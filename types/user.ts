@@ -10,6 +10,7 @@ export interface User {
   email: string
   displayName: string
   role: UserRole
+  posNumber?: string
   isActive: boolean
   createdAt?: Date
   updatedAt?: Date
@@ -21,10 +22,12 @@ export interface CreateUserInput {
   password: string
   displayName: string
   role: UserRole
+  posNumber?: string
 }
 
 export interface UpdateUserInput {
   displayName?: string
   role?: UserRole
+  posNumber?: string
   isActive?: boolean
 }

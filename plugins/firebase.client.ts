@@ -3,7 +3,7 @@ import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 
-export default defineNuxtPlugin(() => {
+export default defineNuxtPlugin(async () => {
   // Only run on client side
   if (process.server) {
     console.log('[Firebase] Server-side detected, skipping Firebase initialization')
