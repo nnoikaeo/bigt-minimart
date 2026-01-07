@@ -3,18 +3,15 @@ import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 
-export default defineNuxtPlugin(async () => {
+export default defineNuxtPlugin(async (nuxtApp) => {
   // Only run on client side
   if (process.server) {
     console.log('[Firebase] Server-side detected, skipping Firebase initialization')
-    return {
-      provide: {
-        firebase: null,
-        auth: null,
-        db: null,
-        storage: null,
-      },
-    }
+    nuxtApp.provide('firebase', null)
+    nuxtApp.provide('auth', null)
+    nuxtApp.provide('db', null)
+    nuxtApp.provide('storage', null)
+    return
   }
 
   // Try to get config from window.__NUXT__.config first (SSR hydration)
@@ -32,14 +29,11 @@ export default defineNuxtPlugin(async () => {
     console.warn('FIREBASE_API_KEY:', apiKey ? '✓' : '✗')
     console.warn('FIREBASE_PROJECT_ID:', projectId ? '✓' : '✗')
     
-    return {
-      provide: {
-        firebase: null,
-        auth: null,
-        db: null,
-        storage: null,
-      },
-    }
+    nuxtApp.provide('firebase', null)
+    nuxtApp.provide('auth', null)
+    nuxtApp.provide('db', null)
+    nuxtApp.provide('storage', null)
+    return
   }
 
   try {
@@ -75,21 +69,15 @@ export default defineNuxtPlugin(async () => {
         auth,
         db,
         storage,
-      },
-    }
+    nuxtApp.provide('firebase', app)
+    nuxtApp.provide('auth', auth)
+    nuxtApp.provide('db', db)
+    nuxtApp.provide('storage', storage)
   } catch (error: any) {
     console.error('[Firebase] ❌ Initialization failed:', error.message)
     console.error('[Firebase] Details:', error)
     
-    return {
-      provide: {
-        firebase: null,
-        auth: null,
-        db: null,
-        storage: null,
-      },
-    }
-  }
-})
-
-
+    nuxtApp.provide('firebase', null)
+    nuxtApp.provide('auth', null)
+    nuxtApp.provide('db', null)
+    nuxtApp.provide('storage', null)
