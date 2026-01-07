@@ -18,10 +18,8 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Clean install dependencies
-        run: |
-          rm -f package-lock.json
-          npm ci --prefer-offline --no-audit
+      - name: Install dependencies
+        run: npm install
 
       - name: Lint check
         run: npm run lint
