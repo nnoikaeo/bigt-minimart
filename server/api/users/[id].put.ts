@@ -4,7 +4,7 @@ import { userService } from '~/server/utils/user-service'
 const updateUserSchema = z.object({
   displayName: z.string().min(2).optional(),
   role: z.enum(['owner', 'manager', 'assistant_manager', 'cashier', 'auditor']).optional(),
-  posNumber: z.union([z.literal(1), z.literal(2)]).optional(),
+  posNumber: z.union([z.literal(1), z.literal(2)]).transform(val => val?.toString()).optional(),
   isActive: z.boolean().optional(),
 })
 
@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 400,
         message: 'Invalid input',
-        data: error.errors,
+        data: error.issues,
       })
     }
     console.error('Error updating user:', error)

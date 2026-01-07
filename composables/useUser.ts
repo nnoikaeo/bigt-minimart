@@ -12,8 +12,13 @@ export const useUser = () => {
     error.value = ''
     try {
       const response = await $fetch('/api/users')
-      users.value = response.data
-      return { success: true, data: response.data }
+      // Convert date strings back to Date objects
+      users.value = response.data.map((user: any) => ({
+        ...user,
+        createdAt: user.createdAt ? new Date(user.createdAt) : undefined,
+        updatedAt: user.updatedAt ? new Date(user.updatedAt) : undefined,
+      }))
+      return { success: true, data: users.value }
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch users'
       console.error('Error fetching users:', err)
@@ -32,8 +37,13 @@ export const useUser = () => {
         method: 'POST',
         body: input,
       })
-      users.value.push(response.data)
-      return { success: true, data: response.data }
+      const userData = {
+        ...response.data,
+        createdAt: response.data.createdAt ? new Date(response.data.createdAt) : undefined,
+        updatedAt: response.data.updatedAt ? new Date(response.data.updatedAt) : undefined,
+      }
+      users.value.push(userData)
+      return { success: true, data: userData }
     } catch (err: any) {
       error.value = err.message || 'Failed to create user'
       console.error('Error creating user:', err)
@@ -52,11 +62,16 @@ export const useUser = () => {
         method: 'PUT',
         body: input,
       })
+      const userData = {
+        ...response.data,
+        createdAt: response.data.createdAt ? new Date(response.data.createdAt) : undefined,
+        updatedAt: response.data.updatedAt ? new Date(response.data.updatedAt) : undefined,
+      }
       const index = users.value.findIndex(u => u.uid === uid)
       if (index > -1) {
-        users.value[index] = response.data
+        users.value[index] = userData
       }
-      return { success: true, data: response.data }
+      return { success: true, data: userData }
     } catch (err: any) {
       error.value = err.message || 'Failed to update user'
       console.error('Error updating user:', err)

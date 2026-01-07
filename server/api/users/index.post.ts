@@ -6,7 +6,7 @@ const createUserSchema = z.object({
   password: z.string().min(6),
   displayName: z.string().min(2),
   role: z.enum(['owner', 'manager', 'assistant_manager', 'cashier', 'auditor']),
-  posNumber: z.union([z.literal(1), z.literal(2)]).optional(),
+  posNumber: z.union([z.literal(1), z.literal(2)]).transform(val => val?.toString()).optional(),
 })
 
 export default defineEventHandler(async (event) => {
@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 400,
         message: 'Invalid input',
-        data: error.errors,
+        data: error.issues,
       })
     }
     console.error('Error creating user:', error)
