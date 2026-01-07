@@ -34,18 +34,3 @@ jobs:
           channelId: staging
           expires: 7d
 
-      - name: Comment PR with preview URL
-        if: always()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const status = '${{ job.status }}' === 'success' ? '✅' : '❌';
-            const message = `${status} Staging deployment ${{ job.status }}\n\n[View preview](https://console.firebase.google.com/project/${{ secrets.FIREBASE_PROJECT_ID }}/hosting/channels)`;
-            
-            github.rest.repos.createCommitComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              commit_sha: context.sha,
-              body: message
-            })
-
