@@ -21,7 +21,7 @@ jobs:
       - name: Clean install dependencies
         run: |
           rm -f package-lock.json
-          npm install --no-optional
+          npm ci --prefer-offline --no-audit
 
       - name: Lint check
         run: npm run lint
