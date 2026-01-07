@@ -18,6 +18,14 @@ export default defineNuxtConfig({
   // Pages - Enable auto-routing
   pages: true,
 
+  // Nitro - Configure for static generation
+  nitro: {
+    prerender: {
+      crawlLinks: false,  // Don't crawl links to avoid protected routes
+      routes: ['/login', '/setup'],  // Only truly public pages (not home /)
+    },
+  },
+
   // Runtime Config - Auto-load from .env files
   runtimeConfig: {
     // Private keys (server-only)

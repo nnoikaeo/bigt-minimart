@@ -1,0 +1,109 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run type check
+        run: npm run type-check
+
+      - name: Build application
+        run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: nuxt-build-${{ github.sha }}
+          path: |
+            .output
+            package.json
+            nuxt.config.ts
+          retention-days: 30
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://console.firebase.google.com/project/${{ secrets.FIREBASE_PROJECT_ID }}/hosting/sites
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: nuxt-build-${{ github.sha }}
+
+      - name: Deploy to Firebase Hosting (Production)
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          projectId: ${{ secrets.FIREBASE_PROJECT_ID }}
+          channelId: live
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ needs.build.outputs.version }}-${{ github.run_number }}
+          release_name: Production Release v${{ needs.build.outputs.version }}
+          body: |
+            ## 🚀 Production Deployment
+
+            - **Version**: ${{ needs.build.outputs.version }}
+            - **Commit**: ${{ github.sha }}
+            - **Environment**: Production (Firebase Hosting)
+
+            ### Links
+            - [View in Firebase Console](https://console.firebase.google.com/project/${{ secrets.FIREBASE_PROJECT_ID }}/hosting/sites)
+            - [View Commit](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
+
+            See commit history for changes.
+          draft: false
+          prerelease: false
+
+      - name: Notify deployment
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const status = '${{ job.status }}' === 'success' ? '✅ Success' : '❌ Failed';
+            github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+              body: `${status} Production deployment - [View Details](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`
+            })
+

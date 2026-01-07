@@ -1,4 +1,9 @@
 export default defineNuxtRouteMiddleware(async (to, from) => {
+  // Skip on server-side rendering to avoid hydration mismatch
+  if (process.server) {
+    return
+  }
+
   // Allow access to login, setup, and public pages without authentication
   const publicPages = ['/login', '/setup']
   if (publicPages.includes(to.path)) {

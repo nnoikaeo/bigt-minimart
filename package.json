@@ -7,7 +7,9 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "lint": "nuxt generate --nitro-prerender",
+    "type-check": "vue-tsc --noEmit"
   },
   "dependencies": {
     "@pinia/nuxt": "^0.11.3",
