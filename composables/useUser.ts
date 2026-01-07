@@ -57,7 +57,12 @@ export const useUser = () => {
   const updateUser = async (uid: string, input: UpdateUserInput) => {
     loading.value = true
     error.value = ''
-    try {userData = {
+    try {
+      const response = await $fetch(`/api/users/${uid}`, {
+        method: 'PUT',
+        body: input,
+      })
+      const userData = {
         ...response.data,
         createdAt: response.data.createdAt ? new Date(response.data.createdAt) : undefined,
         updatedAt: response.data.updatedAt ? new Date(response.data.updatedAt) : undefined,
@@ -66,12 +71,7 @@ export const useUser = () => {
       if (index > -1) {
         users.value[index] = userData
       }
-      return { success: true, data: userD
-      const index = users.value.findIndex(u => u.uid === uid)
-      if (index > -1) {
-        users.value[index] = response.data
-      }
-      return { success: true, data: response.data }
+      return { success: true, data: userData }
     } catch (err: any) {
       error.value = err.message || 'Failed to update user'
       console.error('Error updating user:', err)
