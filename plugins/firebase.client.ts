@@ -63,12 +63,6 @@ export default defineNuxtPlugin(async (nuxtApp) => {
 
     console.log('[Firebase] ✅ Connected successfully')
 
-    return {
-      provide: {
-        firebase: app,
-        auth,
-        db,
-        storage,
     nuxtApp.provide('firebase', app)
     nuxtApp.provide('auth', auth)
     nuxtApp.provide('db', db)
@@ -81,3 +75,5 @@ export default defineNuxtPlugin(async (nuxtApp) => {
     nuxtApp.provide('auth', null)
     nuxtApp.provide('db', null)
     nuxtApp.provide('storage', null)
+  }
+})
