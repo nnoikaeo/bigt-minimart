@@ -18,11 +18,12 @@ export default defineNuxtConfig({
   // Pages - Enable auto-routing
   pages: true,
 
-  // Nitro - Configure for static generation
+  // Nitro - Configure for Firebase Node server
   nitro: {
+    preset: 'node-server',
     prerender: {
-      crawlLinks: false,  // Don't crawl links to avoid protected routes
-      routes: ['/login', '/setup'],  // Only truly public pages (not home /)
+      crawlLinks: false,
+      routes: ['/'],
     },
   },
 

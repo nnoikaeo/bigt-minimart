@@ -9,19 +9,35 @@
     "rewrites": [
       {
         "source": "**",
-        "destination": "/index.html"
+        "function": "nuxtServer"
       }
     ],
+    "cleanUrls": true,
+    "trailingSlashBehavior": "REMOVE",
     "headers": [
       {
-        "source": "**/*.@(js|css|woff|woff2)",
+        "source": "**/*.@(js|css|woff|woff2|eot|ttf|otf|svg)",
         "headers": [
           {
             "key": "Cache-Control",
             "value": "max-age=31536000, immutable"
           }
         ]
+      },
+      {
+        "source": "**/*.html",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=3600, must-revalidate"
+          }
+        ]
       }
     ]
+  },
+  "functions": {
+    "source": ".output/server",
+    "runtime": "nodejs20",
+    "codebase": "default"
   }
 }
