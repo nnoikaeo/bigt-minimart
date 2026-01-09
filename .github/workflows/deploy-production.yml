@@ -45,6 +45,8 @@ jobs:
             .output
             package.json
             nuxt.config.ts
+            firebase.json
+            .firebaserc
           retention-days: 30
 
   deploy:
