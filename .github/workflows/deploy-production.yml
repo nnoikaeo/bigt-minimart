@@ -6,51 +6,7 @@ on:
       - main
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.version.outputs.version }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Get version
-        id: version
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run type check
-        run: npm run type-check
-
-      - name: Build application
-        run: npm run generate
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: nuxt-build-${{ github.sha }}
-          path: |
-            .output
-            package.json
-            nuxt.config.ts
-            firebase.json
-            .firebaserc
-          retention-days: 30
-
   deploy:
-    needs: build
     runs-on: ubuntu-latest
     environment:
       name: production
@@ -60,10 +16,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          name: nuxt-build-${{ github.sha }}
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run type check
+        run: npm run type-check
+
+      - name: Build application
+        run: npm run generate
 
       - name: Deploy to Firebase Hosting (Production)
         uses: FirebaseExtended/action-hosting-deploy@v0
