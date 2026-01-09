@@ -12,8 +12,10 @@ export const useUser = () => {
     error.value = ''
     try {
       const response = await $fetch('/api/users')
+      // $fetch automatically unwraps the response, so response is already the full object
+      const data = response.data || []
       // Convert date strings back to Date objects
-      users.value = response.data.map((user: any) => ({
+      users.value = data.map((user: any) => ({
         ...user,
         createdAt: user.createdAt ? new Date(user.createdAt) : undefined,
         updatedAt: user.updatedAt ? new Date(user.updatedAt) : undefined,
@@ -37,10 +39,11 @@ export const useUser = () => {
         method: 'POST',
         body: input,
       })
+      // $fetch automatically unwraps the response
       const userData = {
         ...response.data,
-        createdAt: response.data.createdAt ? new Date(response.data.createdAt) : undefined,
-        updatedAt: response.data.updatedAt ? new Date(response.data.updatedAt) : undefined,
+        createdAt: response.data?.createdAt ? new Date(response.data.createdAt) : undefined,
+        updatedAt: response.data?.updatedAt ? new Date(response.data.updatedAt) : undefined,
       }
       users.value.push(userData)
       return { success: true, data: userData }
@@ -64,8 +67,8 @@ export const useUser = () => {
       })
       const userData = {
         ...response.data,
-        createdAt: response.data.createdAt ? new Date(response.data.createdAt) : undefined,
-        updatedAt: response.data.updatedAt ? new Date(response.data.updatedAt) : undefined,
+        createdAt: response.data?.createdAt ? new Date(response.data.createdAt) : undefined,
+        updatedAt: response.data?.updatedAt ? new Date(response.data.updatedAt) : undefined,
       }
       const index = users.value.findIndex(u => u.uid === uid)
       if (index > -1) {
