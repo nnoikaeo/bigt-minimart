@@ -29,7 +29,7 @@ export const useAuth = () => {
       }
 
       const userCredential = await signInWithEmailAndPassword(
-        $auth,
+        $auth as any,
         email,
         password
       )
@@ -62,7 +62,7 @@ export const useAuth = () => {
       const $auth = getAuth()
       
       if ($auth) {
-        await signOut($auth)
+        await signOut($auth as any)
       }
       
       authStore.clearUser()
@@ -84,7 +84,7 @@ export const useAuth = () => {
         return () => {} // Return dummy unsubscribe
       }
 
-      return onAuthStateChanged($auth, (user) => {
+      return onAuthStateChanged($auth as any, (user) => {
         if (user) {
           console.log('[Auth] User logged in:', user.email)
           authStore.setUser({

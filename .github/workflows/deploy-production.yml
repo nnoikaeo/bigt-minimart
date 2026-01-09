@@ -17,11 +17,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js 18
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
-          cache: 'npm'
+          node-version: '20'
 
       - name: Get version
         id: version
@@ -36,7 +35,7 @@ jobs:
         run: npm run type-check
 
       - name: Build application
-        run: npm run build
+        run: npm run generate
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3
@@ -53,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://console.firebase.google.com/project/${{ secrets.FIREBASE_PROJECT_ID }}/hosting/sites
+      url: https://firebase.google.com
 
     steps:
       - name: Checkout code

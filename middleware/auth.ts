@@ -22,7 +22,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
     // Check if there's a session in localStorage (persistent login)
     const auth = useNuxtApp().$auth
-    if (auth && auth.currentUser) {
+    if (auth && typeof auth === 'object' && 'currentUser' in auth && auth.currentUser) {
       // Firebase says we're authenticated
       return
     }

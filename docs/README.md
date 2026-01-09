@@ -35,6 +35,7 @@ Technical architecture and implementation details.
 - [DATABASE_SCHEMA.md](./TECHNICAL/DATABASE_SCHEMA.md) - Firestore data structure
 - [API_ENDPOINTS.md](./TECHNICAL/API_ENDPOINTS.md) - REST API documentation
 - [FIREBASE_SETUP.md](./TECHNICAL/FIREBASE_SETUP.md) - Firebase configuration and setup
+- [FIREBASE_HOSTING_SETUP.md](./TECHNICAL/FIREBASE_HOSTING_SETUP.md) - Firebase Hosting technical setup
 
 ### 🎨 [DESIGN/](./DESIGN/) - UI/UX Guidelines
 Design standards and visual guidelines.
@@ -50,7 +51,10 @@ Development standards and processes.
 - [CODING_STANDARDS.md](./DEVELOPMENT/CODING_STANDARDS.md) - Code standards (extracted)
 - [TESTING_GUIDELINES.md](./DEVELOPMENT/TESTING_GUIDELINES.md) - Testing approach (extracted)
 - [GIT_WORKFLOW.md](./DEVELOPMENT/GIT_WORKFLOW.md) - Git strategy (extracted)
-- [DEPLOYMENT.md](./DEVELOPMENT/DEPLOYMENT.md) - Deployment process (extracted)
+- [DEPLOYMENT.md](./DEVELOPMENT/DEPLOYMENT.md) - Deployment and CI/CD process
+- [CI_CD.md](./DEVELOPMENT/CI_CD.md) - CI/CD pipeline overview
+- [CI_CD_SETUP.md](./DEVELOPMENT/CI_CD_SETUP.md) - Detailed CI/CD setup and configuration
+- [FIREBASE_DEPLOYMENT_CHECKLIST.md](./DEVELOPMENT/FIREBASE_DEPLOYMENT_CHECKLIST.md) - Step-by-step deployment checklist
 
 ### 🗺️ [ROADMAP/](./ROADMAP/) - Development Roadmap
 Phase-by-phase development timeline.
@@ -77,6 +81,7 @@ Glossaries, FAQs, and reference materials.
 - [FAQ.md](./REFERENCE/FAQ.md) - Frequently asked questions
 - [TROUBLESHOOTING.md](./REFERENCE/TROUBLESHOOTING.md) - Troubleshooting guide (to be added)
 - [RESOURCES.md](./REFERENCE/RESOURCES.md) - External resources and links (to be added)
+- [FIREBASE_COMMANDS.md](./REFERENCE/FIREBASE_COMMANDS.md) - Firebase CLI commands reference
 
 ### 🗂️ [ARCHIVE/](./ARCHIVE/) - Version Archives
 Previous versions and backups.
