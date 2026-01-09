@@ -28,7 +28,7 @@ jobs:
         run: npm run type-check
 
       - name: Build application
-        run: npm run generate
+        run: npm run build
 
       - name: Deploy to Firebase Hosting (Production)
         uses: FirebaseExtended/action-hosting-deploy@v0
