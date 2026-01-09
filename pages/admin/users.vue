@@ -77,7 +77,7 @@ const handleSubmit = async () => {
         editingUser.value = null
         resetForm()
       } else {
-        error.value = result.error
+        error.value = result.error || 'เกิดข้อผิดพลาดในการอัปเดตผู้ใช้'
       }
     } else {
       // Create user
@@ -96,7 +96,7 @@ const handleSubmit = async () => {
         showCreateForm.value = false
         resetForm()
       } else {
-        error.value = result.error
+        error.value = result.error || 'เกิดข้อผิดพลาดในการสร้างผู้ใช้'
       }
     }
   } catch (err: any) {

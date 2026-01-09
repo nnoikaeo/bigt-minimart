@@ -1,6 +1,7 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50">
-    <div class="max-w-md w-full space-y-8">
+  <ClientOnly>
+    <div class="min-h-screen flex items-center justify-center bg-gray-50">
+      <div class="max-w-md w-full space-y-8">
       <!-- Header -->
       <div class="text-center">
         <h1 class="text-3xl font-bold text-primary mb-2">
@@ -93,7 +94,8 @@
         <p>&copy; 2026 BigT Minimart. All rights reserved.</p>
       </div>
     </div>
-  </div>
+    </div>
+  </ClientOnly>
 </template>
 
 <script setup lang="ts">
