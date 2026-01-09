@@ -94,6 +94,7 @@
         <p>&copy; 2026 BigT Minimart. All rights reserved.</p>
       </div>
     </div>
+    </div>
   </ClientOnly>
 </template>
 
