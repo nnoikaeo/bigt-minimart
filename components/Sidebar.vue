@@ -15,12 +15,12 @@
 
         <!-- Settings Link -->
         <NuxtLink
-          to="/admin/settings"
+          to="/admin/system-settings"
           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
-          :class="isActive('/admin/settings') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'"
+          :class="isActive('/admin/system-settings') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'"
         >
           <span class="text-xl">⚙️</span>
-          <span class="font-medium">ตั้งค่า</span>
+          <span class="font-medium">ตั้งค่าระบบ</span>
         </NuxtLink>
 
         <!-- Reports (Owner only) -->
