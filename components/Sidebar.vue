@@ -88,9 +88,23 @@
       </div>
     </nav>
 
-    <!-- Footer (optional) -->
-    <div class="border-t border-slate-700 px-4 py-3 text-xs text-slate-400 text-center">
-      <p>v1.2.0</p>
+    <!-- Footer: User Info and Role Badge -->
+    <div class="border-t border-slate-700 px-4 py-4 space-y-3">
+      <!-- User Name -->
+      <div class="text-sm text-slate-300">
+        <p class="text-xs text-slate-500 uppercase tracking-wider">Logged in as</p>
+        <p class="font-medium text-white truncate">{{ userName }}</p>
+      </div>
+
+      <!-- Role Badge -->
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold" :class="getRoleBadgeClass">
+          {{ getRoleBadgeIcon }} {{ getRoleBadgeLabel }}
+        </span>
+      </div>
+
+      <!-- Version -->
+      <p class="text-xs text-slate-500 text-center">v1.2.0</p>
     </div>
   </aside>
 </template>
@@ -109,13 +123,66 @@ const isSettingsOpen = ref(false)
 // Computed properties
 const user = computed(() => authStore.user)
 const userRole = computed(() => user.value?.role || 'unknown')
+const userName = computed(() => user.value?.displayName || 'User')
+
+// Role badge styling and labels
+const getRoleBadgeClass = computed(() => {
+  const role = userRole.value
+  switch (role) {
+    case 'owner':
+      return 'bg-purple-900 text-purple-200'
+    case 'manager':
+      return 'bg-blue-900 text-blue-200'
+    case 'auditor':
+      return 'bg-amber-900 text-amber-200'
+    case 'cashier':
+      return 'bg-green-900 text-green-200'
+    default:
+      return 'bg-slate-700 text-slate-300'
+  }
+})
+
+const getRoleBadgeIcon = computed(() => {
+  const role = userRole.value
+  switch (role) {
+    case 'owner':
+      return '👑'
+    case 'manager':
+      return '📋'
+    case 'auditor':
+      return '🔍'
+    case 'cashier':
+      return '💳'
+    default:
+      return '👤'
+  }
+})
+
+const getRoleBadgeLabel = computed(() => {
+  const role = userRole.value
+  switch (role) {
+    case 'owner':
+      return 'Owner'
+    case 'manager':
+      return 'Manager'
+    case 'auditor':
+      return 'Auditor'
+    case 'cashier':
+      return 'Cashier'
+    default:
+      return 'Unknown'
+  }
+})
 
 // Role-based access control
+// Owner: All features
+// Manager: Dashboard only
+// Auditor: Dashboard, Audit Logs only
+// Cashier/Staff: Dashboard only
+
 const canAccessUsers = computed(() => {
   const role = userRole.value
-  // TODO: Restrict to owner/manager only
-  // For now: show to all logged-in users for testing
-  return true
+  return role === 'owner'
 })
 
 const canAccessReports = computed(() => {
@@ -125,14 +192,12 @@ const canAccessReports = computed(() => {
 
 const canAccessAuditLogs = computed(() => {
   const role = userRole.value
-  return role === 'auditor'
+  return role === 'owner' || role === 'auditor'
 })
 
 const canAccessSystemSettings = computed(() => {
   const role = userRole.value
-  // TODO: Restrict to owner only
-  // For now: show to all logged-in users for testing
-  return true
+  return role === 'owner'
 })
 
 // Check if current route is active
