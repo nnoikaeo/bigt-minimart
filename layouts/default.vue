@@ -6,7 +6,7 @@
     <Header />
     
     <!-- 2️⃣ CONTENT AREA: flex row with sidebar + main -->
-    <div class="flex flex-1 overflow-hidden relative">
+    <div class="flex flex-1 relative">
       <!-- Sidebar (fixed left) -->
       <Sidebar />
       
