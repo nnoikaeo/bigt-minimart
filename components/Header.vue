@@ -28,7 +28,7 @@
           <!-- User Info -->
           <div class="text-right">
             <p class="text-sm font-medium text-gray-800">{{ userName }}</p>
-            <p class="text-xs text-gray-500 capitalize">{{ userRole }}</p>
+            <p class="text-xs text-gray-500">{{ roleLabel }}</p>
           </div>
           <!-- Dropdown Arrow -->
           <svg
@@ -86,7 +86,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '~/stores/auth'
 
@@ -95,6 +95,7 @@ const authStore = useAuthStore()
 
 // State
 const isDropdownOpen = ref(false)
+const isMobileMenuOpen = ref(false)
 
 // Computed properties
 const user = computed(() => authStore.user)
@@ -104,6 +105,32 @@ const userInitial = computed(() => {
   const name = userName.value || 'U'
   return name.charAt(0).toUpperCase()
 })
+
+// Map role to Thai display label
+const roleLabel = computed(() => {
+  const role = userRole.value
+  const roleMap: Record<string, string> = {
+    owner: 'เจ้าของร้าน',
+    manager: 'ผู้จัดการ',
+    assistant_manager: 'ผู้จัดการช่วย',
+    cashier: 'พนักงานคิดเงิน',
+    auditor: 'ออดิท',
+    unknown: 'ไม่ทราบ',
+  }
+  return roleMap[role] || role
+})
+
+// Watch for role changes and log
+watch(
+  () => user.value?.role,
+  (newRole) => {
+    console.log('[Header] User role:', newRole, '| Display name:', user.value?.displayName)
+  },
+  { immediate: true }
+)
+
+// Provide mobile menu state to child components
+provide('isMobileMenuOpen', isMobileMenuOpen)
 
 // Handle logout
 const handleLogout = async () => {

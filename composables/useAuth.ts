@@ -4,6 +4,7 @@ import {
   onAuthStateChanged,
   type User,
 } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
 
 export const useAuth = () => {
   const nuxtApp = useNuxtApp()
@@ -15,10 +16,29 @@ export const useAuth = () => {
     return nuxtApp.$auth
   }
 
+  // Helper function to extract role from displayName (for testing)
+  const extractRoleFromDisplayName = (displayName: string | null): string => {
+    if (!displayName) return 'unknown'
+    
+    const roleMap: Record<string, string> = {
+      'เจ้าของร้าน': 'owner',
+      'ผู้จัดการร้าน': 'manager',
+      'ผู้จัดการ': 'manager',
+      'พนักงานสาเหตุ': 'auditor',
+      'ออดิท': 'auditor',
+      'auditor': 'auditor',
+      'พนักงานคิดเงิน': 'cashier',
+      'cashier': 'cashier',
+    }
+    
+    return roleMap[displayName] || 'unknown'
+  }
+
   // Login function
   const login = async (email: string, password: string) => {
     try {
       const $auth = getAuth()
+      const $db = useNuxtApp().$db
       
       if (!$auth) {
         return { 
@@ -36,14 +56,35 @@ export const useAuth = () => {
       
       const user = userCredential.user
       
+      // Try to fetch user role from Firestore first
+      let userRole = extractRoleFromDisplayName(user.displayName)
+      
+      if ($db) {
+        try {
+          const userDocRef = doc($db as any, 'users', user.uid)
+          const userDocSnap = await getDoc(userDocRef)
+          if (userDocSnap.exists()) {
+            const firestoreRole = userDocSnap.data()?.role || null
+            if (firestoreRole) {
+              userRole = firestoreRole
+              console.log('[Auth] Fetched role from Firestore:', userRole)
+            }
+          }
+        } catch (error: any) {
+          // Silently fall back to displayName extraction
+          console.log('[Auth] Using role from displayName:', userRole)
+        }
+      }
+      
       // Store user info in auth store
       authStore.setUser({
         uid: user.uid,
         email: user.email,
         displayName: user.displayName,
+        role: userRole as any,
       })
 
-      console.log('[Auth] Login successful:', user.email)
+      console.log('[Auth] Login successful:', user.email, '| role:', userRole)
       return { success: true, user }
     } catch (error: any) {
       console.error('[Auth] Login failed:', error.code, error.message)
@@ -78,19 +119,41 @@ export const useAuth = () => {
   const watchAuthState = () => {
     try {
       const $auth = getAuth()
+      const $db = useNuxtApp().$db
       
       if (!$auth) {
         console.warn('[Auth] Firebase not available for state watching')
         return () => {} // Return dummy unsubscribe
       }
 
-      return onAuthStateChanged($auth as any, (user) => {
+      return onAuthStateChanged($auth as any, async (user) => {
         if (user) {
           console.log('[Auth] User logged in:', user.email)
+          
+          // Try to fetch user role from Firestore first
+          let userRole = extractRoleFromDisplayName(user.displayName)
+          
+          if ($db) {
+            try {
+              const userDocRef = doc($db as any, 'users', user.uid)
+              const userDocSnap = await getDoc(userDocRef)
+              if (userDocSnap.exists()) {
+                const firestoreRole = userDocSnap.data()?.role || null
+                if (firestoreRole) {
+                  userRole = firestoreRole
+                }
+              }
+            } catch (error: any) {
+              // Silently fall back to displayName extraction
+              console.log('[Auth] Using role from displayName:', userRole)
+            }
+          }
+          
           authStore.setUser({
             uid: user.uid,
             email: user.email,
             displayName: user.displayName,
+            role: userRole as any,
           })
         } else {
           console.log('[Auth] User logged out')
