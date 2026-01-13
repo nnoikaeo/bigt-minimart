@@ -1,6 +1,6 @@
 <template>
-  <nav aria-label="Breadcrumb" class="mb-4">
-    <ol class="flex items-center space-x-2 text-sm text-gray-600">
+  <nav aria-label="Breadcrumb" class="mb-4 overflow-x-auto">
+    <ol class="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm text-gray-600 whitespace-nowrap">
       <!-- Home -->
       <li>
         <NuxtLink to="/admin" class="hover:text-gray-900 font-medium">
