@@ -90,7 +90,7 @@ const getLabel = (segment: string, root: string): string => {
   }
 
   // Use labelMap for all other segments
-  return labelMap[segment] || segment.charAt(0).toUpperCase() + segment.slice(1)
+  return (labelMap[segment as keyof typeof labelMap] || segment.charAt(0).toUpperCase() + segment.slice(1))
 }
 
 // Generate breadcrumbs from route
@@ -105,8 +105,8 @@ const breadcrumbs = computed<Breadcrumb[]>(() => {
   logger.debug('Generating breadcrumbs', { currentPath: route.path, pathArray })
 
   // Get root segment (admin or user) and extract relevant parts
-  const rootSegment = pathArray[0]
-  const relevantParts = pathArray.slice(1)
+  const rootSegment = pathArray[0] as string
+  const relevantParts = pathArray.slice(1) as string[]
 
   if (relevantParts.length === 0) {
     logger.log('No relevant parts after root segment', { root: rootSegment })
