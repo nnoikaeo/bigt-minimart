@@ -47,23 +47,24 @@ interface Breadcrumb {
 const route = useRoute()
 const logger = useLogger('Breadcrumb')
 
-// Breadcrumb label mapping for friendly names
+// Breadcrumb label mapping for friendly names (Thai)
 const labelMap: Record<string, string> = {
-  admin: 'Dashboard',
-  dashboard: 'Dashboard',
-  settings: 'Settings',
-  'general-settings': 'General Settings',
-  'business-info': 'Business Info',
-  'payment-methods': 'Payment Methods',
-  'email-notification': 'Email Notifications',
-  users: 'Users Management',
-  'add-user': 'Add User',
-  'edit-user': 'Edit User',
-  reports: 'Reports',
-  'sales-report': 'Sales Report',
-  'inventory-report': 'Inventory Report',
-  'customer-report': 'Customer Report',
-  'audit-logs': 'Audit Logs',
+  admin: 'แดชบอร์ด',
+  dashboard: 'แดชบอร์ด',
+  settings: 'ตั้งค่า',
+  'system-settings': 'ตั้งค่าระบบ',
+  'general-settings': 'ตั้งค่าทั่วไป',
+  'business-info': 'ข้อมูลร้านค้า',
+  'payment-methods': 'วิธีการชำระเงิน',
+  'email-notification': 'การแจ้งเตือนอีเมล',
+  users: 'จัดการผู้ใช้',
+  'add-user': 'เพิ่มผู้ใช้',
+  'edit-user': 'แก้ไขผู้ใช้',
+  reports: 'รายงาน',
+  'sales-report': 'รายงานการขาย',
+  'inventory-report': 'รายงานสินค้าคงคลัง',
+  'customer-report': 'รายงานลูกค้า',
+  'audit-logs': 'บันทึกการตรวจสอบ',
 }
 
 // Generate breadcrumbs from route

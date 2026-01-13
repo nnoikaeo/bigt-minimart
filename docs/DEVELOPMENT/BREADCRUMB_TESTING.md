@@ -23,7 +23,7 @@ The new `useLogger` composable provides:
 [Breadcrumb] Route changed {from: "/admin", to: "/admin/settings"}
 [Breadcrumb] Generating breadcrumbs {currentPath: "/admin/settings", pathArray: ["admin", "settings"]}
 [Breadcrumb] Generated Breadcrumbs:
-  (table shows: [{label: "Settings", path: "/admin/settings"}])
+  (table shows: [{label: "ตั้งค่า", path: "/admin/settings"}])
 [Breadcrumb] Route changed {from: "/admin/settings", to: "/admin/users"}
 [Breadcrumb] Breadcrumbs count 1
 ```
@@ -43,11 +43,12 @@ The new `useLogger` composable provides:
 - **Login** with any test user
 - **Navigate** to different admin pages:
   - Dashboard (should have no breadcrumbs)
-  - Settings (should show: Home / Settings)
-  - User Management (should show: Home / Users Management)
-  - Add User (should show: Home / Users Management / Add User)
-  - Reports (should show: Home / Reports)
-  - Audit Logs (should show: Home / Audit Logs)
+  - Settings (should show: 🏠 / ตั้งค่า)
+  - System Settings (should show: 🏠 / ตั้งค่าระบบ)
+  - User Management (should show: 🏠 / จัดการผู้ใช้)
+  - Add User (should show: 🏠 / จัดการผู้ใช้ / เพิ่มผู้ใช้)
+  - Reports (should show: 🏠 / รายงาน)
+  - Audit Logs (should show: 🏠 / บันทึกการตรวจสอบ)
 
 ### 3. Verify Logging
 - Check console for:
@@ -64,21 +65,22 @@ The new `useLogger` composable provides:
 ## Breadcrumb Label Mapping
 ```typescript
 {
-  admin: 'Dashboard',
-  dashboard: 'Dashboard',
-  settings: 'Settings',
-  'general-settings': 'General Settings',
-  'business-info': 'Business Info',
-  'payment-methods': 'Payment Methods',
-  'email-notification': 'Email Notifications',
-  users: 'Users Management',
-  'add-user': 'Add User',
-  'edit-user': 'Edit User',
-  reports: 'Reports',
-  'sales-report': 'Sales Report',
-  'inventory-report': 'Inventory Report',
-  'customer-report': 'Customer Report',
-  'audit-logs': 'Audit Logs',
+  admin: 'แดชบอร์ด',
+  dashboard: 'แดชบอร์ด',
+  settings: 'ตั้งค่า',
+  'system-settings': 'ตั้งค่าระบบ',
+  'general-settings': 'ตั้งค่าทั่วไป',
+  'business-info': 'ข้อมูลร้านค้า',
+  'payment-methods': 'วิธีการชำระเงิน',
+  'email-notification': 'การแจ้งเตือนอีเมล',
+  users: 'จัดการผู้ใช้',
+  'add-user': 'เพิ่มผู้ใช้',
+  'edit-user': 'แก้ไขผู้ใช้',
+  reports: 'รายงาน',
+  'sales-report': 'รายงานการขาย',
+  'inventory-report': 'รายงานสินค้าคงคลัง',
+  'customer-report': 'รายงานลูกค้า',
+  'audit-logs': 'บันทึกการตรวจสอบ',
 }
 ```
 
