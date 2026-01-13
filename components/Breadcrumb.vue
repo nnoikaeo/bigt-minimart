@@ -49,22 +49,31 @@ const logger = useLogger('Breadcrumb')
 
 // Breadcrumb label mapping for friendly names (Thai)
 const labelMap: Record<string, string> = {
+  // Admin pages
   admin: 'แดชบอร์ด',
   dashboard: 'แดชบอร์ด',
+  // Settings pages
   settings: 'ตั้งค่า',
   'system-settings': 'ตั้งค่าระบบ',
   'general-settings': 'ตั้งค่าทั่วไป',
   'business-info': 'ข้อมูลร้านค้า',
   'payment-methods': 'วิธีการชำระเงิน',
   'email-notification': 'การแจ้งเตือนอีเมล',
+  // User Management pages
   users: 'จัดการผู้ใช้',
   'add-user': 'เพิ่มผู้ใช้',
   'edit-user': 'แก้ไขผู้ใช้',
+  // Reports pages
   reports: 'รายงาน',
   'sales-report': 'รายงานการขาย',
   'inventory-report': 'รายงานสินค้าคงคลัง',
   'customer-report': 'รายงานลูกค้า',
+  // Audit pages
   'audit-logs': 'บันทึกการตรวจสอบ',
+  // User profile pages (not admin routes)
+  user: 'บัญชีผู้ใช้',
+  profile: 'โปรไฟล์',
+  'user-settings': 'ตั้งค่าบัญชี',
 }
 
 // Generate breadcrumbs from route
@@ -105,12 +114,16 @@ const breadcrumbs = computed<Breadcrumb[]>(() => {
   return breadcrumbArray
 })
 
+// Track previous path for accurate route change logging
+let previousPath = route.path
+
 // Watch route changes
 watch(
   () => route.path,
   (newPath) => {
-    logger.info('Route changed', { from: route.path, to: newPath })
+    logger.info('Route changed', { from: previousPath, to: newPath })
     logger.debug('Breadcrumbs count', breadcrumbs.value.length)
+    previousPath = newPath
   }
 )
 </script>

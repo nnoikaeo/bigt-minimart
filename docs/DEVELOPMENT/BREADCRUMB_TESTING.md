@@ -20,17 +20,46 @@ The new `useLogger` composable provides:
 
 ### When navigating to Admin pages:
 ```
-[Breadcrumb] Route changed {from: "/admin", to: "/admin/settings"}
-[Breadcrumb] Generating breadcrumbs {currentPath: "/admin/settings", pathArray: ["admin", "settings"]}
+[Breadcrumb] Route changed {from: "/admin", to: "/admin/system-settings"}
+[Breadcrumb] Generating breadcrumbs {currentPath: "/admin/system-settings", pathArray: ["admin", "system-settings"]}
 [Breadcrumb] Generated Breadcrumbs:
-  (table shows: [{label: "ตั้งค่า", path: "/admin/settings"}])
-[Breadcrumb] Route changed {from: "/admin/settings", to: "/admin/users"}
+  (table shows: [{label: "ตั้งค่าระบบ", path: "/admin/system-settings"}])
+[Breadcrumb] Route changed {from: "/admin/system-settings", to: "/admin/users"}
 [Breadcrumb] Breadcrumbs count 1
 ```
 
 ### When on Dashboard (no breadcrumbs):
 ```
 [Breadcrumb] Route path is empty, returning empty breadcrumbs
+```
+
+### When navigating to user profile page:
+```
+[Breadcrumb] Route changed {from: "/admin", to: "/user/profile"}
+[Breadcrumb] Generating breadcrumbs {currentPath: "/user/profile", pathArray: ["user", "profile"]}
+[Breadcrumb] Generated Breadcrumbs:
+  (table shows: [{label: "บัญชีผู้ใช้", path: "/user"}, {label: "โปรไฟล์", path: "/user/profile"}])
+[Breadcrumb] Route changed {from: "/user/profile", to: "/user/user-settings"}
+[Breadcrumb] Breadcrumbs count 2
+```
+
+## Route Change Logging Fix
+
+**Problem Fixed**: Route change logs were showing identical `from` and `to` values  
+**Root Cause**: The watch was comparing against the current route.path instead of tracking the previous value  
+**Solution**: Store the previous route path in a variable and update it after each route change
+
+```typescript
+// Track previous path for accurate route change logging
+let previousPath = route.path
+
+watch(
+  () => route.path,
+  (newPath) => {
+    logger.info('Route changed', { from: previousPath, to: newPath })
+    previousPath = newPath  // Update for next watch
+  }
+)
 ```
 
 ## Testing Steps
@@ -65,22 +94,31 @@ The new `useLogger` composable provides:
 ## Breadcrumb Label Mapping
 ```typescript
 {
+  // Admin pages
   admin: 'แดชบอร์ด',
   dashboard: 'แดชบอร์ด',
+  // Settings pages
   settings: 'ตั้งค่า',
   'system-settings': 'ตั้งค่าระบบ',
   'general-settings': 'ตั้งค่าทั่วไป',
   'business-info': 'ข้อมูลร้านค้า',
   'payment-methods': 'วิธีการชำระเงิน',
   'email-notification': 'การแจ้งเตือนอีเมล',
+  // User Management pages
   users: 'จัดการผู้ใช้',
   'add-user': 'เพิ่มผู้ใช้',
   'edit-user': 'แก้ไขผู้ใช้',
+  // Reports pages
   reports: 'รายงาน',
   'sales-report': 'รายงานการขาย',
   'inventory-report': 'รายงานสินค้าคงคลัง',
   'customer-report': 'รายงานลูกค้า',
+  // Audit pages
   'audit-logs': 'บันทึกการตรวจสอบ',
+  // User profile pages (not admin routes)
+  user: 'บัญชีผู้ใช้',
+  profile: 'โปรไฟล์',
+  'user-settings': 'ตั้งค่าบัญชี',
 }
 ```
 
