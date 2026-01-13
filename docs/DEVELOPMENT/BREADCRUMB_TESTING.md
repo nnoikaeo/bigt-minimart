@@ -62,6 +62,25 @@ watch(
 )
 ```
 
+## Breadcrumb Path Generation Fix
+
+**Problem Fixed**: Breadcrumb paths didn't match actual route paths (e.g., to: '/user/settings' but path: '/admin/settings')  
+**Root Cause**: The breadcrumb builder always hardcoded '/admin' as the root, even for '/user/*' routes  
+**Solution**: Extract the actual root segment from the URL and use it for breadcrumb paths
+
+```typescript
+// Before (WRONG):
+let cumulativePath = '/admin'  // Always /admin!
+
+// After (CORRECT):
+const rootSegment = pathArray[0]  // Extract actual root (admin or user)
+let cumulativePath = `/${rootSegment}`  // Use the actual root
+```
+
+This ensures:
+- `/admin/settings` → breadcrumb path is `/admin/settings` ✅
+- `/user/profile` → breadcrumb paths are `/user` and `/user/profile` ✅
+
 ## Testing Steps
 
 ### 1. Open Browser Developer Console

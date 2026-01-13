@@ -87,17 +87,18 @@ const breadcrumbs = computed<Breadcrumb[]>(() => {
 
   logger.debug('Generating breadcrumbs', { currentPath: route.path, pathArray })
 
-  // Skip 'admin' part as it's the root dashboard
+  // Get root segment (admin or user) and extract relevant parts
+  const rootSegment = pathArray[0]
   const relevantParts = pathArray.slice(1)
 
   if (relevantParts.length === 0) {
-    logger.log('No relevant parts after admin, returning empty breadcrumbs')
+    logger.log('No relevant parts after root segment', { root: rootSegment })
     return []
   }
 
-  // Build breadcrumb path
+  // Build breadcrumb path using actual root from URL
   const breadcrumbArray: Breadcrumb[] = []
-  let cumulativePath = '/admin'
+  let cumulativePath = `/${rootSegment}`
 
   for (const part of relevantParts) {
     cumulativePath += `/${part}`
