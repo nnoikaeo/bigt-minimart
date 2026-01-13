@@ -2,270 +2,162 @@
 
 **Week**: January 14-20, 2026  
 **Phase**: Phase 1 - Core Features  
-**Status**: ✅ **IN PROGRESS** (Tasks 3.1-3.5 completed)  
-**Last Updated**: Jan 13, 2026
+**Status**: 🟡 **DESIGN COMPLETE** (Ready for Development)  
+**Last Updated**: Jan 14, 2026
 
 ---
 
 ## 🎯 Week 3 Objectives
 
-Implement **Daily Sales Feature** - allow users to record daily sales transactions with form validation, table display, and complete CRUD API endpoints.
+Implement **Daily Sales Feature** - Auditor (ผู้ตรวจสอบ) บันทึกข้อมูลยอดขายรายวันจากแคชเชียร์พร้อมฟอร์มการป้อนข้อมูล ตารางแสดงรายการ และ CRUD API endpoints
 
 ---
 
 ## ✅ Completed Tasks
 
-### Task 3.1: Daily Sales Form ✅
-**Status**: Complete | **Files Created**: `pages/admin/daily-sales.vue`
+### Task 3.1: Daily Sales Form ✅ (DESIGN COMPLETE - Ready for Development)
+**Status**: Design Complete | **Purpose**: Auditor บันทึกข้อมูลยอดขายรายวัน
+**User**: Auditor (ผู้ตรวจสอบ) | **Time**: 10-15 นาที (ต่อ Cashier 1 คน)
 
-**Features Implemented**:
-- Form modal with date picker input
-- Sales amount input with validation (must be > 0)
-- Notes textarea for additional comments
-- Thai language labels throughout
-- Form validation with error messages
-- Success/error notifications
-- Edit/Create mode support
-- Modal overlay with responsive design
+**Features to Implement**:
+- **Table** แสดงรายการ Daily Sales ทั้งหมด
+  - 📅 วันที่
+  - 👤 Cashier (ชื่อแคชเชียร์)
+  - 💰 ยอดขาย (รวม 4 ช่องทาง)
+  - ⚖️ ผลต่างเงินสด
+  - 🔖 Status (Submitted/Audited/Approved)
+  - 🎯 Actions (View/Edit/Delete)
+  - 📄 Pagination & Filters
 
-**UI Elements**:
-- Add button at top of page
-- Date field (required)
-- Amount field in Thai currency (required)
-- Notes field (optional)
-- Cancel/Save buttons
-- Error message display
-- Success notification toast
+- **Modal**: บันทึกยอดขายใหม่
+  - **Input Fields**:
+    - วันที่ (Date picker)
+    - Cashier (Select from list)
+    - ยอดขาย 4 ช่องทาง:
+      - เงินสด (Cash)
+      - QR Code
+      - ธนาคาร (Bank Transfer)
+      - โครงการรัฐ (Government Program)
+    - ผลต่างเงินสด (Cash Difference)
+    - หมายเหตุ (Notes)
+  
+  - **Auto-Calculate** (แสดงเรียลไทม์):
+    - รวมยอด = Cash + QR + Bank + Government
+    - ผลต่าง = ยอดจริง - ยอดคาดไว้
+  
+  - **Validation**:
+    - กรอกข้อมูลครบถ้วน
+    - จำนวนเงินต้องมากกว่า 0
+    - Display error messages in Thai
+  
+  - **Success Message**:
+    - แสดง Summary Result
+    - ยอดรวม, ผลต่าง, Status
 
-**Form Validation**:
-- Date field required
-- Amount must be greater than 0
-- Clear error messages in Thai
+**UI Components to Create**:
+- `pages/auditor/daily-sales.vue` (Main Page)
+- `components/DailySalesTable.vue` (Table Display)
+- `components/DailySalesModal.vue` (Modal Form)
 
----
+**Composable to Create**:
+- `composables/useDailySales.ts` (API Interactions + State Management)
 
-### Task 3.2: Sales Entry Table ✅
-**Status**: Complete | **Component**: `pages/admin/daily-sales.vue`
+**Database Schema** (Firestore):
+- Collection: `daily_sales`
+- Fields:
+  - `id`: string (Auto-generated)
+  - `date`: Timestamp
+  - `cashierId`: string (Firebase UID)
+  - `cashierName`: string
+  - `posposData`: object (ยอดขาย 4 ช่องทาง)
+  - `cashReconciliation`: object (ผลต่างเงินสด)
+  - `status`: "submitted" | "audited" | "approved"
+  - `submittedBy`, `submittedAt`: Auditor info
+  - `auditedBy`, `auditedAt`, `auditNotes`: Audit info
+  - `createdAt`, `updatedAt`: System timestamps
 
-**Features Implemented**:
-- Table display with date, amount, notes, and actions columns
-- Thai date formatting (e.g., "13 มกราคม 2569")
-- Thai currency formatting (e.g., "฿1,234.50")
-- Edit button for each row (populates form with entry data)
-- Delete button for each row (with confirmation dialog)
-- Loading state indicator
-- Empty state message
-- Hover effects on rows
-- Responsive table design
+**API Endpoints to Create**:
+- `POST /api/daily-sales` - Create new entry
+- `GET /api/daily-sales` - List all (with filters)
+- `GET /api/daily-sales/[id]` - Get single entry
+- `PUT /api/daily-sales/[id]` - Update entry
+- `DELETE /api/daily-sales/[id]` - Delete entry
 
-**Table Columns**:
-- วันที่ (Date) - formatted in Thai
-- จำนวนเงิน (Amount) - formatted in Thai currency
-- หมายเหตุ (Notes) - or "-" if empty
-- การกระทำ (Actions) - Edit/Delete buttons
-
----
-
-### Task 3.3: Daily Sales API ✅
-**Status**: Complete | **Directory**: `server/api/daily-sales/`
-
-**Endpoints Created**:
-1. **POST /api/daily-sales** - Create new entry
-   - File: `index.post.ts`
-   - Validates: date, amount (positive), optional notes
-   - Sets: userId, userName, createdAt, updatedAt timestamps
-   - Returns: Created entry with ID
-
-2. **GET /api/daily-sales** - List all entries
-   - File: `index.get.ts`
-   - Orders: By date (descending)
-   - Returns: Array of all sales entries
-
-3. **GET /api/daily-sales/[id]** - Get single entry
-   - File: `[id].get.ts`
-   - Returns: Single sales entry or 404 if not found
-
-4. **PUT /api/daily-sales/[id]** - Update entry
-   - File: `[id].put.ts`
-   - Validates: Ownership (user can only update own entries)
-   - Updates: date, amount, notes, updatedAt timestamp
-   - Returns: Updated entry
-
-5. **DELETE /api/daily-sales/[id]** - Delete entry
-   - File: `[id].delete.ts`
-   - Validates: Ownership (user can only delete own entries)
-   - Returns: Success message
-
-**Validation Features**:
-- Zod schema validation on all endpoints
-- Timestamp conversion (JavaScript Date ↔ Firestore Timestamp)
-- User authentication checks
-- Ownership verification for update/delete
+**Next**: Task 3.2-3.6 Development Sprint
 
 ---
 
-### Task 3.4: Database Schema ✅
-**Status**: Complete | **Documentation**: Already defined in `docs/TECHNICAL/DATABASE_SCHEMA.md`
+## 📊 Design & Planning Status
 
-**Collection**: `daily_sales`
+### Design Phase: ✅ COMPLETE
+- ✅ Workflow mapped (5 steps)
+- ✅ UI Components defined (3 components)
+- ✅ Database schema finalized (daily_sales collection)
+- ✅ API endpoints documented (5 endpoints)
+- ✅ Composable structure planned (useDailySales)
 
-**Fields**:
-```typescript
-{
-  id: string;                      // Firestore auto-generated
-  date: Timestamp;                 // Sales date
-  amount: number;                  // Sales amount in Thai Baht
-  notes: string;                   // Optional notes/comments
-  userId: string;                  // Firebase UID of recorder
-  userName: string;                // Display name of recorder
-  createdAt: Timestamp;            // Record creation timestamp
-  updatedAt: Timestamp;            // Last update timestamp
-}
-```
+### Development Phase: ❌ PENDING
+- [ ] Create page component (pages/auditor/daily-sales.vue)
+- [ ] Create table component (components/DailySalesTable.vue)
+- [ ] Create modal component (components/DailySalesModal.vue)
+- [ ] Create composable (composables/useDailySales.ts)
+- [ ] Create API endpoints (5 files in server/api/daily-sales/)
 
-**Firestore Configuration**:
-- ✅ Collection created: `daily_sales`
-- ✅ Documents auto-generated by Firestore
-- ✅ Indexes: By date, by userId
-- ✅ Security rules: Update to come (Phase 2)
+### Testing Phase: ❌ PENDING
+- [ ] Unit tests for API endpoints
+- [ ] Component tests (Table, Modal)
+- [ ] Integration tests (Form submission → Firestore)
+- [ ] Manual testing (3 viewports)
+- [ ] Firestore rules testing
 
 ---
 
-### Task 3.5: Component Integration ✅
-**Status**: Complete
+## 🎯 Development Guidelines
 
-**Files Modified**:
-1. **`components/Sidebar.vue`**
-   - Added "Daily Sales" menu item (💰 ยอดขายรายวัน)
-   - Role-based access: Owner, Manager, Assistant Manager
-   - Route: `/admin/daily-sales`
-   - Added `canAccessDailySales` computed property
-   - Updated console logging for menu visibility
+**Code Standards**:
+- ✅ TypeScript strict mode
+- ✅ Tailwind CSS for styling
+- ✅ Zod schema validation
+- ✅ Thai language throughout
+- ✅ useLogger() for debugging
+- ✅ Responsive design (375px, 768px, 1920px)
+- ✅ Firebase/Firestore integration
 
-2. **`components/Breadcrumb.vue`**
-   - Added `daily-sales` label mapping
-   - Thai label: "บันทึกยอดขายรายวัน"
-   - Breadcrumb auto-generates for route changes
+**Component Structure**:
+- Main page manages state
+- Modal handles form input
+- Table handles display + actions
+- Composable handles API calls
 
----
-
-### Task 3.6: Composable Implementation ✅
-**Status**: Complete | **File**: `composables/useDailySales.ts`
-
-**Features**:
-- `fetchSales()` - Fetch all sales entries from API
-- `createSales()` - Create new sales entry
-- `updateSales()` - Update existing sales entry
-- `deleteSales()` - Delete sales entry
-- Reactive state: `sales`, `loading`, `error`
-- Proper TypeScript typing for API responses
-- Logger integration for debugging
-- Error handling and user feedback
+**API Patterns**:
+- Follow existing user CRUD patterns
+- Zod validation on all endpoints
+- Timestamp handling (JS Date ↔ Firestore)
+- User auth checks
 
 ---
 
-## 📊 Testing Status
+## 📝 Next Phase: Development
 
-### Unit Testing
-- TypeScript strict mode: ✅ PASS
-- Lint checks: ✅ PASS (to be verified)
-- Component compilation: ✅ PASS
+**Sprint Estimate**: 2-3 days
+**Priority**: High (Core feature)
+**Dependencies**: Firebase setup complete ✅
 
-### Manual Testing (TODO)
-- [ ] Create sales entry on mobile (375px)
-- [ ] Create sales entry on tablet (768px)
-- [ ] Create sales entry on desktop (1920px)
-- [ ] Edit existing entry
-- [ ] Delete entry with confirmation
-- [ ] Verify Thai date formatting
-- [ ] Verify Thai currency formatting
-- [ ] Test form validation (empty date, zero amount)
-- [ ] Test error handling
-- [ ] Verify Firestore data persistence
-
----
-
-## 📁 Files Created/Modified
-
-### Created Files:
-1. `pages/admin/daily-sales.vue` - Main form and table component (185 lines)
-2. `composables/useDailySales.ts` - API interaction composable (122 lines)
-3. `server/api/daily-sales/index.post.ts` - Create endpoint (46 lines)
-4. `server/api/daily-sales/index.get.ts` - List endpoint (27 lines)
-5. `server/api/daily-sales/[id].get.ts` - Single entry endpoint (38 lines)
-6. `server/api/daily-sales/[id].put.ts` - Update endpoint (76 lines)
-7. `server/api/daily-sales/[id].delete.ts` - Delete endpoint (53 lines)
-
-### Modified Files:
-1. `components/Sidebar.vue` - Added daily sales menu item
-2. `components/Breadcrumb.vue` - Added daily sales breadcrumb label
-
----
-
-## 🎨 UI/UX Features
-
-**Theme & Styling**:
-- Consistent with existing design (Tailwind CSS)
-- Dark sidebar with blue highlights
-- White content areas with gray borders
-- Responsive design (mobile-first)
-
-**Color Scheme**:
-- Primary: Blue (#2563eb for hover, #1d4ed8 for active)
-- Success: Green (#10b981)
-- Error: Red (#ef4444)
-- Background: Gray-50/White
-
-**Responsive Breakpoints**:
-- Mobile: 375px
-- Tablet: 768px
-- Desktop: 1920px
-
----
-
-## 🔒 Security Considerations
-
-**Current Implementation**:
-- ✅ User authentication required (auth middleware)
-- ✅ Ownership verification (update/delete own entries only)
-- ✅ Input validation (Zod schema)
-
-**Future Security Tasks** (Phase 2):
-- [ ] Firestore security rules for daily_sales collection
-- [ ] Role-based access control (Manager vs Auditor visibility)
-- [ ] Audit logging for all CRUD operations
-- [ ] Data encryption for sensitive fields
-
----
-
-## 📝 Language Support
-
-All UI text is in Thai (ภาษาไทย):
-- Button labels: "เพิ่มยอดขาย", "บันทึก", "แก้ไข", "ลบ"
-- Field labels: "วันที่", "จำนวนเงิน", "หมายเหตุ"
-- Messages: "บันทึกยอดขายเรียบร้อย", "อัปเดตข้อมูลยอดขายเรียบร้อย"
-- Table headers: "วันที่", "จำนวนเงิน", "หมายเหตุ", "การกระทำ"
+**Ready for**: Development assignment
 
 ---
 
 ## 🔗 Related Documentation
 
-- [Database Schema](../TECHNICAL/DATABASE_SCHEMA.md) - daily_sales collection definition
-- [Business Requirements](../REQUIREMENTS/BUSINESS_REQUIREMENTS.md) - Daily sales workflow
-- [API Endpoints](../TECHNICAL/API_ENDPOINTS.md) - Updated with new endpoints
-- [Week 2 Summary](./WEEK_02.md) - Previous week's sidebar implementation
+- [Database Schema](../TECHNICAL/DATABASE_SCHEMA.md) - See daily_sales definition
+- [Business Requirements](../REQUIREMENTS/BUSINESS_REQUIREMENTS.md) - Daily workflow
+- [Development Roadmap](../REQUIREMENTS/DEVELOPMENT_ROADMAP.md) - See Week 3 plan
 
 ---
 
-## 📋 Next Steps (Week 4)
-
-1. **Daily Expenses Feature**
-   - Create daily expenses form
-   - Implement expenses API endpoints
-   - Add to sidebar and breadcrumb
-
-2. **Audit System**
-   - Audit check page
+**Design Approved By**: TBD  
+**Last Updated**: Jan 14, 2026  
+**Status**: 🟡 Ready for Development
    - Audit log tracking
    - Approval workflow
 
