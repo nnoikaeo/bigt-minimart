@@ -52,6 +52,8 @@ const labelMap: Record<string, string> = {
   // Admin pages
   admin: 'แดชบอร์ด',
   dashboard: 'แดชบอร์ด',
+  // Daily Sales pages
+  'daily-sales': 'บันทึกยอดขายรายวัน',
   // Admin Settings pages
   settings: 'ตั้งค่า',
   'system-settings': 'ตั้งค่าระบบ',
