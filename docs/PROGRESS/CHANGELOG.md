@@ -4,6 +4,52 @@ All notable changes to this project are documented here.
 
 ---
 
+## [1.2] - 2026-01-13
+
+### ✨ Week 2: Layout & Navigation Complete
+
+**Added**
+- [NEW] components/Breadcrumb.vue - Automatic breadcrumb navigation (156 lines)
+- [NEW] composables/useLogger.ts - Structured logging utility (69 lines)
+- [NEW] pages/user/account-settings.vue - User account settings page
+- [NEW] docs/DEVELOPMENT/BREADCRUMB_TESTING.md - Breadcrumb testing guide (200+ lines)
+- [NEW] docs/PROGRESS/WEEK_SUMMARIES/WEEK_02.md - Week 2 completion summary
+- Breadcrumb labels for 24+ routes in Thai language
+- Logger composable with methods: log(), info(), warn(), error(), debug(), table()
+- Mobile menu toggle button in Header
+- Role-based menu access control (Owner, Manager, Auditor)
+- Responsive layout for mobile (375px), tablet (768px), desktop (1920px)
+
+**Changed**
+- [UPDATED] components/Header.vue - Added mobile menu toggle, responsive styling
+- [UPDATED] components/Sidebar.vue - Added role-based visibility, hidden on mobile
+- [UPDATED] layouts/default.vue - Added Breadcrumb component, responsive margins
+- [UPDATED] docs/README.md - Updated last modified date, added WEEK_02.md reference
+- [UPDATED] docs/PROGRESS/STATUS.md - Week 2 completion, 40% overall progress
+- Renamed /user/settings → /user/account-settings
+- Header dropdown link now points to /user/account-settings
+
+**Removed**
+- [DELETED] pages/user/settings.vue - Deprecated settings page
+
+**Fixed**
+- Fixed TypeScript strict mode errors in Breadcrumb component
+- Fixed array indexing type assertions (rootSegment, relevantParts)
+- Fixed labelMap lookup with proper typing
+- Fixed route change logging (previousPath tracking)
+- Fixed breadcrumb path generation (dynamic root segment)
+
+**Quality**
+- Type-check: ✅ PASS
+- Lint: ✅ PASS
+- Testing: ✅ Manual testing (3 viewports, 3 user roles)
+- PR #7: Sidebar + Mobile Menu ✅ Merged
+- PR #8: Role-Based Items ✅ Merged
+- PR #9: Breadcrumb Navigation ✅ Merged
+- PR #10: Responsive Layout ✅ Merged (commit: 81a8774)
+
+---
+
 ## [1.1] - 2026-01-07
 
 ### 📚 Documentation Restructure

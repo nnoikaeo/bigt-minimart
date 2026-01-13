@@ -1,7 +1,7 @@
 # 📚 BigT Minimart Documentation Hub
 
 **Version**: 1.0  
-**Last Updated**: Jan 7, 2026  
+**Last Updated**: Jan 13, 2026  
 **Status**: 📖 Complete Documentation Structure
 
 ---
@@ -66,6 +66,7 @@ Week-by-week progress and status tracking.
 
 #### Week Summaries
 - [WEEK_SUMMARIES/WEEK_01.md](./PROGRESS/WEEK_SUMMARIES/WEEK_01.md) - Week 1 completion summary
+- [WEEK_SUMMARIES/WEEK_02.md](./PROGRESS/WEEK_SUMMARIES/WEEK_02.md) - Week 2 completion summary
 
 #### Progress Dashboards
 - [STATUS.md](./PROGRESS/STATUS.md) - Current project status dashboard
@@ -108,7 +109,7 @@ Previous versions and backups.
 1. [PROJECT_OVERVIEW.md](./PROJECT/PROJECT_OVERVIEW.md) - Project scope
 2. [ROADMAP_PHASE1.md](./ROADMAP/ROADMAP_PHASE1.md) - Development timeline
 3. [STATUS.md](./PROGRESS/STATUS.md) - Current status
-4. [WEEK_01.md](./PROGRESS/WEEK_SUMMARIES/WEEK_01.md) - Latest progress
+4. [WEEK_02.md](./PROGRESS/WEEK_SUMMARIES/WEEK_02.md) - Latest progress
 
 ### For Users
 1. [GLOSSARY.md](./REFERENCE/GLOSSARY.md) - Terminology
@@ -182,7 +183,7 @@ Previous versions and backups.
 ```
 PHASE 1: Core Features (Weeks 1-6)
 ├─ Week 1: Setup + Auth ✅ COMPLETE
-├─ Week 2: Layout + Navigation ⏳ IN PROGRESS
+├─ Week 2: Layout + Navigation ✅ COMPLETE
 ├─ Week 3: Daily Sales ❌ PENDING
 ├─ Week 4: Expenses + Audit ❌ PENDING
 └─ Week 5-6: Dashboard + Reports ❌ PENDING
