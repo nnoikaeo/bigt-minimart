@@ -13,8 +13,8 @@
           <span class="font-medium">แดชบอร์ด</span>
         </NuxtLink>
 
-        <!-- Settings Accordion Menu -->
-        <div class="space-y-0">
+        <!-- Settings Accordion Menu (Owner only) -->
+        <div v-if="canAccessSystemSettings || canAccessUsers" class="space-y-0">
           <!-- Settings Header (Toggle) -->
           <button
             @click="isSettingsOpen = !isSettingsOpen"
@@ -88,7 +88,7 @@
       </div>
     </nav>
 
-    <!-- Footer (optional) -->
+    <!-- Footer: Version only -->
     <div class="border-t border-slate-700 px-4 py-3 text-xs text-slate-400 text-center">
       <p>v1.2.0</p>
     </div>
@@ -96,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, inject, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '~/stores/auth'
 
@@ -106,16 +106,22 @@ const authStore = useAuthStore()
 // State
 const isSettingsOpen = ref(false)
 
+// Inject mobile menu state from Header
+const isMobileMenuOpen = inject<any>('isMobileMenuOpen', ref(false))
+
 // Computed properties
 const user = computed(() => authStore.user)
 const userRole = computed(() => user.value?.role || 'unknown')
 
 // Role-based access control
+// Owner: All features
+// Manager: Dashboard only
+// Auditor: Dashboard, Audit Logs only
+// Cashier/Staff: Dashboard only
+
 const canAccessUsers = computed(() => {
   const role = userRole.value
-  // TODO: Restrict to owner/manager only
-  // For now: show to all logged-in users for testing
-  return true
+  return role === 'owner'
 })
 
 const canAccessReports = computed(() => {
@@ -125,15 +131,26 @@ const canAccessReports = computed(() => {
 
 const canAccessAuditLogs = computed(() => {
   const role = userRole.value
-  return role === 'auditor'
+  return role === 'owner' || role === 'auditor'
 })
 
 const canAccessSystemSettings = computed(() => {
   const role = userRole.value
-  // TODO: Restrict to owner only
-  // For now: show to all logged-in users for testing
-  return true
+  return role === 'owner'
 })
+
+// Debugging: Log role and menu visibility
+watch(
+  () => userRole.value,
+  (newRole) => {
+    console.log('[Sidebar] Menu access for role:', newRole)
+    console.log('  - canAccessUsers:', canAccessUsers.value)
+    console.log('  - canAccessReports:', canAccessReports.value)
+    console.log('  - canAccessAuditLogs:', canAccessAuditLogs.value)
+    console.log('  - canAccessSystemSettings:', canAccessSystemSettings.value)
+  },
+  { immediate: true }
+)
 
 // Check if current route is active
 const isActive = (path: string) => {
