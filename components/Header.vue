@@ -1,13 +1,13 @@
 <template>
   <header class="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
-    <div class="px-6 py-3 flex items-center justify-between">
-      <!-- Left: Logo & Title -->
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center font-bold text-white text-lg">
+    <div class="px-4 py-3 sm:px-6 sm:py-3 flex items-center justify-between gap-2 sm:gap-4">
+      <!-- Left: Logo & Title (responsive) -->
+      <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center font-bold text-white text-sm sm:text-lg flex-shrink-0">
           B
         </div>
-        <div>
-          <h1 class="text-lg font-bold text-gray-800">BigT Minimart</h1>
+        <div class="hidden sm:block">
+          <h1 class="text-base sm:text-lg font-bold text-gray-800">BigT Minimart</h1>
           <p class="text-xs text-gray-500">Management System</p>
         </div>
       </div>
@@ -15,18 +15,18 @@
       <!-- Center: Spacer -->
       <div class="flex-1"></div>
 
-      <!-- Right: User Dropdown -->
+      <!-- Right: User Dropdown (responsive) -->
       <div class="relative">
         <button
           @click="isDropdownOpen = !isDropdownOpen"
-          class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+          class="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
         >
           <!-- Avatar -->
           <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center font-bold text-white text-sm">
             {{ userInitial }}
           </div>
-          <!-- User Info -->
-          <div class="text-right">
+          <!-- User Info (hidden on mobile) -->
+          <div class="hidden sm:block text-right">
             <p class="text-sm font-medium text-gray-800">{{ userName }}</p>
             <p class="text-xs text-gray-500">{{ roleLabel }}</p>
           </div>
@@ -42,11 +42,11 @@
           </svg>
         </button>
 
-        <!-- Dropdown Menu -->
+        <!-- Dropdown Menu (responsive width) -->
         <div
           v-if="isDropdownOpen"
           @click.outside="isDropdownOpen = false"
-          class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50"
+          class="absolute right-0 mt-2 w-40 sm:w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50"
         >
           <!-- Profile Option -->
           <NuxtLink

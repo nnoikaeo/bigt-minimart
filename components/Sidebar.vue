@@ -1,5 +1,6 @@
 <template>
-  <aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 bg-slate-900 text-white shadow-lg flex flex-col z-30">
+  <!-- Sidebar: hidden on mobile (sm), visible on md and up -->
+  <aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 bg-slate-900 text-white shadow-lg flex flex-col z-30 hidden md:flex">
     <!-- Navigation Links -->
     <nav class="flex-1 overflow-y-auto px-3 py-6">
       <div class="space-y-2">
