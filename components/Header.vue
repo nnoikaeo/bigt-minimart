@@ -60,7 +60,7 @@
 
           <!-- Settings Option -->
           <NuxtLink
-            to="/user/settings"
+            to="/user/account-settings"
             class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
             @click="isDropdownOpen = false"
           >

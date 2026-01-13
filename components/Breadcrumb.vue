@@ -1,0 +1,155 @@
+<template>
+  <nav aria-label="Breadcrumb" class="mb-4">
+    <ol class="flex items-center space-x-2 text-sm text-gray-600">
+      <!-- Home -->
+      <li>
+        <NuxtLink to="/admin" class="hover:text-gray-900 font-medium">
+          <svg
+            class="w-4 h-4 inline-block"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"
+            ></path>
+          </svg>
+          <span class="sr-only">Home</span>
+        </NuxtLink>
+      </li>
+
+      <!-- Breadcrumb Items -->
+      <li v-for="(breadcrumb, index) in breadcrumbs" :key="index">
+        <span class="text-gray-400">/</span>
+        <NuxtLink
+          v-if="index < breadcrumbs.length - 1"
+          :to="breadcrumb.path"
+          class="ml-2 hover:text-gray-900 font-medium"
+        >
+          {{ breadcrumb.label }}
+        </NuxtLink>
+        <span v-else class="ml-2 text-gray-900 font-semibold">
+          {{ breadcrumb.label }}
+        </span>
+      </li>
+    </ol>
+  </nav>
+</template>
+
+<script setup lang="ts">
+import { computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
+
+interface Breadcrumb {
+  label: string
+  path: string
+}
+
+const route = useRoute()
+const logger = useLogger('Breadcrumb')
+
+// Breadcrumb label mapping for friendly names (Thai)
+const labelMap: Record<string, string> = {
+  // Admin pages
+  admin: 'แดชบอร์ด',
+  dashboard: 'แดชบอร์ด',
+  // Admin Settings pages
+  settings: 'ตั้งค่า',
+  'system-settings': 'ตั้งค่าระบบ',
+  'general-settings': 'ตั้งค่าทั่วไป',
+  'business-info': 'ข้อมูลร้านค้า',
+  'payment-methods': 'วิธีการชำระเงิน',
+  'email-notification': 'การแจ้งเตือนอีเมล',
+  // User Management pages
+  users: 'จัดการผู้ใช้',
+  'add-user': 'เพิ่มผู้ใช้',
+  'edit-user': 'แก้ไขผู้ใช้',
+  // Reports pages
+  reports: 'รายงาน',
+  'sales-report': 'รายงานการขาย',
+  'inventory-report': 'รายงานสินค้าคงคลัง',
+  'customer-report': 'รายงานลูกค้า',
+  // Audit pages
+  'audit-logs': 'บันทึกการตรวจสอบ',
+  // User profile pages (not admin routes)
+  user: 'บัญชีผู้ใช้',
+  profile: 'โปรไฟล์',
+  'account-settings': 'ตั้งค่าบัญชี',
+  'user-settings': 'ตั้งค่าบัญชี',  // Fallback for old naming
+}
+
+// Helper function to get context-aware label
+const getLabel = (segment: string, root: string): string => {
+  // Special case: 'settings' label depends on the root context
+  if (segment === 'settings') {
+    if (root === 'admin') {
+      return '✏️ ตั้งค่า'
+    }
+    if (root === 'user') {
+      return 'ตั้งค่าบัญชี'
+    }
+  }
+
+  // Use labelMap for all other segments
+  return (labelMap[segment as keyof typeof labelMap] || segment.charAt(0).toUpperCase() + segment.slice(1))
+}
+
+// Generate breadcrumbs from route
+const breadcrumbs = computed<Breadcrumb[]>(() => {
+  const pathArray = route.path.split('/').filter(p => p)
+
+  if (pathArray.length === 0) {
+    logger.log('Route path is empty, returning empty breadcrumbs')
+    return []
+  }
+
+  logger.debug('Generating breadcrumbs', { currentPath: route.path, pathArray })
+
+  // Get root segment (admin or user) and extract relevant parts
+  const rootSegment = pathArray[0] as string
+  const relevantParts = pathArray.slice(1) as string[]
+
+  if (relevantParts.length === 0) {
+    logger.log('No relevant parts after root segment', { root: rootSegment })
+    return []
+  }
+
+  // Build breadcrumb path using actual root from URL
+  const breadcrumbArray: Breadcrumb[] = []
+  let cumulativePath = `/${rootSegment}`
+
+  for (const part of relevantParts) {
+    cumulativePath += `/${part}`
+    const label = getLabel(part, rootSegment)
+
+    breadcrumbArray.push({
+      label,
+      path: cumulativePath,
+    })
+  }
+
+  logger.table('Generated Breadcrumbs', breadcrumbArray)
+
+  return breadcrumbArray
+})
+
+// Track previous path for accurate route change logging
+let previousPath = route.path
+
+// Watch route changes
+watch(
+  () => route.path,
+  (newPath) => {
+    logger.info('Route changed', { from: previousPath, to: newPath })
+    logger.debug('Breadcrumbs count', breadcrumbs.value.length)
+    previousPath = newPath
+  }
+)
+</script>
+
+<style scoped>
+/* Breadcrumb styling */
+nav {
+  background-color: transparent;
+  padding: 0;
+}
+</style>

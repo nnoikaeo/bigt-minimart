@@ -1,12 +1,12 @@
 <template>
   <div>
-    <h1 class="text-3xl font-bold text-gray-800 mb-6">ตั้งค่า</h1>
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">ตั้งค่าบัญชี</h1>
     
     <!-- Placeholder Message -->
     <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
       <h2 class="text-lg font-semibold text-blue-900 mb-2">🔧 ฟีเจอร์กำลังพัฒนา</h2>
       <p class="text-blue-700">
-        หน้าตั้งค่าผู้ใช้จะเพิ่มเข้ามาในเฟส Phase 3
+        หน้าตั้งค่าบัญชีผู้ใช้จะเพิ่มเข้ามาในเฟส Phase 3
       </p>
       <p class="text-sm text-blue-600 mt-2">
         ตอนนี้คุณสามารถกลับไปยัง
@@ -16,7 +16,7 @@
       </p>
     </div>
 
-    <!-- User Settings Form (Placeholder) -->
+    <!-- User Account Settings Form (Placeholder) -->
     <div class="mt-8 space-y-6">
       <div class="bg-white rounded-lg shadow p-6">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">⚙️ ตั้งค่าบัญชี</h3>
@@ -59,7 +59,7 @@
 </template>
 
 <script setup lang="ts">
-// User Settings page
+// User Account Settings page
 definePageMeta({
   middleware: 'auth'
 })
