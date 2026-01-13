@@ -13,6 +13,8 @@
       <!-- Main Content (direct child, with margin for sidebar) -->
       <main class="flex-1 overflow-y-auto ml-64">
         <div class="px-6 py-8">
+          <!-- Breadcrumb Navigation -->
+          <Breadcrumb />
           <slot />
         </div>
       </main>
