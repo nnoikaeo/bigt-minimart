@@ -14,6 +14,17 @@
           <span class="font-medium">แดชบอร์ด</span>
         </NuxtLink>
 
+        <!-- Daily Sales (Manager and above) -->
+        <NuxtLink
+          v-if="canAccessDailySales"
+          to="/admin/daily-sales"
+          class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
+          :class="isActive('/admin/daily-sales') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'"
+        >
+          <span class="text-xl">💰</span>
+          <span class="font-medium">ยอดขายรายวัน</span>
+        </NuxtLink>
+
         <!-- Settings Accordion Menu (Owner only) -->
         <div v-if="canAccessSystemSettings || canAccessUsers" class="space-y-0">
           <!-- Settings Header (Toggle) -->
@@ -125,6 +136,11 @@ const canAccessUsers = computed(() => {
   return role === 'owner'
 })
 
+const canAccessDailySales = computed(() => {
+  const role = userRole.value
+  return role === 'owner' || role === 'manager' || role === 'assistant_manager'
+})
+
 const canAccessReports = computed(() => {
   const role = userRole.value
   return role === 'owner'
@@ -146,6 +162,7 @@ watch(
   (newRole) => {
     console.log('[Sidebar] Menu access for role:', newRole)
     console.log('  - canAccessUsers:', canAccessUsers.value)
+    console.log('  - canAccessDailySales:', canAccessDailySales.value)
     console.log('  - canAccessReports:', canAccessReports.value)
     console.log('  - canAccessAuditLogs:', canAccessAuditLogs.value)
     console.log('  - canAccessSystemSettings:', canAccessSystemSettings.value)
