@@ -36,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 interface Breadcrumb {
@@ -45,6 +45,7 @@ interface Breadcrumb {
 }
 
 const route = useRoute()
+const logger = useLogger('Breadcrumb')
 
 // Breadcrumb label mapping for friendly names
 const labelMap: Record<string, string> = {
@@ -70,13 +71,17 @@ const breadcrumbs = computed<Breadcrumb[]>(() => {
   const pathArray = route.path.split('/').filter(p => p)
 
   if (pathArray.length === 0) {
+    logger.log('Route path is empty, returning empty breadcrumbs')
     return []
   }
+
+  logger.debug('Generating breadcrumbs', { currentPath: route.path, pathArray })
 
   // Skip 'admin' part as it's the root dashboard
   const relevantParts = pathArray.slice(1)
 
   if (relevantParts.length === 0) {
+    logger.log('No relevant parts after admin, returning empty breadcrumbs')
     return []
   }
 
@@ -94,8 +99,19 @@ const breadcrumbs = computed<Breadcrumb[]>(() => {
     })
   }
 
+  logger.table('Generated Breadcrumbs', breadcrumbArray)
+
   return breadcrumbArray
 })
+
+// Watch route changes
+watch(
+  () => route.path,
+  (newPath) => {
+    logger.info('Route changed', { from: route.path, to: newPath })
+    logger.debug('Breadcrumbs count', breadcrumbs.value.length)
+  }
+)
 </script>
 
 <style scoped>
