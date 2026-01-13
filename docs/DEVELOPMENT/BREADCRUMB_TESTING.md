@@ -33,15 +33,25 @@ The new `useLogger` composable provides:
 [Breadcrumb] Route path is empty, returning empty breadcrumbs
 ```
 
-### When navigating to user profile page:
+### When navigating to user account settings:
 ```
-[Breadcrumb] Route changed {from: "/admin", to: "/user/profile"}
-[Breadcrumb] Generating breadcrumbs {currentPath: "/user/profile", pathArray: ["user", "profile"]}
+[Breadcrumb] Route changed {from: "/user/profile", to: "/user/account-settings"}
+[Breadcrumb] Generating breadcrumbs {currentPath: "/user/account-settings", pathArray: ["user", "account-settings"]}
 [Breadcrumb] Generated Breadcrumbs:
-  (table shows: [{label: "บัญชีผู้ใช้", path: "/user"}, {label: "โปรไฟล์", path: "/user/profile"}])
-[Breadcrumb] Route changed {from: "/user/profile", to: "/user/user-settings"}
+  (table shows: [{label: "บัญชีผู้ใช้", path: "/user"}, {label: "ตั้งค่าบัญชี", path: "/user/account-settings"}])
 [Breadcrumb] Breadcrumbs count 2
 ```
+
+### When switching from user to admin (system settings):
+```
+[Breadcrumb] Route changed {from: "/user/account-settings", to: "/admin/system-settings"}
+[Breadcrumb] Generated Breadcrumbs:
+  (table shows: [{label: "✏️ ตั้งค่า", path: "/admin"}, {label: "ตั้งค่าระบบ", path: "/admin/system-settings"}])
+```
+
+**Note**: The `settings` breadcrumb label is context-aware:
+- `/admin/settings` → label: "✏️ ตั้งค่า" (System Settings)
+- `/user/account-settings` → label: "ตั้งค่าบัญชี" (Account Settings)
 
 ## Route Change Logging Fix
 
@@ -116,8 +126,8 @@ This ensures:
   // Admin pages
   admin: 'แดชบอร์ด',
   dashboard: 'แดชบอร์ด',
-  // Settings pages
-  settings: 'ตั้งค่า',
+  // Admin Settings pages
+  settings: 'ตั้งค่า',  // Context-aware: /admin/settings
   'system-settings': 'ตั้งค่าระบบ',
   'general-settings': 'ตั้งค่าทั่วไป',
   'business-info': 'ข้อมูลร้านค้า',
@@ -137,9 +147,25 @@ This ensures:
   // User profile pages (not admin routes)
   user: 'บัญชีผู้ใช้',
   profile: 'โปรไฟล์',
-  'user-settings': 'ตั้งค่าบัญชี',
+  'account-settings': 'ตั้งค่าบัญชี',  // Recommended over /user/settings
+  'user-settings': 'ตั้งค่าบัญชี',  // Fallback (deprecated)
+}
+
+// Context-Aware Helper (for smart label selection)
+const getLabel = (segment: string, root: string): string => {
+  if (segment === 'settings') {
+    if (root === 'admin') return 'ตั้งค่า'       // System settings
+    if (root === 'user') return 'ตั้งค่าบัญชี'   // Account settings
+  }
+  return labelMap[segment] || formatLabel(segment)
 }
 ```
+
+**Why use `/user/account-settings` instead of `/user/settings`?**
+- More explicit and clear (account settings vs system settings)
+- Avoids confusion with `/admin/settings`
+- Better UX - users understand what they're changing
+- Follows RESTful naming conventions
 
 ## Component Files Modified
 - `components/Breadcrumb.vue` - Added logging with watch on route changes

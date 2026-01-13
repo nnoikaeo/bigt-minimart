@@ -52,7 +52,7 @@ const labelMap: Record<string, string> = {
   // Admin pages
   admin: 'แดชบอร์ด',
   dashboard: 'แดชบอร์ด',
-  // Settings pages
+  // Admin Settings pages
   settings: 'ตั้งค่า',
   'system-settings': 'ตั้งค่าระบบ',
   'general-settings': 'ตั้งค่าทั่วไป',
@@ -73,7 +73,24 @@ const labelMap: Record<string, string> = {
   // User profile pages (not admin routes)
   user: 'บัญชีผู้ใช้',
   profile: 'โปรไฟล์',
-  'user-settings': 'ตั้งค่าบัญชี',
+  'account-settings': 'ตั้งค่าบัญชี',
+  'user-settings': 'ตั้งค่าบัญชี',  // Fallback for old naming
+}
+
+// Helper function to get context-aware label
+const getLabel = (segment: string, root: string): string => {
+  // Special case: 'settings' label depends on the root context
+  if (segment === 'settings') {
+    if (root === 'admin') {
+      return '✏️ ตั้งค่า'
+    }
+    if (root === 'user') {
+      return 'ตั้งค่าบัญชี'
+    }
+  }
+
+  // Use labelMap for all other segments
+  return labelMap[segment] || segment.charAt(0).toUpperCase() + segment.slice(1)
 }
 
 // Generate breadcrumbs from route
@@ -102,7 +119,7 @@ const breadcrumbs = computed<Breadcrumb[]>(() => {
 
   for (const part of relevantParts) {
     cumulativePath += `/${part}`
-    const label = labelMap[part] || part.charAt(0).toUpperCase() + part.slice(1)
+    const label = getLabel(part, rootSegment)
 
     breadcrumbArray.push({
       label,
