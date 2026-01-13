@@ -8,36 +8,18 @@ import { ref, computed } from 'vue'
 
 // Setup
 const authStore = useAuthStore()
-const router = useRouter()
-const { logout } = useAuth()
 
 // Computed
 const currentUser = computed(() => authStore.getCurrentUser)
-
-// Logout handler
-const handleLogout = async () => {
-  const result = await logout()
-  if (result.success) {
-    await router.push('/login')
-  }
-}
 </script>
 
 <template>
   <div>
-    <div class="flex justify-between items-center mb-6">
-      <div>
-        <h1 class="text-3xl font-bold text-gray-800">Dashboard</h1>
-        <p class="text-gray-600 mt-1">
-          ยินดีต้อนรับ, {{ currentUser?.email }}
-        </p>
-      </div>
-      <button
-        @click="handleLogout"
-        class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition"
-      >
-        ออกจากระบบ
-      </button>
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-800">Dashboard</h1>
+      <p class="text-gray-600 mt-1">
+        ยินดีต้อนรับ, {{ currentUser?.email }}
+      </p>
     </div>
 
     <!-- Stats Cards -->

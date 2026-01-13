@@ -101,6 +101,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+// Use auth layout for login page (no sidebar, minimal design)
+definePageMeta({
+  layout: 'auth'
+})
+
 // Setup
 const router = useRouter()
 const { login } = useAuth()

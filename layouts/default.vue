@@ -1,43 +1,35 @@
 <template>
-  <div class="flex flex-col min-h-screen">
-    <!-- Header -->
-    <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10">
-      <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-        <h1 class="text-2xl font-bold text-primary">
-          🏪 BigT Minimart
-        </h1>
-        <div class="text-sm text-gray-600">
-          {{ currentDate }}
+  <!-- OUTER CONTAINER: flex column, full screen height -->
+  <div class="flex flex-col h-screen bg-gray-50">
+    
+    <!-- 1️⃣ HEADER: Full width, sticky at top -->
+    <Header />
+    
+    <!-- 2️⃣ CONTENT AREA: flex row with sidebar + main -->
+    <div class="flex flex-1 relative">
+      <!-- Sidebar (fixed left) -->
+      <Sidebar />
+      
+      <!-- Main Content (direct child, with margin for sidebar) -->
+      <main class="flex-1 overflow-y-auto ml-64">
+        <div class="px-6 py-8">
+          <!-- Breadcrumb Navigation -->
+          <Breadcrumb />
+          <slot />
         </div>
-      </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="flex-grow">
-      <div class="max-w-7xl mx-auto px-4 py-8">
-        <slot />
-      </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-gray-50 border-t border-gray-200 py-4">
-      <div class="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500">
-        <p>&copy; 2026 BigT Minimart. All rights reserved.</p>
-      </div>
+      </main>
+    </div>
+    
+    <!-- 3️⃣ FOOTER: Full width, OUTSIDE flex container -->
+    <footer class="w-full bg-white border-t border-gray-200 py-4 px-6 text-center text-sm text-gray-500">
+      <p>&copy; 2026 BigT Minimart. All rights reserved.</p>
     </footer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import dayjs from 'dayjs'
-import 'dayjs/locale/th'
-
-dayjs.locale('th')
-
-const currentDate = computed(() => {
-  return dayjs().format('dddd D MMMM YYYY')
-})
+// Default layout with Header and Sidebar
+// Used for authenticated pages (dashboard, admin pages, etc.)
 </script>
 
 <style scoped>
