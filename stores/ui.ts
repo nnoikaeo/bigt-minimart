@@ -17,7 +17,8 @@ export const useUIStore = defineStore('ui', {
       finance: true,
       inventory: false,
       personnel: true,
-      settings: false,
+      settings: true,
+      admin: true,
     } as Record<string, boolean>,
 
     /**
