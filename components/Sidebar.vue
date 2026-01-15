@@ -1,42 +1,43 @@
 <template>
-  <!-- Sidebar: hidden on mobile (sm), visible on md and up -->
-  <aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 bg-slate-900 text-white shadow-lg flex flex-col z-30 hidden md:flex">
-    <!-- Navigation Links -->
-    <nav class="flex-1 overflow-y-auto px-3 py-6">
-      <div class="space-y-2">
-        <!-- Dashboard Link -->
+  <!-- Desktop/Tablet: Fixed Sidebar -->
+  <aside
+    class="hidden md:flex md:fixed md:left-0 md:top-16 md:h-[calc(100vh-64px)] md:w-64 md:flex-col md:bg-white md:border-r md:border-gray-200 md:z-40"
+  >
+    <!-- Sidebar Content -->
+    <nav class="flex-1 overflow-y-auto px-3 py-6 space-y-4">
+      <!-- Loop through sidebar menu groups -->
+      <template v-for="group in visibleMenu" :key="group.groupKey">
+        <!-- Single Page (No Toggle) - If group has only 1 page -->
         <NuxtLink
-          to="/"
-          class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
-          :class="isActive('/') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'"
+          v-if="group.pages.length === 1"
+          :to="group.pages[0].route"
+          @click="handleSelectPage(group.pages[0].pageKey, group.groupKey)"
+          class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-150"
+          :class="
+            isPageActive(group.pages[0].pageKey)
+              ? 'bg-red-600 text-white'
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+          "
         >
-          <span class="text-xl">📊</span>
-          <span class="font-medium">แดชบอร์ด</span>
+          <span class="text-lg">{{ group.icon }}</span>
+          <span class="text-sm font-semibold">{{ group.groupName }}</span>
         </NuxtLink>
 
-        <!-- Daily Sales (Manager and above) -->
-        <NuxtLink
-          v-if="canAccessDailySales"
-          to="/admin/daily-sales"
-          class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
-          :class="isActive('/admin/daily-sales') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'"
-        >
-          <span class="text-xl">💰</span>
-          <span class="font-medium">ยอดขายรายวัน</span>
-        </NuxtLink>
-
-        <!-- Settings Accordion Menu (Owner only) -->
-        <div v-if="canAccessSystemSettings || canAccessUsers" class="space-y-0">
-          <!-- Settings Header (Toggle) -->
+        <!-- Group with Accordion - If group has multiple pages -->
+        <div v-else :key="group.groupKey">
+          <!-- Group Header (Toggle) -->
           <button
-            @click="isSettingsOpen = !isSettingsOpen"
-            class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-slate-300 hover:bg-slate-800"
+            @click="handleToggleGroup(group.groupKey)"
+            class="w-full flex items-center justify-between px-4 py-3 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors duration-150"
           >
-            <span class="text-xl">⚙️</span>
-            <span class="font-medium flex-1 text-left">ตั้งค่า</span>
+            <div class="flex items-center gap-3">
+              <span class="text-lg">{{ group.icon }}</span>
+              <span class="text-sm font-semibold text-gray-800">{{ group.groupName }}</span>
+            </div>
+            <!-- Arrow Indicator -->
             <svg
-              class="w-4 h-4 transition-transform duration-200"
-              :class="{ 'rotate-180': isSettingsOpen }"
+              class="w-4 h-4 text-gray-600 transition-transform duration-200"
+              :class="{ 'rotate-180': isGroupExpanded(group.groupKey) }"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -45,170 +46,227 @@
             </svg>
           </button>
 
-          <!-- Settings Submenu Items -->
+          <!-- Pages (Conditional Render) -->
           <Transition name="slide-fade">
-            <div
-              v-if="isSettingsOpen"
-              class="space-y-1 ml-3 mt-1 border-l-2 border-slate-700 pl-3"
-            >
-              <!-- System Settings (Owner only) -->
+            <div v-if="isGroupExpanded(group.groupKey)" class="space-y-1">
               <NuxtLink
-                v-if="canAccessSystemSettings"
-                to="/admin/system-settings"
-                class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm"
-                :class="isActive('/admin/system-settings') ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'"
+                v-for="page in group.pages"
+                :key="page.pageKey"
+                :to="page.route"
+                @click="handleSelectPage(page.pageKey, group.groupKey)"
+                class="block px-4 py-2 pl-12 rounded-lg text-sm font-medium transition-colors duration-150"
+                :class="
+                  isPageActive(page.pageKey)
+                    ? 'bg-red-600 text-white'
+                    : 'text-gray-700 hover:bg-red-50'
+                "
               >
-                <span class="text-base">🔧</span>
-                <span class="font-medium">ตั้งค่าระบบ</span>
-              </NuxtLink>
-
-              <!-- User Management (Owner/Manager only) -->
-              <NuxtLink
-                v-if="canAccessUsers"
-                to="/admin/users"
-                class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm"
-                :class="isActive('/admin/users') ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'"
-              >
-                <span class="text-base">👥</span>
-                <span class="font-medium">จัดการผู้ใช้</span>
+                {{ page.pageName }}
               </NuxtLink>
             </div>
           </Transition>
         </div>
-
-        <!-- Reports (Owner only) -->
-        <NuxtLink
-          v-if="canAccessReports"
-          to="/admin/reports"
-          class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
-          :class="isActive('/admin/reports') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'"
-        >
-          <span class="text-xl">📋</span>
-          <span class="font-medium">รายงาน</span>
-        </NuxtLink>
-
-        <!-- Audit Logs (Auditor only) -->
-        <NuxtLink
-          v-if="canAccessAuditLogs"
-          to="/admin/audit-logs"
-          class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
-          :class="isActive('/admin/audit-logs') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'"
-        >
-          <span class="text-xl">🔍</span>
-          <span class="font-medium">บันทึกการตรวจสอบ</span>
-        </NuxtLink>
-      </div>
+      </template>
     </nav>
-
-    <!-- Footer: Version only -->
-    <div class="border-t border-slate-700 px-4 py-3 text-xs text-slate-400 text-center">
-      <p>v1.2.0</p>
-    </div>
   </aside>
+
+  <!-- Mobile/Tablet: Overlay + Sliding Sidebar -->
+  <Transition name="sidebar-bg">
+    <div v-if="isMobileSidebarOpen" class="md:hidden fixed inset-0 z-40">
+      <!-- Overlay (Dark background) -->
+      <div
+        class="absolute inset-0 bg-black bg-opacity-50"
+        @click="closeMobileSidebar"
+      />
+
+      <!-- Mobile Sidebar (slides in from left) -->
+      <Transition name="sidebar-slide">
+        <aside
+          v-if="isMobileSidebarOpen"
+          class="absolute left-0 top-0 h-screen w-64 bg-white shadow-lg overflow-y-auto z-50"
+        >
+          <nav class="px-3 py-6 space-y-4">
+            <!-- Loop through sidebar menu groups -->
+            <template v-for="group in visibleMenu" :key="group.groupKey">
+              <!-- Single Page (No Toggle) - If group has only 1 page -->
+              <NuxtLink
+                v-if="group.pages.length === 1"
+                :to="group.pages[0].route"
+                @click="handleSelectPage(group.pages[0].pageKey, group.groupKey)"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-150"
+                :class="
+                  isPageActive(group.pages[0].pageKey)
+                    ? 'bg-red-600 text-white'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                "
+              >
+                <span class="text-lg">{{ group.icon }}</span>
+                <span class="text-sm font-semibold">{{ group.groupName }}</span>
+              </NuxtLink>
+
+              <!-- Group with Accordion - If group has multiple pages -->
+              <div v-else :key="group.groupKey">
+                <!-- Group Header (Toggle) -->
+                <button
+                  @click="handleToggleGroup(group.groupKey)"
+                  class="w-full flex items-center justify-between px-4 py-3 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors duration-150"
+                >
+                  <div class="flex items-center gap-3">
+                    <span class="text-lg">{{ group.icon }}</span>
+                    <span class="text-sm font-semibold text-gray-800">{{ group.groupName }}</span>
+                  </div>
+                  <svg
+                    class="w-4 h-4 text-gray-600 transition-transform duration-200"
+                    :class="{ 'rotate-180': isGroupExpanded(group.groupKey) }"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                    />
+                  </svg>
+                </button>
+
+                <!-- Pages (Conditional Render) -->
+                <Transition name="slide-fade">
+                  <div v-if="isGroupExpanded(group.groupKey)" class="space-y-1">
+                    <NuxtLink
+                      v-for="page in group.pages"
+                      :key="page.pageKey"
+                      :to="page.route"
+                      @click="handleSelectPage(page.pageKey, group.groupKey)"
+                      class="block px-4 py-2 pl-12 rounded-lg text-sm font-medium transition-colors duration-150"
+                      :class="
+                        isPageActive(page.pageKey)
+                          ? 'bg-red-600 text-white'
+                          : 'text-gray-700 hover:bg-red-50'
+                      "
+                    >
+                      {{ page.pageName }}
+                    </NuxtLink>
+                  </div>
+                </Transition>
+              </div>
+            </template>
+          </nav>
+        </aside>
+      </Transition>
+    </div>
+  </Transition>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, inject, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, watch, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '~/stores/auth'
+import { useUIStore } from '~/stores/ui'
+import { sidebarMenu, filterMenuByRole, findPageByRoute } from '~/utils/sidebar-menu'
 
-const router = useRouter()
+// Get stores and router
+const route = useRoute()
 const authStore = useAuthStore()
+const uiStore = useUIStore()
 
-// State
-const isSettingsOpen = ref(false)
+// ============================================================
+// COMPUTED PROPERTIES
+// ============================================================
 
-// Inject mobile menu state from Header
-const isMobileMenuOpen = inject<any>('isMobileMenuOpen', ref(false))
-
-// Computed properties
+/**
+ * Get current user
+ */
 const user = computed(() => authStore.user)
+
+/**
+ * Get user's role (fallback to 'unknown' if not authenticated)
+ */
 const userRole = computed(() => user.value?.role || 'unknown')
 
-// Role-based access control
-// Owner: All features
-// Manager: Dashboard only
-// Auditor: Dashboard, Audit Logs only
-// Cashier/Staff: Dashboard only
-
-const canAccessUsers = computed(() => {
-  const role = userRole.value
-  return role === 'owner'
+/**
+ * Filter sidebar menu based on user role
+ * Only shows groups and pages the user has access to
+ */
+const visibleMenu = computed(() => {
+  return filterMenuByRole(sidebarMenu, userRole.value)
 })
 
-const canAccessDailySales = computed(() => {
-  const role = userRole.value
-  return role === 'owner' || role === 'manager' || role === 'assistant_manager'
-})
+/**
+ * Get mobile sidebar visibility state
+ */
+const isMobileSidebarOpen = computed(() => uiStore.isMobileSidebarOpen)
 
-const canAccessReports = computed(() => {
-  const role = userRole.value
-  return role === 'owner'
-})
+// ============================================================
+// METHODS
+// ============================================================
 
-const canAccessAuditLogs = computed(() => {
-  const role = userRole.value
-  return role === 'owner' || role === 'auditor'
-})
+/**
+ * Check if a sidebar group is expanded
+ */
+const isGroupExpanded = (groupKey: string): boolean => {
+  return uiStore.expandedGroups[groupKey] ?? false
+}
 
-const canAccessSystemSettings = computed(() => {
-  const role = userRole.value
-  return role === 'owner'
-})
+/**
+ * Check if a sidebar page is active
+ */
+const isPageActive = (pageKey: string): boolean => {
+  return uiStore.activePage === pageKey
+}
 
-// Debugging: Log role and menu visibility
+/**
+ * Handle group toggle (expand/collapse)
+ */
+const handleToggleGroup = (groupKey: string): void => {
+  uiStore.toggleGroup(groupKey)
+}
+
+/**
+ * Handle page selection
+ * Updates active page/group and closes mobile sidebar
+ */
+const handleSelectPage = (pageKey: string, groupKey: string): void => {
+  uiStore.selectPage(pageKey, groupKey)
+}
+
+/**
+ * Close mobile sidebar
+ * Called when overlay is clicked or page is selected
+ */
+const closeMobileSidebar = (): void => {
+  uiStore.closeMobileSidebar()
+}
+
+// ============================================================
+// LIFECYCLE
+// ============================================================
+
+/**
+ * Watch route changes to update active page
+ * This ensures sidebar highlighting stays in sync with current route
+ */
 watch(
-  () => userRole.value,
-  (newRole) => {
-    console.log('[Sidebar] Menu access for role:', newRole)
-    console.log('  - canAccessUsers:', canAccessUsers.value)
-    console.log('  - canAccessDailySales:', canAccessDailySales.value)
-    console.log('  - canAccessReports:', canAccessReports.value)
-    console.log('  - canAccessAuditLogs:', canAccessAuditLogs.value)
-    console.log('  - canAccessSystemSettings:', canAccessSystemSettings.value)
-  },
-  { immediate: true }
+  () => route.path,
+  (newPath) => {
+    uiStore.updateActivePageFromRoute(newPath, sidebarMenu)
+  }
 )
 
-// Check if current route is active
-const isActive = (path: string) => {
-  return router.currentRoute.value.path === path
-}
+/**
+ * Initialize active page on component mount
+ */
+onMounted(() => {
+  uiStore.updateActivePageFromRoute(route.path, sidebarMenu)
+})
 </script>
 
 <style scoped>
-/* Add smooth transitions */
-aside {
-  transition: all 0.3s ease;
-}
-
-/* Scrollbar styling for nav */
-nav {
-  scrollbar-width: thin;
-  scrollbar-color: #475569 #1e293b;
-}
-
-nav::-webkit-scrollbar {
-  width: 6px;
-}
-
-nav::-webkit-scrollbar-track {
-  background: #1e293b;
-}
-
-nav::-webkit-scrollbar-thumb {
-  background: #475569;
-  border-radius: 3px;
-}
-
-nav::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
-}
-
 /* Transition animations */
 .slide-fade-enter-active,
 .slide-fade-leave-active {
-  transition: all 0.2s ease;
+  transition: all 200ms ease;
 }
 
 .slide-fade-enter-from {
@@ -218,6 +276,31 @@ nav::-webkit-scrollbar-thumb:hover {
 
 .slide-fade-leave-to {
   transform: translateY(-10px);
+  opacity: 0;
+}
+
+/* Mobile sidebar slide-in animation */
+.sidebar-slide-enter-active,
+.sidebar-slide-leave-active {
+  transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-slide-enter-from {
+  transform: translateX(-100%);
+}
+
+.sidebar-slide-leave-to {
+  transform: translateX(-100%);
+}
+
+/* Overlay fade animation */
+.sidebar-bg-enter-active,
+.sidebar-bg-leave-active {
+  transition: opacity 250ms ease;
+}
+
+.sidebar-bg-enter-from,
+.sidebar-bg-leave-to {
   opacity: 0;
 }
 </style>

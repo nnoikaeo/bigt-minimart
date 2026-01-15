@@ -3,7 +3,7 @@
     <ol class="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm text-gray-600 whitespace-nowrap">
       <!-- Home -->
       <li>
-        <NuxtLink to="/admin" class="hover:text-gray-900 font-medium">
+        <NuxtLink to="/" class="hover:text-gray-900 font-medium">
           <svg
             class="w-4 h-4 inline-block"
             fill="currentColor"
@@ -49,34 +49,34 @@ const logger = useLogger('Breadcrumb')
 
 // Breadcrumb label mapping for friendly names (Thai)
 const labelMap: Record<string, string> = {
-  // Admin pages
+  // Dashboard
   admin: 'แดชบอร์ด',
   dashboard: 'แดชบอร์ด',
-  // Daily Sales pages
-  'daily-sales': 'บันทึกยอดขายรายวัน',
-  // Admin Settings pages
+  // Sales pages
+  sales: 'การขาย',
+  'daily-sales': 'บันทึกยอดขาย',
+  'sales-report': 'รายงานการขาย',
+  // Finance pages
+  finance: 'บัญชีการเงิน',
+  'daily-expenses': 'รายรับ-รายจ่าย',
+  'cash-flow': 'กระแสเงินสด',
+  'monthly-report': 'รายงานประจำเดือน',
+  // HR pages
+  hr: 'บุคคล',
+  attendance: 'เวลาเข้าออก',
+  overtime: 'โอที',
+  // Settings pages
   settings: 'ตั้งค่า',
   'system-settings': 'ตั้งค่าระบบ',
-  'general-settings': 'ตั้งค่าทั่วไป',
-  'business-info': 'ข้อมูลร้านค้า',
-  'payment-methods': 'วิธีการชำระเงิน',
-  'email-notification': 'การแจ้งเตือนอีเมล',
-  // User Management pages
+  others: 'เพิ่มเติม',
+  // Admin pages
+  admin: 'ผู้ดูแลระบบ',
   users: 'จัดการผู้ใช้',
-  'add-user': 'เพิ่มผู้ใช้',
-  'edit-user': 'แก้ไขผู้ใช้',
-  // Reports pages
-  reports: 'รายงาน',
-  'sales-report': 'รายงานการขาย',
-  'inventory-report': 'รายงานสินค้าคงคลัง',
-  'customer-report': 'รายงานลูกค้า',
-  // Audit pages
-  'audit-logs': 'บันทึกการตรวจสอบ',
-  // User profile pages (not admin routes)
+  roles: 'บทบาทและสิทธิ์',
+  // User profile pages
   user: 'บัญชีผู้ใช้',
   profile: 'โปรไฟล์',
   'account-settings': 'ตั้งค่าบัญชี',
-  'user-settings': 'ตั้งค่าบัญชี',  // Fallback for old naming
 }
 
 // Helper function to get context-aware label
