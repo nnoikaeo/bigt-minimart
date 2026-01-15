@@ -15,9 +15,68 @@ Implement **Daily Sales Feature** - Auditor (ผู้ตรวจสอบ) บ
 
 ## ✅ Completed Tasks
 
+### ⚙️ Sidebar Navigation Structure ✅ DESIGN COMPLETE
+
+**Navigation Groups with Accordion**:
+```
+📊 [หน้าหลัก]                          ← Changed from "แดชบอร์ด"
+
+💰 [การขาย]                        ▼  ← Group expanded
+   -[Daily Sales] ✓                    ← Active page (highlighted)
+   -[Close Shift]                      ← Inactive page
+   -[Sales Report]
+
+📈 [บัญชีการเงิน]                   ▼  ← Group expanded
+   -[รายรับ-รายจ่าย]
+   -[กระแสเงินสด]
+   -[Monthly Report]
+
+📦 [สต๊อกสินค้า]                    ▶  ← Group collapsed
+   
+👥 [บุคคล]                         ▼  ← Group expanded
+   -[เวลาเข้าออก]
+   -[โอที]
+   -[จัดการผู้ใช้]
+
+⚙️ [ตั้งค่า]                        ▶  ← Group collapsed
+   -[ตั้งค่าระบบ]
+```
+
+**Key Design Decisions**:
+
+1. **Icon + Label**: Emoji icon for visual clarity + label for text
+2. **Arrow Indicator**: ▼ = expanded, ▶ = collapsed
+3. **Active Page**: Only page is highlighted (not group) with #EF3340 red background
+4. **Multiple Open Groups**: Users can keep multiple groups expanded simultaneously
+5. **Mobile Behavior**: Sidebar auto-closes after selecting a page
+6. **Responsive Design**: 
+   - Desktop (1920px): Sidebar fixed 256px width
+   - Tablet (768px): Sidebar toggleable with ☰
+   - Mobile (375px): Sidebar hidden, toggle with ☰
+
+**Color Scheme**:
+- Group Label: #F5F5F5 (light gray background)
+- Active Page: #EF3340 (BigT Red) + white text
+- Inactive Page: #333 (dark gray text)
+- Hover State: #FFF0F0 (light red background)
+
+**Status**: ✅ Design finalized, ready for implementation
+
+---
+
 ### Task 3.1: Daily Sales Form ✅ (DESIGN COMPLETE - Ready for Development)
 **Status**: Design Complete | **Purpose**: Auditor บันทึกข้อมูลยอดขายรายวัน
 **User**: Auditor (ผู้ตรวจสอบ) | **Time**: 10-15 นาที (ต่อ Cashier 1 คน)
+
+**Location in Sidebar**:
+```
+💰 [การขาย]                    ▼
+   -[Daily Sales] ✓             ← Task 3.1 (Active page)
+   -[Close Shift]               ← Task 3.2
+   -[Sales Report]              ← Task 3.3
+```
+
+**Page Route**: `/auditor/daily-sales`
 
 **Features to Implement**:
 - **Table** แสดงรายการ Daily Sales ทั้งหมด
