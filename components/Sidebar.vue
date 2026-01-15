@@ -6,48 +6,67 @@
     <!-- Sidebar Content -->
     <nav class="flex-1 overflow-y-auto px-3 py-6 space-y-4">
       <!-- Loop through sidebar menu groups -->
-      <div v-for="group in visibleMenu" :key="group.groupKey">
-        <!-- Group Header (Toggle) -->
-        <button
-          @click="handleToggleGroup(group.groupKey)"
-          class="w-full flex items-center justify-between px-4 py-3 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors duration-150"
+      <template v-for="group in visibleMenu" :key="group.groupKey">
+        <!-- Single Page (No Toggle) - If group has only 1 page -->
+        <NuxtLink
+          v-if="group.pages.length === 1"
+          :to="group.pages[0].route"
+          @click="handleSelectPage(group.pages[0].pageKey, group.groupKey)"
+          class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-150"
+          :class="
+            isPageActive(group.pages[0].pageKey)
+              ? 'bg-red-600 text-white'
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+          "
         >
-          <div class="flex items-center gap-3">
-            <span class="text-lg">{{ group.icon }}</span>
-            <span class="text-sm font-semibold text-gray-800">{{ group.groupName }}</span>
-          </div>
-          <!-- Arrow Indicator -->
-          <svg
-            class="w-4 h-4 text-gray-600 transition-transform duration-200"
-            :class="{ 'rotate-180': isGroupExpanded(group.groupKey) }"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-          </svg>
-        </button>
+          <span class="text-lg">{{ group.icon }}</span>
+          <span class="text-sm font-semibold">{{ group.groupName }}</span>
+        </NuxtLink>
 
-        <!-- Pages (Conditional Render) -->
-        <Transition name="slide-fade">
-          <div v-if="isGroupExpanded(group.groupKey)" class="space-y-1">
-            <NuxtLink
-              v-for="page in group.pages"
-              :key="page.pageKey"
-              :to="page.route"
-              @click="handleSelectPage(page.pageKey, group.groupKey)"
-              class="block px-4 py-2 pl-12 rounded-lg text-sm font-medium transition-colors duration-150"
-              :class="
-                isPageActive(page.pageKey)
-                  ? 'bg-red-600 text-white'
-                  : 'text-gray-700 hover:bg-red-50'
-              "
+        <!-- Group with Accordion - If group has multiple pages -->
+        <div v-else :key="group.groupKey">
+          <!-- Group Header (Toggle) -->
+          <button
+            @click="handleToggleGroup(group.groupKey)"
+            class="w-full flex items-center justify-between px-4 py-3 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors duration-150"
+          >
+            <div class="flex items-center gap-3">
+              <span class="text-lg">{{ group.icon }}</span>
+              <span class="text-sm font-semibold text-gray-800">{{ group.groupName }}</span>
+            </div>
+            <!-- Arrow Indicator -->
+            <svg
+              class="w-4 h-4 text-gray-600 transition-transform duration-200"
+              :class="{ 'rotate-180': isGroupExpanded(group.groupKey) }"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              {{ page.pageName }}
-            </NuxtLink>
-          </div>
-        </Transition>
-      </div>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            </svg>
+          </button>
+
+          <!-- Pages (Conditional Render) -->
+          <Transition name="slide-fade">
+            <div v-if="isGroupExpanded(group.groupKey)" class="space-y-1">
+              <NuxtLink
+                v-for="page in group.pages"
+                :key="page.pageKey"
+                :to="page.route"
+                @click="handleSelectPage(page.pageKey, group.groupKey)"
+                class="block px-4 py-2 pl-12 rounded-lg text-sm font-medium transition-colors duration-150"
+                :class="
+                  isPageActive(page.pageKey)
+                    ? 'bg-red-600 text-white'
+                    : 'text-gray-700 hover:bg-red-50'
+                "
+              >
+                {{ page.pageName }}
+              </NuxtLink>
+            </div>
+          </Transition>
+        </div>
+      </template>
     </nav>
   </aside>
 
@@ -68,52 +87,71 @@
         >
           <nav class="px-3 py-6 space-y-4">
             <!-- Loop through sidebar menu groups -->
-            <div v-for="group in visibleMenu" :key="group.groupKey">
-              <!-- Group Header (Toggle) -->
-              <button
-                @click="handleToggleGroup(group.groupKey)"
-                class="w-full flex items-center justify-between px-4 py-3 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors duration-150"
+            <template v-for="group in visibleMenu" :key="group.groupKey">
+              <!-- Single Page (No Toggle) - If group has only 1 page -->
+              <NuxtLink
+                v-if="group.pages.length === 1"
+                :to="group.pages[0].route"
+                @click="handleSelectPage(group.pages[0].pageKey, group.groupKey)"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-150"
+                :class="
+                  isPageActive(group.pages[0].pageKey)
+                    ? 'bg-red-600 text-white'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                "
               >
-                <div class="flex items-center gap-3">
-                  <span class="text-lg">{{ group.icon }}</span>
-                  <span class="text-sm font-semibold text-gray-800">{{ group.groupName }}</span>
-                </div>
-                <svg
-                  class="w-4 h-4 text-gray-600 transition-transform duration-200"
-                  :class="{ 'rotate-180': isGroupExpanded(group.groupKey) }"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                  />
-                </svg>
-              </button>
+                <span class="text-lg">{{ group.icon }}</span>
+                <span class="text-sm font-semibold">{{ group.groupName }}</span>
+              </NuxtLink>
 
-              <!-- Pages (Conditional Render) -->
-              <Transition name="slide-fade">
-                <div v-if="isGroupExpanded(group.groupKey)" class="space-y-1">
-                  <NuxtLink
-                    v-for="page in group.pages"
-                    :key="page.pageKey"
-                    :to="page.route"
-                    @click="handleSelectPage(page.pageKey, group.groupKey)"
-                    class="block px-4 py-2 pl-12 rounded-lg text-sm font-medium transition-colors duration-150"
-                    :class="
-                      isPageActive(page.pageKey)
-                        ? 'bg-red-600 text-white'
-                        : 'text-gray-700 hover:bg-red-50'
-                    "
+              <!-- Group with Accordion - If group has multiple pages -->
+              <div v-else :key="group.groupKey">
+                <!-- Group Header (Toggle) -->
+                <button
+                  @click="handleToggleGroup(group.groupKey)"
+                  class="w-full flex items-center justify-between px-4 py-3 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors duration-150"
+                >
+                  <div class="flex items-center gap-3">
+                    <span class="text-lg">{{ group.icon }}</span>
+                    <span class="text-sm font-semibold text-gray-800">{{ group.groupName }}</span>
+                  </div>
+                  <svg
+                    class="w-4 h-4 text-gray-600 transition-transform duration-200"
+                    :class="{ 'rotate-180': isGroupExpanded(group.groupKey) }"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    {{ page.pageName }}
-                  </NuxtLink>
-                </div>
-              </Transition>
-            </div>
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                    />
+                  </svg>
+                </button>
+
+                <!-- Pages (Conditional Render) -->
+                <Transition name="slide-fade">
+                  <div v-if="isGroupExpanded(group.groupKey)" class="space-y-1">
+                    <NuxtLink
+                      v-for="page in group.pages"
+                      :key="page.pageKey"
+                      :to="page.route"
+                      @click="handleSelectPage(page.pageKey, group.groupKey)"
+                      class="block px-4 py-2 pl-12 rounded-lg text-sm font-medium transition-colors duration-150"
+                      :class="
+                        isPageActive(page.pageKey)
+                          ? 'bg-red-600 text-white'
+                          : 'text-gray-700 hover:bg-red-50'
+                      "
+                    >
+                      {{ page.pageName }}
+                    </NuxtLink>
+                  </div>
+                </Transition>
+              </div>
+            </template>
           </nav>
         </aside>
       </Transition>
