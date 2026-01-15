@@ -46,7 +46,7 @@ export const sidebarMenu: SidebarGroup[] = [
       {
         pageKey: 'dashboard',
         pageName: 'หน้าหลัก',
-        route: '/dashboard',
+        route: '/',
         requiredRoles: null, // All users can access
       },
     ],
