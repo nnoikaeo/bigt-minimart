@@ -84,6 +84,8 @@
 
 ## Permission Matrix
 
+### Data Access (Legacy)
+
 | Resource | Owner | Manager | Asst Mgr | Cashier | Auditor |
 |----------|-------|---------|----------|---------|---------|
 | Dashboard | ✅ | ✅ | ✅ | ❌ | ✅ |
@@ -98,6 +100,72 @@
 | Reports (Monthly) | ✅ | ❌ | ❌ | ❌ | ✅ |
 | Export Data | ✅ | ❌ | ❌ | ❌ | ✅ |
 | User Management | ✅ | ❌ | ❌ | ❌ | ❌ |
+
+---
+
+## Page Access Matrix (Strict Role Hierarchy)
+
+ระบบใช้ **Strict Role Hierarchy** ในการกำหนดสิทธิ์การเข้าถึง pages แต่ละหน้า
+
+### Design Approach
+- **Owner**: Auto-access all pages (non-configurable)
+- **Other roles**: ต้องกำหนด page access ใน `/admin/roles.vue`
+- **Source**: Firestore `role_permissions` collection
+
+### Default Page Access Matrix
+
+| Page | Path | Owner | Manager | Auditor | Cashier | Staff |
+|------|------|-------|---------|---------|---------|-------|
+| **Sales Group** | | | | | | |
+| Daily Sales | sales/daily-sales | ✅ Auto | ❌ | ✅ | ❌ | ❌ |
+| Sales Report | sales/sales-report | ✅ Auto | ✅ | ✅ | ❌ | ❌ |
+| **Finance Group** | | | | | | |
+| Daily Expenses | finance/daily-expenses | ✅ Auto | ✅ | ❌ | ❌ | ❌ |
+| Cash Flow | finance/cash-flow | ✅ Auto | ✅ | ❌ | ❌ | ❌ |
+| Monthly Report | finance/monthly-report | ✅ Auto | ✅ | ❌ | ❌ | ❌ |
+| **HR Group** | | | | | | |
+| Attendance | hr/attendance | ✅ Auto | ✅ | ❌ | ❌ | ❌ |
+| Overtime | hr/overtime | ✅ Auto | ✅ | ❌ | ❌ | ❌ |
+| **Settings Group** | | | | | | |
+| System Settings | settings/system-settings | ✅ Auto | ❌ | ❌ | ❌ | ❌ |
+| Others | settings/others | ✅ Auto | ❌ | ❌ | ❌ | ❌ |
+| **Admin Group** | | | | | | |
+| Users | admin/users | ✅ Auto | ❌ | ❌ | ❌ | ❌ |
+| Roles | admin/roles | ✅ Auto | ❌ | ❌ | ❌ | ❌ |
+
+### Key Rules
+1. **Owner**: ✅ Auto - All pages always accessible
+2. **Manager**: Has access to operational pages (sales, finance, hr)
+3. **Auditor**: Limited to audit-related pages (daily-sales, sales-report)
+4. **Cashier**: Minimal access (own sales data only)
+5. **Staff**: No direct page access
+
+### Implementation
+- Pages list managed in `role_permissions` collection
+- Admin can toggle page access via `/admin/roles.vue` UI
+- Sidebar automatically filters based on role permissions
+- Frontend & backend validate access on every page load
+
+### Example: Auditor Role
+```json
+{
+  "role": "auditor",
+  "name": "ผู้ตรวจสอบ",
+  "pages": {
+    "sales/daily-sales": true,      // Can access
+    "sales/sales-report": true,     // Can access
+    "finance/daily-expenses": false,
+    "finance/cash-flow": false,
+    "finance/monthly-report": false,
+    "hr/attendance": false,
+    "hr/overtime": false,
+    "settings/system-settings": false,
+    "settings/others": false,
+    "admin/users": false,
+    "admin/roles": false
+  }
+}
+```
 
 ---
 

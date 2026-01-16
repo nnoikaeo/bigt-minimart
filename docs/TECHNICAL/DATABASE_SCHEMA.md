@@ -288,6 +288,100 @@ type SystemAction =
 
 ---
 
+## Collection: role_permissions
+Role-based page access control configuration - กำหนดสิทธิ์การเข้าถึง pages ของแต่ละ role
+
+```typescript
+interface RolePermissions {
+  // Identification
+  role: UserRole;                    // "owner" | "manager" | "auditor" | "cashier" | "staff"
+  name: string;                      // Thai name (ผู้จัดการร้าน, ผู้ตรวจสอบ, etc.)
+  description?: string;              // Description of role
+  
+  // Page Access Matrix
+  pages: Record<string, boolean>;    // {
+                                     //   "sales/daily-sales": true,
+                                     //   "sales/sales-report": false,
+                                     //   "finance/daily-expenses": true,
+                                     //   ...
+                                     // }
+  
+  // System Fields
+  updatedAt: Timestamp;              // Last update
+  updatedBy: string;                 // Admin UID who made changes
+}
+```
+
+**Design Notes**:
+- **Owner**: Auto-access all pages (empty `pages` object means all)
+- **Other roles**: Explicit page access matrix
+- **Pages**: Use full route path (e.g., "sales/daily-sales")
+
+**Example Data**:
+```firestore
+// auditor document
+{
+  "role": "auditor",
+  "name": "ผู้ตรวจสอบ",
+  "description": "บันทึก ตรวจสอบ และอนุมัติยอดขาย",
+  "pages": {
+    "sales/daily-sales": true,
+    "sales/sales-report": true,
+    "finance/daily-expenses": false,
+    "finance/cash-flow": false,
+    "finance/monthly-report": false,
+    "hr/attendance": false,
+    "hr/overtime": false,
+    "settings/system-settings": false,
+    "settings/others": false,
+    "admin/users": false,
+    "admin/roles": false
+  },
+  "updatedAt": Timestamp,
+  "updatedBy": "owner-uid-1"
+}
+
+// manager document
+{
+  "role": "manager",
+  "name": "ผู้จัดการร้าน",
+  "description": "จัดการปฏิบัติการรายวัน",
+  "pages": {
+    "sales/daily-sales": false,
+    "sales/sales-report": true,
+    "finance/daily-expenses": true,
+    "finance/cash-flow": true,
+    "finance/monthly-report": false,
+    "hr/attendance": true,
+    "hr/overtime": true,
+    "settings/system-settings": false,
+    "settings/others": false,
+    "admin/users": false,
+    "admin/roles": false
+  },
+  "updatedAt": Timestamp,
+  "updatedBy": "owner-uid-1"
+}
+
+// owner document (implicit - no need to store)
+// owner auto-access all pages
+```
+
+**Validation Rules**:
+- Owner: Must have access to all pages (non-negotiable)
+- No role should have more access than owner
+- Admin-only pages (admin/users, admin/roles): Only owner
+- Page routes must match actual application routes
+
+**Indexes**:
+- `role` (Unique) - Single document per role
+
+**Security Rules**:
+- Public: Read (for client-side filtering)
+- Admin only: Write/Update (owner can manage roles)
+
+---
+
 **Source**: Extracted from Technical Specification  
 **Last Updated**: Jan 7, 2026  
 **Version**: 1.0  
