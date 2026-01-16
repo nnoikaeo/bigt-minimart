@@ -94,6 +94,61 @@ Implement **Daily Sales Feature** design (Auditor บันทึกข้อม
 
 ---
 
+### 🔐 Role Hierarchy & Page Access Control ✅ (DESIGN COMPLETE)
+
+**Status**: Designed | **Approach**: Strict Role Hierarchy + Page Access Matrix  
+**Implementation**: Ready for Week 4
+
+**Design Decisions**:
+1. **Strict Role Hierarchy**: No permission conflicts
+   - Owner: Auto-access all pages
+   - Other roles: Explicit page access matrix
+   - Source: Firestore `role_permissions` collection
+
+2. **Page Access Matrix**:
+   ```
+   role_permissions/{role}:
+   {
+     "role": "auditor",
+     "name": "ผู้ตรวจสอบ",
+     "pages": {
+       "sales/daily-sales": true,
+       "sales/sales-report": true,
+       "finance/*": false,
+       ...
+     }
+   }
+   ```
+
+3. **Implementation Flow**:
+   - Backend: Firestore collection + API endpoints
+   - Frontend: Composable + Sidebar filtering + Route guards
+   - Admin UI: `/admin/roles.vue` for managing access
+
+**Features**:
+- ✅ Owner: Non-configurable (auto-all pages)
+- ✅ Flexible: Admin can customize per role
+- ✅ Audit Trail: Track changes with timestamps
+- ✅ No Conflicts: Strict hierarchy prevents issues
+- ✅ Scalable: Page list managed centrally
+
+**Validation Rules**:
+- Owner must have all pages
+- No role can have more access than owner
+- Admin pages only for owner
+- Page routes must be valid
+
+**Next Steps (Week 4+)**:
+- [ ] Create Firestore `role_permissions` collection
+- [ ] Create API endpoints (GET/PUT)
+- [ ] Update sidebar filtering logic
+- [ ] Create route guard middleware
+- [ ] Implement `/admin/roles.vue` UI
+
+**Documentation**: See [ROLE_BASED_ACCESS_CONTROL.md](../../TECHNICAL/ROLE_BASED_ACCESS_CONTROL.md)
+
+---
+
 ### Task 3.1: Daily Sales Form ✅ (DESIGN COMPLETE - Ready for Development)
 **Status**: Design Complete | **Purpose**: Auditor บันทึกข้อมูลยอดขายรายวัน
 **User**: Auditor (ผู้ตรวจสอบ) | **Time**: 10-15 นาที (ต่อ Cashier 1 คน)
@@ -131,7 +186,7 @@ Implement **Daily Sales Feature** design (Auditor บันทึกข้อม
   
   - **Auto-Calculate** (แสดงเรียลไทม์):
     - รวมยอด = Cash + QR + Bank + Government
-    - ผลต่าง = ยอดจริง - ยอดคาดไว้
+    - ผลต่าง = รวมยอด - ยอดคาดไว้
   
   - **Validation**:
     - กรอกข้อมูลครบถ้วน
@@ -191,8 +246,8 @@ Implement **Daily Sales Feature** design (Auditor บันทึกข้อม
 - ✅ Pinia state management
 - ✅ All 11 pages created
 - ✅ Breadcrumb Thai labels added
-- ✅ Role-based access control
-- ❌ Daily Sales form details (form + modal components, API endpoints) - Pending for next sprint
+- ✅ Role-based access control (design)
+- ⏳ Daily Sales form (in progress)
 - ❌ Close Shift feature
 - ❌ Sales Report feature
 - ❌ And other Task 3.2-3.6
