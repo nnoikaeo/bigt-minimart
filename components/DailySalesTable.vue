@@ -60,7 +60,8 @@ const currentPage = ref(1)
 const itemsPerPage = ref(10)
 
 // Search/Filter
-const searchQuery = ref('')
+const searchCashierName = ref('')
+const searchDate = ref('')
 
 // Filtered and sorted entries
 const filteredEntries = computed(() => {
@@ -69,16 +70,23 @@ const filteredEntries = computed(() => {
       console.warn('[DailySalesTable] Entry missing cashierName:', entry.id)
       return false
     }
-    if (!entry.cashierId) {
-      console.warn('[DailySalesTable] Entry missing cashierId:', entry.id)
-      return false
+    
+    // Check cashier name filter
+    if (searchCashierName.value) {
+      const query = searchCashierName.value.toLowerCase()
+      if (!entry.cashierName.toLowerCase().includes(query)) {
+        return false
+      }
     }
-    const query = searchQuery.value.toLowerCase()
-    return (
-      entry.cashierName.toLowerCase().includes(query) ||
-      entry.cashierId.toLowerCase().includes(query) ||
-      entry.date.includes(query)
-    )
+    
+    // Check date filter
+    if (searchDate.value) {
+      if (!entry.date.includes(searchDate.value)) {
+        return false
+      }
+    }
+    
+    return true
   })
 })
 
@@ -141,6 +149,13 @@ const handleSort = (field: 'date' | 'cashierName' | 'total') => {
   }
 }
 
+const handleReset = () => {
+  searchCashierName.value = ''
+  searchDate.value = ''
+  currentPage.value = 1
+  logger.log('Search filters reset')
+}
+
 const getSortIndicator = (field: string): string => {
   if (sortBy.value !== field) return '↕️'
   return sortOrder.value === 'asc' ? '↑' : '↓'
@@ -159,12 +174,40 @@ const getSortIndicator = (field: string): string => {
 
     <!-- Search Bar -->
     <div class="bg-white rounded-lg shadow p-4">
-      <input
-        v-model="searchQuery"
-        type="text"
-        placeholder="ค้นหาจากชื่อแคชเชียร์ หรือ ID หรือ วันที่..."
-        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
-      />
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+        <!-- Cashier Name Search -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">ค้นหาชื่อแคชเชียร์</label>
+          <input
+            v-model="searchCashierName"
+            type="text"
+            placeholder="เช่น สมชาย, สินใจ..."
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
+          />
+        </div>
+        <!-- Date Search -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">ค้นหาตามวันที่</label>
+          <input
+            v-model="searchDate"
+            type="date"
+            placeholder="วว/ดด/ปปปป"
+            :class="[
+              'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 placeholder-gray-400',
+              searchDate ? 'text-gray-900' : 'text-gray-500'
+            ]"
+          />
+        </div>
+        <!-- Reset Button -->
+        <div>
+          <button
+            @click="handleReset"
+            class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
+          >
+            🔄 รีเซ็ต
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Table Container -->
