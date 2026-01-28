@@ -391,13 +391,20 @@ export const useSalesStore = defineStore('sales', {
       this.error = null
 
       try {
+        console.log('[deleteDailySale] Deleting entry:', id)
         // Delete via API
-        await $fetch(`/api/daily-sales/${id}`, {
+        const response = await $fetch<{ success: boolean; message: string }>(`/api/daily-sales/${id}`, {
           method: 'DELETE',
         })
 
+        console.log('[deleteDailySale] Delete response:', response)
+
         // Remove from local state
+        const beforeCount = this.dailySales.length
         this.dailySales = this.dailySales.filter((s) => s.id !== id)
+        const afterCount = this.dailySales.length
+
+        console.log(`[deleteDailySale] Removed from state: ${beforeCount} → ${afterCount} entries`)
 
         // Recalculate statistics
         this.calculateStats()
