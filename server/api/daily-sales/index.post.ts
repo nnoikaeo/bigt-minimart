@@ -108,8 +108,5 @@ export default defineEventHandler(async (event) => {
       statusCode: 500,
       message: `Failed to create daily sales entry: ${error.message}`,
     })
-      statusCode: 500,
-      message: error.message || 'Internal server error',
-    })
   }
 })
