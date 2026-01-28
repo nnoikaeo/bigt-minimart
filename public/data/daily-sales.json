@@ -1,0 +1,70 @@
+[
+  {
+    "id": "sales-1674882645000-abc123def",
+    "date": "2026-01-28",
+    "cashierId": "cashier-001",
+    "cashierName": "สมชาย",
+    "posposData": {
+      "cash": 10000,
+      "qr": 5000,
+      "bank": 3000,
+      "government": 2000
+    },
+    "cashReconciliation": {
+      "expectedAmount": 20000,
+      "actualCashInDrawer": 20000,
+      "difference": 0,
+      "notes": ""
+    },
+    "status": "submitted",
+    "submittedAt": "2026-01-28T14:30:45.000Z",
+    "submittedBy": "auditor-001",
+    "auditNotes": null
+  },
+  {
+    "id": "sales-1674968745000-xyz789uvw",
+    "date": "2026-01-29",
+    "cashierId": "cashier-002",
+    "cashierName": "สินใจ",
+    "posposData": {
+      "cash": 15000,
+      "qr": 8000,
+      "bank": 5000,
+      "government": 2000
+    },
+    "cashReconciliation": {
+      "expectedAmount": 30000,
+      "actualCashInDrawer": 30000,
+      "difference": 0,
+      "notes": ""
+    },
+    "status": "approved",
+    "submittedAt": "2026-01-29T15:45:30.000Z",
+    "submittedBy": "auditor-001",
+    "auditedAt": "2026-01-29T16:00:00.000Z",
+    "auditedBy": "auditor-001",
+    "auditNotes": "All records verified"
+  },
+  {
+    "id": "sales-1675054845000-def456ghi",
+    "date": "2026-01-30",
+    "cashierId": "cashier-001",
+    "cashierName": "สมชาย",
+    "posposData": {
+      "cash": 12000,
+      "qr": 6000,
+      "bank": 4000,
+      "government": 1500
+    },
+    "cashReconciliation": {
+      "expectedAmount": 23500,
+      "actualCashInDrawer": 23500,
+      "difference": 0,
+      "notes": ""
+    },
+    "status": "submitted",
+    "submittedAt": "2026-01-30T16:20:15.000Z",
+    "submittedBy": "auditor-001",
+    "auditNotes": null
+  }
+]

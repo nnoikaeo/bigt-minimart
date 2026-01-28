@@ -37,7 +37,7 @@ const formData = reactive({
     difference: 0,
     notes: '',
   },
-  status: 'submitted' as const,
+  status: 'submitted' as 'submitted' | 'audited' | 'approved',
 })
 
 const validationErrors = ref<Record<string, string>>({})

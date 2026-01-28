@@ -50,7 +50,6 @@ const logger = useLogger('Breadcrumb')
 // Breadcrumb label mapping for friendly names (Thai)
 const labelMap: Record<string, string> = {
   // Dashboard
-  admin: 'แดชบอร์ด',
   dashboard: 'แดชบอร์ด',
   // Sales pages
   sales: 'การขาย',
