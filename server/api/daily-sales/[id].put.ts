@@ -59,6 +59,16 @@ export default defineEventHandler(async (event) => {
     console.log('[PUT /api/daily-sales/[id]] Request body:', body)
     
     const validatedData = updateDailySalesSchema.parse(body)
+    
+    // Ensure posposData properties are numbers with defaults
+    if (validatedData.posposData) {
+      validatedData.posposData = {
+        cash: validatedData.posposData.cash ?? 0,
+        qr: validatedData.posposData.qr ?? 0,
+        bank: validatedData.posposData.bank ?? 0,
+        government: validatedData.posposData.government ?? 0,
+      }
+    }
 
     // Get existing entry to verify it exists
     const existingEntry = await salesJsonRepository.getById(id)
@@ -72,9 +82,35 @@ export default defineEventHandler(async (event) => {
 
     console.log('[PUT /api/daily-sales/[id]] Updating entry:', id)
 
-    // Build partial update object
-    const updateData: Partial<DailySalesEntry> = {
-      ...validatedData,
+    // Build partial update object with safe property access
+    const updateData: Partial<DailySalesEntry> = {}
+    
+    // Only add properties that are defined
+    if (validatedData.date !== undefined) updateData.date = validatedData.date
+    if (validatedData.cashierId !== undefined) updateData.cashierId = validatedData.cashierId
+    if (validatedData.cashierName !== undefined) updateData.cashierName = validatedData.cashierName
+    if (validatedData.status !== undefined) updateData.status = validatedData.status
+    if (validatedData.submittedBy !== undefined) updateData.submittedBy = validatedData.submittedBy
+    if (validatedData.auditNotes !== undefined) updateData.auditNotes = validatedData.auditNotes
+    
+    // Handle posposData with defaults
+    if (validatedData.posposData) {
+      updateData.posposData = {
+        cash: validatedData.posposData.cash ?? 0,
+        qr: validatedData.posposData.qr ?? 0,
+        bank: validatedData.posposData.bank ?? 0,
+        government: validatedData.posposData.government ?? 0,
+      }
+    }
+    
+    // Handle cashReconciliation
+    if (validatedData.cashReconciliation) {
+      updateData.cashReconciliation = {
+        expectedAmount: validatedData.cashReconciliation.expectedAmount ?? 0,
+        actualAmount: validatedData.cashReconciliation.actualAmount ?? 0,
+        difference: validatedData.cashReconciliation.difference ?? 0,
+        notes: validatedData.cashReconciliation.notes ?? '',
+      }
     }
 
     // Recalculate difference and total if reconciliation data changed
