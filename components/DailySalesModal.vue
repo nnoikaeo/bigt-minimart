@@ -40,8 +40,17 @@ const cashiers = ref([
   { id: 'cashier-003', name: 'บัญชา สุวรรณ' },
 ])
 
-// Form state
-const formData = reactive({
+// Form state with explicit type annotation
+interface FormDataType {
+  date: string
+  cashierId: string
+  cashierName: string
+  posposData: { cash: number; qr: number; bank: number; government: number }
+  cashReconciliation: { expectedAmount: number; actualAmount: number; difference: number; notes: string }
+  status: 'submitted' | 'audited' | 'approved'
+}
+
+const formData = reactive<FormDataType>({
   date: '',
   cashierId: '',
   cashierName: '',
@@ -57,7 +66,7 @@ const formData = reactive({
     difference: 0,
     notes: '',
   },
-  status: 'submitted' as 'submitted' | 'audited' | 'approved',
+  status: 'submitted',
 })
 
 logger.log('Form initialized:', formData)
@@ -121,7 +130,11 @@ watch(
       formData.cashierId = entry.cashierId
       formData.cashierName = entry.cashierName
       formData.posposData = { ...entry.posposData }
-      formData.cashReconciliation = { ...entry.cashReconciliation }
+      // Ensure notes is always a string
+      formData.cashReconciliation = {
+        ...entry.cashReconciliation,
+        notes: entry.cashReconciliation.notes || '',
+      }
       formData.status = entry.status
     }
   }
@@ -177,12 +190,17 @@ const handleSubmit = async () => {
   submitting.value = true
   try {
     logger.log('Submitting daily sales entry', formData)
-    emit('submit', {
+  emit('submit', {
       date: formData.date,
       cashierId: formData.cashierId,
       cashierName: formData.cashierName,
       posposData: formData.posposData,
-      cashReconciliation: formData.cashReconciliation,
+      cashReconciliation: {
+        expectedAmount: formData.cashReconciliation.expectedAmount,
+        actualAmount: formData.cashReconciliation.actualAmount,
+        difference: formData.cashReconciliation.difference,
+        notes: formData.cashReconciliation.notes || '', // Ensure notes is always a string
+      },
       status: formData.status,
       submittedBy: 'current-user-id', // Will be set by store/page
       auditNotes: '',

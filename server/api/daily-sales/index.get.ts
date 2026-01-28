@@ -22,11 +22,14 @@ export default defineEventHandler(async (event) => {
     let entries = await salesJsonRepository.getAll()
 
     // Apply filters if provided
-    if (query.dateFrom) {
-      entries = entries.filter((e) => e.date >= query.dateFrom)
+    const dateFrom = query.dateFrom ? String(query.dateFrom) : null
+    const dateTo = query.dateTo ? String(query.dateTo) : null
+    
+    if (dateFrom) {
+      entries = entries.filter((e) => e.date >= dateFrom)
     }
-    if (query.dateTo) {
-      entries = entries.filter((e) => e.date <= query.dateTo)
+    if (dateTo) {
+      entries = entries.filter((e) => e.date <= dateTo)
     }
     if (query.status) {
       entries = entries.filter((e) => e.status === query.status)

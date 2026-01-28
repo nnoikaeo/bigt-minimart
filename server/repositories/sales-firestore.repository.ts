@@ -174,7 +174,7 @@ export class SalesFirestoreRepository implements ISalesRepository {
   /**
    * WRITE: Update existing record
    */
-  async update(id: string, updates: Partial<DailySalesEntry>): Promise<void> {
+  async update(id: string, updates: Partial<DailySalesEntry>): Promise<DailySalesEntry> {
     // Remove id from updates if present
     const { id: _, ...cleanUpdates } = updates
 
@@ -193,7 +193,19 @@ export class SalesFirestoreRepository implements ISalesRepository {
     const docRef = doc(this.db, this.collectionName, id)
     await updateDoc(docRef, firestoreUpdates)
 
+    // Fetch and return updated entry
+    const docSnap = await getDoc(docRef)
+    if (!docSnap.exists()) {
+      throw new Error(`Sale with ID ${id} not found after update`)
+    }
+
     console.log(`✅ Updated sale: ${id}`)
+    return {
+      id: docSnap.id,
+      ...docSnap.data(),
+      submittedAt: (docSnap.data().submittedAt as Timestamp).toDate(),
+      auditedAt: docSnap.data().auditedAt ? (docSnap.data().auditedAt as Timestamp).toDate() : undefined,
+    } as DailySalesEntry
   }
 
   /**

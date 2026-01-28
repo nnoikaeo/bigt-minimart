@@ -126,10 +126,20 @@ export class SalesJsonRepository implements ISalesRepository {
     // Generate unique ID
     const id = `sales-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
+    // Explicitly create newSale with all required fields
     const newSale: DailySalesEntry = {
-      ...sale,
-      id,
+      id: id,
+      date: sale.date,
+      cashierId: sale.cashierId,
+      cashierName: sale.cashierName,
+      posposData: sale.posposData,
+      cashReconciliation: sale.cashReconciliation,
+      status: sale.status,
+      submittedBy: sale.submittedBy,
+      auditNotes: sale.auditNotes,
       submittedAt: new Date().toISOString(),
+      auditedAt: sale.auditedAt,
+      updatedAt: sale.updatedAt,
     }
 
     console.log('[Repository.add] Creating sale with data:', newSale)
@@ -161,8 +171,27 @@ export class SalesJsonRepository implements ISalesRepository {
       throw new Error(`Sale with ID ${id} not found`)
     }
 
-    // Merge updates
-    const updated = { ...this.data[index], ...updates }
+    // Get existing entry
+    const existing = this.data[index]
+    if (!existing) {
+      throw new Error(`Sale with ID ${id} not found`)
+    }
+
+    // Merge updates, ensuring all required fields are preserved
+    const updated: DailySalesEntry = {
+      ...existing,
+      ...updates,
+      id: existing.id, // Always use original id
+      date: updates.date ?? existing.date,
+      cashierId: updates.cashierId ?? existing.cashierId,
+      cashierName: updates.cashierName ?? existing.cashierName,
+      posposData: updates.posposData ?? existing.posposData,
+      cashReconciliation: updates.cashReconciliation ?? existing.cashReconciliation,
+      status: updates.status ?? existing.status,
+      submittedBy: updates.submittedBy ?? existing.submittedBy,
+      auditNotes: updates.auditNotes ?? existing.auditNotes,
+      submittedAt: updates.submittedAt ?? existing.submittedAt,
+    }
 
     // Validate merged data
     this.validateSale(updated)
