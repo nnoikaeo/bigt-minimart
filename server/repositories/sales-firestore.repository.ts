@@ -167,8 +167,8 @@ export class SalesFirestoreRepository implements ISalesRepository {
     return {
       id: docRef.id,
       ...sale,
-      submittedAt: new Date(),
-    }
+      submittedAt: new Date() as unknown as DailySalesEntry['submittedAt'],
+    } as DailySalesEntry
   }
 
   /**

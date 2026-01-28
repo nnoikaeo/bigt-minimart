@@ -30,20 +30,27 @@ export interface DailySalesEntry {
   // Cash reconciliation
   cashReconciliation: {
     expectedAmount: number // เงินคาดไว้
-    actualCashInDrawer: number // เงินจริง
+    actualAmount: number // เงินจริง
     difference: number // ผลต่าง (AUTO)
     notes?: string // หมายเหตุ
   }
+  
+  // Calculated fields
+  total?: number // Auto-calculated total (cash + qr + bank + government)
   
   // Status & workflow
   status: 'submitted' | 'audited' | 'approved'
   auditNotes?: string
   
   // User & timestamps
-  submittedAt: Date
+  submittedAt: string | Date // ISO format or Date object
   submittedBy?: string
-  auditedAt?: Date
+  auditedAt?: string | Date // ISO format or Date object
   auditedBy?: string
+  
+  // System timestamps
+  createdAt?: string | Date
+  updatedAt?: string | Date
 }
 
 /**

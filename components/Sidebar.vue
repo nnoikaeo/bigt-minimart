@@ -183,7 +183,7 @@ const user = computed(() => authStore.user)
 /**
  * Get user's role (fallback to 'unknown' if not authenticated)
  */
-const userRole = computed(() => user.value?.role || 'unknown')
+const userRole = computed(() => user.value?.role ?? 'unknown')
 
 /**
  * Filter sidebar menu based on user role

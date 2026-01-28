@@ -157,6 +157,4 @@ export const useUIStore = defineStore('ui', {
       }
     },
   },
-
-  persist: true, // Enable persistence to localStorage
 })

@@ -21,7 +21,7 @@ const logger = useLogger('DailySalesModal')
 const { calculateTotal, validateEntry, formatCurrency, formatStatus, cashiers, fetchCashiers } = useDailySales()
 
 // Form state
-const formData = reactive({
+const formData = reactive<Omit<DailySalesEntry, 'id' | 'submittedAt' | 'submittedBy' | 'auditedAt' | 'auditedBy' | 'createdAt' | 'updatedAt'> & { actualAmount: number }>({
   date: '',
   cashierId: '',
   cashierName: '',
@@ -37,7 +37,7 @@ const formData = reactive({
     difference: 0,
     notes: '',
   },
-  status: 'submitted' as const,
+  status: 'submitted',
 })
 
 const validationErrors = ref<Record<string, string>>({})
