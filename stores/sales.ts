@@ -183,12 +183,20 @@ export const useSalesStore = defineStore('sales', {
      */
     getTotalSalesAmount: (state) => {
       return state.dailySales.reduce(
-        (sum, sale) =>
-          sum +
-          sale.posposData.cash +
-          sale.posposData.qr +
-          sale.posposData.bank +
-          sale.posposData.government,
+        (sum, sale) => {
+          // Validate entry has required fields
+          if (!sale.posposData) {
+            console.warn('[getTotalSalesAmount] Entry missing posposData:', sale.id)
+            return sum
+          }
+          return (
+            sum +
+            (sale.posposData.cash || 0) +
+            (sale.posposData.qr || 0) +
+            (sale.posposData.bank || 0) +
+            (sale.posposData.government || 0)
+          )
+        },
         0
       )
     },
@@ -294,6 +302,21 @@ export const useSalesStore = defineStore('sales', {
           method: 'POST',
           body: entry,
         })
+
+        console.log('[addDailySale] Response from API:', newEntry)
+        console.log('[addDailySale] Entry has posposData:', !!newEntry?.posposData)
+        console.log('[addDailySale] Entry has cashierName:', !!newEntry?.cashierName)
+        console.log('[addDailySale] Entry keys:', Object.keys(newEntry || {}))
+
+        // Validate entry has all required fields
+        if (!newEntry?.posposData) {
+          console.error('[addDailySale] ❌ New entry missing posposData:', newEntry)
+          throw new Error('Invalid response: missing posposData')
+        }
+        if (!newEntry?.cashierName) {
+          console.error('[addDailySale] ❌ New entry missing cashierName:', newEntry)
+          throw new Error('Invalid response: missing cashierName')
+        }
 
         // Add to local state
         this.dailySales.push(newEntry)

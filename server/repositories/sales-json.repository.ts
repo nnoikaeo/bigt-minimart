@@ -129,8 +129,10 @@ export class SalesJsonRepository implements ISalesRepository {
     const newSale: DailySalesEntry = {
       ...sale,
       id,
-      submittedAt: new Date(),
+      submittedAt: new Date().toISOString(),
     }
+
+    console.log('[Repository.add] Creating sale with data:', newSale)
 
     // Validate data
     this.validateSale(newSale)
@@ -142,6 +144,7 @@ export class SalesJsonRepository implements ISalesRepository {
     await this.save()
 
     console.log(`✅ Added sale: ${id}`)
+    console.log('[Repository.add] Returning to API:', newSale)
     return newSale
   }
 

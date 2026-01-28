@@ -65,6 +65,14 @@ const searchQuery = ref('')
 // Filtered and sorted entries
 const filteredEntries = computed(() => {
   return props.entries.filter((entry) => {
+    if (!entry.cashierName) {
+      console.warn('[DailySalesTable] Entry missing cashierName:', entry.id)
+      return false
+    }
+    if (!entry.cashierId) {
+      console.warn('[DailySalesTable] Entry missing cashierId:', entry.id)
+      return false
+    }
     const query = searchQuery.value.toLowerCase()
     return (
       entry.cashierName.toLowerCase().includes(query) ||

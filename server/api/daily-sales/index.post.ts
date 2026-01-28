@@ -77,6 +77,11 @@ export default defineEventHandler(async (event) => {
     // Add to repository
     const newEntry = await salesJsonRepository.add(entryData as Omit<DailySalesEntry, 'id'>)
 
+    console.log('[POST /api/daily-sales] Entry created by repository:', newEntry)
+    console.log('[POST /api/daily-sales] New entry has posposData:', !!newEntry?.posposData)
+    console.log('[POST /api/daily-sales] New entry has cashierName:', !!newEntry?.cashierName)
+    console.log('[POST /api/daily-sales] New entry keys:', Object.keys(newEntry || {}))
+
     setResponseStatus(event, 201)
     return {
       success: true,
