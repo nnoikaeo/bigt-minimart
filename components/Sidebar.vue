@@ -53,8 +53,8 @@
                 v-for="page in group.pages"
                 :key="page.pageKey"
                 :to="page.route"
-                @click="handleSelectPage(page.pageKey, group.groupKey)"
-                class="block px-4 py-2 pl-12 rounded-lg text-sm font-medium transition-colors duration-150"
+                @click.prevent="handleSelectPage(page.pageKey, group.groupKey); $router.push(page.route)"
+                class="block px-4 py-2 pl-12 rounded-lg text-sm font-medium transition-colors duration-150 cursor-pointer"
                 :class="
                   isPageActive(page.pageKey)
                     ? 'bg-red-600 text-white'
@@ -161,13 +161,14 @@
 
 <script setup lang="ts">
 import { computed, watch, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '~/stores/auth'
 import { useUIStore } from '~/stores/ui'
 import { sidebarMenu, filterMenuByRole, findPageByRoute } from '~/utils/sidebar-menu'
 
 // Get stores and router
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
 const uiStore = useUIStore()
 
@@ -228,7 +229,9 @@ const handleToggleGroup = (groupKey: string): void => {
  * Updates active page/group and closes mobile sidebar
  */
 const handleSelectPage = (pageKey: string, groupKey: string): void => {
+  console.log(`[Sidebar] handleSelectPage called: pageKey=${pageKey}, groupKey=${groupKey}`)
   uiStore.selectPage(pageKey, groupKey)
+  console.log(`[Sidebar] selectPage completed, activePage=${uiStore.activePage}`)
 }
 
 /**
@@ -250,8 +253,11 @@ const closeMobileSidebar = (): void => {
 watch(
   () => route.path,
   (newPath) => {
+    console.log('[Sidebar] Route changed to:', newPath)
     uiStore.updateActivePageFromRoute(newPath, sidebarMenu)
-  }
+    console.log('[Sidebar] Active page now:', uiStore.activePage)
+  },
+  { immediate: true }
 )
 
 /**

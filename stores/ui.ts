@@ -100,14 +100,17 @@ export const useUIStore = defineStore('ui', {
      * @param groupKey - The parent group key
      */
     selectPage(pageKey: string, groupKey: string): void {
+      console.log(`[UI Store] selectPage: pageKey=${pageKey}, groupKey=${groupKey}`)
       this.activePage = pageKey
       this.activeGroup = groupKey
+      console.log(`[UI Store] activePage set to: ${this.activePage}, activeGroup: ${this.activeGroup}`)
 
       // Ensure parent group is expanded
       this.expandGroup(groupKey)
 
       // Auto-close sidebar on mobile (< 768px)
       if (typeof window !== 'undefined' && window.innerWidth < 768) {
+        console.log('[UI Store] Mobile detected, closing sidebar')
         this.isMobileSidebarOpen = false
       }
     },
@@ -145,9 +148,23 @@ export const useUIStore = defineStore('ui', {
       routePath: string,
       menuData: Array<{ groupKey: string; pages: Array<{ pageKey: string; route: string }> }>
     ): void {
+      // Normalize path (remove trailing slash)
+      const normalizedPath = routePath.endsWith('/') && routePath !== '/' 
+        ? routePath.slice(0, -1) 
+        : routePath
+
+      console.log('[UI Store] Searching for route:', normalizedPath)
+
       for (const group of menuData) {
-        const page = group.pages.find((p) => p.route === routePath)
+        const page = group.pages.find((p) => {
+          const normalizedPageRoute = p.route.endsWith('/') && p.route !== '/' 
+            ? p.route.slice(0, -1) 
+            : p.route
+          console.log(`[UI Store] Comparing: "${normalizedPath}" vs "${normalizedPageRoute}"`)
+          return normalizedPageRoute === normalizedPath
+        })
         if (page) {
+          console.log(`[UI Store] Found page: ${page.pageKey} in group: ${group.groupKey}`)
           this.activePage = page.pageKey
           this.activeGroup = group.groupKey
           // Ensure parent group is expanded
@@ -155,6 +172,8 @@ export const useUIStore = defineStore('ui', {
           return
         }
       }
+      
+      console.log('[UI Store] No matching page found for route:', normalizedPath)
     },
   },
 })
