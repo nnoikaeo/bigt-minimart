@@ -140,5 +140,28 @@
     "submittedAt": "2026-01-28T20:16:13.696Z",
     "submittedBy": "dev-user-1769631373688",
     "id": "sales-1769631373696-yplclyq51"
+  },
+  {
+    "date": "2026-01-29",
+    "cashierId": "cashier-001",
+    "cashierName": "สมชาย ใจดี",
+    "posposData": {
+      "cash": 5000,
+      "qr": 1000,
+      "bank": 0,
+      "government": 600
+    },
+    "cashReconciliation": {
+      "expectedAmount": 6600,
+      "actualAmount": 6600,
+      "difference": 0,
+      "notes": ""
+    },
+    "status": "submitted",
+    "auditNotes": "",
+    "total": 6600,
+    "submittedAt": "2026-01-28T20:36:01.041Z",
+    "submittedBy": "dev-user-1769632561035",
+    "id": "sales-1769632561041-bdngsts9b"
   }
 ]

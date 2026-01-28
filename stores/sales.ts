@@ -275,7 +275,8 @@ export const useSalesStore = defineStore('sales', {
       this.error = null
 
       try {
-        this.selectedEntry = await $fetch<DailySalesEntry>(`/api/daily-sales/${id}`)
+        const response = await $fetch<{ success: boolean; data: DailySalesEntry }>(`/api/daily-sales/${id}`)
+        this.selectedEntry = response?.data || null
       } catch (err) {
         this.error = `Failed to fetch sale: ${err}`
         console.error('❌ Fetch sale by ID failed:', err)
@@ -298,12 +299,17 @@ export const useSalesStore = defineStore('sales', {
 
       try {
         // Add entry via API
-        const newEntry = await $fetch<DailySalesEntry>('/api/daily-sales', {
+        const response = await $fetch<{ success: boolean; data: DailySalesEntry; message: string }>('/api/daily-sales', {
           method: 'POST',
           body: entry,
         })
 
-        console.log('[addDailySale] Response from API:', newEntry)
+        console.log('[addDailySale] Full response from API:', response)
+        
+        // Extract the actual entry from the response wrapper
+        const newEntry = response?.data
+        
+        console.log('[addDailySale] Extracted entry:', newEntry)
         console.log('[addDailySale] Entry has posposData:', !!newEntry?.posposData)
         console.log('[addDailySale] Entry has cashierName:', !!newEntry?.cashierName)
         console.log('[addDailySale] Entry keys:', Object.keys(newEntry || {}))
@@ -347,13 +353,16 @@ export const useSalesStore = defineStore('sales', {
 
       try {
         // Update via API
-        const updatedEntry = await $fetch<DailySalesEntry>(
+        const response = await $fetch<{ success: boolean; data: DailySalesEntry; message: string }>(
           `/api/daily-sales/${id}`,
           {
             method: 'PUT',
             body: updates,
           }
         )
+
+        // Extract the updated entry from response
+        const updatedEntry = response?.data
 
         // Update local state
         const index = this.dailySales.findIndex((s) => s.id === id)
