@@ -1,11 +1,35 @@
 import { z } from 'zod'
-import { adminDb } from '~/server/utils/firebase-admin'
-import { Timestamp } from 'firebase-admin/firestore'
+import { salesJsonRepository } from '~/server/repositories/sales-json.repository'
+import type { DailySalesEntry } from '~/types/repositories'
+
+/**
+ * POST /api/daily-sales
+ * 
+ * Create a new daily sales entry
+ * Uses Repository Pattern for flexible data source switching
+ * 
+ * Request body: DailySalesEntry (without id and timestamps)
+ * Response: { success: boolean, data: DailySalesEntry }
+ */
 
 const createDailySalesSchema = z.object({
-  date: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid date format'),
-  amount: z.number().positive('Amount must be greater than 0'),
-  notes: z.string().optional(),
+  date: z.string().min(1, 'Date is required'),
+  cashierId: z.string().min(1, 'Cashier ID is required'),
+  cashierName: z.string().min(1, 'Cashier name is required'),
+  posposData: z.object({
+    cash: z.number().nonnegative(),
+    qr: z.number().nonnegative(),
+    bank: z.number().nonnegative(),
+    government: z.number().nonnegative(),
+  }),
+  cashReconciliation: z.object({
+    expectedAmount: z.number().nonnegative(),
+    actualAmount: z.number().nonnegative(),
+    difference: z.number().optional(),
+    notes: z.string().optional(),
+  }),
+  status: z.enum(['submitted', 'audited', 'approved']).default('submitted'),
+  auditNotes: z.string().optional(),
 })
 
 export default defineEventHandler(async (event) => {
@@ -19,31 +43,42 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    // Initialize repository
+    await salesJsonRepository.init()
+
     const body = await readBody(event)
     const validatedData = createDailySalesSchema.parse(body)
 
-    // Create new document
-    const newEntry = {
-      date: Timestamp.fromDate(new Date(validatedData.date)),
-      amount: validatedData.amount,
-      notes: validatedData.notes || '',
-      userId: user.uid,
-      userName: user.displayName || user.email,
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
+    // Calculate difference and total
+    const difference =
+      validatedData.cashReconciliation.actualAmount -
+      validatedData.cashReconciliation.expectedAmount
+
+    const total =
+      validatedData.posposData.cash +
+      validatedData.posposData.qr +
+      validatedData.posposData.bank +
+      validatedData.posposData.government
+
+    // Create entry object
+    const entryData = {
+      ...validatedData,
+      cashReconciliation: {
+        ...validatedData.cashReconciliation,
+        difference,
+      },
+      total,
+      submittedAt: new Date().toISOString(),
+      submittedBy: user.uid,
     }
 
-    const docRef = await adminDb.collection('daily_sales').add(newEntry)
+    // Add to repository
+    const newEntry = await salesJsonRepository.add(entryData as Omit<DailySalesEntry, 'id'>)
 
+    setResponseStatus(event, 201)
     return {
       success: true,
-      data: {
-        id: docRef.id,
-        ...newEntry,
-        date: newEntry.date.toDate(),
-        createdAt: newEntry.createdAt.toDate(),
-        updatedAt: newEntry.updatedAt.toDate(),
-      },
+      data: newEntry,
       message: 'Daily sales entry created successfully',
     }
   } catch (error: any) {

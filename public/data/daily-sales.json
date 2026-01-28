@@ -12,14 +12,15 @@
     },
     "cashReconciliation": {
       "expectedAmount": 20000,
-      "actualCashInDrawer": 20000,
+      "actualAmount": 20000,
       "difference": 0,
       "notes": ""
     },
+    "total": 20000,
     "status": "submitted",
     "submittedAt": "2026-01-28T14:30:45.000Z",
     "submittedBy": "auditor-001",
-    "auditNotes": null
+    "auditNotes": ""
   },
   {
     "id": "sales-1674968745000-xyz789uvw",
@@ -34,10 +35,11 @@
     },
     "cashReconciliation": {
       "expectedAmount": 30000,
-      "actualCashInDrawer": 30000,
+      "actualAmount": 30000,
       "difference": 0,
       "notes": ""
     },
+    "total": 30000,
     "status": "approved",
     "submittedAt": "2026-01-29T15:45:30.000Z",
     "submittedBy": "auditor-001",
@@ -58,13 +60,62 @@
     },
     "cashReconciliation": {
       "expectedAmount": 23500,
-      "actualCashInDrawer": 23500,
+      "actualAmount": 23500,
       "difference": 0,
       "notes": ""
     },
+    "total": 23500,
     "status": "submitted",
     "submittedAt": "2026-01-30T16:20:15.000Z",
     "submittedBy": "auditor-001",
-    "auditNotes": null
+    "auditNotes": ""
+  },
+  {
+    "id": "sales-1675141245000-jkl789mno",
+    "date": "2026-01-31",
+    "cashierId": "cashier-003",
+    "cashierName": "บัญชา",
+    "posposData": {
+      "cash": 8500,
+      "qr": 4200,
+      "bank": 2800,
+      "government": 900
+    },
+    "cashReconciliation": {
+      "expectedAmount": 16400,
+      "actualAmount": 16350,
+      "difference": -50,
+      "notes": "ขาดเงิน 50 บาท"
+    },
+    "total": 16400,
+    "status": "submitted",
+    "submittedAt": "2026-01-31T17:45:30.000Z",
+    "submittedBy": "auditor-001",
+    "auditNotes": ""
+  },
+  {
+    "id": "sales-1675227645000-pqr012stu",
+    "date": "2026-02-01",
+    "cashierId": "cashier-002",
+    "cashierName": "สินใจ",
+    "posposData": {
+      "cash": 18000,
+      "qr": 9500,
+      "bank": 6000,
+      "government": 2500
+    },
+    "cashReconciliation": {
+      "expectedAmount": 36000,
+      "actualAmount": 36000,
+      "difference": 0,
+      "notes": ""
+    },
+    "total": 36000,
+    "status": "audited",
+    "submittedAt": "2026-02-01T18:30:00.000Z",
+    "submittedBy": "auditor-001",
+    "auditedAt": "2026-02-01T19:00:00.000Z",
+    "auditedBy": "auditor-002",
+    "auditNotes": "Verified and balanced"
   }
 ]
