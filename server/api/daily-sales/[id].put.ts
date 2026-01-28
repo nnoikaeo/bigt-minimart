@@ -55,6 +55,8 @@ export default defineEventHandler(async (event) => {
     await salesJsonRepository.init()
 
     const body = await readBody(event)
+    console.log('[PUT /api/daily-sales/[id]] Request body:', body)
+    
     const validatedData = updateDailySalesSchema.parse(body)
 
     // Get existing entry to verify it exists
@@ -104,6 +106,7 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error: any) {
     if (error instanceof z.ZodError) {
+      console.error('[PUT /api/daily-sales/[id]] Validation error:', error.issues)
       throw createError({
         statusCode: 400,
         message: 'Invalid input',
@@ -113,7 +116,7 @@ export default defineEventHandler(async (event) => {
     if (error.statusCode) {
       throw error
     }
-    console.error('Error updating sales entry:', error)
+    console.error('[PUT /api/daily-sales/[id]] Error updating sales entry:', error)
     throw createError({
       statusCode: 500,
       message: error.message || 'Internal server error',
