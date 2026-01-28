@@ -70,18 +70,19 @@ const handleEdit = (entry: DailySalesEntry) => {
 
 // Handle delete
 const handleDelete = async (id: string) => {
-  if (confirm('คุณแน่ใจว่าต้องการลบบันทึกนี้?')) {
-    try {
-      await salesStore.deleteDailySale(id)
-      successMessage.value = 'ลบบันทึกเรียบร้อย'
-      logger.log('Deleted entry:', id)
-      setTimeout(() => {
-        successMessage.value = ''
-      }, 3000)
-    } catch (err: any) {
-      submitError.value = err.message || 'เกิดข้อผิดพลาดในการลบ'
-      logger.error('Error deleting entry', err)
-    }
+  // Confirmation is already handled in DailySalesTable component
+  // So we just proceed with deletion directly
+  try {
+    logger.log('Deleting entry:', id)
+    await salesStore.deleteDailySale(id)
+    successMessage.value = 'ลบบันทึกเรียบร้อย'
+    logger.log('Deleted entry:', id)
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 3000)
+  } catch (err: any) {
+    submitError.value = err.message || 'เกิดข้อผิดพลาดในการลบ'
+    logger.error('Error deleting entry', err)
   }
 }
 
