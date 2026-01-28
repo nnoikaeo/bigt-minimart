@@ -225,8 +225,8 @@ export const useSalesStore = defineStore('sales', {
 
       try {
         // Fetch all sales via API
-        const response = await $fetch<DailySalesEntry[]>('/api/daily-sales')
-        this.dailySales = response || []
+        const response = await $fetch<{ success: boolean; data: DailySalesEntry[]; count: number }>('/api/daily-sales')
+        this.dailySales = response?.data || []
 
         // Calculate statistics
         this.calculateStats()
@@ -248,8 +248,8 @@ export const useSalesStore = defineStore('sales', {
       this.error = null
 
       try {
-        const response = await $fetch<DailySalesEntry[]>('/api/daily-sales')
-        this.dailySales = response || []
+        const response = await $fetch<{ success: boolean; data: DailySalesEntry[]; count: number }>('/api/daily-sales')
+        this.dailySales = response?.data || []
         this.calculateStats()
       } catch (err) {
         this.error = `Failed to fetch sales: ${err}`
