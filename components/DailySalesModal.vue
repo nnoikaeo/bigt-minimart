@@ -87,13 +87,16 @@ watch(
   }
 )
 
-// Watch cashier selection - auto-fill ID when cashier name is selected
+// Watch cashier selection - auto-fill name when ID is selected
 watch(
-  () => formData.cashierName,
-  (selectedName) => {
-    const selected = cashiers.value.find(c => c.name === selectedName)
+  () => formData.cashierId,
+  (selectedId) => {
+    const selected = cashiers.value.find(c => c.id === selectedId)
     if (selected) {
-      formData.cashierId = selected.id
+      formData.cashierName = selected.name
+      logger.log('Cashier selected:', { id: selectedId, name: selected.name })
+    } else {
+      formData.cashierName = ''
     }
   }
 )
@@ -140,7 +143,11 @@ const handleSubmit = async () => {
   }
 
   if (!formData.cashierId) {
-    validationErrors.value.cashierId = 'ชื่อแคชเชียร์เป็นข้อมูลที่จำเป็น'
+    validationErrors.value.cashierId = 'แคชเชียร์เป็นข้อมูลที่จำเป็น'
+  }
+
+  if (!formData.cashierName) {
+    validationErrors.value.cashierName = 'ชื่อแคชเชียร์เป็นข้อมูลที่จำเป็น'
   }
 
   if (totalAmount.value === 0) {
@@ -241,16 +248,19 @@ const handleClose = () => {
                 แคชเชียร์ <span class="text-red-500">*</span>
               </label>
               <select
-                v-model="formData.cashierName"
+                v-model="formData.cashierId"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
               >
                 <option value="">-- เลือกแคชเชียร์ --</option>
-                <option v-for="cashier in cashiers" :key="cashier.id" :value="cashier.name">
+                <option v-for="cashier in cashiers" :key="cashier.id" :value="cashier.id">
                   {{ cashier.name }}
                 </option>
               </select>
               <p v-if="validationErrors.cashierId" class="text-red-500 text-sm mt-1">
                 {{ validationErrors.cashierId }}
+              </p>
+              <p v-if="validationErrors.cashierName" class="text-red-500 text-sm mt-1">
+                {{ validationErrors.cashierName }}
               </p>
             </div>
           </div>
