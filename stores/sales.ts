@@ -1,15 +1,14 @@
 import { defineStore } from 'pinia'
 import type { DailySalesEntry } from '~/types/repositories'
-import { salesJsonRepository } from '~/server/repositories/sales-json.repository'
 
 /**
  * Daily Sales Store
  * 
  * Manages all sales-related state and operations
- * Uses Repository Pattern for flexible data source switching
+ * Uses Repository Pattern via API endpoints for flexible data source switching
  * 
- * Phase 1: Uses salesJsonRepository (JSON data)
- * Phase 2: Switch to salesFirestoreRepository (Firestore)
+ * Phase 1: API calls to salesJsonRepository endpoints
+ * Phase 2: API calls to salesFirestoreRepository endpoints (no client code changes)
  */
 export const useSalesStore = defineStore('sales', {
   state: () => ({
@@ -218,18 +217,16 @@ export const useSalesStore = defineStore('sales', {
 
   actions: {
     /**
-     * Initialize store: Load all sales from repository
+     * Initialize store: Load all sales from API
      */
     async initializeStore(): Promise<void> {
       this.isLoading = true
       this.error = null
 
       try {
-        // Initialize repository if needed
-        await salesJsonRepository.init()
-
-        // Fetch all sales
-        this.dailySales = await salesJsonRepository.getAll()
+        // Fetch all sales via API
+        const response = await $fetch<DailySalesEntry[]>('/api/daily-sales')
+        this.dailySales = response || []
 
         // Calculate statistics
         this.calculateStats()
@@ -244,14 +241,15 @@ export const useSalesStore = defineStore('sales', {
     },
 
     /**
-     * Fetch all sales entries
+     * Fetch all sales entries from API
      */
     async fetchDailySales(): Promise<void> {
       this.isLoading = true
       this.error = null
 
       try {
-        this.dailySales = await salesJsonRepository.getAll()
+        const response = await $fetch<DailySalesEntry[]>('/api/daily-sales')
+        this.dailySales = response || []
         this.calculateStats()
       } catch (err) {
         this.error = `Failed to fetch sales: ${err}`
@@ -262,14 +260,14 @@ export const useSalesStore = defineStore('sales', {
     },
 
     /**
-     * Get single sales entry by ID
+     * Get single sales entry by ID from API
      */
     async fetchSaleById(id: string): Promise<void> {
       this.isLoading = true
       this.error = null
 
       try {
-        this.selectedEntry = await salesJsonRepository.getById(id)
+        this.selectedEntry = await $fetch<DailySalesEntry>(`/api/daily-sales/${id}`)
       } catch (err) {
         this.error = `Failed to fetch sale: ${err}`
         console.error('❌ Fetch sale by ID failed:', err)
@@ -279,7 +277,7 @@ export const useSalesStore = defineStore('sales', {
     },
 
     /**
-     * Add new daily sales entry
+     * Add new daily sales entry via API
      */
     async addDailySale(
       entry: Omit<
@@ -291,8 +289,11 @@ export const useSalesStore = defineStore('sales', {
       this.error = null
 
       try {
-        // Add entry via repository
-        const newEntry = await salesJsonRepository.add(entry)
+        // Add entry via API
+        const newEntry = await $fetch<DailySalesEntry>('/api/daily-sales', {
+          method: 'POST',
+          body: entry,
+        })
 
         // Add to local state
         this.dailySales.push(newEntry)
@@ -312,7 +313,7 @@ export const useSalesStore = defineStore('sales', {
     },
 
     /**
-     * Update existing sales entry
+     * Update existing sales entry via API
      */
     async updateDailySale(
       id: string,
@@ -322,11 +323,16 @@ export const useSalesStore = defineStore('sales', {
       this.error = null
 
       try {
-        // Update via repository
-        await salesJsonRepository.update(id, updates)
+        // Update via API
+        const updatedEntry = await $fetch<DailySalesEntry>(
+          `/api/daily-sales/${id}`,
+          {
+            method: 'PUT',
+            body: updates,
+          }
+        )
 
-        // Update local state - get the updated entry from repository
-        const updatedEntry = await salesJsonRepository.getById(id)
+        // Update local state
         const index = this.dailySales.findIndex((s) => s.id === id)
         if (index >= 0) {
           this.dailySales[index] = updatedEntry
@@ -346,15 +352,17 @@ export const useSalesStore = defineStore('sales', {
     },
 
     /**
-     * Delete sales entry
+     * Delete sales entry via API
      */
     async deleteDailySale(id: string): Promise<void> {
       this.isLoading = true
       this.error = null
 
       try {
-        // Delete via repository
-        await salesJsonRepository.delete(id)
+        // Delete via API
+        await $fetch(`/api/daily-sales/${id}`, {
+          method: 'DELETE',
+        })
 
         // Remove from local state
         this.dailySales = this.dailySales.filter((s) => s.id !== id)
