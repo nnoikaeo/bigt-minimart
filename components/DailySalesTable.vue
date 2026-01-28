@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { DailySalesEntry } from '~/composables/useDailySales'
+import type { DailySalesEntry } from '~/types/repositories'
 
 interface Props {
   entries: DailySalesEntry[]
@@ -17,7 +17,38 @@ const emit = defineEmits<{
 }>()
 
 const logger = useLogger('DailySalesTable')
-const { formatCurrency, formatDateThai, formatStatus, calculateTotal } = useDailySales()
+
+// Helper functions
+const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat('th-TH', {
+    style: 'currency',
+    currency: 'THB',
+    minimumFractionDigits: 0,
+  }).format(amount)
+}
+
+const formatDateThai = (dateStr: string): string => {
+  const date = new Date(dateStr + 'T00:00:00')
+  const formatter = new Intl.DateTimeFormat('th-TH', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+  return formatter.format(date)
+}
+
+const formatStatus = (status: string): string => {
+  const statusMap: Record<string, string> = {
+    submitted: 'รอตรวจสอบ',
+    audited: 'ตรวจสอบแล้ว',
+    approved: 'อนุมัติแล้ว',
+  }
+  return statusMap[status] || status
+}
+
+const calculateTotal = (posposData: any): number => {
+  return (posposData.cash || 0) + (posposData.qr || 0) + (posposData.bank || 0) + (posposData.government || 0)
+}
 
 // Sorting
 const sortBy = ref<'date' | 'cashierName' | 'total'>('date')

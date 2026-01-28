@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, reactive, watch, computed, onMounted } from 'vue'
-import type { DailySalesEntry, Cashier } from '~/composables/useDailySales'
+import { ref, reactive, watch, computed } from 'vue'
+import type { DailySalesEntry } from '~/types/repositories'
 
 interface Props {
   open: boolean
@@ -14,11 +14,30 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   close: []
-  submit: [entry: Omit<DailySalesEntry, 'id' | 'createdAt' | 'updatedAt'>]
+  submit: [entry: Omit<DailySalesEntry, 'id' | 'submittedAt'>]
 }>()
 
 const logger = useLogger('DailySalesModal')
-const { calculateTotal, validateEntry, formatCurrency, formatStatus, cashiers, fetchCashiers } = useDailySales()
+
+// Helper functions
+const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat('th-TH', {
+    style: 'currency',
+    currency: 'THB',
+    minimumFractionDigits: 0,
+  }).format(amount)
+}
+
+const calculateTotal = (posposData: any): number => {
+  return (posposData.cash || 0) + (posposData.qr || 0) + (posposData.bank || 0) + (posposData.government || 0)
+}
+
+// Mock cashiers for now - replace with actual data later
+const cashiers = ref([
+  { id: 'cashier-001', name: 'สมชาย ใจดี' },
+  { id: 'cashier-002', name: 'สินใจ ขยัน' },
+  { id: 'cashier-003', name: 'บัญชา สุวรรณ' },
+])
 
 // Form state
 const formData = reactive({
@@ -43,11 +62,6 @@ const formData = reactive({
 const validationErrors = ref<Record<string, string>>({})
 const submitting = ref(false)
 const successMessage = ref('')
-
-// Load cashiers on mount
-onMounted(() => {
-  fetchCashiers()
-})
 
 // Calculate totals
 const totalAmount = computed(() => calculateTotal(formData.posposData))
@@ -118,11 +132,22 @@ const resetForm = () => {
 // Validate and submit
 const handleSubmit = async () => {
   validationErrors.value = {}
-  const validation = validateEntry(formData)
 
-  if (!validation.valid) {
-    validationErrors.value = validation.errors
-    logger.warn('Validation failed', validation.errors)
+  // Basic validation
+  if (!formData.date) {
+    validationErrors.value.date = 'วันที่เป็นข้อมูลที่จำเป็น'
+  }
+
+  if (!formData.cashierId) {
+    validationErrors.value.cashierId = 'ชื่อแคชเชียร์เป็นข้อมูลที่จำเป็น'
+  }
+
+  if (totalAmount.value === 0) {
+    validationErrors.value.posposData = 'กรุณากรอกยอดขายอย่างน้อย 1 ช่องทาง'
+  }
+
+  if (Object.keys(validationErrors.value).length > 0) {
+    logger.warn('Validation failed', validationErrors.value)
     return
   }
 
@@ -136,6 +161,8 @@ const handleSubmit = async () => {
       posposData: formData.posposData,
       cashReconciliation: formData.cashReconciliation,
       status: formData.status,
+      submittedBy: 'current-user-id', // Will be set by store/page
+      auditNotes: '',
     })
     successMessage.value = 'บันทึกข้อมูลสำเร็จ'
     setTimeout(() => {
@@ -154,6 +181,7 @@ const handleClose = () => {
   resetForm()
   emit('close')
 }
+</script>
 </script>
 
 <template>
