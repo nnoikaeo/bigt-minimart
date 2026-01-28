@@ -100,6 +100,8 @@ export default defineEventHandler(async (event) => {
     // Update via repository
     const updatedEntry = await salesJsonRepository.update(id, updateData)
 
+    console.log('[PUT /api/daily-sales/[id]] Updated entry from repository:', updatedEntry)
+
     return {
       success: true,
       data: updatedEntry,

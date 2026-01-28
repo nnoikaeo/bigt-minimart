@@ -153,8 +153,9 @@ export class SalesJsonRepository implements ISalesRepository {
    * - Validates data
    * - Updates in-memory data
    * - Saves to JSON file
+   * - Returns the updated entry
    */
-  async update(id: string, updates: Partial<DailySalesEntry>): Promise<void> {
+  async update(id: string, updates: Partial<DailySalesEntry>): Promise<DailySalesEntry> {
     const index = this.data.findIndex(s => s.id === id)
     if (index === -1) {
       throw new Error(`Sale with ID ${id} not found`)
@@ -173,6 +174,8 @@ export class SalesJsonRepository implements ISalesRepository {
     await this.save()
 
     console.log(`✅ Updated sale: ${id}`)
+    console.log('[Repository.update] Returning updated entry:', updated)
+    return updated
   }
 
   /**
