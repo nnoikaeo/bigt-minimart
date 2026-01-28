@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, watch, computed } from 'vue'
+import { useLogger } from '~/composables/useLogger'
 import type { DailySalesEntry } from '~/types/repositories'
 
 interface Props {

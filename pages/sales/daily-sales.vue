@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useSalesStore } from '~/stores/sales'
+import { useLogger } from '~/composables/useLogger'
 import type { DailySalesEntry } from '~/types/repositories'
 
 // Require authentication to access this page
