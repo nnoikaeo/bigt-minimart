@@ -89,24 +89,28 @@ watch(
   }
 )
 
-// Watch cashier selection - auto-fill name when ID is selected
-watch(
-  () => formData.cashierId,
-  (selectedId) => {
-    logger.log('[Watch cashierId] Triggered with:', selectedId)
-    logger.log('[Watch cashierId] Available cashiers:', cashiers.value)
-    const selected = cashiers.value.find(c => c.id === selectedId)
-    logger.log('[Watch cashierId] Found cashier:', selected)
-    if (selected) {
-      formData.cashierName = selected.name
-      logger.log('✅ Cashier selected:', { id: selectedId, name: selected.name })
-      logger.log('[Watch cashierId] FormData after update:', { cashierId: formData.cashierId, cashierName: formData.cashierName })
-    } else {
-      formData.cashierName = ''
-      logger.log('[Watch cashierId] Cashier not found, clearing name')
-    }
+// Handle cashier selection change
+const handleCashierChange = (event: Event) => {
+  const target = event.target as HTMLSelectElement
+  const selectedId = target.value
+  logger.log('[handleCashierChange] Selected ID:', selectedId)
+  
+  if (!selectedId) {
+    formData.cashierId = ''
+    formData.cashierName = ''
+    logger.log('[handleCashierChange] Cleared selection')
+    return
   }
-)
+  
+  const selected = cashiers.value.find(c => c.id === selectedId)
+  logger.log('[handleCashierChange] Found cashier:', selected)
+  
+  if (selected) {
+    formData.cashierId = selected.id
+    formData.cashierName = selected.name
+    logger.log('✅ Cashier updated:', { id: formData.cashierId, name: formData.cashierName })
+  }
+}
 
 // Initialize form for edit mode
 watch(
@@ -260,6 +264,7 @@ const handleClose = () => {
               </label>
               <select
                 v-model="formData.cashierId"
+                @change="handleCashierChange"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
               >
                 <option value="">-- เลือกแคชเชียร์ --</option>
