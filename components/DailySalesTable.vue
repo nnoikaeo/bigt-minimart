@@ -44,8 +44,8 @@ const filteredEntries = computed(() => {
 
 const sortedEntries = computed(() => {
   const sorted = [...filteredEntries.value].sort((a, b) => {
-    let aVal: any = a[sortBy.value]
-    let bVal: any = b[sortBy.value]
+    let aVal: any = a[sortBy.value as keyof typeof a]
+    let bVal: any = b[sortBy.value as keyof typeof b]
 
     if (sortBy.value === 'total') {
       aVal = calculateTotal(a.posposData)

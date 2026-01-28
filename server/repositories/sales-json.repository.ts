@@ -205,7 +205,7 @@ export class SalesJsonRepository implements ISalesRepository {
                   sale.posposData.bank + sale.posposData.government
 
     if (total < 0) throw new Error('Total sales cannot be negative')
-    if (sale.cashReconciliation.actualCashInDrawer < 0) {
+    if (sale.cashReconciliation.actualAmount < 0) {
       throw new Error('Actual cash cannot be negative')
     }
   }

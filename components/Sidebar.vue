@@ -9,12 +9,12 @@
       <template v-for="group in visibleMenu" :key="group.groupKey">
         <!-- Single Page (No Toggle) - If group has only 1 page -->
         <NuxtLink
-          v-if="group.pages.length === 1"
-          :to="group.pages[0].route"
-          @click="handleSelectPage(group.pages[0].pageKey, group.groupKey)"
+          v-if="group.pages.length === 1 && group.pages[0]"
+          :to="group.pages[0]!.route"
+          @click="handleSelectPage(group.pages[0]!.pageKey, group.groupKey)"
           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-150"
           :class="
-            isPageActive(group.pages[0].pageKey)
+            isPageActive(group.pages[0]?.pageKey)
               ? 'bg-red-600 text-white'
               : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
           "
@@ -90,12 +90,12 @@
             <template v-for="group in visibleMenu" :key="group.groupKey">
               <!-- Single Page (No Toggle) - If group has only 1 page -->
               <NuxtLink
-                v-if="group.pages.length === 1"
-                :to="group.pages[0].route"
-                @click="handleSelectPage(group.pages[0].pageKey, group.groupKey)"
+                v-if="group.pages.length === 1 && group.pages[0]"
+                :to="group.pages[0]!.route"
+                @click="handleSelectPage(group.pages[0]!.pageKey, group.groupKey)"
                 class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-150"
                 :class="
-                  isPageActive(group.pages[0].pageKey)
+                  isPageActive(group.pages[0]?.pageKey)
                     ? 'bg-red-600 text-white'
                     : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                 "
