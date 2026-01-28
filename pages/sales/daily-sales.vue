@@ -112,7 +112,7 @@ const openCreateModal = () => {
         @click="openCreateModal"
         class="px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg font-medium hover:from-red-700 hover:to-red-800 transition-all shadow-md hover:shadow-lg flex items-center gap-2"
       >
-        ➕ บันทึกใหม่
+        บันทึกใหม่
       </button>
     </div>
 
