@@ -60,6 +60,8 @@ const formData = reactive({
   status: 'submitted' as 'submitted' | 'audited' | 'approved',
 })
 
+logger.log('Form initialized:', formData)
+
 const validationErrors = ref<Record<string, string>>({})
 const submitting = ref(false)
 const successMessage = ref('')
@@ -91,12 +93,17 @@ watch(
 watch(
   () => formData.cashierId,
   (selectedId) => {
+    logger.log('[Watch cashierId] Triggered with:', selectedId)
+    logger.log('[Watch cashierId] Available cashiers:', cashiers.value)
     const selected = cashiers.value.find(c => c.id === selectedId)
+    logger.log('[Watch cashierId] Found cashier:', selected)
     if (selected) {
       formData.cashierName = selected.name
-      logger.log('Cashier selected:', { id: selectedId, name: selected.name })
+      logger.log('✅ Cashier selected:', { id: selectedId, name: selected.name })
+      logger.log('[Watch cashierId] FormData after update:', { cashierId: formData.cashierId, cashierName: formData.cashierName })
     } else {
       formData.cashierName = ''
+      logger.log('[Watch cashierId] Cashier not found, clearing name')
     }
   }
 )
@@ -135,6 +142,10 @@ const resetForm = () => {
 
 // Validate and submit
 const handleSubmit = async () => {
+  logger.log('[handleSubmit] FormData before validation:', formData)
+  logger.log('[handleSubmit] cashierId:', formData.cashierId)
+  logger.log('[handleSubmit] cashierName:', formData.cashierName)
+  
   validationErrors.value = {}
 
   // Basic validation
