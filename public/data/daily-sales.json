@@ -78,19 +78,19 @@
     "posposData": {
       "cash": 8500,
       "qr": 4200,
-      "bank": 2800,
+      "bank": 0,
       "government": 900
     },
     "cashReconciliation": {
-      "expectedAmount": 16400,
-      "actualAmount": 16350,
-      "difference": -50,
+      "expectedAmount": 13601,
+      "actualAmount": 13600,
+      "difference": -1,
       "notes": "ขาดเงิน 50 บาท"
     },
-    "total": 16400,
+    "total": 13600,
     "status": "submitted",
     "submittedAt": "2026-01-31T17:45:30.000Z",
-    "submittedBy": "auditor-001",
+    "submittedBy": "current-user-id",
     "auditNotes": ""
   },
   {

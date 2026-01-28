@@ -352,6 +352,9 @@ export const useSalesStore = defineStore('sales', {
       this.error = null
 
       try {
+        console.log('[updateDailySale] Updating entry:', id)
+        console.log('[updateDailySale] Updates:', updates)
+        
         // Update via API
         const response = await $fetch<{ success: boolean; data: DailySalesEntry; message: string }>(
           `/api/daily-sales/${id}`,
@@ -361,13 +364,26 @@ export const useSalesStore = defineStore('sales', {
           }
         )
 
+        console.log('[updateDailySale] Response:', response)
+
         // Extract the updated entry from response
         const updatedEntry = response?.data
+
+        console.log('[updateDailySale] Extracted entry:', updatedEntry)
+        
+        if (!updatedEntry) {
+          console.error('[updateDailySale] ❌ Response has no data:', response)
+          throw new Error('Invalid response: missing data')
+        }
 
         // Update local state
         const index = this.dailySales.findIndex((s) => s.id === id)
         if (index >= 0) {
+          console.log('[updateDailySale] Updating array index:', index)
           this.dailySales[index] = updatedEntry
+          console.log('[updateDailySale] Updated entry in state:', this.dailySales[index])
+        } else {
+          console.warn('[updateDailySale] Entry not found in local state:', id)
         }
 
         // Recalculate statistics
