@@ -182,7 +182,6 @@ const handleClose = () => {
   emit('close')
 }
 </script>
-</script>
 
 <template>
   <!-- Modal Overlay -->
