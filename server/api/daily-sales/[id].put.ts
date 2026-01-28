@@ -30,6 +30,7 @@ const updateDailySalesSchema = z.object({
   }).optional(),
   status: z.enum(['submitted', 'audited', 'approved']).optional(),
   auditNotes: z.string().optional(),
+  submittedBy: z.string().optional(), // Allow submittedBy from client
 }).strict()
 
 export default defineEventHandler(async (event) => {
