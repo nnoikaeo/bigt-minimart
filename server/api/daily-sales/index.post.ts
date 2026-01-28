@@ -36,7 +36,10 @@ export default defineEventHandler(async (event) => {
   try {
     // Get user from context (set by auth middleware)
     const user = (event.context as any).user
+    console.log('[POST /api/daily-sales] User context:', user)
+    
     if (!user) {
+      console.error('[POST /api/daily-sales] No user in context')
       throw createError({
         statusCode: 401,
         message: 'Unauthorized - Please login',
@@ -47,7 +50,10 @@ export default defineEventHandler(async (event) => {
     await salesJsonRepository.init()
 
     const body = await readBody(event)
+    console.log('[POST /api/daily-sales] Request body:', body)
+    
     const validatedData = createDailySalesSchema.parse(body)
+    console.log('[POST /api/daily-sales] Validated data:', validatedData)
 
     // Calculate difference and total
     const difference =
@@ -82,15 +88,26 @@ export default defineEventHandler(async (event) => {
       message: 'Daily sales entry created successfully',
     }
   } catch (error: any) {
+    console.error('[POST /api/daily-sales] Error:', error)
+    
     if (error instanceof z.ZodError) {
+      console.error('[POST /api/daily-sales] Validation error:', error.issues)
       throw createError({
         statusCode: 400,
         message: 'Invalid input',
         data: error.issues,
       })
     }
-    console.error('Error creating daily sales:', error)
+    
+    if (error.statusCode) {
+      throw error
+    }
+    
+    console.error('[POST /api/daily-sales] Unexpected error:', error.message)
     throw createError({
+      statusCode: 500,
+      message: `Failed to create daily sales entry: ${error.message}`,
+    })
       statusCode: 500,
       message: error.message || 'Internal server error',
     })
