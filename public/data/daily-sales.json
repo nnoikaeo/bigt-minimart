@@ -78,16 +78,16 @@
     "posposData": {
       "cash": 8500,
       "qr": 4200,
-      "bank": 500,
+      "bank": 1000,
       "government": 900
     },
     "cashReconciliation": {
-      "expectedAmount": 14101,
-      "actualAmount": 14100,
+      "expectedAmount": 14601,
+      "actualAmount": 14600,
       "difference": -1,
       "notes": ""
     },
-    "total": 14100,
+    "total": 14600,
     "status": "submitted",
     "submittedAt": "2026-01-31T17:45:30.000Z",
     "submittedBy": "current-user-id",

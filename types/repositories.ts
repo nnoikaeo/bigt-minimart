@@ -81,8 +81,9 @@ export interface ISalesRepository {
 
   /**
    * Update existing sales record
+   * Returns: Updated record
    */
-  update(id: string, updates: Partial<DailySalesEntry>): Promise<void>
+  update(id: string, updates: Partial<DailySalesEntry>): Promise<DailySalesEntry>
 
   /**
    * Delete sales record
