@@ -97,7 +97,6 @@ const openCreateModal = () => {
   showModal.value = true
 }
 </script>
-</script>
 
 <template>
   <div class="space-y-6">
