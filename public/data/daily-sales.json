@@ -1,0 +1,121 @@
+[
+  {
+    "id": "sales-1674882645000-abc123def",
+    "date": "2026-01-28",
+    "cashierId": "cashier-001",
+    "cashierName": "สมชาย",
+    "posposData": {
+      "cash": 10000,
+      "qr": 5000,
+      "bank": 3000,
+      "government": 2000
+    },
+    "cashReconciliation": {
+      "expectedAmount": 20000,
+      "actualAmount": 20000,
+      "difference": 0,
+      "notes": ""
+    },
+    "total": 20000,
+    "status": "submitted",
+    "submittedAt": "2026-01-28T14:30:45.000Z",
+    "submittedBy": "auditor-001",
+    "auditNotes": ""
+  },
+  {
+    "id": "sales-1674968745000-xyz789uvw",
+    "date": "2026-01-29",
+    "cashierId": "cashier-002",
+    "cashierName": "สินใจ",
+    "posposData": {
+      "cash": 15000,
+      "qr": 8000,
+      "bank": 5000,
+      "government": 2000
+    },
+    "cashReconciliation": {
+      "expectedAmount": 30000,
+      "actualAmount": 30000,
+      "difference": 0,
+      "notes": ""
+    },
+    "total": 30000,
+    "status": "approved",
+    "submittedAt": "2026-01-29T15:45:30.000Z",
+    "submittedBy": "auditor-001",
+    "auditedAt": "2026-01-29T16:00:00.000Z",
+    "auditedBy": "auditor-001",
+    "auditNotes": "All records verified"
+  },
+  {
+    "id": "sales-1675054845000-def456ghi",
+    "date": "2026-01-30",
+    "cashierId": "cashier-001",
+    "cashierName": "สมชาย",
+    "posposData": {
+      "cash": 12000,
+      "qr": 6000,
+      "bank": 4000,
+      "government": 1500
+    },
+    "cashReconciliation": {
+      "expectedAmount": 23500,
+      "actualAmount": 23500,
+      "difference": 0,
+      "notes": ""
+    },
+    "total": 23500,
+    "status": "submitted",
+    "submittedAt": "2026-01-30T16:20:15.000Z",
+    "submittedBy": "auditor-001",
+    "auditNotes": ""
+  },
+  {
+    "id": "sales-1675141245000-jkl789mno",
+    "date": "2026-01-31",
+    "cashierId": "cashier-003",
+    "cashierName": "บัญชา",
+    "posposData": {
+      "cash": 8500,
+      "qr": 4200,
+      "bank": 1000,
+      "government": 900
+    },
+    "cashReconciliation": {
+      "expectedAmount": 14601,
+      "actualAmount": 14600,
+      "difference": -1,
+      "notes": ""
+    },
+    "total": 14600,
+    "status": "submitted",
+    "submittedAt": "2026-01-31T17:45:30.000Z",
+    "submittedBy": "current-user-id",
+    "auditNotes": ""
+  },
+  {
+    "id": "sales-1675227645000-pqr012stu",
+    "date": "2026-02-01",
+    "cashierId": "cashier-002",
+    "cashierName": "สินใจ",
+    "posposData": {
+      "cash": 18000,
+      "qr": 9500,
+      "bank": 6000,
+      "government": 2500
+    },
+    "cashReconciliation": {
+      "expectedAmount": 36000,
+      "actualAmount": 36000,
+      "difference": 0,
+      "notes": ""
+    },
+    "total": 36000,
+    "status": "audited",
+    "submittedAt": "2026-02-01T18:30:00.000Z",
+    "submittedBy": "auditor-001",
+    "auditedAt": "2026-02-01T19:00:00.000Z",
+    "auditedBy": "auditor-002",
+    "auditNotes": "Verified and balanced"
+  }
+]

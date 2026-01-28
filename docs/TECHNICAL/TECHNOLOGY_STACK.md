@@ -4,7 +4,7 @@
 - **Framework**: Nuxt 3 (Vue 3.5)
 - **Language**: TypeScript 5.9
 - **Styling**: Tailwind CSS 3.4
-- **State Management**: Pinia 0.11
+- **State Management**: Pinia 0.11 ([Comprehensive Store Architecture](#pinia-store-architecture))
 - **HTTP Client**: $fetch (Nuxt built-in)
 - **Form Validation**: Zod 4.3
 - **Date/Time**: Day.js 1.11

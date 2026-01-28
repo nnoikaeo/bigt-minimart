@@ -34,5 +34,10 @@ export const useAuthStore = defineStore('auth', {
     setLoading(loading: boolean) {
       this.isLoading = loading
     },
+
+    logout() {
+      this.clearUser()
+      this.isLoading = false
+    },
   },
 })

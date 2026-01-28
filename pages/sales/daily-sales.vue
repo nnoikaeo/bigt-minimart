@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import type { DailySalesEntry } from '~/composables/useDailySales'
-import { useDailySales } from '~/composables/useDailySales'
+import { ref, onMounted, computed } from 'vue'
+import { useSalesStore } from '~/stores/sales'
+import { useLogger } from '~/composables/useLogger'
+import type { DailySalesEntry } from '~/types/repositories'
 
 // Require authentication to access this page
 definePageMeta({
@@ -10,16 +11,7 @@ definePageMeta({
 
 // Setup
 const logger = useLogger('DailySales')
-const { 
-  fetchSales, 
-  fetchCashiers,
-  createSales, 
-  updateSales, 
-  deleteSales, 
-  sales, 
-  loading, 
-  error 
-} = useDailySales()
+const salesStore = useSalesStore()
 
 // Modal state
 const showModal = ref(false)
@@ -27,35 +19,39 @@ const editingEntry = ref<DailySalesEntry | null>(null)
 const successMessage = ref('')
 const submitError = ref('')
 
+// Computed properties from store
+const sales = computed(() => salesStore.getAllSales)
+const loading = computed(() => salesStore.isLoading)
+const error = computed(() => salesStore.error)
+
 // Load sales on mount
-onMounted(() => {
-  fetchSales()
+onMounted(async () => {
+  try {
+    await salesStore.fetchDailySales()
+  } catch (err: any) {
+    logger.error('Failed to fetch sales', err)
+  }
 })
 
 // Handle modal submit
-const handleModalSubmit = async (entry: Omit<DailySalesEntry, 'id' | 'createdAt' | 'updatedAt'>) => {
+const handleModalSubmit = async (entry: Omit<DailySalesEntry, 'id' | 'submittedAt'>) => {
   submitError.value = ''
   try {
-    if (editingEntry.value) {
+    if (editingEntry.value?.id) {
       // Update
-      const result = await updateSales(editingEntry.value.id!, entry)
-      if (result.success) {
-        successMessage.value = 'อัปเดตบันทึกยอดขายเรียบร้อย'
-        editingEntry.value = null
-        showModal.value = false
-      } else {
-        submitError.value = result.error || 'เกิดข้อผิดพลาดในการอัปเดต'
-      }
+      await salesStore.updateDailySale(editingEntry.value.id, entry)
+      successMessage.value = 'อัปเดตบันทึกยอดขายเรียบร้อย'
+      logger.log('Updated entry:', editingEntry.value.id)
     } else {
       // Create
-      const result = await createSales(entry)
-      if (result.success) {
-        successMessage.value = 'บันทึกยอดขายเรียบร้อย'
-        showModal.value = false
-      } else {
-        submitError.value = result.error || 'เกิดข้อผิดพลาดในการบันทึก'
-      }
+      await salesStore.addDailySale(entry)
+      successMessage.value = 'บันทึกยอดขายเรียบร้อย'
+      logger.log('Created new entry')
     }
+    
+    editingEntry.value = null
+    showModal.value = false
+    
     // Clear success message after 3 seconds
     setTimeout(() => {
       successMessage.value = ''
@@ -74,16 +70,19 @@ const handleEdit = (entry: DailySalesEntry) => {
 
 // Handle delete
 const handleDelete = async (id: string) => {
-  if (confirm('คุณแน่ใจว่าต้องการลบบันทึกนี้?')) {
-    const result = await deleteSales(id)
-    if (result.success) {
-      successMessage.value = 'ลบบันทึกเรียบร้อย'
-      setTimeout(() => {
-        successMessage.value = ''
-      }, 3000)
-    } else {
-      submitError.value = result.error || 'เกิดข้อผิดพลาดในการลบ'
-    }
+  // Confirmation is already handled in DailySalesTable component
+  // So we just proceed with deletion directly
+  try {
+    logger.log('Deleting entry:', id)
+    await salesStore.deleteDailySale(id)
+    successMessage.value = 'ลบบันทึกเรียบร้อย'
+    logger.log('Deleted entry:', id)
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 3000)
+  } catch (err: any) {
+    submitError.value = err.message || 'เกิดข้อผิดพลาดในการลบ'
+    logger.error('Error deleting entry', err)
   }
 }
 
@@ -97,7 +96,6 @@ const handleModalClose = () => {
 // Open create modal
 const openCreateModal = () => {
   editingEntry.value = null
-  fetchCashiers() // Load cashiers when opening modal
   showModal.value = true
 }
 </script>

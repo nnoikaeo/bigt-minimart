@@ -82,8 +82,22 @@ STEP 5: Auditor ตรวจสอบต่อไป (Week 4)
 2. `components/DailySalesTable.vue` - Table display
 3. `components/DailySalesModal.vue` - Form modal
 
-**Composable to Create**:
-- `composables/useDailySales.ts` - API interactions & state management
+**Repository Pattern** (Data Abstraction Layer):
+- Phase 1 (Development): Uses `SalesJsonRepository` ([Code](../../server/repositories/sales-json.repository.ts))
+- Phase 2+ (Production): Switch to `SalesFirestoreRepository` ([Code](../../server/repositories/sales-firestore.repository.ts))
+- Interface: `ISalesRepository` ([Types](../../types/repositories.ts))
+- Data Source: `public/data/daily-sales.json` (Phase 1) → Firestore `daily_sales` collection (Phase 2+)
+- **Benefit**: Change data source with single import update (no UI/store changes needed)
+
+**Store to Create** (using Pinia + Repository):
+- `stores/sales.ts` - Daily Sales Store ([Architecture Guide](../TECHNICAL/STATE_MANAGEMENT_ARCHITECTURE.md#repository-pattern))
+  - Uses: `salesJsonRepository` in Phase 1 (imports from `server/repositories/sales-json.repository.ts`)
+  - State: dailySales, filters, stats, syncStatus
+  - Getters: getAllSales, getPendingSales, getSalesStats, getFilteredSales
+  - Actions: fetchDailySales, addDailySale, updateDailySale, approveSale, calculateStats
+
+**Composable to Update**:
+- `composables/useDailySales.ts` - API interactions (refactor to work with sales store)
 
 **API Endpoints to Create**:
 ```
@@ -94,14 +108,14 @@ PUT    /api/daily-sales/[id]      - Update entry
 DELETE /api/daily-sales/[id]      - Delete entry
 ```
 
-**Database Schema**:
-```typescript
-Collection: daily_sales
+**Data Interface** (Repository-Agnostic):
 
-interface DailySales {
+```typescript
+// Defined in types/repositories.ts
+interface DailySalesEntry {
   // Identification
-  id: string;                              // Auto-generated
-  date: Timestamp;                         // Entry date
+  id: string;                              // Auto-generated (UUID v4)
+  date: string;                            // ISO format: YYYY-MM-DD
   
   // Cashier Info
   cashierId: string;                       // Firebase UID
@@ -127,17 +141,22 @@ interface DailySales {
   
   // Status & Workflow
   status: "submitted" | "audited" | "approved";
-  submittedAt: Timestamp;
+  submittedAt: string;                     // ISO format timestamp
   submittedBy: string;                     // Auditor UID
-  auditedAt?: Timestamp;
-  auditedBy?: string;
+  auditedAt?: string;                      // ISO format timestamp
+  auditedBy?: string;                      // Auditor UID
   auditNotes?: string;
   
   // System
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: string;                       // ISO format timestamp
+  updatedAt: string;                       // ISO format timestamp
 }
 ```
+
+**Storage Format**:
+- **Phase 1 (JSON)**: Stored in `public/data/daily-sales.json` as array of `DailySalesEntry`
+- **Phase 2+ (Firestore)**: Stored in `daily_sales` collection (dates converted to Timestamps during migration)
+- **API Contract**: All endpoints return/accept `DailySalesEntry` regardless of storage backend
 
 **UI/Table Columns**:
 - 📅 วันที่ (Date)
@@ -155,19 +174,35 @@ interface DailySales {
 
 **Objective**: Daily expenses tracking and audit system
 
+**Repository Pattern**:
+- Phase 1 (Development): Uses `ExpenseJsonRepository` (in `server/repositories/expense-json.repository.ts`)
+- Phase 2+ (Production): Switch to `ExpenseFirestoreRepository` (in `server/repositories/expense-firestore.repository.ts`)
+- Interface: `IExpenseRepository` (in `types/repositories.ts`)
+- Data Source: `public/data/daily-expenses.json` (Phase 1) → Firestore `daily_expenses` collection (Phase 2+)
+
+**Store to Create** (using Pinia + Repository):
+- `stores/finance.ts` - Finance Store ([Architecture Guide](../TECHNICAL/STATE_MANAGEMENT_ARCHITECTURE.md))
+  - Uses: `expenseJsonRepository` in Phase 1
+  - State: expenses, filters, categories, totals
+  - Getters: getAllExpenses, getExpensesByCategory, getExpenseTotals, getExpensesByDate
+  - Actions: fetchExpenses, addExpense, updateExpense, deleteExpense, calculateCategoryTotals
+
 **Task 4.1**: Daily Expenses Form
 - Manager บันทึกรายจ่ายรายวัน
-- Categories: Stock purchase, Other
-- Validation: Receipt upload, amount > 0
+- Categories: Stock purchase, Supplies, Utilities, Other
+- Validation: Receipt upload, amount > 0, category selection
+- Uses: `stores/finance.ts` with `expenseJsonRepository`
 
 **Task 4.2**: Audit Check Page
-- Auditor ตรวจสอบข้อมูล Daily Sales + Expenses
+- Auditor ตรวจสอบข้อมูล Daily Sales + Expenses (cross-store operation)
+- Uses data from: `stores/sales.ts` + `stores/finance.ts`
 - Reconciliation: Negate discrepancies
 - Approval workflow: Submitted → Audited → Approved
 
 **Task 4.3**: Audit Summary Report
 - Daily audit log display
 - Filter by date, status, auditor
+- Aggregate data from sales + expenses stores
 - Export functionality
 
 ---
@@ -176,27 +211,128 @@ interface DailySales {
 
 **Objective**: Analytics and reporting for Owner/Manager
 
+**Cross-Store Architecture**:
+- Aggregates data from multiple stores (sales + finance)
+- Uses Repository Pattern for consistent data access
+- Charts and filters work with JSON data in Phase 1
+- Automatic migration to Firestore queries in Phase 2+
+
+**Store to Create** (using Pinia + Repository):
+- `stores/reports.ts` - Reports Store ([Architecture Guide](../TECHNICAL/STATE_MANAGEMENT_ARCHITECTURE.md))
+  - Uses: Data from `stores/sales.ts` + `stores/finance.ts` (getters)
+  - State: selectedDateRange, reportFilters, cachedResults
+  - Getters: getDailySalesReport, getExpenseReport, getReconciliationReport, getDashboardMetrics
+  - Actions: generateSalesReport, generateExpenseReport, generateReconciliationReport, calculateMetrics
+
 **Task 5.1**: Analytics Dashboard
-- Daily sales trend (Chart)
-- Expense breakdown (Pie chart)
-- Cash vs. Digital payments ratio
-- Audit status overview
+- Daily sales trend (Chart) - Data from `stores/sales.ts`
+- Expense breakdown (Pie chart) - Data from `stores/finance.ts`
+- Cash vs. Digital payments ratio - Calculated from sales store
+- Audit status overview - Cross-store aggregation
+- All data access via Repository Pattern
 
 **Task 5.2**: Reports Page
-- Sales report (Daily/Weekly/Monthly)
-- Expense report
-- Reconciliation summary
+- Sales report (Daily/Weekly/Monthly) - Aggregated from `stores/sales.ts`
+- Expense report - Aggregated from `stores/finance.ts`
+- Reconciliation summary - Cross-store calculation
 - Export to CSV/Excel
 
 **Task 5.3**: Advanced Features
-- Filters (Date range, Cashier, Category)
-- Charts (Line, Bar, Pie)
-- Pagination & sorting
-- Print functionality
+- Filters (Date range, Cashier, Category) - Applied at store level
+- Charts (Line, Bar, Pie) - Data from repositories
+- Pagination & sorting - In-memory using arrays
+- Print functionality - Works with cached data
 
 ---
 
-## 🔄 Phase 2: Reports & Export (Future)
+## � Data Persistence Strategy
+
+### Phase 1: Development with JSON (Week 1-5)
+
+**Approach**: Repository Pattern with JSON implementation
+
+**Benefits**:
+- ✅ Fast iteration on data structures (no schema migration)
+- ✅ Easy to reset test data (delete/recreate `public/data/*.json`)
+- ✅ No database credentials needed locally
+- ✅ Perfect for UX/UI refinement with rapid changes
+- ✅ Version control friendly (git diff shows data changes)
+
+**Storage**:
+- `public/data/daily-sales.json` - Managed by `SalesJsonRepository`
+- `public/data/daily-expenses.json` - Managed by `ExpenseJsonRepository`
+- Both are arrays of typed interfaces (`DailySalesEntry`, `ExpenseEntry`)
+
+**Data Access**:
+```
+Component → Store (Pinia) → Repository Interface → JSON File
+```
+
+**Implementation Files**:
+- `types/repositories.ts` - Interface definitions
+- `server/repositories/sales-json.repository.ts` - JSON implementation
+- `server/repositories/expense-json.repository.ts` - JSON implementation (to be created)
+- `stores/sales.ts` - Uses `salesJsonRepository`
+- `stores/finance.ts` - Uses `expenseJsonRepository`
+
+### Phase 2: Migration to Firestore (Week 6+)
+
+**Transition Plan**:
+
+1. **Create Firestore Repositories**:
+   - `server/repositories/sales-firestore.repository.ts` (already created)
+   - `server/repositories/expense-firestore.repository.ts` (to be created)
+   - Implement same interfaces as JSON versions
+
+2. **Migrate Data**:
+   ```
+   public/data/daily-sales.json → Firestore collection 'daily_sales'
+   public/data/daily-expenses.json → Firestore collection 'daily_expenses'
+   ```
+
+3. **Update Imports** (single location per store):
+   ```typescript
+   // Before (Phase 1):
+   import { salesJsonRepository } from '@/server/repositories/sales-json.repository';
+   
+   // After (Phase 2):
+   import { salesFirestoreRepository } from '@/server/repositories/sales-firestore.repository';
+   ```
+
+4. **No Changes Required**:
+   - ✅ Component code (same store interface)
+   - ✅ Store structure (same getters/actions)
+   - ✅ API endpoints (same contract)
+   - ✅ Type definitions (same interfaces)
+   - ✅ UI/UX (no changes)
+
+**Firestore Setup** (Week 6):
+- Create collections: `daily_sales`, `daily_expenses`
+- Set up security rules
+- Create Firestore repositories
+- Run migration script (convert JSON to Firestore)
+- Update imports
+- Test with Phase 1 data
+
+### Why This Approach?
+
+**Problem**: During development, UX/UI changes frequently → Firestore schema adjustments cause problems
+
+**Solution**: 
+- Develop with flexible JSON structure (no schema constraints)
+- Use Repository Pattern to abstract storage implementation
+- Switch to Firestore when development stabilizes
+- **Zero rework**: Components don't know or care about backend
+
+**Timing**:
+- **Weeks 1-5**: Rapid iteration with JSON (low friction)
+- **Week 5**: Finalize data structures
+- **Week 6**: Create Firestore collections
+- **Week 6+**: Switch imports (single change per store)
+
+---
+
+## �🔄 Phase 2: Reports & Export (Future)
 
 **Objective**: Google Sheets integration and automated reporting
 

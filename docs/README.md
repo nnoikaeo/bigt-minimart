@@ -32,10 +32,12 @@ Technical architecture and implementation details.
 
 - [FULL_SPECIFICATION.md](./TECHNICAL/FULL_SPECIFICATION.md) - Complete technical specification
 - [TECHNOLOGY_STACK.md](./TECHNICAL/TECHNOLOGY_STACK.md) - Technology choices and versions
+- [STATE_MANAGEMENT_ARCHITECTURE.md](./TECHNICAL/STATE_MANAGEMENT_ARCHITECTURE.md) - Pinia + Repository Pattern guide
 - [DATABASE_SCHEMA.md](./TECHNICAL/DATABASE_SCHEMA.md) - Firestore data structure
 - [API_ENDPOINTS.md](./TECHNICAL/API_ENDPOINTS.md) - REST API documentation
 - [FIREBASE_SETUP.md](./TECHNICAL/FIREBASE_SETUP.md) - Firebase configuration and setup
 - [FIREBASE_HOSTING_SETUP.md](./TECHNICAL/FIREBASE_HOSTING_SETUP.md) - Firebase Hosting technical setup
+- [ROLE_BASED_ACCESS_CONTROL.md](./TECHNICAL/ROLE_BASED_ACCESS_CONTROL.md) - RBAC implementation guide
 
 ### 🎨 [DESIGN/](./DESIGN/) - UI/UX Guidelines
 Design standards and visual guidelines.

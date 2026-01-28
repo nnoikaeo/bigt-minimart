@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, reactive, watch, computed, onMounted } from 'vue'
-import type { DailySalesEntry, Cashier } from '~/composables/useDailySales'
+import { ref, reactive, watch, computed } from 'vue'
+import { useLogger } from '~/composables/useLogger'
+import type { DailySalesEntry } from '~/types/repositories'
 
 interface Props {
   open: boolean
@@ -14,14 +15,42 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   close: []
-  submit: [entry: Omit<DailySalesEntry, 'id' | 'createdAt' | 'updatedAt'>]
+  submit: [entry: Omit<DailySalesEntry, 'id' | 'submittedAt'>]
 }>()
 
 const logger = useLogger('DailySalesModal')
-const { calculateTotal, validateEntry, formatCurrency, formatStatus, cashiers, fetchCashiers } = useDailySales()
 
-// Form state
-const formData = reactive({
+// Helper functions
+const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat('th-TH', {
+    style: 'currency',
+    currency: 'THB',
+    minimumFractionDigits: 0,
+  }).format(amount)
+}
+
+const calculateTotal = (posposData: any): number => {
+  return (posposData.cash || 0) + (posposData.qr || 0) + (posposData.bank || 0) + (posposData.government || 0)
+}
+
+// Mock cashiers for now - replace with actual data later
+const cashiers = ref([
+  { id: 'cashier-001', name: 'สมชาย ใจดี' },
+  { id: 'cashier-002', name: 'สินใจ ขยัน' },
+  { id: 'cashier-003', name: 'บัญชา สุวรรณ' },
+])
+
+// Form state with explicit type annotation
+interface FormDataType {
+  date: string
+  cashierId: string
+  cashierName: string
+  posposData: { cash: number; qr: number; bank: number; government: number }
+  cashReconciliation: { expectedAmount: number; actualAmount: number; difference: number; notes: string }
+  status: 'submitted' | 'audited' | 'approved'
+}
+
+const formData = reactive<FormDataType>({
   date: '',
   cashierId: '',
   cashierName: '',
@@ -37,17 +66,14 @@ const formData = reactive({
     difference: 0,
     notes: '',
   },
-  status: 'submitted' as const,
+  status: 'submitted',
 })
+
+logger.log('Form initialized:', formData)
 
 const validationErrors = ref<Record<string, string>>({})
 const submitting = ref(false)
 const successMessage = ref('')
-
-// Load cashiers on mount
-onMounted(() => {
-  fetchCashiers()
-})
 
 // Calculate totals
 const totalAmount = computed(() => calculateTotal(formData.posposData))
@@ -72,16 +98,28 @@ watch(
   }
 )
 
-// Watch cashier selection - auto-fill ID when cashier name is selected
-watch(
-  () => formData.cashierName,
-  (selectedName) => {
-    const selected = cashiers.value.find(c => c.name === selectedName)
-    if (selected) {
-      formData.cashierId = selected.id
-    }
+// Handle cashier selection change
+const handleCashierChange = (event: Event) => {
+  const target = event.target as HTMLSelectElement
+  const selectedId = target.value
+  logger.log('[handleCashierChange] Selected ID:', selectedId)
+  
+  if (!selectedId) {
+    formData.cashierId = ''
+    formData.cashierName = ''
+    logger.log('[handleCashierChange] Cleared selection')
+    return
   }
-)
+  
+  const selected = cashiers.value.find(c => c.id === selectedId)
+  logger.log('[handleCashierChange] Found cashier:', selected)
+  
+  if (selected) {
+    formData.cashierId = selected.id
+    formData.cashierName = selected.name
+    logger.log('✅ Cashier updated:', { id: formData.cashierId, name: formData.cashierName })
+  }
+}
 
 // Initialize form for edit mode
 watch(
@@ -92,7 +130,11 @@ watch(
       formData.cashierId = entry.cashierId
       formData.cashierName = entry.cashierName
       formData.posposData = { ...entry.posposData }
-      formData.cashReconciliation = { ...entry.cashReconciliation }
+      // Ensure notes is always a string
+      formData.cashReconciliation = {
+        ...entry.cashReconciliation,
+        notes: entry.cashReconciliation.notes || '',
+      }
       formData.status = entry.status
     }
   }
@@ -117,25 +159,51 @@ const resetForm = () => {
 
 // Validate and submit
 const handleSubmit = async () => {
+  logger.log('[handleSubmit] FormData before validation:', formData)
+  logger.log('[handleSubmit] cashierId:', formData.cashierId)
+  logger.log('[handleSubmit] cashierName:', formData.cashierName)
+  
   validationErrors.value = {}
-  const validation = validateEntry(formData)
 
-  if (!validation.valid) {
-    validationErrors.value = validation.errors
-    logger.warn('Validation failed', validation.errors)
+  // Basic validation
+  if (!formData.date) {
+    validationErrors.value.date = 'วันที่เป็นข้อมูลที่จำเป็น'
+  }
+
+  if (!formData.cashierId) {
+    validationErrors.value.cashierId = 'แคชเชียร์เป็นข้อมูลที่จำเป็น'
+  }
+
+  if (!formData.cashierName) {
+    validationErrors.value.cashierName = 'ชื่อแคชเชียร์เป็นข้อมูลที่จำเป็น'
+  }
+
+  if (totalAmount.value === 0) {
+    validationErrors.value.posposData = 'กรุณากรอกยอดขายอย่างน้อย 1 ช่องทาง'
+  }
+
+  if (Object.keys(validationErrors.value).length > 0) {
+    logger.warn('Validation failed', validationErrors.value)
     return
   }
 
   submitting.value = true
   try {
     logger.log('Submitting daily sales entry', formData)
-    emit('submit', {
+  emit('submit', {
       date: formData.date,
       cashierId: formData.cashierId,
       cashierName: formData.cashierName,
       posposData: formData.posposData,
-      cashReconciliation: formData.cashReconciliation,
+      cashReconciliation: {
+        expectedAmount: formData.cashReconciliation.expectedAmount,
+        actualAmount: formData.cashReconciliation.actualAmount,
+        difference: formData.cashReconciliation.difference,
+        notes: formData.cashReconciliation.notes || '', // Ensure notes is always a string
+      },
       status: formData.status,
+      submittedBy: 'current-user-id', // Will be set by store/page
+      auditNotes: '',
     })
     successMessage.value = 'บันทึกข้อมูลสำเร็จ'
     setTimeout(() => {
@@ -213,16 +281,20 @@ const handleClose = () => {
                 แคชเชียร์ <span class="text-red-500">*</span>
               </label>
               <select
-                v-model="formData.cashierName"
+                v-model="formData.cashierId"
+                @change="handleCashierChange"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
               >
                 <option value="">-- เลือกแคชเชียร์ --</option>
-                <option v-for="cashier in cashiers" :key="cashier.id" :value="cashier.name">
+                <option v-for="cashier in cashiers" :key="cashier.id" :value="cashier.id">
                   {{ cashier.name }}
                 </option>
               </select>
               <p v-if="validationErrors.cashierId" class="text-red-500 text-sm mt-1">
                 {{ validationErrors.cashierId }}
+              </p>
+              <p v-if="validationErrors.cashierName" class="text-red-500 text-sm mt-1">
+                {{ validationErrors.cashierName }}
               </p>
             </div>
           </div>
