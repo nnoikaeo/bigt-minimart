@@ -972,67 +972,106 @@ Auditor → Verify & Check (Workflow 3.2)
 
 ### Real-World Example
 
-**Scenario**: Manager records daily income & expenses based on approved Daily Sales (19,350 บาท from Workflow 1.3-1.4)
+**Scenario**: Manager records daily income & expenses from multiple sources (Cash Sales, Money Transfer Service, Bill Payment Service, and Government Programs)
 
-**Step 1: Manager Gets Daily Sales Data (Already Approved)**
+**Step 1: Manager Gets Data From All Sources**
 ```
-From /sales/daily-sales → Approved entry:
-- Date: 2026-01-29
-- Daily Sales Total: 19,350 บาท
-  * Cash: 9,800 บาท
-  * QR: 4,500 บาท
-  * Bank: 3,100 บาท
-  * Government: 1,950 บาท
-- Status: approved (by Owner in Workflow 1.4)
+From various sources (already approved):
+- Cash Sales (from POS): 5,000 บาท
+- /finance/money-transfer-service → Service Fee Cash: 150 บาท
+- /finance/money-transfer-service → Service Fee Transfer: 50 บาท
+- /finance/bill-payment-service → Bill Payment Fees: 30 บาท
+- Government Programs (from POS): 1,500 บาท
+- Other Cash Income: (as needed)
 ```
 
-**Step 2: Manager Adds Income Data**
+**Step 2: Manager Records Income Data**
 ```
 /finance/daily-expenses → New Record:
 
-INCOME SECTION:
-1. Daily Sales (from /sales/daily-sales approved): 19,350 บาท
+INCOME SECTION (รายรับ):
+1. เงินสดขาย (จาก POS):
+   - Cash sales from products: 9,800 บาท
+   - (Includes: document copying, phone top-up service, etc.)
 
-2. Service Income (additional):
-   - Money transfer service fees: 150 บาท
-   - Withdrawal service fees: 100 บาท
-   - Bill payment service fees: 50 บาท
-   - Other service fees: 50 บาท
-   Total service income: 350 บาท
+2. เงินโอนขาย (จาก POS - Customer Transfer/QR):
+   - Transfer sales (PromptPay, Bank Transfer, etc.): 4,500 บาท
+   - (Customer paid via QR Code or bank transfer)
 
-TOTAL INCOME: 19,350 + 350 = 19,700 บาท
+3. เงินจากโครงการของรัฐ (Government Programs):
+   - From POS government programs total
+   - Example: 1,950 บาท
+
+4. ค่าบริการจาก Money Transfer:
+   - Service fees: 150 บาท
+
+5. ค่าบริการจาก Bill Payment:
+   - Service fees: 50 บาท
+
+6. เงินสดรับอื่นๆ:
+   - Other cash received: 200 บาท
+   - (Any cash not from categories 1-5)
+
+TOTAL INCOME (รวมรายรับ): 9,800 + 4,500 + 1,950 + 150 + 50 + 200 = 16,650 บาท
 ```
 
-**Step 3: Manager Adds Expense Data**
+**Step 3: Manager Records Expense Data (เงินสดจ่าย)**
 ```
-EXPENSE SECTION:
-1. Stock Purchases (cash payment): 5,000 บาท
-   - Examples: Rice, oil, snacks, beverages, etc.
+EXPENSE GROUP 1: เงินสดจ่ายหน้าร้าน (Cash Payment at Store)
+1.1 เงินซื้อสินค้าหน้าร้าน (Vendor sales at store): 3,000 บาท
+1.2 ค่าจ้างพนักงานรายวัน (Daily wages - paid every day): 1,200 บาท
+1.3 โอทีพนักงานรายวัน (Daily OT - paid on 1st & 16th of month): 300 บาท
+1.4 ค่าน้ำ (Water - paid monthly): 300 บาท
+Subtotal Cash at Store: 4,800 บาท
 
-2. Stock Purchases (transfer payment): 2,000 บาท
-   - Via bank transfer to suppliers
+EXPENSE GROUP 2: เงินโอนจ่าย (Bank Transfer Payment)
+2.1 เงินโอนจ่ายหน้าร้าน (Transfer for store needs): 1,200 บาท
+2.2 แม็คโคร (Makro - Credit card payment): 2,500 บาท
+2.3 ของสด (Fresh goods - Transfer only): 1,800 บาท
+2.4 ออนไลน์ (Online purchase - Transfer only): 800 บาท
+2.5 วีเพย์ (V-Pay mobile top-up system): 500 บาท
+Subtotal Bank Transfer: 6,800 บาท
 
-3. Other Daily Expenses: 500 บาท
-   - Utilities (water, electricity): 300 บาท
-   - Supplies (bags, cleaning): 200 บาท
+EXPENSE GROUP 3: แบ่งตามพื้นที่ซื้อสินค้า (By Purchase Location)
+3.1 อำเภอสองพี่น้อง (Song Phi Nong district): 2,000 บาท
+3.2 อำเภอเมือง (Muang district): 3,500 บาท
+Subtotal by Location: 5,500 บาท
 
-TOTAL EXPENSES: 5,000 + 2,000 + 500 = 7,500 บาท
+EXPENSE GROUP 4: สินค้าเฉพาะกลุ่ม (Specific Product Categories)
+4.1 ข้าวสาร (Rice - จาก หจก.โรงสีรังสรรค์พืชผล): 2,000 บาท
+4.2 อุปกรณ์ตกปลา (Fishing equipment): 1,200 บาท
+Subtotal by Product: 3,200 บาท
+
+EXPENSE GROUP 5: รายจ่ายอื่นๆ (Other Expenses - Manager can record all)
+5.1 เงินเดือน (Salary): 2,000 บาท
+5.2 โอที (Overtime): 500 บาท
+5.3 ภาษี (Tax): 300 บาท
+5.4 อื่นๆ (Others): 400 บาท
+Subtotal Other: 3,200 บาท
+
+TOTAL EXPENSES (รวมรายจ่าย): 4,800 + 6,800 + 5,500 + 3,200 + 3,200 = 23,500 บาท
+(Note: Groups can overlap - it's for tracking purposes, not adding all)
 ```
 
 **Step 4: System Calculates Summary**
 ```
-Income Summary:
-├─ Daily Sales: 19,350 บาท
-├─ Service Income: 350 บาท
-└─ Total Income: 19,700 บาท
+Income Summary (รวมรายรับ):
+├─ Cash Sales: 9,800 บาท
+├─ Money Transfer Fees: 150 บาท
+├─ Bill Payment Fees: 50 บาท
+├─ Other Cash Received: 200 บาท
+├─ Government Programs: 1,950 บาท
+└─ Total Income: 12,150 บาท
 
-Expense Summary:
-├─ Stock Purchases (cash): 5,000 บาท
-├─ Stock Purchases (transfer): 2,000 บาท
-├─ Other Expenses: 500 บาท
-└─ Total Expenses: 7,500 บาท
+Expense Summary (รวมรายจ่าย):
+├─ Cash at Store: 4,800 บาท
+├─ Bank Transfer: 6,800 บาท
+├─ By Location: 5,500 บาท (reference)
+├─ By Product: 3,200 บาท (reference)
+├─ Other Expenses: 3,200 บาท
+└─ Total Expenses: 23,500 บาท
 
-Net Profit (Income - Expense): 19,700 - 7,500 = 12,200 บาท
+Net Result: 12,150 - 23,500 = -11,350 บาท (loss/investment day)
 
 Status: ⚠️ PENDING AUDITOR REVIEW
 ```
@@ -1044,80 +1083,202 @@ Status: ⚠️ PENDING AUDITOR REVIEW
 - managerId: manager-001
 - managerName: วีระ
 
-INCOME DATA:
-- dailySalesApprovedAmount: 19,350 (from /sales/daily-sales id)
-- serviceIncome:
-  * moneyTransferFees: 150
-  * withdrawalFees: 100
-  * billPaymentFees: 50
-  * otherServiceFees: 50
-  * totalServiceIncome: 350
-- totalIncome: 19,700
+INCOME DATA (รายรับ):
+- cashSalesFromPos: 9,800
+- moneyTransferServiceFees: 150
+- billPaymentServiceFees: 50
+- otherCashReceived: 200
+- governmentProgramsIncome: 1,950
+- totalIncome: 12,150
 
-EXPENSE DATA:
-- stockPurchasesCash: 5,000
-- stockPurchasesTransfer: 2,000
-- utilities: 300
-- supplies: 200
-- otherExpenses: 500
-- totalExpenses: 7,500
+EXPENSE DATA - CASH PAYMENTS (เงินสดจ่าย):
+- vendorCashAtStore: 3,000
+- dailyWagesAndOT: 1,500
+- waterExpense: 300
+- totalCashAtStore: 4,800
+
+EXPENSE DATA - BANK TRANSFERS (เงินโอนจ่าย):
+- transferForStore: 1,200
+- makroCredit: 2,500
+- freshGoodsTransfer: 1,800
+- onlineShoppingTransfer: 800
+- vPayTransfer: 500
+- totalBankTransfer: 6,800
+
+EXPENSE DATA - BY LOCATION (แบ่งตามพื้นที่):
+- songPhiNongDistrict: 2,000
+- muangDistrict: 3,500
+- totalByLocation: 5,500
+
+EXPENSE DATA - BY PRODUCT (สินค้าเฉพาะกลุ่ม):
+- riceFromSupplier: 2,000
+- fishingEquipment: 1,200
+- totalByProduct: 3,200
+
+EXPENSE DATA - OTHER (รายจ่ายอื่นๆ):
+- salary: 2,000
+- overtime: 500
+- tax: 300
+- others: 400
+- totalOtherExpenses: 3,200
+
+EXPENSE SUMMARY:
+- totalExpenses: 23,500
+  (Primary: Cash at Store + Bank Transfer = 4,800 + 6,800 = 11,600)
+  (Reference breakdowns: By Location, By Product for tracking)
 
 SUMMARY:
-- netProfit: 12,200
-- managerNotes: "All stock purchases verified with receipts"
+- totalIncome: 16,650
+- totalExpenses: 23,500
+- netResult: -6,850
+- managerNotes: "Daily records entered. Investment day with major stock purchases."
 
 STATUS: "submitted" (auto-set)
 submittedAt: 2026-01-29 17:30:00
 submittedBy: manager-001
 
 [Send notification to Auditor]
-Auditor → Verify & Check (Workflow 2.2)
+Auditor → Verify & Check (Workflow 4.2)
 ```
 
 ---
 
 ### Process Flow
 ```
-[Start] → Get approved Daily Sales data
-        ↓
-     Go to /finance/daily-expenses page
+[Start] → Go to /finance/daily-expenses page
         ↓
      Click "บันทึกใหม่" (New Record)
         ↓
-     ADD INCOME DATA:
-     1. Copy Daily Sales amount from /sales/daily-sales
-        - Pull "approved" entries
-        - Daily sales: 19,350 บาท
+     RECORD INCOME DATA (รายรับ):
+     ════════════════════════════════════════
+     1. เงินสดขาย (Cash Sales from POS):
+        - Enter amount from /sales/daily-sales
+        - Example: 9,800 บาท
         ↓
-     2. Add service income (additional):
-        - Money transfer service fees: 150 บาท
-        - Withdrawal service fees: 100 บาท
-        - Bill payment service fees: 50 บาท
-        - Other service fees: 50 บาท
-        - Total service income: 350 บาท
+     2. เงินโอนขาย (Transfer Sales from POS):
+        - Enter transfer amount (QR/Bank)
+        - Example: 4,500 บาท
         ↓
-     TOTAL INCOME: 19,700 บาท
+     3. เงินจากโครงการของรัฐ (Government Programs):
+        - From POS government programs total
+        - Example: 1,950 บาท
         ↓
-     ADD EXPENSE DATA:
-     1. Stock purchases (cash payment): 5,000 บาท
-     2. Stock purchases (transfer payment): 2,000 บาท
-     3. Other daily expenses: 500 บาท
-        - Utilities, supplies, etc.
+     4. ค่าบริการ Money Transfer:
+        - Enter from /finance/money-transfer-service
+        - Example: 150 บาท
         ↓
-     TOTAL EXPENSES: 7,500 บาท
+     5. ค่าบริการ Bill Payment:
+        - Enter from /finance/bill-payment-service
+        - Example: 50 บาท
         ↓
-     [System calculates]:
-     - Total Income: 19,700 บาท
-     - Total Expenses: 7,500 บาท
-     - Net Profit: 12,200 บาท
+     6. เงินสดรับอื่นๆ (Other Cash Received):
+        - Miscellaneous cash income
+        - Example: 200 บาท (if any)
+        ↓
+     [System calculates]: Total Income = sum of 1-6
+        ↓
+     RECORD EXPENSE DATA (รายจ่าย):
+     ════════════════════════════════════════
+     GROUP 1: เงินสดจ่ายหน้าร้าน (Cash at Store):
+     ─────────────────────────────────────────
+     1.1 เงินซื้อสินค้าหน้าร้าน:
+         - Vendor purchases at store
+         - Example: 3,000 บาท
+         ↓
+     1.2 ค่าจ้างพนักงานรายวัน:
+         - Daily wages (paid every day)
+         - Example: 1,200 บาท
+         ↓
+     1.3 โอทีพนักงานรายวัน:
+         - Daily OT (paid on 1st & 16th)
+         - Example: 300 บาท
+         ↓
+     1.4 ค่าน้ำ:
+         - Water expense (paid monthly)
+         - Example: 300 บาท
+         ↓
+     [Subtotal Cash at Store]: 4,800 บาท
+        ↓
+     GROUP 2: เงินโอนจ่าย (Bank Transfer):
+     ────────────────────────────────────────
+     2.1 เงินโอนจ่ายหน้าร้าน:
+         - Transfer for store operations
+         - Example: 1,200 บาท
+         ↓
+     2.2 แม็คโคร:
+         - Makro wholesale purchases
+         - Example: 2,500 บาท
+         ↓
+     2.3 ของสด (Fresh Goods):
+         - Fresh produce suppliers
+         - Example: 1,800 บาท
+         ↓
+     2.4 ออนไลน์ (Online):
+         - Online shopping/delivery
+         - Example: 800 บาท
+         ↓
+     2.5 วีเพย์ (V-Pay):
+         - Mobile prepaid system transfers
+         - Example: 500 บาท
+         ↓
+     [Subtotal Bank Transfer]: 6,800 บาท
+        ↓
+     GROUP 3: แบ่งตามพื้นที่ (By Location):
+     ──────────────────────────────────────
+     3.1 อำเภอสองพี่น้อง:
+         - Song Phi Nong district purchases
+         - Example: 2,000 บาท
+         ↓
+     3.2 อำเภอเมือง:
+         - Muang district purchases
+         - Example: 3,500 บาท
+         ↓
+     [Subtotal by Location]: 5,500 บาท (reference for tracking)
+        ↓
+     GROUP 4: สินค้าเฉพาะกลุ่ม (By Product Category):
+     ───────────────────────────────────────────────
+     4.1 ข้าวสาร:
+         - Rice from หจก.โรงสีรังสรรค์พืชผล
+         - Example: 2,000 บาท
+         ↓
+     4.2 อุปกรณ์ตกปลา:
+         - All fishing equipment purchases
+         - Example: 1,200 บาท
+         ↓
+     [Subtotal by Product]: 3,200 บาท (reference for tracking)
+        ↓
+     GROUP 5: รายจ่ายอื่นๆ (Other Expenses):
+     ──────────────────────────────────────
+     5.1 เงินเดือน (Salary):
+         - Employee salary
+         - Example: 2,000 บาท
+         ↓
+     5.2 โอที (Overtime):
+         - Overtime payment
+         - Example: 500 บาท
+         ↓
+     5.3 ภาษี (Tax):
+         - Tax payment
+         - Example: 300 บาท
+         ↓
+     5.4 อื่นๆ (Others):
+         - Miscellaneous expenses
+         - Example: 400 บาท
+         ↓
+     [Subtotal Other Expenses]: 3,200 บาท
+        ↓
+     [System calculates total expenses]:
+     Note: Primary calculation = Cash at Store + Bank Transfer
+           (Groups 3-5 are for tracking/reporting reference)
         ↓
      Add manager notes (if needed):
-     - "All stock purchases verified with receipts"
+     - Summary of major purchases
+     - Any special circumstances
         ↓
      [Submit] → Status: "submitted" (auto)
         ↓
      Send summary to Auditor:
-     - Income summary
+     - Income breakdown
      - Expense breakdown
      - Manager notes
         ↓
@@ -1125,40 +1286,70 @@ Auditor → Verify & Check (Workflow 2.2)
 ```
 
 ### Details
-- **Role**: ผู้จัดการ (Manager)
+- **Role**: ผู้จัดการหรือผู้ช่วยผู้จัดการ (Manager/Assistant Manager)
 - **Page**: /finance/daily-expenses (Daily Income/Expense Recording)
-- **Time Required**: ~10-15 minutes
+- **Time Required**: ~15-20 minutes
 - **Success Criteria**:
-  - ✅ Income data matches approved Daily Sales
-  - ✅ Service income details complete
-  - ✅ All expenses recorded with amounts
+  - ✅ All income sources recorded with correct amounts
+  - ✅ All expense groups filled with accurate amounts
   - ✅ Manager notes added (if needed)
-  - ✅ Summary totals correct
+  - ✅ Summary totals calculated correctly
 - **Data Recorded**:
-  - **incomeData**:
-    - dailySalesApprovedAmount: จาก /sales/daily-sales (e.g., 19,350 บาท)
-    - serviceIncome:
-      - moneyTransferFees: (e.g., 150 บาท)
-      - withdrawalFees: (e.g., 100 บาท)
-      - billPaymentFees: (e.g., 50 บาท)
-      - otherServiceFees: (e.g., 50 บาท)
-      - totalServiceIncome: รวมเสิร์วิส (e.g., 350 บาท)
-    - totalIncome: รวมรายรับ (e.g., 19,700 บาท)
-  - **expenseData**:
-    - stockPurchasesCash: (e.g., 5,000 บาท)
-    - stockPurchasesTransfer: (e.g., 2,000 บาท)
-    - utilities: (e.g., 300 บาท)
-    - supplies: (e.g., 200 บาท)
-    - otherExpenses: (if any)
-    - totalExpenses: รวมรายจ่าย (e.g., 7,500 บาท)
+  - **incomeData** (รายรับ):
+    - cashSalesFromPos: เงินสดขาย (e.g., 9,800 บาท)
+    - transferSalesFromPos: เงินโอนขาย (e.g., 4,500 บาท)
+    - governmentProgramsIncome: เงินจากโครงการรัฐ (e.g., 1,950 บาท)
+    - moneyTransferServiceFees: ค่าบริการ Money Transfer (e.g., 150 บาท)
+    - billPaymentServiceFees: ค่าบริการ Bill Payment (e.g., 50 บาท)
+    - otherCashReceived: เงินสดรับอื่นๆ (e.g., 200 บาท)
+    - totalIncome: รวมรายรับ (e.g., 16,650 บาท)
+  
+  - **expenseCashAtStore** (เงินสดจ่ายหน้าร้าน):
+    - vendorCashAtStore: เงินซื้อสินค้าหน้าร้าน (e.g., 3,000 บาท)
+    - dailyWages: ค่าจ้างพนักงานรายวัน (e.g., 1,200 บาท)
+    - dailyOT: โอทีพนักงานรายวัน (e.g., 300 บาท)
+    - waterExpense: ค่าน้ำ (e.g., 300 บาท)
+    - totalCashAtStore: รวม (e.g., 4,800 บาท)
+  
+  - **expenseBankTransfer** (เงินโอนจ่าย):
+    - transferForStore: เงินโอนจ่ายหน้าร้าน (e.g., 1,200 บาท)
+    - makroCredit: แม็คโคร (e.g., 2,500 บาท)
+    - freshGoodsTransfer: ของสด (e.g., 1,800 บาท)
+    - onlineShoppingTransfer: ออนไลน์ (e.g., 800 บาท)
+    - vPayTransfer: วีเพย์ (e.g., 500 บาท)
+    - totalBankTransfer: รวม (e.g., 6,800 บาท)
+  
+  - **expenseByLocation** (แบ่งตามพื้นที่):
+    - songPhiNongDistrict: อำเภอสองพี่น้อง (e.g., 2,000 บาท)
+    - muangDistrict: อำเภอเมือง (e.g., 3,500 บาท)
+    - totalByLocation: รวม (e.g., 5,500 บาท)
+  
+  - **expenseByProduct** (สินค้าเฉพาะกลุ่ม):
+    - riceFromSupplier: ข้าวสาร (e.g., 2,000 บาท)
+    - fishingEquipment: อุปกรณ์ตกปลา (e.g., 1,200 บาท)
+    - totalByProduct: รวม (e.g., 3,200 บาท)
+  
+  - **expenseOther** (รายจ่ายอื่นๆ):
+    - salary: เงินเดือน (e.g., 2,000 บาท)
+    - overtime: โอที (e.g., 500 บาท)
+    - tax: ภาษี (e.g., 300 บาท)
+    - others: อื่นๆ (e.g., 400 บาท)
+    - totalOtherExpenses: รวม (e.g., 3,200 บาท)
+  
+  - **expenseSummary**:
+    - totalCashAndTransfer: Cash at Store + Bank Transfer (Primary: e.g., 11,600 บาท)
+    - totalExpenses: รวมรายจ่ายทั้งหมด (e.g., 23,500 บาท)
+  
   - **summary**:
-    - netProfit: incomeTotal - expenseTotal (e.g., 12,200 บาท)
-    - managerNotes: (if any)
+    - totalIncome: 12,150 บาท
+    - totalExpenses: 23,500 บาท
+    - netResult: Income - Expenses (e.g., -11,350 บาท)
+    - managerNotes: (if any special notes)
+  
   - **status**: "submitted" (ระบบตั้งอัตโนมัติ)
   - **submittedAt**: timestamp ปัจจุบัน
   - **submittedBy**: Manager ID (ผู้ที่บันทึก)
-  - **linkedDailySalesId**: ID ของ approved Daily Sales record
-- **Next Step**: Auditor verify and approve (Workflow 2.2)
+- **Next Step**: Auditor verify and approve (Workflow 4.2)
 
 ---
 
@@ -1166,85 +1357,160 @@ Auditor → Verify & Check (Workflow 2.2)
 
 ### Real-World Example
 
-**Scenario**: Auditor reviews Manager's income/expense record (19,700 บาท income, 7,500 บาท expense from Workflow 2.1)
+**Scenario**: Auditor reviews Manager's income/expense record (12,150 บาท income, 11,600 บาท primary expense from Workflow 4.1)
 
 **Step 1: Auditor Gets Manager's Submitted Record**
 ```
 From /finance/daily-expenses → Submitted entry:
 - Date: 2026-01-29
 - Manager: วีระ
-- Income Total: 19,700 บาท
-- Expense Total: 7,500 บาท
-- Net Profit: 12,200 บาท
-- Status: submitted (by Manager in Workflow 2.1)
+- Income Total: 12,150 บาท
+- Primary Expenses (Cash + Transfer): 11,600 บาท
+- Net Result: 550 บาท
+- Status: submitted (by Manager in Workflow 4.1)
 ```
 
 **Step 2: Auditor Verifies Income Data**
 ```
 INCOME VERIFICATION:
 
-1. Daily Sales Amount (19,350 บาท):
+1. เงินสดขาย (Cash Sales) - 9,800 บาท:
    ✅ Cross-check with /sales/daily-sales → Approved
    - Record date: 2026-01-29
-   - Approved by: Owner
-   - Amount matches: ✓ 19,350 บาท
+   - Amount matches: ✓ 9,800 บาท
 
-2. Service Income (350 บาท):
-   ✅ Money transfer fees: 150 บาท (matches bank statement)
-   ✅ Withdrawal fees: 100 บาท (matches bank statement)
-   ✅ Bill payment fees: 50 บาท (matches bank statement)
-   ✅ Other fees: 50 บาท (matches bank statement)
-   Total service income: ✓ 350 บาท
+2. ค่าบริการ Money Transfer - 150 บาท:
+   ✅ Cross-check with /finance/money-transfer-service → Audited
+   - Amount matches: ✓ 150 บาท
+
+3. ค่าบริการ Bill Payment - 50 บาท:
+   ✅ Cross-check with /finance/bill-payment-service → Audited
+   - Amount matches: ✓ 50 บาท
+
+4. เงินสดรับอื่นๆ - 200 บาท:
+   ✅ Check with supporting documents/notes
+   - Amount verified: ✓ 200 บาท
+
+5. เงินจากโครงการของรัฐ - 1,950 บาท:
+   ✅ Cross-check with /sales/daily-sales government program data
+   - Amount matches: ✓ 1,950 บาท
 
 INCOME VERIFICATION RESULT: ✅ ALL CORRECT
-Total Income: 19,700 บาท
+Total Income: 12,150 บาท
 ```
 
 **Step 3: Auditor Verifies Expense Data**
 ```
-EXPENSE VERIFICATION:
+EXPENSE VERIFICATION (PRIMARY):
 
-1. Stock Purchases (Cash) - 5,000 บาท:
-   ✅ Receipt 1: Rice supplier - 2,000 บาท (verified)
-   ✅ Receipt 2: Beverage supplier - 1,500 บาท (verified)
-   ✅ Receipt 3: Snack supplier - 1,500 บาท (verified)
-   Total: ✓ 5,000 บาท
+GROUP 1: เงินสดจ่ายหน้าร้าน - 4,800 บาท:
+   1.1 เงินซื้อสินค้าหน้าร้าน - 3,000 บาท:
+       ✅ Check receipts/invoices from vendors
+       - Verified: ✓ 3,000 บาท
+   
+   1.2 ค่าจ้างและโอที - 1,500 บาท:
+       ✅ Check payroll/OT records
+       - Verified: ✓ 1,500 บาท
+   
+   1.3 ค่าน้ำ - 300 บาท:
+       ✅ Check utility bill
+       - Verified: ✓ 300 บาท
+   
+   GROUP 1 TOTAL: ✓ 4,800 บาท
 
-2. Stock Purchases (Transfer) - 2,000 บาท:
-   ✅ Bank transfer to Supplier A: 1,200 บาท (verified)
-   ✅ Bank transfer to Supplier B: 800 บาท (verified)
-   Total: ✓ 2,000 บาท
+GROUP 2: เงินโอนจ่าย - 6,800 บาท:
+   2.1 เงินโอนจ่ายหน้าร้าน - 1,200 บาท:
+       ✅ Check bank statement/transfer record
+       - Verified: ✓ 1,200 บาท
+   
+   2.2 แม็คโคร - 2,500 บาท:
+       ✅ Check credit card statement/receipt
+       - Verified: ✓ 2,500 บาท
+   
+   2.3 ของสด - 1,800 บาท:
+       ✅ Check delivery receipts/invoices
+       - Verified: ✓ 1,800 บาท
+   
+   2.4 ออนไลน์ - 800 บาท:
+       ✅ Check order confirmations/bank statement
+       - Verified: ✓ 800 บาท
+   
+   2.5 วีเพย์ - 500 บาท:
+       ✅ Check V-Pay transaction history
+       - Verified: ✓ 500 บาท
+   
+   GROUP 2 TOTAL: ✓ 6,800 บาท
 
-3. Other Daily Expenses - 500 บาท:
-   ✅ Utilities (water/electricity): 300 บาท (verified)
-   ✅ Supplies (bags/cleaning): 200 บาท (verified)
-   Total: ✓ 500 บาท
+PRIMARY EXPENSES (Cash + Transfer): ✓ 11,600 บาท
 
-EXPENSE VERIFICATION RESULT: ✅ ALL CORRECT
-Total Expenses: 7,500 บาท
+EXPENSE VERIFICATION RESULT (PRIMARY): ✅ ALL CORRECT
 ```
 
-**Step 4: Auditor Adds Verification Notes**
+**Step 4: Auditor Verifies Tracking Data (For Reference)**
+```
+VERIFICATION OF TRACKING CATEGORIES (For reporting purposes):
+
+GROUP 3: แบ่งตามพื้นที่ - 5,500 บาท (reference):
+   ✅ Cross-check: Items should fit in Group 1 or 2
+   - Song Phi Nong: 2,000 บาท ✓
+   - Muang: 3,500 บาท ✓
+   TOTAL: ✓ 5,500 บาท
+
+GROUP 4: สินค้าเฉพาะกลุ่ม - 3,200 บาท (reference):
+   ✅ Cross-check: Items should fit in Group 1 or 2
+   - Rice from supplier: 2,000 บาท ✓
+   - Fishing equipment: 1,200 บาท ✓
+   TOTAL: ✓ 3,200 บาท
+
+GROUP 5: รายจ่ายอื่นๆ - 3,200 บาท:
+   5.1 เงินเดือน - 2,000 บาท ✓
+   5.2 โอที - 500 บาท ✓
+   5.3 ภาษี - 300 บาท ✓
+   5.4 อื่นๆ - 400 บาท ✓
+   TOTAL: ✓ 3,200 บาท
+
+TRACKING DATA VERIFICATION: ✅ ALL CORRECT
+(Note: Groups 3-5 are for categorization/tracking, verified for consistency)
+```
+
+**Step 5: Auditor Adds Verification Notes**
 ```
 auditNotes: "Income/Expense verification completed:
 
-INCOME VERIFICATION:
-✅ Daily Sales (19,350 บาท) - Matches approved record in /sales/daily-sales
-✅ Service Income (350 บาท) - All 4 fee types verified against bank statements
-✅ Total Income: 19,700 บาท - CORRECT
+INCOME VERIFICATION: ✅ ALL 6 SOURCES VERIFIED
+- Cash Sales: 9,800 บาท (matches /sales/daily-sales)
+- Transfer Sales: 4,500 บาท (matches /sales/daily-sales)
+- Government Programs: 1,950 บาท (matches /sales/daily-sales)
+- Money Transfer Fees: 150 บาท (matches /finance/money-transfer-service)
+- Bill Payment Fees: 50 บาท (matches /finance/bill-payment-service)
+- Other Cash: 200 บาท (verified with documents)
+- Total Income: 16,650 บาท ✓
 
-EXPENSE VERIFICATION:
-✅ Stock Purchases (Cash): 5,000 บาท - 3 receipts verified
-✅ Stock Purchases (Transfer): 2,000 บาท - 2 bank transfers verified
-✅ Other Expenses: 500 บาท - Utilities and supplies verified
-✅ Total Expenses: 7,500 บาท - CORRECT
+PRIMARY EXPENSES VERIFICATION: ✅ ALL VERIFIED
+- Cash at Store: 4,800 บาท (4 items verified)
+  * Vendor purchases: 3,000 บาท ✓
+  * Daily wages: 1,200 บาท ✓
+  * Daily OT: 300 บาท ✓
+  * Water: 300 บาท ✓
+- Bank Transfers: 6,800 บาท (5 items verified)
+  * Store operation: 1,200 บาท ✓
+  * Makro: 2,500 บาท ✓
+  * Fresh goods: 1,800 บาท ✓
+  * Online: 800 บาท ✓
+  * V-Pay: 500 บาท ✓
+- Total Primary Expenses: 11,600 บาท ✓
 
-NET PROFIT: 12,200 บาท - APPROVED
+TRACKING CATEGORIES VERIFIED: ✅
+- By Location: 5,500 บาท (consistent with Groups 1-2)
+- By Product: 3,200 บาท (consistent with Groups 1-2)
+- Other Expenses: 3,200 บาท (Salary, OT, Tax, Others)
+
+NET RESULT: 16,650 - 11,600 = 5,050 บาท ✓
 
 All documents verified and correct. Ready for Owner approval."
 ```
 
-**Step 5: Auditor Updates Status**
+**Step 6: Auditor Updates Status**
 ```
 /finance/daily-expenses → Update Record:
 - status: "audited" (changed from "submitted")
@@ -1253,7 +1519,7 @@ All documents verified and correct. Ready for Owner approval."
 - auditNotes: "Income/Expense verification completed..." (detailed)
 
 [Send notification to Owner]
-Owner → Final Approval (Workflow 2.3)
+Owner → Final Approval (Workflow 4.3)
 ```
 
 ---
@@ -1266,37 +1532,62 @@ Owner → Final Approval (Workflow 2.3)
         ↓
      Find "submitted" entries for review
         ↓
-     VERIFY INCOME DATA:
-     1. Cross-check Daily Sales:
-        - Pull /sales/daily-sales "approved" record
-        - Compare amount: Manager says 19,350 ← Matches? ✓
+     VERIFY INCOME DATA (6 categories):
+     ════════════════════════════════════
+     1. เงินสดขาย:
+        - Cross-check /sales/daily-sales ✓
         ↓
-     2. Verify Service Income (350 บาท):
-        - Check Bank statement
-        - Money transfer fees: 150 บาท ✓
-        - Withdrawal fees: 100 บาท ✓
-        - Bill payment fees: 50 บาท ✓
-        - Other fees: 50 บาท ✓
+     2. เงินโอนขาย:
+        - Cross-check /sales/daily-sales ✓
         ↓
-     VERIFY EXPENSE DATA:
-     1. Stock Purchases (Cash) - 5,000 บาท:
-        - Check receipts/documents
-        - All 3 suppliers verified ✓
+     3. เงินจากโครงการของรัฐ:
+        - Cross-check /sales/daily-sales ✓
         ↓
-     2. Stock Purchases (Transfer) - 2,000 บาท:
-        - Check Bank statement
-        - Both transfers verified ✓
+     4. ค่าบริการ Money Transfer:
+        - Cross-check /finance/money-transfer-service ✓
         ↓
-     3. Other Daily Expenses - 500 บาท:
-        - Utilities verified ✓
-        - Supplies verified ✓
+     5. ค่าบริการ Bill Payment:
+        - Cross-check /finance/bill-payment-service ✓
+        ↓
+     6. เงินสดรับอื่นๆ:
+        - Verify with supporting documents ✓
+        ↓
+     VERIFY PRIMARY EXPENSES (2 main groups):
+     ════════════════════════════════════════
+     GROUP 1: เงินสดจ่ายหน้าร้าน (4,800 บาท):
+        1.1 Check vendor receipts ✓
+        1.2 Check payroll records (daily wages) ✓
+        1.3 Check OT records (1st & 16th) ✓
+        1.4 Check utility bill (water) ✓
+        ↓
+     GROUP 2: เงินโอนจ่าย (6,800 บาท):
+        2.1 Check bank statement ✓
+        2.2 Check credit card statement ✓
+        2.3 Check delivery receipts ✓
+        2.4 Check online order receipts ✓
+        2.5 Check V-Pay history ✓
+        ↓
+     VERIFY TRACKING CATEGORIES (For consistency):
+     ═════════════════════════════════════════════
+     GROUP 3: แบ่งตามพื้นที่:
+        - Verify items fit within Groups 1-2 ✓
+        ↓
+     GROUP 4: สินค้าเฉพาะกลุ่ม:
+        - Verify items fit within Groups 1-2 ✓
+        ↓
+     GROUP 5: รายจ่ายอื่นๆ:
+        - Verify all items with documents ✓
         ↓
      If everything correct:
+     - All income sources verified ✓
+     - All primary expenses verified ✓
+     - All tracking data consistent ✓
      - Add detailed verification notes
      - Click [✏️ Edit]
      - Change status: submitted → "audited"
         ↓
      If discrepancy found:
+     - Document discrepancies
      - Add notes explaining issues
      - Return record to Manager for correction
      - Do NOT update status
@@ -1304,8 +1595,9 @@ Owner → Final Approval (Workflow 2.3)
      [Update] → Status = "audited"
         ↓
      Send report to Owner:
-     - Verification summary
-     - All amounts verified
+     - Income verification summary
+     - Expense verification summary
+     - Tracking data verification
      - Audit notes
         ↓
      [Complete]
@@ -1314,30 +1606,49 @@ Owner → Final Approval (Workflow 2.3)
 ### Details
 - **Role**: ผู้ตรวจสอบ (Auditor)
 - **Page**: /finance/daily-expenses (Daily Income/Expense Review)
-- **Time Required**: ~10-15 minutes
+- **Time Required**: ~15-20 minutes
 - **Success Criteria**:
-  - ✅ Income matches approved Daily Sales record
-  - ✅ Service income verified against bank statements
-  - ✅ All expenses verified with receipts/documents
+  - ✅ All 6 income sources verified with source documents
+  - ✅ All primary expenses (Groups 1-2) verified with receipts/statements
+  - ✅ Tracking categories (Groups 3-5) verified for consistency
   - ✅ Data completeness verified
-  - ✅ Clear verification notes
+  - ✅ Clear verification notes with all checks documented
 - **Data Checked**:
-  - **incomeVerification**:
-    - dailySalesMatch: Cross-checked with /sales/daily-sales approved entry
-    - serviceIncomeVerified: All 4 fee types matched with bank statement
-    - totalIncomeCorrect: 19,700 บาท confirmed
-  - **expenseVerification**:
-    - stockPurchasesCash: All receipts verified (3 suppliers)
-    - stockPurchasesTransfer: All bank transfers verified
-    - otherExpenses: All items verified with documents
-    - totalExpensesCorrect: 7,500 บาท confirmed
+  - **incomeVerification** (6 sources):
+    - cashSalesMatch: Cross-checked with /sales/daily-sales
+    - transferSalesMatch: Cross-checked with /sales/daily-sales
+    - governmentProgramMatch: Cross-checked with /sales/daily-sales
+    - moneyTransferMatch: Cross-checked with /finance/money-transfer-service
+    - billPaymentMatch: Cross-checked with /finance/bill-payment-service
+    - otherCashVerified: Documents checked
+    - governmentProgramMatch: Cross-checked with /sales/daily-sales
+    - totalIncomeCorrect: 12,150 บาท confirmed
+  
+  - **expenseVerification** (Primary Groups 1-2):
+    - vendorCashVerified: All receipts checked
+    - wagesAndOTVerified: Payroll records checked
+    - waterVerified: Utility bill checked
+    - storeTransferVerified: Bank statement checked
+    - makroVerified: Credit card statement checked
+    - freshGoodsVerified: Delivery receipts checked
+    - onlineVerified: Order confirmations checked
+    - vPayVerified: Transaction history checked
+    - totalPrimaryExpensesCorrect: 11,600 บาท confirmed
+  
+  - **trackingVerification** (Reference Groups 3-5):
+    - locationCategoryConsistent: Items fit within Groups 1-2
+    - productCategoryConsistent: Items fit within Groups 1-2
+    - otherExpensesVerified: All items checked
+    - totalTrackingCorrect: All amounts verified
+
 - **Data Updated**:
   - status: "audited" (changed from "submitted")
   - auditedAt: timestamp ปัจจุบัน
   - auditedBy: Auditor ID (ผู้ตรวจสอบ)
-  - auditNotes: Detailed verification results
-    - Example: "Income/Expense verification completed: Daily Sales matches approved record (19,350 บาท), Service income verified (350 บาท), All expenses verified with receipts (7,500 บาท). Net profit 12,200 บาท - APPROVED."
-- **Next Step**: Owner final approval (Workflow 2.3)
+  - auditNotes: Detailed verification results with all sources and categories verified
+    - Example: "Income/Expense verification completed: All 5 income sources verified (12,150 บาท), Primary expenses verified (Cash 4,800 + Transfer 6,800 = 11,600 บาท), Tracking categories consistent. Net result 550 บาท - APPROVED."
+
+- **Next Step**: Owner final approval (Workflow 4.3)
 
 ---
 
@@ -1345,110 +1656,162 @@ Owner → Final Approval (Workflow 2.3)
 
 ### Real-World Example
 
-**Scenario**: Owner reviews and approves audited income/expense record (19,700 บาท income, 7,500 บาท expense from Workflow 2.2)
+**Scenario**: Owner reviews and approves audited income/expense record (12,150 บาท income, 11,600 บาท primary expense from Workflow 4.2)
 
 **Step 1: Owner Receives Auditor's Report**
 ```
 From /finance/daily-expenses → Audited entry:
 - Date: 2026-01-29
 - Manager: วีระ
-- Income Total: 19,700 บาท
-- Expense Total: 7,500 บาท
-- Net Profit: 12,200 บาท
-- Status: audited (by Auditor in Workflow 2.2)
-- Auditor Notes: "All amounts verified and correct"
+- Income Total: 12,150 บาท
+- Primary Expenses (Cash + Transfer): 11,600 บาท
+- Net Result: 550 บาท
+- Status: audited (by Auditor in Workflow 4.2)
+- Auditor Notes: "All income sources and expenses verified and correct"
 ```
 
 **Step 2: Owner Reviews Income Section**
 ```
-INCOME DETAILS:
-├─ Daily Sales (from approved /sales/daily-sales): 19,350 บาท
-│  └─ Verified by: Auditor (matched with approved Daily Sales record)
+INCOME DETAILS (รายรับ):
+├─ เงินสดขาย (Cash Sales): 9,800 บาท
+│  └─ Verified by: Auditor (matched with /sales/daily-sales)
 │
-├─ Service Income Breakdown: 350 บาท
-│  ├─ Money transfer fees: 150 บาท ✓
-│  ├─ Withdrawal fees: 100 บาท ✓
-│  ├─ Bill payment fees: 50 บาท ✓
-│  └─ Other fees: 50 บาท ✓
+├─ เงินโอนขาย (Transfer Sales): 4,500 บาท
+│  └─ Verified by: Auditor (matched with /sales/daily-sales)
 │
-└─ Total Income: 19,700 บาท ✓
+├─ เงินจากโครงการของรัฐ (Government Programs): 1,950 บาท
+│  └─ Verified by: Auditor (matched with /sales/daily-sales)
+│
+├─ ค่าบริการ Money Transfer: 150 บาท
+│  └─ Verified by: Auditor (matched with /finance/money-transfer-service)
+│
+├─ ค่าบริการ Bill Payment: 50 บาท
+│  └─ Verified by: Auditor (matched with /finance/bill-payment-service)
+│
+├─ เงินสดรับอื่นๆ: 200 บาท
+│  └─ Verified by: Auditor (documents checked)
+│
+└─ Total Income: 16,650 บาท ✓
 
-OWNER CHECK: ✅ All income verified by Auditor
+OWNER CHECK: ✅ All 6 income sources verified by Auditor
 ```
 
-**Step 3: Owner Reviews Expense Section**
+**Step 3: Owner Reviews Expense Section (Primary)**
 ```
-EXPENSE DETAILS:
-├─ Stock Purchases (Cash): 5,000 บาท
-│  ├─ Rice supplier: 2,000 บาท ✓
-│  ├─ Beverage supplier: 1,500 บาท ✓
-│  └─ Snack supplier: 1,500 บาท ✓
+EXPENSE DETAILS - PRIMARY (เงินสดจ่ายและเงินโอนจ่าย):
+├─ GROUP 1: เงินสดจ่ายหน้าร้าน: 4,800 บาท
+│  ├─ เงินซื้อสินค้าหน้าร้าน: 3,000 บาท ✓
+│  ├─ ค่าจ้างพนักงานรายวัน: 1,200 บาท ✓
+│  ├─ โอทีพนักงานรายวัน: 300 บาท ✓
+│  └─ ค่าน้ำ: 300 บาท ✓
 │
-├─ Stock Purchases (Transfer): 2,000 บาท
-│  ├─ Supplier A: 1,200 บาท ✓
-│  └─ Supplier B: 800 บาท ✓
+├─ GROUP 2: เงินโอนจ่าย: 6,800 บาท
+│  ├─ เงินโอนจ่ายหน้าร้าน: 1,200 บาท ✓
+│  ├─ แม็คโคร: 2,500 บาท ✓
+│  ├─ ของสด: 1,800 บาท ✓
+│  ├─ ออนไลน์: 800 บาท ✓
+│  └─ วีเพย์: 500 บาท ✓
 │
-├─ Other Daily Expenses: 500 บาท
-│  ├─ Utilities: 300 บาท ✓
-│  └─ Supplies: 200 บาท ✓
-│
-└─ Total Expenses: 7,500 บาท ✓
+└─ Total Primary Expenses: 11,600 บาท ✓
 
-OWNER CHECK: ✅ All expenses verified by Auditor
+OWNER CHECK: ✅ All primary expenses verified by Auditor with receipts/statements
 ```
 
-**Step 4: Owner Reviews Auditor's Verification Notes**
+**Step 4: Owner Reviews Tracking Data**
+```
+TRACKING CATEGORIES (แบ่งตามพื้นที่ และ สินค้าเฉพาะกลุ่ม - For Reference):
+├─ GROUP 3: แบ่งตามพื้นที่ (By Location):
+│  ├─ อำเภอสองพี่น้อง: 2,000 บาท ✓
+│  └─ อำเภอเมือง: 3,500 บาท ✓
+│
+├─ GROUP 4: สินค้าเฉพาะกลุ่ม (By Product):
+│  ├─ ข้าวสาร: 2,000 บาท ✓
+│  └─ อุปกรณ์ตกปลา: 1,200 บาท ✓
+│
+└─ GROUP 5: รายจ่ายอื่นๆ (Other Expenses):
+   ├─ เงินเดือน: 2,000 บาท ✓
+   ├─ โอที: 500 บาท ✓
+   ├─ ภาษี: 300 บาท ✓
+   └─ อื่นๆ: 400 บาท ✓
+
+NOTE: Groups 3-5 are for categorization/tracking (verified for consistency)
+Owner can see all categories for detailed tracking
+```
+
+**Step 5: Owner Reviews Auditor's Verification Notes**
 ```
 auditNotes from Auditor: "Income/Expense verification completed:
 
-INCOME VERIFICATION:
-✅ Daily Sales (19,350 บาท) - Matches approved record in /sales/daily-sales
-✅ Service Income (350 บาท) - All 4 fee types verified against bank statements
-✅ Total Income: 19,700 บาท - CORRECT
+INCOME: ✅ ALL 6 SOURCES VERIFIED
+- Cash Sales: 9,800 (matches /sales/daily-sales)
+- Transfer Sales: 4,500 (matches /sales/daily-sales)
+- Government Programs: 1,950 (matches /sales/daily-sales)
+- Money Transfer Fees: 150 (matches /finance/money-transfer-service)
+- Bill Payment Fees: 50 (matches /finance/bill-payment-service)
+- Other Cash: 200 (documents verified)
+Total: 16,650 บาท ✓
 
-EXPENSE VERIFICATION:
-✅ Stock Purchases (Cash): 5,000 บาท - 3 receipts verified
-✅ Stock Purchases (Transfer): 2,000 บาท - 2 bank transfers verified
-✅ Other Expenses: 500 บาท - Utilities and supplies verified
-✅ Total Expenses: 7,500 บาท - CORRECT
+EXPENSES: ✅ ALL PRIMARY ITEMS VERIFIED
+- Cash at Store: 4,800 (vendor/wages/OT/water - all receipts checked)
+- Bank Transfers: 6,800 (all 5 categories - statements verified)
+Total Primary: 11,600 บาท ✓
 
-NET PROFIT: 12,200 บาท - APPROVED
+TRACKING: ✅ CONSISTENT
+- By Location: 5,500 บาท (fits within Groups 1-2)
+- By Product: 3,200 บาท (fits within Groups 1-2)
+- Other Expenses: 3,200 บาท (all items documented)
 
-All documents verified and correct. Ready for Owner approval."
+NET RESULT: 5,050 บาท ✓
+All documents verified and correct."
 
 OWNER DECISION: ✅ Everything looks good - Approve
 ```
 
-**Step 5: Owner Approves & Updates Status**
+**Step 6: Owner Approves & Updates Status**
 ```
 /finance/daily-expenses → Update Record:
 - Click [✏️ Edit]
 - Change status: audited → "approved"
+- Optional: Add approval notes
 - Click [อัปเดต]
 
 System auto-updates:
 - status: "approved"
 - approvedAt: 2026-01-29 18:30:00
 - approvedBy: owner-001
-- approvalNotes: (optional) "Reviewed and approved. All data correct."
+- approvalNotes: (optional) "Reviewed and approved. All income and expenses verified."
 
 STATUS: ✅ APPROVED - Daily income/expense recording complete
 ```
 
-**Step 6: Data Now Available for Reports**
+**Step 7: Data Now Available for Reports**
 ```
 Dashboard & Reports Update:
-├─ Daily Sales: 19,350 บาท (from /sales/daily-sales)
-├─ Service Income: 350 บาท
-├─ Total Income: 19,700 บาท
-├─ Total Expenses: 7,500 บาท
-└─ Net Profit: 12,200 บาท
+├─ Income Breakdown:
+│  ├─ Cash Sales: 9,800 บาท
+│  ├─ Transfer Sales: 4,500 บาท
+│  ├─ Government Programs: 1,950 บาท
+│  ├─ Service Fees: 200 บาท (150 + 50)
+│  ├─ Other Cash: 200 บาท
+│  └─ Total Income: 16,650 บาท
+│
+├─ Expense Breakdown:
+│  ├─ Cash at Store: 4,800 บาท
+│  ├─ Bank Transfers: 6,800 บาท
+│  └─ Total Primary: 11,600 บาท
+│
+├─ Tracking Data:
+│  ├─ By Location: 5,500 บาท
+│  ├─ By Product: 3,200 บาท
+│  └─ Other Expenses: 3,200 บาท
+│
+└─ Net Result: 550 บาท
 
 Available in:
 - /finance/daily-expenses (approved record)
 - /finance/cash-flow (updated with today's data)
 - /finance/monthly-report (aggregated)
-- Dashboard (summary view)
+- Dashboard (summary view with all categories)
 ```
 
 ---
@@ -1459,27 +1822,61 @@ Available in:
         ↓
      Check /finance/daily-expenses → "audited" entries
         ↓
-     REVIEW INCOME:
-     1. Check Daily Sales amount: 19,350 บาท
-        - Auditor verified against /sales/daily-sales ✓
-     2. Check Service Income: 350 บาท
-        - Money transfer: 150 บาท
-        - Withdrawal: 100 บาท
-        - Bill payment: 50 บาท
-        - Other: 50 บาท
-        - Auditor verified all ✓
+     REVIEW INCOME (6 sources):
+     ════════════════════════════
+     1. เงินสดขาย: 9,800 บาท
+        - Auditor verified ✓
+     2. เงินโอนขาย: 4,500 บาท
+        - Auditor verified ✓
+     3. เงินจากโครงการรัฐ: 1,950 บาท
+        - Auditor verified ✓
+     4. ค่าบริการ Money Transfer: 150 บาท
+        - Auditor verified ✓
+     5. ค่าบริการ Bill Payment: 50 บาท
+        - Auditor verified ✓
+     6. เงินสดรับอื่นๆ: 200 บาท
+        - Auditor verified ✓
+     
+     TOTAL INCOME: 16,650 บาท ✓
         ↓
-     REVIEW EXPENSES:
-     1. Stock Purchases (Cash): 5,000 บาท
-        - Auditor verified with receipts ✓
-     2. Stock Purchases (Transfer): 2,000 บาท
-        - Auditor verified with bank statement ✓
-     3. Other Expenses: 500 บาท
-        - Auditor verified with documents ✓
+     REVIEW PRIMARY EXPENSES (2 groups):
+     ═════════════════════════════════════
+     GROUP 1: เงินสดจ่ายหน้าร้าน: 4,800 บาท
+        1.1 Vendor purchases: 3,000 บาท (verified) ✓
+        1.2 Daily wages: 1,200 บาท (verified) ✓
+        1.3 Daily OT: 300 บาท (verified) ✓
+        1.4 Water: 300 บาท (verified) ✓
+        ↓
+     GROUP 2: เงินโอนจ่าย: 6,800 บาท
+        2.1 Store operation: 1,200 บาท (verified) ✓
+        2.2 Makro: 2,500 บาท (verified) ✓
+        2.3 Fresh goods: 1,800 บาท (verified) ✓
+        2.4 Online: 800 บาท (verified) ✓
+        2.5 V-Pay: 500 บาท (verified) ✓
+     
+     TOTAL PRIMARY EXPENSES: 11,600 บาท ✓
+        ↓
+     REVIEW TRACKING CATEGORIES (Reference):
+     ══════════════════════════════════════
+     GROUP 3: By Location
+        - Song Phi Nong: 2,000 บาท ✓
+        - Muang: 3,500 บาท ✓
+        ↓
+     GROUP 4: By Product
+        - Rice: 2,000 บาท ✓
+        - Fishing equipment: 1,200 บาท ✓
+        ↓
+     GROUP 5: Other Expenses
+        - Salary: 2,000 บาท ✓
+        - OT: 500 บาท ✓
+        - Tax: 300 บาท ✓
+        - Others: 400 บาท ✓
         ↓
      REVIEW AUDITOR'S NOTES:
-     - All amounts verified? → Yes ✓
-     - All receipts/documents checked? → Yes ✓
+     ═══════════════════════
+     - All 6 income sources verified? → Yes ✓
+     - All primary expenses verified? → Yes ✓
+     - All tracking data consistent? → Yes ✓
      - Any issues or discrepancies? → No ✓
         ↓
      Make Decision:
@@ -1491,7 +1888,7 @@ Available in:
      Change status: audited → "approved"
         ↓
      Add approval notes (optional):
-     - "Reviewed and approved. All correct."
+     - "Reviewed and approved. All verified."
         ↓
      Click [อัปเดต]
         ↓
@@ -1502,6 +1899,7 @@ Available in:
      - /finance/cash-flow
      - /finance/monthly-report
      - Analysis & planning
+     - Categorized reports
         ↓
      Daily income/expense recording ✓
 ```
@@ -1509,33 +1907,204 @@ Available in:
 ### Details
 - **Role**: เจ้าของร้าน (Owner)
 - **Page**: /finance/daily-expenses (Daily Income/Expense Review)
-- **Time Required**: ~5-10 minutes
+- **Time Required**: ~10-15 minutes
 - **Success Criteria**:
-  - ✅ All income reviewed and verified by Auditor
-  - ✅ All expenses reviewed and verified by Auditor
+  - ✅ All 5 income sources reviewed and verified by Auditor
+  - ✅ All primary expenses reviewed and verified by Auditor
+  - ✅ All tracking categories reviewed
   - ✅ Auditor notes reviewed
   - ✅ Final decision documented
   - ✅ Status updated to "approved"
 - **Data Reviewed**:
-  - **incomeReview**:
-    - Daily Sales: 19,350 บาท (verified by Auditor)
-    - Service Income: 350 บาท (verified by Auditor)
-    - Total Income: 19,700 บาท
-  - **expenseReview**:
-    - Stock Purchases (Cash): 5,000 บาท (verified)
-    - Stock Purchases (Transfer): 2,000 บาท (verified)
-    - Other Expenses: 500 บาท (verified)
-    - Total Expenses: 7,500 บาท
+  - **incomeReview** (5 sources):
+    - Cash Sales: 9,800 บาท (verified by Auditor)
+    - Money Transfer Fees: 150 บาท (verified by Auditor)
+    - Bill Payment Fees: 50 บาท (verified by Auditor)
+    - Other Cash: 200 บาท (verified by Auditor)
+    - Government Programs: 1,950 บาท (verified by Auditor)
+    - Total Income: 12,150 บาท
+  
+  - **expenseReview** (Primary):
+    - Cash at Store: 4,800 บาท (verified)
+      * Vendor purchases: 3,000 บาท
+      * Daily wages/OT: 1,500 บาท
+      * Water: 300 บาท
+    - Bank Transfers: 6,800 บาท (verified)
+      * Store operation: 1,200 บาท
+      * Makro: 2,500 บาท
+      * Fresh goods: 1,800 บาท
+      * Online: 800 บาท
+      * V-Pay: 500 บาท
+    - Total Primary: 11,600 บาท
+  
+  - **trackingReview** (Reference categories):
+    - By Location: 5,500 บาท (verified for consistency)
+    - By Product: 3,200 บาท (verified for consistency)
+    - Other Expenses: 3,200 บาท (verified)
+  
   - **auditReview**:
     - Read Auditor's verification notes
-    - Check for any discrepancies
-    - Confirm all documents verified
+    - Check all income sources verified
+    - Check all expenses verified
+    - Confirm tracking data consistent
+    - Confirm no discrepancies
+
 - **Data Updated**:
   - status: "approved" (changed from "audited")
   - approvedAt: timestamp ปัจจุบัน
   - approvedBy: Owner ID (ผู้อนุมัติ)
   - approvalNotes: (optional) Final comments from Owner
-- **Result**: ✅ Daily income/expense recording complete & ready for reports/analysis
+
+- **Result**: ✅ Daily income/expense recording complete & ready for reports/analysis with full categorization data
+
+---
+
+# 💳 CASH FLOW MANAGEMENT: Income & Expense Flow (การจัดการกระแสเงินสด)
+
+## Overview: Daily Cash Flow Structure
+
+### 🔄 Income Sources & Allocation (แหล่งเงินและการจัดสรร)
+
+```
+INCOME DAILY:
+├─ เงินสด (Cash):
+│  ├─ Cash Sales (รวมทุก Cashier)
+│  ├─ Service Fee Cash (Money Transfer)
+│  ├─ Bill Payment Fees
+│  └─ Other Cash Income
+│  └─ → สะสมเป็น "Cash Reserve" สำหรับจ่าย Expense Group 1, 3, 4, 5
+│
+└─ เงินโอน (Transfer):
+   ├─ Service Fee Transfer (Money Transfer)
+   ├─ Government Programs
+   └─ → สะสมเป็น "Transfer Reserve" สำหรับจ่าย Expense Group 2
+```
+
+### 💰 Daily Cash Allocation (การจัดสรรเงินสดรายวัน)
+
+```
+OPENING BALANCE (วันนี้):
+├─ "เงินสดซื้อสินค้าวันถัดไป" จากเมื่อวาน (Previous NextDay Reserve)
+│  └─ ตัวอย่าง: 5,400 บาท
+├─ + Cash Income (วันนี้)
+│  └─ ตัวอย่าง: 17,592 บาท
+└─ = Total Cash Available
+   └─ ตัวอย่าง: 22,992 บาท
+
+CASH OUTFLOW (วันนี้):
+├─ Expense Group 1: vendor/wages/OT/water
+│  └─ ตัวอย่าง: 6,765 บาท
+├─ Expense Group 3: allocation by location (~2,500 บาท/day)
+├─ Expense Group 4: specific product (~1,500 บาท/day)
+├─ Expense Group 5: other expenses (~2,300 บาท/day)
+└─ ± Borrowed Advance (if needed)
+   └─ ตัวอย่าง: 4,000 บาท ⚠️
+
+NEXTDAY RESERVE (สำหรับวันถัดไป):
+├─ Formula: = Total Cash Available - Total Cash Outflow
+│  └─ ตัวอย่าง: 22,992 - 13,065 = 9,927 บาท
+├─ Round down < 100: = 9,900 บาท
+└─ จะใช้เป็น Opening Balance ของวันถัดไป
+```
+
+---
+
+## ⚠️ Borrowed Advance: Cash Flow Issue Indicator (ตัวชี้วัดปัญหา)
+
+### What is Borrowed Advance?
+
+```
+เมื่อเงินสด (Cash Reserve) ไม่พอจ่าย Expense Group 1
+→ ต้องยืมจาก "เงินสดซื้อสินค้าวันถัดไป" (NextDay Reserve) ของวันก่อนหน้า
+→ เรียกว่า "Borrowed Advance"
+```
+
+### ตัวอย่าง: Borrowed Advance เกิดขึ้น
+
+```
+วันที่ 31/1/2026:
+├─ Opening Balance: 5,400 บาท
+├─ + Cash Income: 17,592 บาท
+├─ = Cash Available: 22,992 บาท
+│
+├─ Expense Group 1 needed: 6,765 บาท
+├─ BUT: Opening Balance (5,400) + Today's Cash (17,592) - Group 3/4/5 (6,300)
+│        = 16,692 บาท available ONLY
+├─ Since Expense Group 1 = 6,765 บาท
+└─ ❌ SHORT: 6,765 - 16,692 = ไม่ขาด (ตัวอย่างนี้ไม่ขาด)
+
+วันเปิด (เช่น มี Opening Balance 1,000 บาท ต่ำ):
+├─ Opening Balance: 1,000 บาท
+├─ + Cash Income: 10,000 บาท
+├─ = Cash Available: 11,000 บาท
+│
+├─ Expense Group 1 needed: 6,765 บาท ✓ พอ
+├─ Expense Group 3: 2,500 บาท ✓ พอ
+├─ Expense Group 4: 1,500 บาท ✓ พอ
+├─ Expense Group 5: 2,300 บาท ✓ พอ
+├─ = Total needed: 13,065 บาท
+├─ ❌ SHORT: 11,000 - 13,065 = -2,065 บาท
+│
+└─ SOLUTION: Borrow 2,065 บาท from NextDay Reserve
+   → Borrowed Advance = 2,065 บาท
+```
+
+### ⚠️ Borrowed Advance Analysis (วิเคราะห์ปัญหา)
+
+```
+ตัวอย่าง: เดือนมกราคม (31 วัน)
+├─ Total Borrowed Advance (ทั้งเดือน): 31,000 บาท
+├─ Average per day: 31,000 / 31 = 1,000 บาท/วัน
+│
+└─ 🚨 ISSUE: "ต้อง Borrowed Advance วันละ 1,000 บาท"
+   ├─ Root Cause: รายรับไม่เพียงพอสำหรับค่าใช้จ่ายที่เกิดขึ้น
+   ├─ Impact: "เงินสดซื้อสินค้าวันถัดไป" ลดลงตลอดเดือน
+   └─ Action: ต้องหาวิธีจัดการลด Borrowed Advance ให้เป็น 0 บาท
+```
+
+### 💡 How to Reduce Borrowed Advance
+
+```
+วิธีแก้ไข:
+├─ ❶ เพิ่ม Cash Income:
+│  ├─ เพิ่มยอดขาย (Cash Sales)
+│  ├─ เพิ่ม Service Fee Income
+│  └─ เพิ่ม Other Income
+│
+├─ ❷ ลด Expense Groups:
+│  ├─ ลด Group 3 (location allocation)
+│  ├─ ลด Group 4 (product category)
+│  ├─ ลด Group 5 (other expenses)
+│  └─ จัดการ Group 1 ให้เหมาะสม
+│
+└─ ❸ ปรับแต่ง NextDay Reserve:
+   ├─ รักษา Opening Balance ให้สูงพอ
+   └─ เงินสดขายสินค้าต้องเพียงพอ > ค่าใช้จ่ายรวม
+```
+
+### 📊 Month-End Closing: Borrowed Advance Reporting
+
+```
+สิ้นเดือน (31/1/2026):
+
+OPENING BALANCE (เดือนถัดไป):
+├─ "เงินสดซื้อสินค้าวันถัดไป" (คงเหลือ): 9,900 บาท
+└─ → บันทึกเป็น Opening Balance (1/2/2026)
+
+CASH FLOW ISSUE REPORT (สำหรับบทวิเคราะห์):
+├─ Total Borrowed Advance: 31,000 บาท
+├─ Days in month: 31 วัน
+├─ Average per day: 1,000 บาท/วัน
+│
+└─ ⚠️ ALERT:
+   ├─ Status: "มีปัญหาจัดการกระแสเงิน"
+   ├─ Cause: "รายรับไม่เพียงพอค่าใช้จ่าย"
+   ├─ Impact: "ต้อง Borrowed Advance แต่ละวัน"
+   └─ Action Required: "ปรับปรุงกระแสเงินสดในเดือนถัดไป"
+
+NOTE: Borrowed Advance ไม่นำมารวมกับ Opening Balance
+      → ใช้สำหรับตรวจสอบและปรับปรุงเท่านั้น
+```
 
 ---
 
