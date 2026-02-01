@@ -4,11 +4,21 @@
     "date": "2026-01-28",
     "cashierId": "cashier-001",
     "cashierName": "สมชาย",
-    "posposData": {
+    "expectedCash": 10000,
+    "expectedQR": 5000,
+    "expectedBank": 3000,
+    "expectedGovernment": 2000,
+    "posData": {
       "cash": 10000,
       "qr": 5000,
       "bank": 3000,
       "government": 2000
+    },
+    "differences": {
+      "cashDiff": 0,
+      "qrDiff": 0,
+      "bankDiff": 0,
+      "governmentDiff": 0
     },
     "cashReconciliation": {
       "expectedAmount": 20000,
@@ -27,11 +37,21 @@
     "date": "2026-01-29",
     "cashierId": "cashier-002",
     "cashierName": "สินใจ",
-    "posposData": {
+    "expectedCash": 15000,
+    "expectedQR": 8000,
+    "expectedBank": 5000,
+    "expectedGovernment": 2000,
+    "posData": {
       "cash": 15000,
       "qr": 8000,
       "bank": 5000,
       "government": 2000
+    },
+    "differences": {
+      "cashDiff": 0,
+      "qrDiff": 0,
+      "bankDiff": 0,
+      "governmentDiff": 0
     },
     "cashReconciliation": {
       "expectedAmount": 30000,
@@ -52,11 +72,21 @@
     "date": "2026-01-30",
     "cashierId": "cashier-001",
     "cashierName": "สมชาย",
-    "posposData": {
+    "expectedCash": 12000,
+    "expectedQR": 6000,
+    "expectedBank": 4000,
+    "expectedGovernment": 1500,
+    "posData": {
       "cash": 12000,
       "qr": 6000,
       "bank": 4000,
       "government": 1500
+    },
+    "differences": {
+      "cashDiff": 0,
+      "qrDiff": 0,
+      "bankDiff": 0,
+      "governmentDiff": 0
     },
     "cashReconciliation": {
       "expectedAmount": 23500,
@@ -75,16 +105,26 @@
     "date": "2026-01-31",
     "cashierId": "cashier-003",
     "cashierName": "บัญชา",
-    "posposData": {
+    "expectedCash": 8500,
+    "expectedQR": 4300,
+    "expectedBank": 1000,
+    "expectedGovernment": 900,
+    "posData": {
       "cash": 8500,
       "qr": 4200,
       "bank": 1000,
       "government": 900
     },
+    "differences": {
+      "cashDiff": 0,
+      "qrDiff": -100,
+      "bankDiff": 0,
+      "governmentDiff": 0
+    },
     "cashReconciliation": {
-      "expectedAmount": 14601,
+      "expectedAmount": 14700,
       "actualAmount": 14600,
-      "difference": -1,
+      "difference": -100,
       "notes": ""
     },
     "total": 14600,
@@ -98,11 +138,21 @@
     "date": "2026-02-01",
     "cashierId": "cashier-002",
     "cashierName": "สินใจ",
-    "posposData": {
+    "expectedCash": 18000,
+    "expectedQR": 9500,
+    "expectedBank": 6000,
+    "expectedGovernment": 2500,
+    "posData": {
       "cash": 18000,
       "qr": 9500,
       "bank": 6000,
       "government": 2500
+    },
+    "differences": {
+      "cashDiff": 0,
+      "qrDiff": 0,
+      "bankDiff": 0,
+      "governmentDiff": 0
     },
     "cashReconciliation": {
       "expectedAmount": 36000,
@@ -117,5 +167,45 @@
     "auditedAt": "2026-02-01T19:00:00.000Z",
     "auditedBy": "auditor-002",
     "auditNotes": "Verified and balanced"
+  },
+  {
+    "id": "sales-1769968206170-rv9d0n3qs",
+    "date": "2026-02-01",
+    "cashierId": "cashier-001",
+    "cashierName": "สมชาย ใจดี",
+    "expectedCash": 4475,
+    "expectedQR": 530,
+    "expectedBank": 0,
+    "expectedGovernment": 900,
+    "posData": {
+      "cash": 4473,
+      "qr": 530,
+      "bank": 0,
+      "government": 900
+    },
+    "differences": {
+      "cashDiff": -2,
+      "qrDiff": 0,
+      "bankDiff": 0,
+      "governmentDiff": 0
+    },
+    "cashReconciliation": {
+      "expectedAmount": 5905,
+      "actualAmount": 5903,
+      "difference": -2,
+      "notes": ""
+    },
+    "auditDetails": {
+      "cashAuditNotes": "ทอนเงินผิดหรือนับเงินผิด",
+      "qrAuditNotes": "",
+      "bankAuditNotes": "",
+      "governmentAuditNotes": "",
+      "recommendation": ""
+    },
+    "total": 5903,
+    "status": "submitted",
+    "submittedBy": "dev-user-1769968206162",
+    "submittedAt": "2026-02-01T17:50:06.170Z",
+    "updatedAt": "2026-02-01T17:50:06.170Z"
   }
 ]

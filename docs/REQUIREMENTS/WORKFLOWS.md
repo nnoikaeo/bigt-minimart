@@ -123,12 +123,12 @@ Total actual cash: 9,800 บาท
    ⚠️ QR short: -500 บาท
 
 2. Bank Transfer:
-   - Check Bank statement → Shows 3,100 บาท
+   - Check Bank app → Shows 3,100 บาท
    - vs POS expected: 3,000 บาท
    ✓ Bank over: +100 บาท
 
 3. Government Programs:
-   - Check POS system → Shows 1,950 บาท
+   - Check Government app → Shows 1,950 บาท
    - vs POS expected: 2,000 บาท
    ⚠️ Government short: -50 บาท
 ```
@@ -2015,7 +2015,7 @@ NEXTDAY RESERVE (สำหรับวันถัดไป):
 
 ```
 เมื่อเงินสด (Cash Reserve) ไม่พอจ่าย Expense Group 1
-→ ต้องยืมจาก "เงินสดซื้อสินค้าวันถัดไป" (NextDay Reserve) ของวันก่อนหน้า
+→ ต้องยืมจาก Cash Sales
 → เรียกว่า "Borrowed Advance"
 ```
 

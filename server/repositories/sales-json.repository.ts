@@ -132,14 +132,21 @@ export class SalesJsonRepository implements ISalesRepository {
       date: sale.date,
       cashierId: sale.cashierId,
       cashierName: sale.cashierName,
-      posposData: sale.posposData,
+      expectedCash: sale.expectedCash ?? 0,
+      expectedQR: sale.expectedQR ?? 0,
+      expectedBank: sale.expectedBank ?? 0,
+      expectedGovernment: sale.expectedGovernment ?? 0,
+      posData: sale.posData,
+      differences: sale.differences,
       cashReconciliation: sale.cashReconciliation,
+      auditDetails: sale.auditDetails,
+      total: sale.total,
       status: sale.status,
       submittedBy: sale.submittedBy,
-      auditNotes: sale.auditNotes,
       submittedAt: new Date().toISOString(),
       auditedAt: sale.auditedAt,
-      updatedAt: sale.updatedAt,
+      auditedBy: sale.auditedBy,
+      updatedAt: new Date().toISOString(),
     }
 
     console.log('[Repository.add] Creating sale with data:', newSale)
@@ -185,12 +192,21 @@ export class SalesJsonRepository implements ISalesRepository {
       date: updates.date ?? existing.date,
       cashierId: updates.cashierId ?? existing.cashierId,
       cashierName: updates.cashierName ?? existing.cashierName,
-      posposData: updates.posposData ?? existing.posposData,
+      expectedCash: updates.expectedCash ?? existing.expectedCash,
+      expectedQR: updates.expectedQR ?? existing.expectedQR,
+      expectedBank: updates.expectedBank ?? existing.expectedBank,
+      expectedGovernment: updates.expectedGovernment ?? existing.expectedGovernment,
+      posData: updates.posData ?? existing.posData,
+      differences: updates.differences ?? existing.differences,
       cashReconciliation: updates.cashReconciliation ?? existing.cashReconciliation,
+      auditDetails: updates.auditDetails ?? existing.auditDetails,
+      total: updates.total ?? existing.total,
       status: updates.status ?? existing.status,
       submittedBy: updates.submittedBy ?? existing.submittedBy,
-      auditNotes: updates.auditNotes ?? existing.auditNotes,
-      submittedAt: updates.submittedAt ?? existing.submittedAt,
+      submittedAt: existing.submittedAt, // Never update
+      auditedAt: updates.auditedAt ?? existing.auditedAt,
+      auditedBy: updates.auditedBy ?? existing.auditedBy,
+      updatedAt: new Date().toISOString(),
     }
 
     // Validate merged data
@@ -235,12 +251,13 @@ export class SalesJsonRepository implements ISalesRepository {
     if (!sale.date) throw new Error('Date is required')
     if (!sale.cashierId) throw new Error('Cashier ID is required')
     if (!sale.cashierName) throw new Error('Cashier name is required')
+    if (!sale.posData) throw new Error('posData is required')
 
-    const total = sale.posposData.cash + sale.posposData.qr + 
-                  sale.posposData.bank + sale.posposData.government
+    const total = sale.posData.cash + sale.posData.qr + 
+                  sale.posData.bank + sale.posData.government
 
     if (total < 0) throw new Error('Total sales cannot be negative')
-    if (sale.cashReconciliation.actualAmount < 0) {
+    if (sale.cashReconciliation && sale.cashReconciliation.actualAmount < 0) {
       throw new Error('Actual cash cannot be negative')
     }
   }

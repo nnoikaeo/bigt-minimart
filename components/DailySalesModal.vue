@@ -29,8 +29,8 @@ const formatCurrency = (amount: number): string => {
   }).format(amount)
 }
 
-const calculateTotal = (posposData: any): number => {
-  return (posposData.cash || 0) + (posposData.qr || 0) + (posposData.bank || 0) + (posposData.government || 0)
+const calculateTotal = (posData: any): number => {
+  return (posData.cash || 0) + (posData.qr || 0) + (posData.bank || 0) + (posData.government || 0)
 }
 
 // Mock cashiers for now - replace with actual data later
@@ -45,8 +45,19 @@ interface FormDataType {
   date: string
   cashierId: string
   cashierName: string
-  posposData: { cash: number; qr: number; bank: number; government: number }
+  expectedCash: number
+  expectedQR: number
+  expectedBank: number
+  expectedGovernment: number
+  posData: { cash: number; qr: number; bank: number; government: number }
   cashReconciliation: { expectedAmount: number; actualAmount: number; difference: number; notes: string }
+  auditDetails: {
+    cashAuditNotes: string
+    qrAuditNotes: string
+    bankAuditNotes: string
+    governmentAuditNotes: string
+    recommendation: string
+  }
   status: 'submitted' | 'audited' | 'approved'
 }
 
@@ -54,7 +65,11 @@ const formData = reactive<FormDataType>({
   date: '',
   cashierId: '',
   cashierName: '',
-  posposData: {
+  expectedCash: 0,
+  expectedQR: 0,
+  expectedBank: 0,
+  expectedGovernment: 0,
+  posData: {
     cash: 0,
     qr: 0,
     bank: 0,
@@ -66,6 +81,13 @@ const formData = reactive<FormDataType>({
     difference: 0,
     notes: '',
   },
+  auditDetails: {
+    cashAuditNotes: '',
+    qrAuditNotes: '',
+    bankAuditNotes: '',
+    governmentAuditNotes: '',
+    recommendation: '',
+  },
   status: 'submitted',
 })
 
@@ -76,23 +98,40 @@ const submitting = ref(false)
 const successMessage = ref('')
 
 // Calculate totals
-const totalAmount = computed(() => calculateTotal(formData.posposData))
-const difference = computed(() => {
-  return totalAmount.value - formData.cashReconciliation.expectedAmount
+const totalAmount = computed(() => calculateTotal(formData.posData))
+const expectedTotal = computed(() => {
+  return formData.expectedCash + formData.expectedQR + formData.expectedBank + formData.expectedGovernment
 })
+const difference = computed(() => {
+  return totalAmount.value - expectedTotal.value
+})
+
+// Calculate per-channel differences
+const cashDiff = computed(() => formData.posData.cash - formData.expectedCash)
+const qrDiff = computed(() => formData.posData.qr - formData.expectedQR)
+const bankDiff = computed(() => formData.posData.bank - formData.expectedBank)
+const governmentDiff = computed(() => formData.posData.government - formData.expectedGovernment)
 
 // Auto-fill actual amount = total amount from payment channels
 watch(
-  () => formData.posposData,
+  () => formData.posData,
   () => {
     formData.cashReconciliation.actualAmount = totalAmount.value
   },
   { deep: true }
 )
 
+// Auto-calculate expectedAmount from per-channel inputs
+watch(
+  () => [formData.expectedCash, formData.expectedQR, formData.expectedBank, formData.expectedGovernment],
+  () => {
+    formData.cashReconciliation.expectedAmount = expectedTotal.value
+  }
+)
+
 // Watch difference changes
 watch(
-  () => [totalAmount, formData.cashReconciliation.expectedAmount],
+  () => [totalAmount, expectedTotal],
   () => {
     formData.cashReconciliation.difference = difference.value
   }
@@ -121,21 +160,38 @@ const handleCashierChange = (event: Event) => {
   }
 }
 
-// Initialize form for edit mode
+// Initialize form for edit mode or reset for new entry
 watch(
-  () => props.editingEntry,
-  (entry) => {
-    if (entry) {
+  () => props.open,
+  (isOpen) => {
+    if (!isOpen) return
+    
+    if (props.editingEntry) {
+      // Edit mode: load entry data
+      const entry = props.editingEntry
       formData.date = entry.date
       formData.cashierId = entry.cashierId
       formData.cashierName = entry.cashierName
-      formData.posposData = { ...entry.posposData }
-      // Ensure notes is always a string
+      formData.expectedCash = entry.expectedCash || 0
+      formData.expectedQR = entry.expectedQR || 0
+      formData.expectedBank = entry.expectedBank || 0
+      formData.expectedGovernment = entry.expectedGovernment || 0
+      formData.posData = { ...entry.posData }
       formData.cashReconciliation = {
         ...entry.cashReconciliation,
         notes: entry.cashReconciliation.notes || '',
       }
+      formData.auditDetails = entry.auditDetails || {
+        cashAuditNotes: '',
+        qrAuditNotes: '',
+        bankAuditNotes: '',
+        governmentAuditNotes: '',
+        recommendation: '',
+      }
       formData.status = entry.status
+    } else {
+      // Create mode: reset form to initial state
+      resetForm()
     }
   }
 )
@@ -145,12 +201,23 @@ const resetForm = () => {
   formData.date = ''
   formData.cashierId = ''
   formData.cashierName = ''
-  formData.posposData = { cash: 0, qr: 0, bank: 0, government: 0 }
+  formData.expectedCash = 0
+  formData.expectedQR = 0
+  formData.expectedBank = 0
+  formData.expectedGovernment = 0
+  formData.posData = { cash: 0, qr: 0, bank: 0, government: 0 }
   formData.cashReconciliation = {
     expectedAmount: 0,
     actualAmount: 0,
     difference: 0,
     notes: '',
+  }
+  formData.auditDetails = {
+    cashAuditNotes: '',
+    qrAuditNotes: '',
+    bankAuditNotes: '',
+    governmentAuditNotes: '',
+    recommendation: '',
   }
   formData.status = 'submitted'
   validationErrors.value = {}
@@ -179,7 +246,28 @@ const handleSubmit = async () => {
   }
 
   if (totalAmount.value === 0) {
-    validationErrors.value.posposData = 'กรุณากรอกยอดขายอย่างน้อย 1 ช่องทาง'
+    validationErrors.value.posData = 'กรุณากรอกยอดขายอย่างน้อย 1 ช่องทาง'
+  }
+
+  if (expectedTotal.value === 0) {
+    validationErrors.value.expectedAmount = 'กรุณากรอกยอดคาดไว้อย่างน้อย 1 ช่องทาง'
+  }
+
+  // Conditional validation: per-channel audit notes only when difference exists
+  if (cashDiff.value !== 0 && !formData.auditDetails.cashAuditNotes.trim()) {
+    validationErrors.value.cashAuditNotes = 'กรุณาอธิบายสาเหตุของผลต่าง (เงินสด)'
+  }
+
+  if (qrDiff.value !== 0 && !formData.auditDetails.qrAuditNotes.trim()) {
+    validationErrors.value.qrAuditNotes = 'กรุณาอธิบายสาเหตุของผลต่าง (QR Code)'
+  }
+
+  if (bankDiff.value !== 0 && !formData.auditDetails.bankAuditNotes.trim()) {
+    validationErrors.value.bankAuditNotes = 'กรุณาอธิบายสาเหตุของผลต่าง (ธนาคาร)'
+  }
+
+  if (governmentDiff.value !== 0 && !formData.auditDetails.governmentAuditNotes.trim()) {
+    validationErrors.value.governmentAuditNotes = 'กรุณาอธิบายสาเหตุของผลต่าง (โครงการรัฐ)'
   }
 
   if (Object.keys(validationErrors.value).length > 0) {
@@ -190,20 +278,36 @@ const handleSubmit = async () => {
   submitting.value = true
   try {
     logger.log('Submitting daily sales entry', formData)
-  emit('submit', {
+    emit('submit', {
       date: formData.date,
       cashierId: formData.cashierId,
       cashierName: formData.cashierName,
-      posposData: formData.posposData,
+      expectedCash: formData.expectedCash,
+      expectedQR: formData.expectedQR,
+      expectedBank: formData.expectedBank,
+      expectedGovernment: formData.expectedGovernment,
+      posData: formData.posData,
+      differences: {
+        cashDiff: cashDiff.value,
+        qrDiff: qrDiff.value,
+        bankDiff: bankDiff.value,
+        governmentDiff: governmentDiff.value,
+      },
       cashReconciliation: {
         expectedAmount: formData.cashReconciliation.expectedAmount,
         actualAmount: formData.cashReconciliation.actualAmount,
         difference: formData.cashReconciliation.difference,
-        notes: formData.cashReconciliation.notes || '', // Ensure notes is always a string
+        notes: formData.cashReconciliation.notes || '',
+      },
+      auditDetails: {
+        cashAuditNotes: formData.auditDetails.cashAuditNotes,
+        qrAuditNotes: formData.auditDetails.qrAuditNotes,
+        bankAuditNotes: formData.auditDetails.bankAuditNotes,
+        governmentAuditNotes: formData.auditDetails.governmentAuditNotes,
+        recommendation: formData.auditDetails.recommendation,
       },
       status: formData.status,
-      submittedBy: 'current-user-id', // Will be set by store/page
-      auditNotes: '',
+      submittedBy: 'current-user-id',
     })
     successMessage.value = 'บันทึกข้อมูลสำเร็จ'
     setTimeout(() => {
@@ -299,14 +403,105 @@ const handleClose = () => {
             </div>
           </div>
 
-          <!-- Payment Channels -->
+          <!-- SECTION A: Expected Per Channel (from POS) -->
           <div class="space-y-4">
             <h3 class="text-lg font-semibold text-gray-800 border-b pb-2">
-              ยอดขาย 4 ช่องทาง
+              📋 Section A: ยอดคาดไว้ (จากใบเสร็จ POS)
             </h3>
 
-            <div v-if="validationErrors.posposData" class="bg-red-50 border border-red-200 rounded-lg p-3 text-red-800 text-sm">
-              ⚠ {{ validationErrors.posposData }}
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Expected Cash -->
+              <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
+                <label class="block text-sm font-semibold text-blue-900 mb-2">
+                  💵 เงินสดคาดไว้
+                </label>
+                <div class="flex items-center gap-2">
+                  <span class="text-gray-600">฿</span>
+                  <input
+                    v-model.number="formData.expectedCash"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    class="flex-1 px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <!-- Expected QR -->
+              <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200">
+                <label class="block text-sm font-semibold text-purple-900 mb-2">
+                  📱 QR Code คาดไว้
+                </label>
+                <div class="flex items-center gap-2">
+                  <span class="text-gray-600">฿</span>
+                  <input
+                    v-model.number="formData.expectedQR"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    class="flex-1 px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+              </div>
+
+              <!-- Expected Bank -->
+              <div class="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
+                <label class="block text-sm font-semibold text-green-900 mb-2">
+                  🏦 ธนาคารคาดไว้
+                </label>
+                <div class="flex items-center gap-2">
+                  <span class="text-gray-600">฿</span>
+                  <input
+                    v-model.number="formData.expectedBank"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    class="flex-1 px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:border-green-500"
+                  />
+                </div>
+              </div>
+
+              <!-- Expected Government -->
+              <div class="bg-gradient-to-br from-amber-50 to-amber-100 p-4 rounded-lg border border-amber-200">
+                <label class="block text-sm font-semibold text-amber-900 mb-2">
+                  🏛️ โครงการรัฐคาดไว้
+                </label>
+                <div class="flex items-center gap-2">
+                  <span class="text-gray-600">฿</span>
+                  <input
+                    v-model.number="formData.expectedGovernment"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    class="flex-1 px-3 py-2 border border-amber-300 rounded-lg focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Expected Total -->
+            <div class="bg-gradient-to-r from-orange-50 to-orange-100 p-4 rounded-lg border-2 border-orange-300">
+              <div class="flex justify-between items-center">
+                <span class="text-lg font-semibold text-orange-900">รวมยอดคาดไว้</span>
+                <span class="text-2xl font-bold text-orange-700">
+                  {{ formatCurrency(expectedTotal) }}
+                </span>
+              </div>
+            </div>
+
+            <div v-if="validationErrors.expectedAmount" class="bg-red-50 border border-red-200 rounded-lg p-3 text-red-800 text-sm">
+              ⚠ {{ validationErrors.expectedAmount }}
+            </div>
+          </div>
+
+          <!-- SECTION B: Actual Per Channel (from verification) -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-gray-800 border-b pb-2">
+              ✓ Section B: ยอดจริง (จากการตรวจสอบ)
+            </h3>
+
+            <div v-if="validationErrors.posData" class="bg-red-50 border border-red-200 rounded-lg p-3 text-red-800 text-sm">
+              ⚠ {{ validationErrors.posData }}
             </div>
 
             <!-- Payment channels grid -->
@@ -319,7 +514,7 @@ const handleClose = () => {
                 <div class="flex items-center gap-2">
                   <span class="text-gray-600">฿</span>
                   <input
-                    v-model.number="formData.posposData.cash"
+                    v-model.number="formData.posData.cash"
                     type="number"
                     min="0"
                     step="0.01"
@@ -336,7 +531,7 @@ const handleClose = () => {
                 <div class="flex items-center gap-2">
                   <span class="text-gray-600">฿</span>
                   <input
-                    v-model.number="formData.posposData.qr"
+                    v-model.number="formData.posData.qr"
                     type="number"
                     min="0"
                     step="0.01"
@@ -353,7 +548,7 @@ const handleClose = () => {
                 <div class="flex items-center gap-2">
                   <span class="text-gray-600">฿</span>
                   <input
-                    v-model.number="formData.posposData.bank"
+                    v-model.number="formData.posData.bank"
                     type="number"
                     min="0"
                     step="0.01"
@@ -370,7 +565,7 @@ const handleClose = () => {
                 <div class="flex items-center gap-2">
                   <span class="text-gray-600">฿</span>
                   <input
-                    v-model.number="formData.posposData.government"
+                    v-model.number="formData.posData.government"
                     type="number"
                     min="0"
                     step="0.01"
@@ -383,7 +578,7 @@ const handleClose = () => {
             <!-- Total -->
             <div class="bg-gradient-to-r from-red-50 to-red-100 p-4 rounded-lg border-2 border-red-300">
               <div class="flex justify-between items-center">
-                <span class="text-lg font-semibold text-red-900">รวมยอดขาย</span>
+                <span class="text-lg font-semibold text-red-900">รวมยอดจริง</span>
                 <span class="text-2xl font-bold text-red-700">
                   {{ formatCurrency(totalAmount) }}
                 </span>
@@ -391,8 +586,92 @@ const handleClose = () => {
             </div>
           </div>
 
-          <!-- Cash Reconciliation -->
+          <!-- SECTION C+D: Merged Differences & Per-Channel Audit Notes -->
           <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-gray-800 border-b pb-2">
+              ⚖️ Section C+D: ผลต่างและวิเคราะห์รายช่องทาง
+            </h3>
+
+            <!-- 2x2 Grid: 4 Payment Channels -->
+            <div class="grid grid-cols-2 gap-4">
+              <!-- CASH -->
+              <div class="border-2 border-blue-300 p-4 rounded-lg">
+                <h4 class="font-semibold text-blue-900 mb-3">💵 เงินสด</h4>
+                <div class="space-y-2">
+                  <div class="text-sm">ยอดจริง: <span class="font-semibold">{{ formatCurrency(formData.posData.cash) }}</span></div>
+                  <div :class="['text-sm font-semibold px-2 py-1 rounded', cashDiff > 0 ? 'bg-green-100 text-green-800' : cashDiff < 0 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800']">
+                    ผลต่าง: {{ formatCurrency(cashDiff) }}
+                  </div>
+                  <textarea v-if="cashDiff !== 0" v-model="formData.auditDetails.cashAuditNotes" placeholder="วิเคราะห์สาเหตุ..." class="w-full p-2 border border-gray-300 rounded text-xs h-16" />
+                  <div v-else class="text-xs text-gray-500">✓ ตรวจสอบแล้ว (ไม่มีผลต่าง)</div>
+                  <p v-if="validationErrors.cashAuditNotes" class="text-red-500 text-xs">{{ validationErrors.cashAuditNotes }}</p>
+                </div>
+              </div>
+
+              <!-- QR -->
+              <div class="border-2 border-purple-300 p-4 rounded-lg">
+                <h4 class="font-semibold text-purple-900 mb-3">📱 QR Code</h4>
+                <div class="space-y-2">
+                  <div class="text-sm">ยอดจริง: <span class="font-semibold">{{ formatCurrency(formData.posData.qr) }}</span></div>
+                  <div :class="['text-sm font-semibold px-2 py-1 rounded', qrDiff > 0 ? 'bg-green-100 text-green-800' : qrDiff < 0 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800']">
+                    ผลต่าง: {{ formatCurrency(qrDiff) }}
+                  </div>
+                  <textarea v-if="qrDiff !== 0" v-model="formData.auditDetails.qrAuditNotes" placeholder="วิเคราะห์สาเหตุ..." class="w-full p-2 border border-gray-300 rounded text-xs h-16" />
+                  <div v-else class="text-xs text-gray-500">✓ ตรวจสอบแล้ว (ไม่มีผลต่าง)</div>
+                  <p v-if="validationErrors.qrAuditNotes" class="text-red-500 text-xs">{{ validationErrors.qrAuditNotes }}</p>
+                </div>
+              </div>
+
+              <!-- BANK -->
+              <div class="border-2 border-green-300 p-4 rounded-lg">
+                <h4 class="font-semibold text-green-900 mb-3">🏦 ธนาคาร</h4>
+                <div class="space-y-2">
+                  <div class="text-sm">ยอดจริง: <span class="font-semibold">{{ formatCurrency(formData.posData.bank) }}</span></div>
+                  <div :class="['text-sm font-semibold px-2 py-1 rounded', bankDiff > 0 ? 'bg-green-100 text-green-800' : bankDiff < 0 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800']">
+                    ผลต่าง: {{ formatCurrency(bankDiff) }}
+                  </div>
+                  <textarea v-if="bankDiff !== 0" v-model="formData.auditDetails.bankAuditNotes" placeholder="วิเคราะห์สาเหตุ..." class="w-full p-2 border border-gray-300 rounded text-xs h-16" />
+                  <div v-else class="text-xs text-gray-500">✓ ตรวจสอบแล้ว (ไม่มีผลต่าง)</div>
+                  <p v-if="validationErrors.bankAuditNotes" class="text-red-500 text-xs">{{ validationErrors.bankAuditNotes }}</p>
+                </div>
+              </div>
+
+              <!-- GOVERNMENT -->
+              <div class="border-2 border-amber-300 p-4 rounded-lg">
+                <h4 class="font-semibold text-amber-900 mb-3">🏛️ โครงการรัฐ</h4>
+                <div class="space-y-2">
+                  <div class="text-sm">ยอดจริง: <span class="font-semibold">{{ formatCurrency(formData.posData.government) }}</span></div>
+                  <div :class="['text-sm font-semibold px-2 py-1 rounded', governmentDiff > 0 ? 'bg-green-100 text-green-800' : governmentDiff < 0 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800']">
+                    ผลต่าง: {{ formatCurrency(governmentDiff) }}
+                  </div>
+                  <textarea v-if="governmentDiff !== 0" v-model="formData.auditDetails.governmentAuditNotes" placeholder="วิเคราะห์สาเหตุ..." class="w-full p-2 border border-gray-300 rounded text-xs h-16" />
+                  <div v-else class="text-xs text-gray-500">✓ ตรวจสอบแล้ว (ไม่มีผลต่าง)</div>
+                  <p v-if="validationErrors.governmentAuditNotes" class="text-red-500 text-xs">{{ validationErrors.governmentAuditNotes }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Total Difference -->
+            <div :class="['p-4 rounded-lg border-2 font-semibold text-center', difference > 0 ? 'bg-green-50 border-green-300 text-green-700' : difference < 0 ? 'bg-red-50 border-red-300 text-red-700' : 'bg-gray-50 border-gray-300 text-gray-700']">
+              <div class="text-sm">รวมผลต่าง</div>
+              <div class="text-2xl">{{ formatCurrency(difference) }}</div>
+            </div>
+
+            <!-- Recommendation (full-width) -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">ข้อแนะนำการปรับปรุง</label>
+              <textarea v-model="formData.auditDetails.recommendation" placeholder="เช่น ควรเพิ่มความระมัดระวัง..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 resize-none h-20" />
+            </div>
+
+            <!-- Notes (full-width) -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">หมายเหตุเพิ่มเติม</label>
+              <textarea v-model="formData.cashReconciliation.notes" placeholder="ข้อมูลสรุปเพิ่มเติม..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 resize-none h-16" />
+            </div>
+          </div>
+
+          <!-- Old Cash Reconciliation Section (Remove) -->
+          <div class="space-y-4" style="display: none;">
             <h3 class="text-lg font-semibold text-gray-800 border-b pb-2">
               ผลต่างเงินสด
             </h3>

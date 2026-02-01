@@ -139,15 +139,15 @@ export const useSalesStore = defineStore('sales', {
         // Handle numeric comparison for total
         if (state.sortBy === 'total') {
           aVal =
-            a.posposData.cash +
-            a.posposData.qr +
-            a.posposData.bank +
-            a.posposData.government
+            a.posData.cash +
+            a.posData.qr +
+            a.posData.bank +
+            a.posData.government
           bVal =
-            b.posposData.cash +
-            b.posposData.qr +
-            b.posposData.bank +
-            b.posposData.government
+            b.posData.cash +
+            b.posData.qr +
+            b.posData.bank +
+            b.posData.government
         }
 
         if (state.sortOrder === 'asc') {
@@ -185,16 +185,16 @@ export const useSalesStore = defineStore('sales', {
       return state.dailySales.reduce(
         (sum, sale) => {
           // Validate entry has required fields
-          if (!sale.posposData) {
-            console.warn('[getTotalSalesAmount] Entry missing posposData:', sale.id)
+          if (!sale.posData) {
+            console.warn('[getTotalSalesAmount] Entry missing posData:', sale.id)
             return sum
           }
           return (
             sum +
-            (sale.posposData.cash || 0) +
-            (sale.posposData.qr || 0) +
-            (sale.posposData.bank || 0) +
-            (sale.posposData.government || 0)
+            (sale.posData.cash || 0) +
+            (sale.posData.qr || 0) +
+            (sale.posData.bank || 0) +
+            (sale.posData.government || 0)
           )
         },
         0
@@ -213,10 +213,10 @@ export const useSalesStore = defineStore('sales', {
       }
 
       state.dailySales.forEach((sale) => {
-        byMethod.cash += sale.posposData.cash
-        byMethod.qr += sale.posposData.qr
-        byMethod.bank += sale.posposData.bank
-        byMethod.government += sale.posposData.government
+        byMethod.cash += sale.posData.cash
+        byMethod.qr += sale.posData.qr
+        byMethod.bank += sale.posData.bank
+        byMethod.government += sale.posData.government
       })
 
       return byMethod
@@ -310,14 +310,14 @@ export const useSalesStore = defineStore('sales', {
         const newEntry = response?.data
         
         console.log('[addDailySale] Extracted entry:', newEntry)
-        console.log('[addDailySale] Entry has posposData:', !!newEntry?.posposData)
+        console.log('[addDailySale] Entry has posData:', !!newEntry?.posData)
         console.log('[addDailySale] Entry has cashierName:', !!newEntry?.cashierName)
         console.log('[addDailySale] Entry keys:', Object.keys(newEntry || {}))
 
         // Validate entry has all required fields
-        if (!newEntry?.posposData) {
-          console.error('[addDailySale] ❌ New entry missing posposData:', newEntry)
-          throw new Error('Invalid response: missing posposData')
+        if (!newEntry?.posData) {
+          console.error('[addDailySale] ❌ New entry missing posData:', newEntry)
+          throw new Error('Invalid response: missing posData')
         }
         if (!newEntry?.cashierName) {
           console.error('[addDailySale] ❌ New entry missing cashierName:', newEntry)
