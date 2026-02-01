@@ -16,11 +16,21 @@ const updateDailySalesSchema = z.object({
   date: z.string().optional(),
   cashierId: z.string().optional(),
   cashierName: z.string().optional(),
-  posposData: z.object({
+  expectedCash: z.number().nonnegative().optional(),
+  expectedQR: z.number().nonnegative().optional(),
+  expectedBank: z.number().nonnegative().optional(),
+  expectedGovernment: z.number().nonnegative().optional(),
+  posData: z.object({
     cash: z.number().nonnegative().optional(),
     qr: z.number().nonnegative().optional(),
     bank: z.number().nonnegative().optional(),
     government: z.number().nonnegative().optional(),
+  }).optional(),
+  differences: z.object({
+    cashDiff: z.number().optional(),
+    qrDiff: z.number().optional(),
+    bankDiff: z.number().optional(),
+    governmentDiff: z.number().optional(),
   }).optional(),
   cashReconciliation: z.object({
     expectedAmount: z.number().nonnegative().optional(),
@@ -28,9 +38,15 @@ const updateDailySalesSchema = z.object({
     difference: z.number().optional(),
     notes: z.string().optional(),
   }).optional(),
+  auditDetails: z.object({
+    cashAuditNotes: z.string().optional(),
+    qrAuditNotes: z.string().optional(),
+    bankAuditNotes: z.string().optional(),
+    governmentAuditNotes: z.string().optional(),
+    recommendation: z.string().optional(),
+  }).optional(),
   status: z.enum(['submitted', 'audited', 'approved']).optional(),
-  auditNotes: z.string().optional(),
-  submittedBy: z.string().optional(), // Allow submittedBy from client
+  submittedBy: z.string().optional(),
 }).strict()
 
 export default defineEventHandler(async (event) => {
@@ -59,16 +75,6 @@ export default defineEventHandler(async (event) => {
     console.log('[PUT /api/daily-sales/[id]] Request body:', body)
     
     const validatedData = updateDailySalesSchema.parse(body)
-    
-    // Ensure posposData properties are numbers with defaults
-    if (validatedData.posposData) {
-      validatedData.posposData = {
-        cash: validatedData.posposData.cash ?? 0,
-        qr: validatedData.posposData.qr ?? 0,
-        bank: validatedData.posposData.bank ?? 0,
-        government: validatedData.posposData.government ?? 0,
-      }
-    }
 
     // Get existing entry to verify it exists
     const existingEntry = await salesJsonRepository.getById(id)
@@ -82,55 +88,56 @@ export default defineEventHandler(async (event) => {
 
     console.log('[PUT /api/daily-sales/[id]] Updating entry:', id)
 
-    // Build partial update object with safe property access
+    // Build partial update object
     const updateData: Partial<DailySalesEntry> = {}
     
-    // Only add properties that are defined
+    // Copy defined properties
     if (validatedData.date !== undefined) updateData.date = validatedData.date
     if (validatedData.cashierId !== undefined) updateData.cashierId = validatedData.cashierId
     if (validatedData.cashierName !== undefined) updateData.cashierName = validatedData.cashierName
+    if (validatedData.expectedCash !== undefined) updateData.expectedCash = validatedData.expectedCash
+    if (validatedData.expectedQR !== undefined) updateData.expectedQR = validatedData.expectedQR
+    if (validatedData.expectedBank !== undefined) updateData.expectedBank = validatedData.expectedBank
+    if (validatedData.expectedGovernment !== undefined) updateData.expectedGovernment = validatedData.expectedGovernment
     if (validatedData.status !== undefined) updateData.status = validatedData.status
     if (validatedData.submittedBy !== undefined) updateData.submittedBy = validatedData.submittedBy
-    if (validatedData.auditNotes !== undefined) updateData.auditNotes = validatedData.auditNotes
     
-    // Handle posposData with defaults
-    if (validatedData.posposData) {
-      updateData.posposData = {
-        cash: validatedData.posposData.cash ?? 0,
-        qr: validatedData.posposData.qr ?? 0,
-        bank: validatedData.posposData.bank ?? 0,
-        government: validatedData.posposData.government ?? 0,
+    // Handle posData with defaults
+    if (validatedData.posData) {
+      updateData.posData = {
+        cash: validatedData.posData.cash ?? existingEntry.posData.cash,
+        qr: validatedData.posData.qr ?? existingEntry.posData.qr,
+        bank: validatedData.posData.bank ?? existingEntry.posData.bank,
+        government: validatedData.posData.government ?? existingEntry.posData.government,
       }
+    }
+    
+    // Handle differences
+    if (validatedData.differences !== undefined) {
+      updateData.differences = validatedData.differences
     }
     
     // Handle cashReconciliation
     if (validatedData.cashReconciliation) {
-      updateData.cashReconciliation = {
-        expectedAmount: validatedData.cashReconciliation.expectedAmount ?? 0,
-        actualAmount: validatedData.cashReconciliation.actualAmount ?? 0,
-        difference: validatedData.cashReconciliation.difference ?? 0,
-        notes: validatedData.cashReconciliation.notes ?? '',
-      }
-    }
-
-    // Recalculate difference and total if reconciliation data changed
-    if (validatedData.cashReconciliation) {
       const expectedAmount = validatedData.cashReconciliation.expectedAmount ?? existingEntry.cashReconciliation.expectedAmount
       const actualAmount = validatedData.cashReconciliation.actualAmount ?? existingEntry.cashReconciliation.actualAmount
       updateData.cashReconciliation = {
-        ...existingEntry.cashReconciliation,
-        ...validatedData.cashReconciliation,
+        expectedAmount,
+        actualAmount,
         difference: actualAmount - expectedAmount,
+        notes: validatedData.cashReconciliation.notes ?? existingEntry.cashReconciliation.notes,
       }
     }
 
-    // Recalculate total if posposData changed
-    if (validatedData.posposData) {
-      const posposData = {
-        ...existingEntry.posposData,
-        ...validatedData.posposData,
-      }
-      updateData.total = posposData.cash + posposData.qr + posposData.bank + posposData.government
+    // Handle auditDetails
+    if (validatedData.auditDetails !== undefined) {
+      updateData.auditDetails = validatedData.auditDetails
+    }
+
+    // Recalculate total if posData changed
+    if (validatedData.posData) {
+      const posData = updateData.posData || existingEntry.posData
+      updateData.total = posData.cash + posData.qr + posData.bank + posData.government
     }
 
     // Update via repository
