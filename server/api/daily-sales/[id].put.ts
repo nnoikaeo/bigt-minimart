@@ -114,7 +114,12 @@ export default defineEventHandler(async (event) => {
     
     // Handle differences
     if (validatedData.differences !== undefined) {
-      updateData.differences = validatedData.differences
+      updateData.differences = {
+        cashDiff: validatedData.differences.cashDiff ?? existingEntry.differences?.cashDiff ?? 0,
+        qrDiff: validatedData.differences.qrDiff ?? existingEntry.differences?.qrDiff ?? 0,
+        bankDiff: validatedData.differences.bankDiff ?? existingEntry.differences?.bankDiff ?? 0,
+        governmentDiff: validatedData.differences.governmentDiff ?? existingEntry.differences?.governmentDiff ?? 0,
+      } as DailySalesEntry['differences']
     }
     
     // Handle cashReconciliation
@@ -131,7 +136,13 @@ export default defineEventHandler(async (event) => {
 
     // Handle auditDetails
     if (validatedData.auditDetails !== undefined) {
-      updateData.auditDetails = validatedData.auditDetails
+      updateData.auditDetails = {
+        cashAuditNotes: validatedData.auditDetails.cashAuditNotes ?? existingEntry.auditDetails?.cashAuditNotes ?? '',
+        qrAuditNotes: validatedData.auditDetails.qrAuditNotes ?? existingEntry.auditDetails?.qrAuditNotes ?? '',
+        bankAuditNotes: validatedData.auditDetails.bankAuditNotes ?? existingEntry.auditDetails?.bankAuditNotes ?? '',
+        governmentAuditNotes: validatedData.auditDetails.governmentAuditNotes ?? existingEntry.auditDetails?.governmentAuditNotes ?? '',
+        recommendation: validatedData.auditDetails.recommendation ?? existingEntry.auditDetails?.recommendation ?? '',
+      } as DailySalesEntry['auditDetails']
     }
 
     // Recalculate total if posData changed
