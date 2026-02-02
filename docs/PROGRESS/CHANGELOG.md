@@ -4,6 +4,83 @@ All notable changes to this project are documented here.
 
 ---
 
+## [1.4] - 2026-02-03
+
+### ✨ Week 4: Access Control System (User/Role Management)
+
+**Added**
+- [NEW] pages/admin/access-control.vue - Complete access control management page (596 lines)
+  - Users table with status toggle iOS switch
+  - User modal with create/edit functionality
+  - Primary role selection with auto-sync to roles checkboxes
+  - Permissions modal for role permission management
+  - Delete confirmation modal
+- [NEW] stores/access-control.ts - Pinia store for access control (407 lines)
+  - State: users, roles, permissions, rolePermissions
+  - Getters: getAllUsers, getAllRoles, getAllPermissions, getCashiers
+  - Actions: fetchUsers, createUser, updateUser, deleteUser, fetchRoles
+  - Repository pattern support (JSON & Firestore-ready)
+- [NEW] types/access-control.ts - Type definitions for access control
+  - User interface with uid, email, displayName, primaryRole, roles, isActive
+  - Role interface with id, name, description
+  - Permission interface
+  - CreateUserInput & UpdateUserInput for form validation
+- [NEW] server/repositories/access-control.repository.ts - Abstract repository interface
+- [NEW] server/repositories/access-control-json.repository.ts - JSON implementation (400+ lines)
+  - All CRUD operations for users, roles, permissions
+  - File-based persistence
+- [NEW] server/api/access-control/users/*.ts - API endpoints
+  - GET /api/access-control/users (fetch all)
+  - POST /api/access-control/users (create)
+  - PUT /api/access-control/users/[id] (update)
+  - DELETE /api/access-control/users/[id] (delete)
+- [NEW] server/api/access-control/roles/*.ts - Role API endpoints
+  - GET /api/access-control/roles (fetch all)
+  - GET /api/access-control/roles/[id]/permissions (fetch permissions)
+  - PUT /api/access-control/roles/[id]/permissions (update permissions)
+- [NEW] public/data/roles.json - Role definitions (5 roles)
+  - owner, manager, assistant_manager, auditor, cashier
+- [NEW] public/data/permissions.json - Permission definitions
+- [NEW] public/data/role-permissions.json - Role-permission mappings
+- [NEW] public/data/users.json - Sample user data (5 users)
+- [NEW] docs/TECHNICAL/ACCESS_CONTROL_IMPLEMENTATION.md - Complete implementation guide
+- [NEW] docs/TECHNICAL/AUTH_STORE_USAGE.md - Auth store usage patterns
+- [NEW] docs/TECHNICAL/HYBRID_APPROACH_SETUP.md - Hybrid approach architecture
+- [NEW] pages/admin/audit-log.vue - Audit log page (placeholder)
+- [NEW] pages/admin/system-logs.vue - System logs page (placeholder)
+
+**Changed**
+- [UPDATED] stores/access-control.ts - getAllRoles now returns sorted list
+  - Role order: owner → manager → assistant_manager → auditor → cashier
+- [ENHANCED] Access Control Store with watch for primaryRole auto-sync
+  - Selecting primaryRole auto-clears and sets roles checkbox
+
+**Features Implemented**
+- User management: Create, Read, Update, Delete (Full CRUD)
+- Status toggle: iOS switch for active/inactive status
+- Auto-sync: Primary role selection auto-syncs to roles
+- Role-based UI: Access control available to owner/manager only
+- Data validation: Zod validation on API endpoints
+- Responsive design: Mobile-friendly modal and table
+- Thai localization: All labels in Thai
+- Error handling: User-friendly error messages
+
+**Fixes**
+- Fixed email mismatch: Firebase Auth and Firestore now use same email
+- Fixed UID mismatch: Firestore document IDs match Firebase Auth UIDs
+- Fixed type errors: primaryRole type includes 'unknown' value
+- Fixed redundant role field: Removed deprecated 'role' field
+- Fixed Zod validation: Changed error.errors to error.issues
+
+**Quality Assurance**
+- TypeScript: 0 errors ✅
+- All API endpoints tested ✅
+- Pinia store fully functional ✅
+- Components responsive and accessible ✅
+- Documentation complete ✅
+
+---
+
 ## [1.3] - 2026-01-16
 
 ### ✨ Week 3: Sidebar Navigation & Pages Complete

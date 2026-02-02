@@ -1,8 +1,8 @@
 # 📊 Project Status Dashboard
 
-**Last Updated**: Jan 30, 2026, Morning (Week 3 Complete - Code Clean & Documentation Organized ✅)  
+**Last Updated**: Feb 3, 2026, Evening (Week 4 Access Control Feature - In Progress ✅)  
 **Updated By**: Claude Code + Claude.ai  
-**Next Update**: Feb 5, 2026 (Week 4 Development Start)
+**Next Update**: Feb 10, 2026 (Week 4 Completion Target)
 
 ---
 
@@ -21,9 +21,18 @@ PHASE 1: Core Features (Weeks 1-6 = 4-6 weeks)
 │  ├─ Task 3.5: Integration Testing ✅ COMPLETE
 │  ├─ Task 3.6: Type Definitions ✅ COMPLETE
 │  ├─ Overall: Implementation complete, all CRUD verified, PR merged ✅
-├─ Week 4: Expenses + Audit ❌ NOT STARTED (0%)
+├─ Week 4: Access Control (User/Role Management) 🟡 IN PROGRESS (60%)
+│  ├─ Task 4.0: Design & Architecture ✅ COMPLETE (Feb 1-3)
+│  ├─ Task 4.1: Access Control Store ✅ COMPLETE (Feb 2-3)
+│  ├─ Task 4.2: Users Table Component ✅ COMPLETE (Feb 3)
+│  ├─ Task 4.3: User Modal (CRUD) ✅ COMPLETE with Auto-sync (Feb 3)
+│  ├─ Task 4.4: Status Toggle (iOS Switch) ✅ COMPLETE (Feb 3)
+│  ├─ Task 4.5: Role Sorting ✅ COMPLETE (Feb 3)
+│  ├─ Task 4.6: Permissions Modal ⏳ NEXT (Feb 4-5)
+│  ├─ Task 4.7: API Endpoints ⏳ PENDING (Feb 4-5)
+│  └─ Overall: Core UI/UX complete, API integration pending
 ├─ Week 5-6: Dashboard + Reports ❌ NOT STARTED (0%)
-└─ Overall: 100% WEEK 3 DESIGN COMPLETE, 100% WEEK 3 CODE COMPLETE
+└─ Overall: WEEK 4 PARTIAL COMPLETE (60% UI, 40% Backend API)
 
 Timeline Status: ON SCHEDULE ✓ (Ahead of schedule!)
 Target Launch: March 2026 ✓

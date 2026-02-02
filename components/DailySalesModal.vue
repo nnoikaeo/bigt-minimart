@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, watch, computed } from 'vue'
 import { useLogger } from '~/composables/useLogger'
+import { useAccessControlStore } from '~/stores/access-control'
 import type { DailySalesEntry } from '~/types/repositories'
 
 interface Props {
@@ -19,6 +20,7 @@ const emit = defineEmits<{
 }>()
 
 const logger = useLogger('DailySalesModal')
+const accessControlStore = useAccessControlStore()
 
 // Helper functions
 const formatCurrency = (amount: number): string => {
@@ -33,12 +35,14 @@ const calculateTotal = (posData: any): number => {
   return (posData.cash || 0) + (posData.qr || 0) + (posData.bank || 0) + (posData.government || 0)
 }
 
-// Mock cashiers for now - replace with actual data later
-const cashiers = ref([
-  { id: 'cashier-001', name: 'สมชาย ใจดี' },
-  { id: 'cashier-002', name: 'สินใจ ขยัน' },
-  { id: 'cashier-003', name: 'บัญชา สุวรรณ' },
-])
+// Get cashiers from access control store
+// This getter filters users who have 'cashier' role and are active
+const cashiers = computed(() => {
+  return accessControlStore.getCashiers.map((user) => ({
+    id: user.uid,
+    name: user.displayName,
+  }))
+})
 
 // Form state with explicit type annotation
 interface FormDataType {

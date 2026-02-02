@@ -56,35 +56,49 @@ export const useAuth = () => {
       
       const user = userCredential.user
       
-      // Try to fetch user role from Firestore first
-      let userRole = extractRoleFromDisplayName(user.displayName)
+      // Fetch user role from Firestore (Hybrid Approach)
+      let userRole = 'unknown'
+      let userRoles: string[] = []
+      let userPrimaryRole: 'owner' | 'manager' | 'assistant_manager' | 'cashier' | 'auditor' | 'unknown' = 'unknown'
+      let userIsActive = false
+      let userDisplayName = user.displayName || 'User'
       
       if ($db) {
         try {
           const userDocRef = doc($db as any, 'users', user.uid)
           const userDocSnap = await getDoc(userDocRef)
           if (userDocSnap.exists()) {
-            const firestoreRole = userDocSnap.data()?.role || null
-            if (firestoreRole) {
-              userRole = firestoreRole
-              console.log('[Auth] Fetched role from Firestore:', userRole)
-            }
+            const firestoreData = userDocSnap.data()
+            userRole = firestoreData?.primaryRole || 'unknown'
+            userRoles = firestoreData?.roles || []
+            userPrimaryRole = firestoreData?.primaryRole || 'unknown'
+            userIsActive = firestoreData?.isActive ?? true
+            userDisplayName = firestoreData?.displayName || user.displayName || 'User'
+            console.log('[Auth] Fetched from Firestore:', { role: userRole, roles: userRoles, primaryRole: userPrimaryRole, isActive: userIsActive, displayName: userDisplayName })
+          } else {
+            console.warn('[Auth] No user document in Firestore for UID:', user.uid)
+            userRole = extractRoleFromDisplayName(user.displayName)
           }
         } catch (error: any) {
-          // Silently fall back to displayName extraction
-          console.log('[Auth] Using role from displayName:', userRole)
+          console.error('[Auth] Error fetching from Firestore:', error.message)
+          userRole = extractRoleFromDisplayName(user.displayName)
         }
+      } else {
+        // Fallback if Firestore not available
+        userRole = extractRoleFromDisplayName(user.displayName)
       }
       
       // Store user info in auth store
       authStore.setUser({
         uid: user.uid,
         email: user.email,
-        displayName: user.displayName,
-        role: userRole as any,
+        displayName: userDisplayName,
+        primaryRole: userPrimaryRole,
+        roles: userRoles,
+        isActive: userIsActive,
       })
 
-      console.log('[Auth] Login successful:', user.email, '| role:', userRole)
+      console.log('[Auth] Login successful:', user.email, '| role:', userRole, '| roles:', userRoles)
       return { success: true, user }
     } catch (error: any) {
       console.error('[Auth] Login failed:', error.code, error.message)
@@ -130,30 +144,42 @@ export const useAuth = () => {
         if (user) {
           console.log('[Auth] User logged in:', user.email)
           
-          // Try to fetch user role from Firestore first
-          let userRole = extractRoleFromDisplayName(user.displayName)
+          // Fetch user role from Firestore (Hybrid Approach)
+          let userRole = 'unknown'
+          let userRoles: string[] = []
+          let userPrimaryRole: 'owner' | 'manager' | 'assistant_manager' | 'cashier' | 'auditor' | 'unknown' = 'unknown'
+          let userIsActive = false
           
           if ($db) {
             try {
               const userDocRef = doc($db as any, 'users', user.uid)
               const userDocSnap = await getDoc(userDocRef)
               if (userDocSnap.exists()) {
-                const firestoreRole = userDocSnap.data()?.role || null
-                if (firestoreRole) {
-                  userRole = firestoreRole
-                }
+                const firestoreData = userDocSnap.data()
+                userRole = firestoreData?.primaryRole || 'unknown'
+                userRoles = firestoreData?.roles || []
+                userPrimaryRole = firestoreData?.primaryRole || 'unknown'
+                userIsActive = firestoreData?.isActive ?? true
+              } else {
+                console.warn('[Auth] No user document in Firestore for UID:', user.uid)
+                userRole = extractRoleFromDisplayName(user.displayName)
               }
             } catch (error: any) {
-              // Silently fall back to displayName extraction
-              console.log('[Auth] Using role from displayName:', userRole)
+              console.error('[Auth] Error fetching from Firestore:', error.message)
+              userRole = extractRoleFromDisplayName(user.displayName)
             }
+          } else {
+            // Fallback if Firestore not available
+            userRole = extractRoleFromDisplayName(user.displayName)
           }
           
           authStore.setUser({
             uid: user.uid,
             email: user.email,
             displayName: user.displayName,
-            role: userRole as any,
+            roles: userRoles as any,
+            primaryRole: userPrimaryRole,
+            isActive: userIsActive,
           })
         } else {
           console.log('[Auth] User logged out')

@@ -207,5 +207,45 @@
     "submittedBy": "dev-user-1769968206162",
     "submittedAt": "2026-02-01T17:50:06.170Z",
     "updatedAt": "2026-02-01T17:50:06.170Z"
+  },
+  {
+    "id": "sales-1770026876362-jjsf0cbel",
+    "date": "2026-02-02",
+    "cashierId": "cashier-001",
+    "cashierName": "สมชาย ใจดี",
+    "expectedCash": 4800,
+    "expectedQR": 570,
+    "expectedBank": 0,
+    "expectedGovernment": 900,
+    "posData": {
+      "cash": 4803,
+      "qr": 570,
+      "bank": 0,
+      "government": 900
+    },
+    "differences": {
+      "cashDiff": 3,
+      "qrDiff": 0,
+      "bankDiff": 0,
+      "governmentDiff": 0
+    },
+    "cashReconciliation": {
+      "expectedAmount": 6270,
+      "actualAmount": 6273,
+      "difference": 3,
+      "notes": ""
+    },
+    "auditDetails": {
+      "cashAuditNotes": "ทอนเงินผิดหรือนับเงินผิด",
+      "qrAuditNotes": "",
+      "bankAuditNotes": "",
+      "governmentAuditNotes": "",
+      "recommendation": ""
+    },
+    "total": 6273,
+    "status": "submitted",
+    "submittedBy": "dev-user-1770026876352",
+    "submittedAt": "2026-02-02T10:07:56.362Z",
+    "updatedAt": "2026-02-02T10:07:56.362Z"
   }
 ]
