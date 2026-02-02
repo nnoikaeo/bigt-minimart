@@ -101,9 +101,16 @@ export class AccessControlJsonRepository implements IAccessControlRepository {
       throw new Error('User not found')
     }
 
+    const existingUser = users[index]!
+    
     const updatedUser: User = {
-      ...users[index],
-      ...input,
+      uid: uid,
+      email: input.email ?? existingUser.email,
+      displayName: input.displayName ?? existingUser.displayName,
+      roles: input.roles ?? existingUser.roles,
+      primaryRole: input.primaryRole ?? existingUser.primaryRole,
+      isActive: input.isActive !== undefined ? input.isActive : existingUser.isActive,
+      createdAt: existingUser.createdAt,
       updatedAt: new Date().toISOString(),
     }
 

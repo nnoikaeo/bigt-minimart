@@ -27,7 +27,7 @@
           <div>
             <p class="text-lg font-semibold text-gray-800">{{ currentUser?.displayName }}</p>
             <p class="text-sm text-gray-600">{{ currentUser?.email }}</p>
-            <p class="text-sm text-gray-500 capitalize">{{ currentUser?.role }}</p>
+            <p class="text-sm text-gray-500 capitalize">{{ currentUser?.primaryRole }}</p>
           </div>
         </div>
 
@@ -50,7 +50,7 @@
           <div class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
             <span class="text-xl">👤</span>
             <div>
-              <p class="font-semibold text-gray-800 capitalize">{{ currentUser?.role }}</p>
+              <p class="font-semibold text-gray-800 capitalize">{{ currentUser?.primaryRole }}</p>
               <p class="text-xs text-gray-600">บทบาทในระบบ</p>
             </div>
           </div>
