@@ -160,15 +160,21 @@ export const sidebarMenu: SidebarGroup[] = [
     icon: '🔐',
     pages: [
       {
-        pageKey: 'user-management',
-        pageName: 'จัดการผู้ใช้',
-        route: '/admin/users',
+        pageKey: 'access-control',
+        pageName: 'จัดการสิทธิ์การเข้าถึง',
+        route: '/admin/access-control',
         requiredRoles: ['owner'],
       },
       {
-        pageKey: 'roles-management',
-        pageName: 'บทบาทและสิทธิ์',
-        route: '/admin/roles',
+        pageKey: 'audit-log',
+        pageName: 'บันทึกการกระทำ',
+        route: '/admin/audit-log',
+        requiredRoles: ['owner'],
+      },
+      {
+        pageKey: 'system-logs',
+        pageName: 'บันทึกระบบ',
+        route: '/admin/system-logs',
         requiredRoles: ['owner'],
       },
     ],

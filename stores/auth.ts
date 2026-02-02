@@ -4,7 +4,9 @@ export interface AuthUser {
   uid: string
   email: string | null
   displayName: string | null
-  role?: 'owner' | 'manager' | 'assistant_manager' | 'cashier' | 'auditor'
+  primaryRole?: 'owner' | 'manager' | 'assistant_manager' | 'cashier' | 'auditor' | 'unknown'
+  roles?: string[]
+  isActive?: boolean
 }
 
 export const useAuthStore = defineStore('auth', {
