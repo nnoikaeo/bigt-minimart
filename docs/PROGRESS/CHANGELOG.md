@@ -4,6 +4,58 @@ All notable changes to this project are documented here.
 
 ---
 
+## [1.6] - 2026-02-06 (Evening)
+
+### ✨ Week 4: Workflow 1.4 - Owner Approval System Complete
+
+**Added**
+- [NEW] Owner approval workflow for daily sales entries
+  - Dedicated approval API endpoint: POST /api/daily-sales/[id]/approve
+  - Quick-approve button (✓) in DailySalesTable for fast approvals
+  - Detailed approval section in DailySalesModal for review before approval
+  - Approval tracking with timestamps and approver information
+- [NEW] Approval fields in DailySalesEntry type
+  - `approvedAt`: ISO timestamp of approval
+  - `approvedBy`: User ID of approver (normalized approach)
+- [NEW] Helper functions for robust date handling
+  - `formatApprovedDate()`: Safely converts string | Date | undefined to formatted date
+  - `getApproverName()`: Dynamic lookup of owner display name from access-control store
+
+**Features Implemented**
+- Owner-only access control for approval operations
+- Status flow: 'pending' (รออนุมัติ) → 'approved' (อนุมัติแล้ว)
+- Data normalization: Store only user ID, lookup name dynamically
+- Safe TypeScript handling of date types (string | Date | undefined)
+- Immutable approved entries (cannot be edited after approval)
+- Role-based authorization validation on backend
+
+**Fixes**
+- Resolved TypeScript type error with date formatting
+  - Fixed: Argument of type 'string | undefined' is not assignable to parameter of type 'string'
+  - Solution: Created formatApprovedDate() wrapper for safe conversion
+- Fixed test data to use new status values ('pending' instead of 'submitted')
+- All lint checks passing
+
+**Quality Assurance**
+- TypeScript: 0 errors ✅
+- npm run lint: PASS ✅
+- All merge conflicts resolved ✅
+- PR #30 merged to main and develop ✅
+- Branches synchronized (main, develop, origin/main, origin/develop) ✅
+
+**Git History**
+- PR #30: Merge feature/workflow-1.4-approval to main ✅
+- Commit b3793bf: feat(approval): implement workflow 1.4 owner approval
+- Commit 219ab6a: fix: resolve TypeScript lint errors for workflow 1.4 approval
+- Merged to develop for full branch synchronization
+
+**Impact**
+- Completes Workflow 1.4 (Owner Approval) from requirements
+- All Week 4 tasks now 100% complete
+- Ready for production deployment
+
+---
+
 ## [1.5] - 2026-02-06
 
 ### ✨ Week 4: Problem Type Selection UI for Daily Sales Audit
