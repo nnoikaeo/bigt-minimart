@@ -45,7 +45,7 @@ const createDailySalesSchema = z.object({
     governmentAuditNotes: z.string().optional(),
     recommendation: z.string().optional(),
   }).optional(),
-  status: z.enum(['submitted', 'audited', 'approved']).default('submitted'),
+  status: z.enum(['pending', 'approved']).default('pending'),
 })
 
 export default defineEventHandler(async (event) => {

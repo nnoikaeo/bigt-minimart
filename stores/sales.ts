@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { useAuthStore } from './auth'
 import type { DailySalesEntry } from '~/types/repositories'
 
 /**
@@ -28,7 +29,7 @@ export const useSalesStore = defineStore('sales', {
     filters: {
       dateFrom: '',
       dateTo: '',
-      status: '' as '' | 'submitted' | 'audited' | 'approved',
+      status: '' as '' | 'pending' | 'approved',
       cashierName: '',
     },
 
@@ -94,10 +95,10 @@ export const useSalesStore = defineStore('sales', {
     },
 
     /**
-     * Get pending approval entries (submitted status)
+     * Get pending approval entries (pending status)
      */
     getPendingSales: (state) => {
-      return state.dailySales.filter((sale) => sale.status === 'submitted')
+      return state.dailySales.filter((sale) => sale.status === 'pending')
     },
 
     /**
@@ -105,6 +106,14 @@ export const useSalesStore = defineStore('sales', {
      */
     getApprovedSales: (state) => {
       return state.dailySales.filter((sale) => sale.status === 'approved')
+    },
+
+    /**
+     * Get entries pending owner approval
+     * (same as getPendingSales, more descriptive name)
+     */
+    getPendingApprovals: (state) => {
+      return state.dailySales.filter((sale) => sale.status === 'pending')
     },
 
     /**
@@ -436,14 +445,49 @@ export const useSalesStore = defineStore('sales', {
     },
 
     /**
-     * Approve sales entry (change status to approved)
+     * Approve sales entry (Owner only)
+     * Changes status to 'approved' and records approval timestamp + user
      */
-    async approveSale(id: string, auditNotes?: string): Promise<void> {
-      await this.updateDailySale(id, {
-        status: 'approved',
-        auditNotes,
-        auditedAt: new Date().toISOString(),
-      })
+    async approveSale(id: string): Promise<void> {
+      this.isLoading = true
+      this.error = null
+
+      try {
+        console.log('[approveSale] Approving entry:', id)
+
+        // Call dedicated approval API endpoint
+        const response = await $fetch<{
+          success: boolean
+          data: DailySalesEntry
+          message: string
+        }>(`/api/daily-sales/${id}/approve`, {
+          method: 'POST',
+        })
+
+        console.log('[approveSale] Response:', response)
+
+        if (!response?.data) {
+          throw new Error('Invalid response: missing data')
+        }
+
+        // Update local state with approved entry
+        const index = this.dailySales.findIndex((s) => s.id === id)
+        if (index >= 0) {
+          this.dailySales[index] = response.data
+          console.log('[approveSale] Updated entry in state:', this.dailySales[index])
+        }
+
+        // Recalculate statistics
+        this.calculateStats()
+
+        console.log('✅ Daily sale approved:', id)
+      } catch (err) {
+        this.error = `Failed to approve sale: ${err}`
+        console.error('❌ Approve sale failed:', err)
+        throw err
+      } finally {
+        this.isLoading = false
+      }
     },
 
     /**
