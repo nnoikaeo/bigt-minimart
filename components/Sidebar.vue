@@ -54,14 +54,15 @@
                 :key="page.pageKey"
                 :to="page.route"
                 @click.prevent="handleSelectPage(page.pageKey, group.groupKey); $router.push(page.route)"
-                class="block px-4 py-2 pl-12 rounded-lg text-sm font-medium transition-colors duration-150 cursor-pointer"
+                      class="flex items-center gap-2 px-4 py-2 pl-12 rounded-lg text-sm font-medium transition-colors duration-150 cursor-pointer"
                 :class="
                   isPageActive(page.pageKey)
                     ? 'bg-red-600 text-white'
                     : 'text-gray-700 hover:bg-red-50'
                 "
               >
-                {{ page.pageName }}
+                      <span v-if="page.icon" class="text-base">{{ page.icon }}</span>
+                      <span>{{ page.pageName }}</span>
               </NuxtLink>
             </div>
           </Transition>
@@ -139,14 +140,15 @@
                       :key="page.pageKey"
                       :to="page.route"
                       @click="handleSelectPage(page.pageKey, group.groupKey)"
-                      class="block px-4 py-2 pl-12 rounded-lg text-sm font-medium transition-colors duration-150"
+                      class="flex items-center gap-2 px-4 py-2 pl-12 rounded-lg text-sm font-medium transition-colors duration-150"
                       :class="
                         isPageActive(page.pageKey)
                           ? 'bg-red-600 text-white'
                           : 'text-gray-700 hover:bg-red-50'
                       "
                     >
-                      {{ page.pageName }}
+                      <span v-if="page.icon" class="text-base">{{ page.icon }}</span>
+                      <span>{{ page.pageName }}</span>
                     </NuxtLink>
                   </div>
                 </Transition>
@@ -184,7 +186,10 @@ const user = computed(() => authStore.user)
 /**
  * Get user's role (fallback to 'unknown' if not authenticated)
  */
-const userRole = computed(() => user.value?.role ?? 'unknown')
+const userRole = computed(() => {
+  if (!user.value) return 'unknown'
+  return user.value.primaryRole ?? 'unknown'
+})
 
 /**
  * Filter sidebar menu based on user role

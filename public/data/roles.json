@@ -1,0 +1,32 @@
+[
+  {
+    "id": "owner",
+    "name": "เจ้าของ",
+    "description": "Owner of the business - full system access",
+    "createdAt": "2024-01-15T08:00:00Z"
+  },
+  {
+    "id": "manager",
+    "name": "ผู้จัดการ",
+    "description": "Manager - can manage users, sales, and finances",
+    "createdAt": "2024-01-15T08:00:00Z"
+  },
+  {
+    "id": "assistant_manager",
+    "name": "ผู้ช่วยผู้จัดการ",
+    "description": "Assistant Manager - can view and assist with management tasks",
+    "createdAt": "2024-01-15T08:00:00Z"
+  },
+  {
+    "id": "auditor",
+    "name": "ผู้ตรวจสอบ",
+    "description": "Auditor - can view all reports and audit logs",
+    "createdAt": "2024-01-15T08:00:00Z"
+  },
+  {
+    "id": "cashier",
+    "name": "แคชเชียร์",
+    "description": "Cashier - can process sales and view reports",
+    "createdAt": "2024-01-15T08:00:00Z"
+  }
+]

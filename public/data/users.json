@@ -1,0 +1,67 @@
+[
+  {
+    "uid": "kpTHjc5TcrQFtU42KY48guEl5Av1",
+    "email": "kook@bigt.co.th",
+    "displayName": "วราณี อุบลแย้ม",
+    "roles": [
+      "cashier"
+    ],
+    "primaryRole": "cashier",
+    "isActive": true,
+    "createdAt": "2024-01-15T08:00:00Z",
+    "updatedAt": "2026-02-02T17:19:43.124Z"
+  },
+  {
+    "uid": "1OweeO8XGAeXl61Oy10YRrNcaSt2",
+    "email": "pung@bigt.co.th",
+    "displayName": "น้ำผึ้ง พ่วงพลับ",
+    "roles": [
+      "cashier",
+      "assistant_manager"
+    ],
+    "primaryRole": "assistant_manager",
+    "isActive": true,
+    "createdAt": "2024-01-15T08:15:00Z",
+    "updatedAt": "2026-02-02T17:19:44.704Z"
+  },
+  {
+    "uid": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
+    "email": "lek@bigt.co.th",
+    "displayName": "กัลญา ผิวขำทองดี",
+    "roles": [
+      "cashier",
+      "manager"
+    ],
+    "primaryRole": "manager",
+    "isActive": true,
+    "createdAt": "2024-01-15T08:30:00Z",
+    "updatedAt": "2026-02-02T17:19:45.791Z"
+  },
+  {
+    "uid": "dAuL8YQfWDcbiP4NL0z8z2J0wIy2",
+    "email": "tip@bigt.co.th",
+    "displayName": "พรทิพย์ เรือนสุข",
+    "roles": [
+      "auditor"
+    ],
+    "primaryRole": "auditor",
+    "isActive": true,
+    "createdAt": "2024-01-15T08:45:00Z",
+    "updatedAt": "2026-02-02T17:19:46.965Z"
+  },
+  {
+    "uid": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2",
+    "email": "nop@bigt.co.th",
+    "displayName": "นพพล น้อยแก้ว",
+    "roles": [
+      "cashier",
+      "manager",
+      "auditor",
+      "owner"
+    ],
+    "primaryRole": "owner",
+    "isActive": true,
+    "createdAt": "2024-01-15T09:00:00Z",
+    "updatedAt": "2026-02-02T17:19:48.168Z"
+  }
+]

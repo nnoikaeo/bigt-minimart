@@ -20,11 +20,21 @@ const mockSalesEntries: DailySalesEntry[] = [
     date: '2026-01-29',
     cashierId: 'cashier-001',
     cashierName: 'สมชาย ใจดี',
-    posposData: {
+    expectedCash: 5000,
+    expectedQR: 3000,
+    expectedBank: 2000,
+    expectedGovernment: 1000,
+    posData: {
       cash: 5000,
       qr: 3000,
       bank: 2000,
       government: 1000,
+    },
+    differences: {
+      cashDiff: 0,
+      qrDiff: 0,
+      bankDiff: 0,
+      governmentDiff: 0,
     },
     cashReconciliation: {
       expectedAmount: 11000,
@@ -35,18 +45,27 @@ const mockSalesEntries: DailySalesEntry[] = [
     status: 'submitted',
     submittedBy: 'user-001',
     submittedAt: '2026-01-29T10:00:00Z',
-    auditNotes: '',
   },
   {
     id: 'sales-002',
     date: '2026-01-28',
     cashierId: 'cashier-002',
     cashierName: 'สินใจ ขยัน',
-    posposData: {
+    expectedCash: 8000,
+    expectedQR: 2000,
+    expectedBank: 1500,
+    expectedGovernment: 500,
+    posData: {
       cash: 8000,
       qr: 2000,
       bank: 1500,
       government: 500,
+    },
+    differences: {
+      cashDiff: 0,
+      qrDiff: 0,
+      bankDiff: 0,
+      governmentDiff: 0,
     },
     cashReconciliation: {
       expectedAmount: 12000,
@@ -57,7 +76,6 @@ const mockSalesEntries: DailySalesEntry[] = [
     status: 'audited',
     submittedBy: 'user-002',
     submittedAt: '2026-01-28T10:00:00Z',
-    auditNotes: 'ตรวจสอบเรียบร้อย',
   },
 ]
 

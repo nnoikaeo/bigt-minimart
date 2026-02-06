@@ -105,14 +105,14 @@ const openCreateModal = () => {
     <!-- Page Header -->
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-3xl font-bold text-gray-900">💰 บันทึกยอดขายรายวัน</h1>
+        <h1 class="text-3xl font-bold text-gray-900">💰 ยอดขาย</h1>
         <p class="text-gray-600 mt-1">บันทึกและจัดการยอดขายรายวันจากแคชเชียร์</p>
       </div>
       <button
         @click="openCreateModal"
         class="px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg font-medium hover:from-red-700 hover:to-red-800 transition-all shadow-md hover:shadow-lg flex items-center gap-2"
       >
-        ➕ บันทึกใหม่
+        เพิ่ม
       </button>
     </div>
 

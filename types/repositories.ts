@@ -19,20 +19,43 @@ export interface DailySalesEntry {
   cashierId: string
   cashierName: string
   
-  // Sales data from POSPOS
-  posposData: {
-    cash: number // เงินสด
-    qr: number // QR Code
-    bank: number // ธนาคาร
-    government: number // โครงการรัฐ
+  // Expected amounts per channel (from POS receipt)
+  expectedCash: number // เงินสดคาดไว้
+  expectedQR: number // QR Code คาดไว้
+  expectedBank: number // ธนาคารคาดไว้
+  expectedGovernment: number // โครงการรัฐคาดไว้
+  
+  // Sales data from POS (actual amounts)
+  posData: {
+    cash: number // เงินสด (จริง)
+    qr: number // QR Code (จริง)
+    bank: number // ธนาคาร (จริง)
+    government: number // โครงการรัฐ (จริง)
   }
   
-  // Cash reconciliation
+  // Per-channel differences (auto-calculated)
+  differences: {
+    cashDiff: number // เงินสด ผลต่าง
+    qrDiff: number // QR Code ผลต่าง
+    bankDiff: number // ธนาคาร ผลต่าง
+    governmentDiff: number // โครงการรัฐ ผลต่าง
+  }
+  
+  // Cash reconciliation (summary)
   cashReconciliation: {
-    expectedAmount: number // เงินคาดไว้
-    actualAmount: number // เงินจริง
-    difference: number // ผลต่าง (AUTO)
-    notes?: string // หมายเหตุ
+    expectedAmount: number // เงินคาดไว้รวม (auto)
+    actualAmount: number // เงินจริงรวม (auto)
+    difference: number // ผลต่างรวม (auto)
+    notes?: string // หมายเหตุสั้น
+  }
+  
+  // Detailed audit findings - per-channel
+  auditDetails?: {
+    cashAuditNotes: string // วิเคราะห์สาเหตุ (เงินสด)
+    qrAuditNotes: string // วิเคราะห์สาเหตุ (QR Code)
+    bankAuditNotes: string // วิเคราะห์สาเหตุ (ธนาคาร)
+    governmentAuditNotes: string // วิเคราะห์สาเหตุ (โครงการรัฐ)
+    recommendation: string // ข้อแนะนำการปรับปรุง
   }
   
   // Calculated fields

@@ -226,12 +226,13 @@ export class SalesFirestoreRepository implements ISalesRepository {
     if (!sale.date) throw new Error('Date is required')
     if (!sale.cashierId) throw new Error('Cashier ID is required')
     if (!sale.cashierName) throw new Error('Cashier name is required')
+    if (!sale.posData) throw new Error('posData is required')
 
-    const total = sale.posposData.cash + sale.posposData.qr + 
-                  sale.posposData.bank + sale.posposData.government
+    const total = sale.posData.cash + sale.posData.qr + 
+                  sale.posData.bank + sale.posData.government
 
     if (total < 0) throw new Error('Total sales cannot be negative')
-    if (sale.cashReconciliation.actualAmount < 0) {
+    if (sale.cashReconciliation && sale.cashReconciliation.actualAmount < 0) {
       throw new Error('Actual cash cannot be negative')
     }
   }

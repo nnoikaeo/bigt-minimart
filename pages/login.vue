@@ -72,9 +72,11 @@
             ✓ บัญชีสำหรับทดสอบ (ต้องสร้างจาก Setup ก่อน):
           </p>
           <div class="bg-gray-50 p-3 rounded text-xs space-y-1 text-gray-600">
-            <p><strong>Owner:</strong> owner@example.com / password123</p>
-            <p><strong>Manager:</strong> manager@example.com / password123</p>
-            <p><strong>Cashier:</strong> test@example.com / password123</p>
+            <p><strong>เจ้าของ:</strong> nop@bigt.co.th / password123</p>
+            <p><strong>ผู้จัดการ:</strong> lek@bigt.co.th / password123</p>
+            <p><strong>ผู้ช่วยผู้จัดการ:</strong> pung@bigt.co.th / password123</p>
+            <p><strong>ผู้ตรวจสอบ:</strong> tip@bigt.co.th / password123</p>
+            <p><strong>แคชเชียร์:</strong> kook@bigt.co.th / password123</p>
             <p class="text-gray-400 mt-3 text-yellow-700">
               ⚠️ หากยังไม่มีบัญชีเหล่านี้ ให้กด 👇 เพื่อสร้าง
             </p>

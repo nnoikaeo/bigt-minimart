@@ -28,14 +28,16 @@ const formatCurrency = (amount: number): string => {
   }).format(amount)
 }
 
-const formatDateThai = (dateStr: string): string => {
+const formatDate = (dateStr: string): string => {
   const date = new Date(dateStr + 'T00:00:00')
   const formatter = new Intl.DateTimeFormat('th-TH', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   })
-  return formatter.format(date)
+  const formatted = formatter.format(date)
+  // Convert Buddhist Year (BE) to Common Era (CE): BE - 543 = CE
+  return formatted.replace(/\d{4}(?=\s|$)/, (year) => String(parseInt(year) - 543))
 }
 
 const formatStatus = (status: string): string => {
@@ -47,8 +49,36 @@ const formatStatus = (status: string): string => {
   return statusMap[status] || status
 }
 
-const calculateTotal = (posposData: any): number => {
-  return (posposData.cash || 0) + (posposData.qr || 0) + (posposData.bank || 0) + (posposData.government || 0)
+// Problem type categories
+const PROBLEM_TYPES = [
+  { id: 'cash_counting_error', label: 'นับเงินผิดหรือทอนเงินผิด' },
+  { id: 'pos_operation_error', label: 'การใช้งานโปรแกรม POS' },
+  { id: 'cancel_bill', label: 'ยกเลิกบิล' },
+  { id: 'customer_deposit', label: 'ลูกค้าฝาก (ประชารัฐ/คนละครึ่ง)' },
+  { id: 'bank_system_error', label: 'ระบบธนาคารขัดข้อง' },
+  { id: 'supplier_issue', label: 'ปัญหาจากซัพพลายเออร์' },
+  { id: 'other', label: 'อื่นๆ' },
+] as const
+
+// Get problem type label by ID
+const getProblemTypeLabel = (typeId: string): string => {
+  const problemType = PROBLEM_TYPES.find((pt) => pt.id === typeId)
+  return problemType?.label || typeId
+}
+
+// Get channel emoji
+const getChannelEmoji = (channel: string): string => {
+  const emojiMap: Record<string, string> = {
+    cash: '💵',
+    qr: '📱',
+    bank: '🏦',
+    government: '🏛️',
+  }
+  return emojiMap[channel] || '•'
+}
+
+const calculateTotal = (posData: any): number => {
+  return (posData.cash || 0) + (posData.qr || 0) + (posData.bank || 0) + (posData.government || 0)
 }
 
 // Sorting
@@ -60,7 +90,8 @@ const currentPage = ref(1)
 const itemsPerPage = ref(10)
 
 // Search/Filter
-const searchQuery = ref('')
+const searchCashierName = ref('')
+const searchDate = ref('')
 
 // Filtered and sorted entries
 const filteredEntries = computed(() => {
@@ -69,16 +100,23 @@ const filteredEntries = computed(() => {
       console.warn('[DailySalesTable] Entry missing cashierName:', entry.id)
       return false
     }
-    if (!entry.cashierId) {
-      console.warn('[DailySalesTable] Entry missing cashierId:', entry.id)
-      return false
+    
+    // Check cashier name filter
+    if (searchCashierName.value) {
+      const query = searchCashierName.value.toLowerCase()
+      if (!entry.cashierName.toLowerCase().includes(query)) {
+        return false
+      }
     }
-    const query = searchQuery.value.toLowerCase()
-    return (
-      entry.cashierName.toLowerCase().includes(query) ||
-      entry.cashierId.toLowerCase().includes(query) ||
-      entry.date.includes(query)
-    )
+    
+    // Check date filter
+    if (searchDate.value) {
+      if (!entry.date.includes(searchDate.value)) {
+        return false
+      }
+    }
+    
+    return true
   })
 })
 
@@ -88,8 +126,8 @@ const sortedEntries = computed(() => {
     let bVal: any = b[sortBy.value as keyof typeof b]
 
     if (sortBy.value === 'total') {
-      aVal = calculateTotal(a.posposData)
-      bVal = calculateTotal(b.posposData)
+      aVal = calculateTotal(a.posData)
+      bVal = calculateTotal(b.posData)
     }
 
     if (sortOrder.value === 'asc') {
@@ -141,30 +179,72 @@ const handleSort = (field: 'date' | 'cashierName' | 'total') => {
   }
 }
 
+const handleReset = () => {
+  searchCashierName.value = ''
+  searchDate.value = ''
+  currentPage.value = 1
+  logger.log('Search filters reset')
+}
+
 const getSortIndicator = (field: string): string => {
   if (sortBy.value !== field) return '↕️'
   return sortOrder.value === 'asc' ? '↑' : '↓'
+}
+
+// Expand/Collapse Details Row
+const expandedRows = ref<Set<string>>(new Set())
+
+const toggleDetailsRow = (entryId: string) => {
+  if (expandedRows.value.has(entryId)) {
+    expandedRows.value.delete(entryId)
+  } else {
+    expandedRows.value.add(entryId)
+  }
+}
+
+const isRowExpanded = (entryId: string): boolean => {
+  return expandedRows.value.has(entryId)
 }
 </script>
 
 <template>
   <div class="space-y-4">
-    <!-- Header -->
-    <div class="flex justify-between items-center">
-      <h2 class="text-2xl font-bold text-gray-800">บันทึกยอดขาย</h2>
-      <div class="text-sm text-gray-600">
-        ทั้งหมด {{ sortedEntries.length }} รายการ
-      </div>
-    </div>
-
     <!-- Search Bar -->
     <div class="bg-white rounded-lg shadow p-4">
-      <input
-        v-model="searchQuery"
-        type="text"
-        placeholder="ค้นหาจากชื่อแคชเชียร์ หรือ ID หรือ วันที่..."
-        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
-      />
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+        <!-- Cashier Name Search -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">ค้นหาชื่อแคชเชียร์</label>
+          <input
+            v-model="searchCashierName"
+            type="text"
+            placeholder="เช่น สมชาย, สินใจ..."
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
+          />
+        </div>
+        <!-- Date Search -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">ค้นหาตามวันที่</label>
+          <input
+            v-model="searchDate"
+            type="date"
+            placeholder="วว/ดด/ปปปป"
+            :class="[
+              'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 placeholder-gray-400',
+              searchDate ? 'text-gray-900' : 'text-gray-500'
+            ]"
+          />
+        </div>
+        <!-- Reset Button -->
+        <div>
+          <button
+            @click="handleReset"
+            class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
+          >
+            🔄 รีเซ็ต
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Table Container -->
@@ -210,152 +290,247 @@ const getSortIndicator = (field: string): string => {
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200">
-            <tr
-              v-for="entry in paginatedEntries"
-              :key="entry.id"
-              class="hover:bg-gray-50 transition-colors"
-            >
-              <!-- Date -->
-              <td class="px-6 py-4 text-sm text-gray-900 font-medium">
-                {{ formatDateThai(entry.date) }}
-              </td>
+            <template v-for="entry in paginatedEntries" :key="entry.id">
+              <!-- Main Row -->
+              <tr class="hover:bg-gray-50 transition-colors">
+                <!-- Date -->
+                <td class="px-6 py-4 text-sm text-gray-900 font-medium">
+                  {{ formatDate(entry.date) }}
+                </td>
 
-              <!-- Cashier Name -->
-              <td class="px-6 py-4 text-sm">
-                <div class="font-medium text-gray-900">{{ entry.cashierName }}</div>
-                <div class="text-gray-500 text-xs">{{ entry.cashierId }}</div>
-              </td>
+                <!-- Cashier Name -->
+                <td class="px-6 py-4 text-sm">
+                  <div class="font-medium text-gray-900">{{ entry.cashierName }}</div>
+                </td>
 
-              <!-- Total Amount -->
-              <td class="px-6 py-4 text-sm text-right">
-                <div class="font-semibold text-gray-900">
-                  {{ formatCurrency(calculateTotal(entry.posposData)) }}
-                </div>
-                <div class="text-gray-600 text-xs grid grid-cols-2 gap-1 mt-1">
-                  <span>💵 {{ formatCurrency(entry.posposData.cash) }}</span>
-                  <span>📱 {{ formatCurrency(entry.posposData.qr) }}</span>
-                  <span>🏦 {{ formatCurrency(entry.posposData.bank) }}</span>
-                  <span>🏛️ {{ formatCurrency(entry.posposData.government) }}</span>
-                </div>
-              </td>
+                <!-- Total Amount -->
+                <td class="px-6 py-4 text-sm text-right">
+                  <div class="font-semibold text-gray-900">
+                    {{ formatCurrency(calculateTotal(entry.posData)) }}
+                  </div>
+                </td>
 
-              <!-- Difference -->
-              <td class="px-6 py-4 text-sm text-right">
-                <div
-                  :class="[
-                    'font-semibold px-2 py-1 rounded inline-block',
-                    entry.cashReconciliation.difference > 0
-                      ? 'bg-green-100 text-green-800'
-                      : entry.cashReconciliation.difference < 0
-                        ? 'bg-red-100 text-red-800'
-                        : 'bg-gray-100 text-gray-800',
-                  ]"
-                >
-                  {{ formatCurrency(entry.cashReconciliation.difference) }}
-                </div>
-                <div v-if="entry.cashReconciliation.notes" class="text-gray-600 text-xs mt-1">
-                  📝 {{ entry.cashReconciliation.notes }}
-                </div>
-              </td>
-
-              <!-- Status -->
-              <td class="px-6 py-4 text-center text-sm">
-                <span
-                  :class="[
-                    'inline-block px-3 py-1 rounded-full font-medium text-xs',
-                    getStatusBadgeClass(entry.status),
-                  ]"
-                >
-                  {{ formatStatus(entry.status) }}
-                </span>
-              </td>
-
-              <!-- Actions -->
-              <td class="px-6 py-4 text-center text-sm space-x-2">
-                <!-- Edit Button -->
-                <button
-                  @click="emit('edit', entry)"
-                  class="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors font-medium"
-                >
-                  ✏️ แก้ไข
-                </button>
-
-                <!-- Delete Button -->
-                <div class="inline-block relative group">
-                  <button
-                    @click="handleDelete(entry.id!)"
-                    class="inline-block px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors font-medium"
+                <!-- Difference -->
+                <td class="px-6 py-4 text-sm text-right">
+                  <div
+                    :class="[
+                      'font-semibold px-2 py-1 rounded inline-block',
+                      entry.cashReconciliation.difference > 0
+                        ? 'bg-green-100 text-green-800'
+                        : entry.cashReconciliation.difference < 0
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-gray-100 text-gray-800',
+                    ]"
                   >
-                    🗑️ ลบ
+                    {{ formatCurrency(entry.cashReconciliation.difference) }}
+                  </div>
+                </td>
+
+                <!-- Status -->
+                <td class="px-6 py-4 text-center text-sm">
+                  <span
+                    :class="[
+                      'inline-block px-3 py-1 rounded-full font-medium text-xs',
+                      getStatusBadgeClass(entry.status),
+                    ]"
+                  >
+                    {{ formatStatus(entry.status) }}
+                  </span>
+                </td>
+
+                <!-- Actions -->
+                <td class="px-6 py-4 text-center text-sm space-x-2">
+                  <!-- Toggle Details Button -->
+                  <button
+                    @click="toggleDetailsRow(entry.id!)"
+                    :class="[
+                      'inline-block px-3 py-1 rounded font-medium transition-colors',
+                      isRowExpanded(entry.id!)
+                        ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ]"
+                  >
+                    {{ isRowExpanded(entry.id!) ? '▼' : '▶' }}
                   </button>
 
-                  <!-- Delete Confirmation Popup -->
-                  <div
-                    v-if="deleteConfirm === entry.id"
-                    class="absolute right-0 mt-1 bg-white border border-red-300 rounded-lg shadow-lg p-3 z-10 w-48"
+                  <!-- Edit Button -->
+                  <button
+                    @click="emit('edit', entry)"
+                    class="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors font-medium"
                   >
-                    <p class="text-sm text-gray-700 mb-2">ยืนยันการลบ?</p>
-                    <div class="flex gap-2">
-                      <button
-                        @click="deleteConfirm = null"
-                        class="flex-1 px-2 py-1 border border-gray-300 text-gray-700 rounded hover:bg-gray-100 text-xs font-medium"
-                      >
-                        ยกเลิก
-                      </button>
-                      <button
-                        @click="confirmDelete(entry.id!)"
-                        class="flex-1 px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs font-medium"
-                      >
-                        ลบ
-                      </button>
+                    ✏️
+                  </button>
+
+                  <!-- Delete Button -->
+                  <div class="inline-block relative group">
+                    <button
+                      @click="handleDelete(entry.id!)"
+                      class="inline-block px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors font-medium"
+                    >
+                      🗑️
+                    </button>
+
+                    <!-- Delete Confirmation Popup -->
+                    <div
+                      v-if="deleteConfirm === entry.id"
+                      class="absolute right-0 mt-1 bg-white border border-red-300 rounded-lg shadow-lg p-3 z-10 w-48"
+                    >
+                      <p class="text-sm text-gray-700 mb-2">ยืนยันการลบ?</p>
+                      <div class="flex gap-2">
+                        <button
+                          @click="deleteConfirm = null"
+                          class="flex-1 px-2 py-1 border border-gray-300 text-gray-700 rounded hover:bg-gray-100 text-xs font-medium"
+                        >
+                          ยกเลิก
+                        </button>
+                        <button
+                          @click="confirmDelete(entry.id!)"
+                          class="flex-1 px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs font-medium"
+                        >
+                          ลบ
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </td>
-            </tr>
+                </td>
+              </tr>
+
+              <!-- Details Row - Expected/Actual/Diff per-channel (Collapsible) -->
+              <tr v-if="isRowExpanded(entry.id!)" class="bg-gray-50 border-b border-gray-200">
+                <td colspan="6" class="px-6 py-3 text-xs">
+                  <div class="space-y-1">
+                    <!-- Expected Row -->
+                    <div v-if="entry.expectedCash !== undefined" class="flex flex-wrap gap-4">
+                      <span class="font-medium text-gray-700">ค่าที่คาดหวัง:</span>
+                      <span>💵 {{ formatCurrency(entry.expectedCash || 0) }}</span>
+                      <span>📱 {{ formatCurrency(entry.expectedQR || 0) }}</span>
+                      <span>🏦 {{ formatCurrency(entry.expectedBank || 0) }}</span>
+                      <span>🏛️ {{ formatCurrency(entry.expectedGovernment || 0) }}</span>
+                    </div>
+
+                    <!-- Actual Row -->
+                    <div class="flex flex-wrap gap-4">
+                      <span class="font-medium text-gray-700">ค่าจริง:</span>
+                      <span>💵 {{ formatCurrency(entry.posData.cash) }}</span>
+                      <span>📱 {{ formatCurrency(entry.posData.qr) }}</span>
+                      <span>🏦 {{ formatCurrency(entry.posData.bank) }}</span>
+                      <span>🏛️ {{ formatCurrency(entry.posData.government) }}</span>
+                    </div>
+
+                    <!-- Difference Row -->
+                    <div v-if="entry.differences" class="flex flex-wrap gap-4">
+                      <span class="font-medium text-gray-700">ผลต่าง:</span>
+                      <span :class="[entry.differences.cashDiff > 0 ? 'text-green-600' : entry.differences.cashDiff < 0 ? 'text-red-600' : 'text-gray-600']">
+                        💵 {{ formatCurrency(entry.differences.cashDiff) }}
+                      </span>
+                      <span :class="[entry.differences.qrDiff > 0 ? 'text-green-600' : entry.differences.qrDiff < 0 ? 'text-red-600' : 'text-gray-600']">
+                        📱 {{ formatCurrency(entry.differences.qrDiff) }}
+                      </span>
+                      <span :class="[entry.differences.bankDiff > 0 ? 'text-green-600' : entry.differences.bankDiff < 0 ? 'text-red-600' : 'text-gray-600']">
+                        🏦 {{ formatCurrency(entry.differences.bankDiff) }}
+                      </span>
+                      <span :class="[entry.differences.governmentDiff > 0 ? 'text-green-600' : entry.differences.governmentDiff < 0 ? 'text-red-600' : 'text-gray-600']">
+                        🏛️ {{ formatCurrency(entry.differences.governmentDiff) }}
+                      </span>
+                    </div>
+
+                    <!-- Problem Types Row (Audit Details) -->
+                    <div v-if="entry.auditDetails" class="flex flex-wrap gap-4 border-t border-gray-300 pt-2 mt-2">
+                      <span class="font-medium text-gray-700 w-full">ประเภทปัญหาที่พบ:</span>
+                      <div class="w-full flex flex-wrap gap-2">
+                        <!-- Cash Problem -->
+                        <div v-if="entry.auditDetails.cashAuditNotes" class="flex items-center gap-1 bg-blue-50 px-3 py-1 rounded-full border border-blue-200 text-xs">
+                          <span class="font-semibold">💵</span>
+                          <span class="text-blue-900">{{ getProblemTypeLabel(entry.auditDetails.cashAuditNotes) }}</span>
+                        </div>
+
+                        <!-- QR Problem -->
+                        <div v-if="entry.auditDetails.qrAuditNotes" class="flex items-center gap-1 bg-purple-50 px-3 py-1 rounded-full border border-purple-200 text-xs">
+                          <span class="font-semibold">📱</span>
+                          <span class="text-purple-900">{{ getProblemTypeLabel(entry.auditDetails.qrAuditNotes) }}</span>
+                        </div>
+
+                        <!-- Bank Problem -->
+                        <div v-if="entry.auditDetails.bankAuditNotes" class="flex items-center gap-1 bg-green-50 px-3 py-1 rounded-full border border-green-200 text-xs">
+                          <span class="font-semibold">🏦</span>
+                          <span class="text-green-900">{{ getProblemTypeLabel(entry.auditDetails.bankAuditNotes) }}</span>
+                        </div>
+
+                        <!-- Government Problem -->
+                        <div v-if="entry.auditDetails.governmentAuditNotes" class="flex items-center gap-1 bg-amber-50 px-3 py-1 rounded-full border border-amber-200 text-xs">
+                          <span class="font-semibold">🏛️</span>
+                          <span class="text-amber-900">{{ getProblemTypeLabel(entry.auditDetails.governmentAuditNotes) }}</span>
+                        </div>
+
+                        <!-- No Problems Found -->
+                        <div v-if="!entry.auditDetails.cashAuditNotes && !entry.auditDetails.qrAuditNotes && !entry.auditDetails.bankAuditNotes && !entry.auditDetails.governmentAuditNotes" class="text-xs text-gray-500">
+                          ✓ ไม่พบปัญหา
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </template>
           </tbody>
         </table>
       </div>
     </div>
 
     <!-- Pagination -->
-    <div v-if="totalPages > 1" class="flex justify-between items-center bg-white rounded-lg shadow p-4">
-      <div class="text-sm text-gray-600">
-        หน้า {{ currentPage }} จาก {{ totalPages }}
-        <span class="ml-2">|</span>
-        <span class="ml-2">{{ itemsPerPage }} รายการต่อหน้า</span>
-      </div>
+    <div class="bg-white rounded-lg shadow p-4">
+      <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+        <!-- Left: Items Per Page Dropdown -->
+        <div class="flex items-center gap-2">
+          <label class="text-sm font-medium text-gray-700">แสดงรายการต่อหน้า:</label>
+          <select
+            v-model.number="itemsPerPage"
+            @change="currentPage = 1"
+            class="px-3 py-2 pr-8 min-w-fit border border-gray-300 rounded-lg text-sm text-gray-700 hover:border-gray-400 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-colors"
+          >
+            <option :value="10">10</option>
+            <option :value="25">25</option>
+            <option :value="50">50</option>
+          </select>
+        </div>
 
-      <div class="flex gap-2">
-        <button
-          @click="currentPage = Math.max(1, currentPage - 1)"
-          :disabled="currentPage === 1"
-          class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          ← ก่อนหน้า
-        </button>
+        <!-- Middle: Pagination Buttons -->
+        <div class="flex gap-2 flex-wrap justify-center">
+          <button
+            @click="currentPage = Math.max(1, currentPage - 1)"
+            :disabled="currentPage === 1"
+            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            ← ก่อนหน้า
+          </button>
 
-        <button
-          v-for="page in Math.min(5, totalPages)"
-          :key="page"
-          @click="currentPage = page"
-          :class="[
-            'px-4 py-2 rounded-lg font-medium transition-colors',
-            currentPage === page
-              ? 'bg-red-600 text-white'
-              : 'border border-gray-300 text-gray-700 hover:bg-gray-100',
-          ]"
-        >
-          {{ page }}
-        </button>
+          <button
+            v-for="page in Math.min(5, totalPages)"
+            :key="page"
+            @click="currentPage = page"
+            :class="[
+              'px-4 py-2 rounded-lg font-medium transition-colors',
+              currentPage === page
+                ? 'bg-red-600 text-white'
+                : 'border border-gray-300 text-gray-700 hover:bg-gray-100',
+            ]"
+          >
+            {{ page }}
+          </button>
 
-        <button
-          @click="currentPage = Math.min(totalPages, currentPage + 1)"
-          :disabled="currentPage === totalPages"
-          class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          ถัดไป →
-        </button>
+          <button
+            @click="currentPage = Math.min(totalPages, currentPage + 1)"
+            :disabled="currentPage === totalPages"
+            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            ถัดไป →
+          </button>
+        </div>
+
+        <!-- Right: Page Info -->
+        <div class="text-sm text-gray-600 font-medium">
+          หน้า {{ currentPage }} จาก {{ totalPages }}
+        </div>
       </div>
     </div>
   </div>

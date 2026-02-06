@@ -13,8 +13,8 @@ export const useUIStore = defineStore('ui', {
      */
     expandedGroups: {
       dashboard: true,
-      sales: true,
-      finance: true,
+      'daily-records': true, // Daily Recording group - default expanded
+      reports: true,
       inventory: false,
       personnel: true,
       settings: true,

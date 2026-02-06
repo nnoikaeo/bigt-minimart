@@ -137,7 +137,7 @@ const isDropdownOpen = ref(false)
 // Computed properties
 const user = computed(() => authStore.user)
 const userName = computed(() => user.value?.displayName || 'User')
-const userRole = computed(() => user.value?.role || 'unknown')
+const userRole = computed(() => user.value?.primaryRole || 'unknown')
 const userInitial = computed(() => {
   const name = userName.value || 'U'
   return name.charAt(0).toUpperCase()
@@ -149,7 +149,7 @@ const roleLabel = computed(() => {
   const roleMap: Record<string, string> = {
     owner: 'เจ้าของร้าน',
     manager: 'ผู้จัดการ',
-    assistant_manager: 'ผู้จัดการอ่วน',
+    assistant_manager: 'ผู้ช่วยผู้จัดการ',
     auditor: 'ผู้ตรวจสอบ',
     cashier: 'แคชเชียร์',
     staff: 'พนักงาน',

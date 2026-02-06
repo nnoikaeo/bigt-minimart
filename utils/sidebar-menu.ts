@@ -11,6 +11,8 @@ import type { UserRole } from '~/types/user'
 export interface SidebarPage {
   /** Unique identifier for the page */
   pageKey: string
+  /** Optional emoji icon for page */
+  icon?: string
   /** Display name for the page (Thai) */
   pageName: string
   /** Route path (e.g., '/auditor/daily-sales') */
@@ -52,43 +54,62 @@ export const sidebarMenu: SidebarGroup[] = [
     ],
   },
   {
-    groupKey: 'sales',
-    groupName: 'การขาย',
-    icon: '💰',
+    groupKey: 'daily-records',
+    groupName: 'บันทึกรายวัน',
+    icon: '🔄',
     pages: [
       {
         pageKey: 'daily-sales',
-        pageName: 'บันทึกยอดขาย',
+        icon: '⏹️',
+        pageName: 'ยอดขาย',
         route: '/sales/daily-sales',
         requiredRoles: ['owner', 'manager', 'auditor'],
       },
       {
-        pageKey: 'sales-report',
-        pageName: 'รายงานการขาย',
-        route: '/sales/sales-report',
+        pageKey: 'money-transfer-service',
+        icon: '🏦',
+        pageName: 'บริการโอนเงิน',
+        route: '/finance/money-transfer-service',
+        requiredRoles: ['owner', 'manager', 'auditor'],
+      },
+      {
+        pageKey: 'bill-payment-service',
+        icon: '💳',
+        pageName: 'บริการรับชำระบิล',
+        route: '/finance/bill-payment-service',
+        requiredRoles: ['owner', 'manager', 'auditor'],
+      },
+      {
+        pageKey: 'daily-expenses',
+        icon: '💹',
+        pageName: 'รายรับ-รายจ่าย',
+        route: '/finance/daily-expenses',
         requiredRoles: ['manager', 'owner'],
       },
     ],
   },
   {
-    groupKey: 'finance',
-    groupName: 'บัญชีการเงิน',
-    icon: '📈',
+    groupKey: 'reports',
+    groupName: 'รายงาน',
+    icon: '📊',
     pages: [
       {
-        pageKey: 'daily-expenses',
-        pageName: 'รายรับ-รายจ่าย',
-        route: '/finance/daily-expenses',
+        pageKey: 'sales-report',
+        icon: '💰',
+        pageName: 'รายงานการขาย',
+        route: '/sales/sales-report',
         requiredRoles: ['manager', 'owner'],
       },
       {
         pageKey: 'cash-flow',
+        icon: '💧',
         pageName: 'กระแสเงินสด',
         route: '/finance/cash-flow',
         requiredRoles: ['owner'],
       },
       {
         pageKey: 'monthly-report',
+        icon: '📑',
         pageName: 'รายงานประจำเดือน',
         route: '/finance/monthly-report',
         requiredRoles: ['owner'],
@@ -139,15 +160,21 @@ export const sidebarMenu: SidebarGroup[] = [
     icon: '🔐',
     pages: [
       {
-        pageKey: 'user-management',
-        pageName: 'จัดการผู้ใช้',
-        route: '/admin/users',
+        pageKey: 'access-control',
+        pageName: 'จัดการสิทธิ์การเข้าถึง',
+        route: '/admin/access-control',
         requiredRoles: ['owner'],
       },
       {
-        pageKey: 'roles-management',
-        pageName: 'บทบาทและสิทธิ์',
-        route: '/admin/roles',
+        pageKey: 'audit-log',
+        pageName: 'บันทึกการกระทำ',
+        route: '/admin/audit-log',
+        requiredRoles: ['owner'],
+      },
+      {
+        pageKey: 'system-logs',
+        pageName: 'บันทึกระบบ',
+        route: '/admin/system-logs',
         requiredRoles: ['owner'],
       },
     ],

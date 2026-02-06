@@ -56,35 +56,64 @@ export const useAuth = () => {
       
       const user = userCredential.user
       
-      // Try to fetch user role from Firestore first
-      let userRole = extractRoleFromDisplayName(user.displayName)
+      // Fetch user role from Firestore (Hybrid Approach)
+      let userRole = 'unknown'
+      let userRoles: string[] = []
+      let userPrimaryRole: 'owner' | 'manager' | 'assistant_manager' | 'cashier' | 'auditor' | 'unknown' = 'unknown'
+      let userIsActive = false
+      let userDisplayName = user.displayName || 'User'
       
       if ($db) {
         try {
+          console.log('[Auth] Attempting to fetch user from Firestore, UID:', user.uid)
           const userDocRef = doc($db as any, 'users', user.uid)
+          console.log('[Auth] User doc reference created:', userDocRef.path)
+
           const userDocSnap = await getDoc(userDocRef)
+          console.log('[Auth] Firestore query completed')
+
           if (userDocSnap.exists()) {
-            const firestoreRole = userDocSnap.data()?.role || null
-            if (firestoreRole) {
-              userRole = firestoreRole
-              console.log('[Auth] Fetched role from Firestore:', userRole)
-            }
+            const firestoreData = userDocSnap.data()
+            console.log('[Auth] ✅ Firestore document found with data:', firestoreData)
+            userRole = firestoreData?.primaryRole || 'unknown'
+            userRoles = firestoreData?.roles || []
+            userPrimaryRole = firestoreData?.primaryRole || 'unknown'
+            userIsActive = firestoreData?.isActive ?? true
+            userDisplayName = firestoreData?.displayName || user.displayName || 'User'
+            console.log('[Auth] ✅ Fetched from Firestore:', { role: userRole, roles: userRoles, primaryRole: userPrimaryRole, isActive: userIsActive, displayName: userDisplayName })
+          } else {
+            console.warn('[Auth] ⚠️ No user document in Firestore for UID:', user.uid)
+            console.log('[Auth] Falling back to extractRoleFromDisplayName with displayName:', user.displayName)
+            userRole = extractRoleFromDisplayName(user.displayName)
+            console.log('[Auth] Extracted role from displayName:', userRole)
           }
         } catch (error: any) {
-          // Silently fall back to displayName extraction
-          console.log('[Auth] Using role from displayName:', userRole)
+          console.error('[Auth] ❌ Error fetching from Firestore:')
+          console.error('[Auth] Error name:', error.name)
+          console.error('[Auth] Error message:', error.message)
+          console.error('[Auth] Error code:', error.code)
+          console.error('[Auth] Full error:', error)
+          console.log('[Auth] Falling back to extractRoleFromDisplayName with displayName:', user.displayName)
+          userRole = extractRoleFromDisplayName(user.displayName)
+          console.log('[Auth] Extracted role from displayName:', userRole)
         }
+      } else {
+        // Fallback if Firestore not available
+        console.warn('[Auth] Firestore ($db) not available, using displayName fallback')
+        userRole = extractRoleFromDisplayName(user.displayName)
       }
       
       // Store user info in auth store
       authStore.setUser({
         uid: user.uid,
         email: user.email,
-        displayName: user.displayName,
-        role: userRole as any,
+        displayName: userDisplayName,
+        primaryRole: userPrimaryRole,
+        roles: userRoles,
+        isActive: userIsActive,
       })
 
-      console.log('[Auth] Login successful:', user.email, '| role:', userRole)
+      console.log('[Auth] Login successful:', user.email, '| role:', userRole, '| roles:', userRoles)
       return { success: true, user }
     } catch (error: any) {
       console.error('[Auth] Login failed:', error.code, error.message)
@@ -130,30 +159,52 @@ export const useAuth = () => {
         if (user) {
           console.log('[Auth] User logged in:', user.email)
           
-          // Try to fetch user role from Firestore first
-          let userRole = extractRoleFromDisplayName(user.displayName)
+          // Fetch user role from Firestore (Hybrid Approach)
+          let userRole = 'unknown'
+          let userRoles: string[] = []
+          let userPrimaryRole: 'owner' | 'manager' | 'assistant_manager' | 'cashier' | 'auditor' | 'unknown' = 'unknown'
+          let userIsActive = false
           
           if ($db) {
             try {
+              console.log('[Auth:watchAuthState] Attempting to fetch user from Firestore, UID:', user.uid)
               const userDocRef = doc($db as any, 'users', user.uid)
               const userDocSnap = await getDoc(userDocRef)
+              console.log('[Auth:watchAuthState] Firestore query completed')
+
               if (userDocSnap.exists()) {
-                const firestoreRole = userDocSnap.data()?.role || null
-                if (firestoreRole) {
-                  userRole = firestoreRole
-                }
+                const firestoreData = userDocSnap.data()
+                console.log('[Auth:watchAuthState] ✅ Firestore document found with data:', firestoreData)
+                userRole = firestoreData?.primaryRole || 'unknown'
+                userRoles = firestoreData?.roles || []
+                userPrimaryRole = firestoreData?.primaryRole || 'unknown'
+                userIsActive = firestoreData?.isActive ?? true
+              } else {
+                console.warn('[Auth:watchAuthState] ⚠️ No user document in Firestore for UID:', user.uid)
+                console.log('[Auth:watchAuthState] Falling back to extractRoleFromDisplayName')
+                userRole = extractRoleFromDisplayName(user.displayName)
               }
             } catch (error: any) {
-              // Silently fall back to displayName extraction
-              console.log('[Auth] Using role from displayName:', userRole)
+              console.error('[Auth:watchAuthState] ❌ Error fetching from Firestore:')
+              console.error('[Auth:watchAuthState] Error name:', error.name)
+              console.error('[Auth:watchAuthState] Error code:', error.code)
+              console.error('[Auth:watchAuthState] Error message:', error.message)
+              console.log('[Auth:watchAuthState] Falling back to extractRoleFromDisplayName')
+              userRole = extractRoleFromDisplayName(user.displayName)
             }
+          } else {
+            // Fallback if Firestore not available
+            console.warn('[Auth:watchAuthState] Firestore ($db) not available, using displayName fallback')
+            userRole = extractRoleFromDisplayName(user.displayName)
           }
           
           authStore.setUser({
             uid: user.uid,
             email: user.email,
             displayName: user.displayName,
-            role: userRole as any,
+            roles: userRoles as any,
+            primaryRole: userPrimaryRole,
+            isActive: userIsActive,
           })
         } else {
           console.log('[Auth] User logged out')

@@ -1,0 +1,67 @@
+[
+  {
+    "roleId": "owner",
+    "permissions": {
+      "view-dashboard": true,
+      "view-sales": true,
+      "create-sales": true,
+      "edit-sales": true,
+      "view-finance": true,
+      "manage-users": true,
+      "manage-roles": true,
+      "view-audit-log": true
+    }
+  },
+  {
+    "roleId": "manager",
+    "permissions": {
+      "view-dashboard": true,
+      "view-sales": true,
+      "create-sales": true,
+      "edit-sales": true,
+      "view-finance": true,
+      "manage-users": true,
+      "manage-roles": false,
+      "view-audit-log": true
+    }
+  },
+  {
+    "roleId": "assistant_manager",
+    "permissions": {
+      "view-dashboard": true,
+      "view-sales": true,
+      "create-sales": true,
+      "edit-sales": true,
+      "view-finance": true,
+      "manage-users": false,
+      "manage-roles": false,
+      "view-audit-log": false
+    }
+  },
+  {
+    "roleId": "cashier",
+    "permissions": {
+      "view-dashboard": true,
+      "view-sales": true,
+      "create-sales": true,
+      "edit-sales": false,
+      "view-finance": false,
+      "manage-users": false,
+      "manage-roles": false,
+      "view-audit-log": false
+    }
+  },
+  {
+    "roleId": "auditor",
+    "permissions": {
+      "view-dashboard": true,
+      "view-sales": true,
+      "create-sales": false,
+      "edit-sales": false,
+      "view-finance": true,
+      "manage-users": false,
+      "manage-roles": false,
+      "view-audit-log": true
+    }
+  }
+]

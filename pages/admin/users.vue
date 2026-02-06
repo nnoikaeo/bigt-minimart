@@ -204,7 +204,7 @@ onMounted(() => {
     >
       <div class="bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
         <h2 class="text-xl font-semibold text-gray-800 mb-6">
-          {{ editingUser ? 'แก้ไขผู้ใช้งาน' : 'เพิ่มผู้ใช้งาน' }}
+          {{ editingUser ? 'แก้ไขผู้ใช้' : 'เพิ่มผู้ใช้' }}
         </h2>
 
         <!-- Form -->
