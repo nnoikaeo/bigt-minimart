@@ -64,7 +64,7 @@ async function loadAccessControlDataIfNeeded() {
 
   // Roles that require access control data (can view daily sales, access users list, etc.)
   const rolesNeedingAccessControl = ['owner', 'manager', 'assistant_manager', 'auditor']
-  const userRole = currentUser.primaryRole || currentUser.role
+  const userRole = currentUser.primaryRole || 'unknown'
 
   if (rolesNeedingAccessControl.includes(userRole)) {
     // Only load if not already loaded (check if users array is empty)
