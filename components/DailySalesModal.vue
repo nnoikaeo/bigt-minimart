@@ -77,6 +77,13 @@ const formatDate = (dateStr: string): string => {
   return formatted.replace(/\d{4}(?=\s|$)/, (year) => String(parseInt(year) - 543))
 }
 
+const formatApprovedDate = (approvedAt: string | Date | undefined): string => {
+  if (!approvedAt) return ''
+  const dateStr = typeof approvedAt === 'string' ? approvedAt : (approvedAt as Date).toISOString()
+  const datePart = dateStr.split('T')[0] || ''
+  return formatDate(datePart)
+}
+
 const calculateTotal = (posData: any): number => {
   return (posData.cash || 0) + (posData.qr || 0) + (posData.bank || 0) + (posData.government || 0)
 }
@@ -887,7 +894,7 @@ const handleClose = () => {
           <div v-if="editingEntry.approvedAt" class="text-sm text-green-700">
             <div class="flex items-center gap-2">
               <span>✓</span>
-              <span>อนุมัติแล้วเมื่อ: {{ formatDate(editingEntry.approvedAt.toString().split('T')[0]) }}</span>
+              <span>อนุมัติแล้วเมื่อ: {{ formatApprovedDate(editingEntry.approvedAt) }}</span>
             </div>
             <div v-if="editingEntry.approvedBy" class="ml-6 text-xs text-gray-600">
               โดย: {{ getApproverName(editingEntry.approvedBy) }}

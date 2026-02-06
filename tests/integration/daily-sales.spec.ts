@@ -42,7 +42,7 @@ const mockSalesEntries: DailySalesEntry[] = [
       difference: 0,
       notes: 'ตรวจสอบถูกต้อง',
     },
-    status: 'submitted',
+    status: 'pending',
     submittedBy: 'user-001',
     submittedAt: '2026-01-29T10:00:00Z',
   },
@@ -73,7 +73,7 @@ const mockSalesEntries: DailySalesEntry[] = [
       difference: 0,
       notes: '',
     },
-    status: 'audited',
+    status: 'approved',
     submittedBy: 'user-002',
     submittedAt: '2026-01-28T10:00:00Z',
   },
@@ -627,13 +627,13 @@ describe('DailySales Page Integration', () => {
 
     await wrapper.vm.handleModalSubmit({
       ...mockSalesEntries[0]!,
-      status: 'audited',
+      status: 'approved',
     })
 
     expect(updateSpy).toHaveBeenCalledWith(
       mockSalesEntries[0]?.id,
       expect.objectContaining({
-        status: 'audited',
+        status: 'approved',
       })
     )
   })
