@@ -61,7 +61,7 @@ export const sidebarMenu: SidebarGroup[] = [
       {
         pageKey: 'daily-sales',
         icon: '⏹️',
-        pageName: 'ปิดกะขาย',
+        pageName: 'ยอดขาย',
         route: '/sales/daily-sales',
         requiredRoles: ['owner', 'manager', 'auditor'],
       },

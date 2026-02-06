@@ -52,8 +52,8 @@ const labelMap: Record<string, string> = {
   // Dashboard
   dashboard: 'แดชบอร์ด',
   // Sales pages
-  sales: 'การขาย',
-  'daily-sales': 'บันทึกยอดขาย',
+  sales: 'บันทึกรายวัน',
+  'daily-sales': 'ยอดขาย',
   'sales-report': 'รายงานการขาย',
   // Finance pages
   finance: 'บัญชีการเงิน',
@@ -109,15 +109,18 @@ const breadcrumbs = computed<Breadcrumb[]>(() => {
   const rootSegment = pathArray[0] as string
   const relevantParts = pathArray.slice(1) as string[]
 
-  if (relevantParts.length === 0) {
-    logger.log('No relevant parts after root segment', { root: rootSegment })
-    return []
-  }
-
   // Build breadcrumb path using actual root from URL
   const breadcrumbArray: Breadcrumb[] = []
   let cumulativePath = `/${rootSegment}`
 
+  // Add root segment (e.g., sales -> บันทึกรายวัน)
+  const rootLabel = getLabel(rootSegment, rootSegment)
+  breadcrumbArray.push({
+    label: rootLabel,
+    path: cumulativePath,
+  })
+
+  // Add relevant parts (e.g., daily-sales -> ยอดขาย)
   for (const part of relevantParts) {
     cumulativePath += `/${part}`
     const label = getLabel(part, rootSegment)

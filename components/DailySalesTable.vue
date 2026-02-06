@@ -28,14 +28,16 @@ const formatCurrency = (amount: number): string => {
   }).format(amount)
 }
 
-const formatDateThai = (dateStr: string): string => {
+const formatDate = (dateStr: string): string => {
   const date = new Date(dateStr + 'T00:00:00')
   const formatter = new Intl.DateTimeFormat('th-TH', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   })
-  return formatter.format(date)
+  const formatted = formatter.format(date)
+  // Convert Buddhist Year (BE) to Common Era (CE): BE - 543 = CE
+  return formatted.replace(/\d{4}(?=\s|$)/, (year) => String(parseInt(year) - 543))
 }
 
 const formatStatus = (status: string): string => {
@@ -45,6 +47,34 @@ const formatStatus = (status: string): string => {
     approved: 'อนุมัติแล้ว',
   }
   return statusMap[status] || status
+}
+
+// Problem type categories
+const PROBLEM_TYPES = [
+  { id: 'cash_counting_error', label: 'นับเงินผิดหรือทอนเงินผิด' },
+  { id: 'pos_operation_error', label: 'การใช้งานโปรแกรม POS' },
+  { id: 'cancel_bill', label: 'ยกเลิกบิล' },
+  { id: 'customer_deposit', label: 'ลูกค้าฝาก (ประชารัฐ/คนละครึ่ง)' },
+  { id: 'bank_system_error', label: 'ระบบธนาคารขัดข้อง' },
+  { id: 'supplier_issue', label: 'ปัญหาจากซัพพลายเออร์' },
+  { id: 'other', label: 'อื่นๆ' },
+] as const
+
+// Get problem type label by ID
+const getProblemTypeLabel = (typeId: string): string => {
+  const problemType = PROBLEM_TYPES.find((pt) => pt.id === typeId)
+  return problemType?.label || typeId
+}
+
+// Get channel emoji
+const getChannelEmoji = (channel: string): string => {
+  const emojiMap: Record<string, string> = {
+    cash: '💵',
+    qr: '📱',
+    bank: '🏦',
+    government: '🏛️',
+  }
+  return emojiMap[channel] || '•'
 }
 
 const calculateTotal = (posData: any): number => {
@@ -179,14 +209,6 @@ const isRowExpanded = (entryId: string): boolean => {
 
 <template>
   <div class="space-y-4">
-    <!-- Header -->
-    <div class="flex justify-between items-center">
-      <h2 class="text-2xl font-bold text-gray-800">บันทึกยอดขาย</h2>
-      <div class="text-sm text-gray-600">
-        ทั้งหมด {{ sortedEntries.length }} รายการ
-      </div>
-    </div>
-
     <!-- Search Bar -->
     <div class="bg-white rounded-lg shadow p-4">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -273,13 +295,12 @@ const isRowExpanded = (entryId: string): boolean => {
               <tr class="hover:bg-gray-50 transition-colors">
                 <!-- Date -->
                 <td class="px-6 py-4 text-sm text-gray-900 font-medium">
-                  {{ formatDateThai(entry.date) }}
+                  {{ formatDate(entry.date) }}
                 </td>
 
                 <!-- Cashier Name -->
                 <td class="px-6 py-4 text-sm">
                   <div class="font-medium text-gray-900">{{ entry.cashierName }}</div>
-                  <div class="text-gray-500 text-xs">{{ entry.cashierId }}</div>
                 </td>
 
                 <!-- Total Amount -->
@@ -412,6 +433,41 @@ const isRowExpanded = (entryId: string): boolean => {
                         🏛️ {{ formatCurrency(entry.differences.governmentDiff) }}
                       </span>
                     </div>
+
+                    <!-- Problem Types Row (Audit Details) -->
+                    <div v-if="entry.auditDetails" class="flex flex-wrap gap-4 border-t border-gray-300 pt-2 mt-2">
+                      <span class="font-medium text-gray-700 w-full">ประเภทปัญหาที่พบ:</span>
+                      <div class="w-full flex flex-wrap gap-2">
+                        <!-- Cash Problem -->
+                        <div v-if="entry.auditDetails.cashAuditNotes" class="flex items-center gap-1 bg-blue-50 px-3 py-1 rounded-full border border-blue-200 text-xs">
+                          <span class="font-semibold">💵</span>
+                          <span class="text-blue-900">{{ getProblemTypeLabel(entry.auditDetails.cashAuditNotes) }}</span>
+                        </div>
+
+                        <!-- QR Problem -->
+                        <div v-if="entry.auditDetails.qrAuditNotes" class="flex items-center gap-1 bg-purple-50 px-3 py-1 rounded-full border border-purple-200 text-xs">
+                          <span class="font-semibold">📱</span>
+                          <span class="text-purple-900">{{ getProblemTypeLabel(entry.auditDetails.qrAuditNotes) }}</span>
+                        </div>
+
+                        <!-- Bank Problem -->
+                        <div v-if="entry.auditDetails.bankAuditNotes" class="flex items-center gap-1 bg-green-50 px-3 py-1 rounded-full border border-green-200 text-xs">
+                          <span class="font-semibold">🏦</span>
+                          <span class="text-green-900">{{ getProblemTypeLabel(entry.auditDetails.bankAuditNotes) }}</span>
+                        </div>
+
+                        <!-- Government Problem -->
+                        <div v-if="entry.auditDetails.governmentAuditNotes" class="flex items-center gap-1 bg-amber-50 px-3 py-1 rounded-full border border-amber-200 text-xs">
+                          <span class="font-semibold">🏛️</span>
+                          <span class="text-amber-900">{{ getProblemTypeLabel(entry.auditDetails.governmentAuditNotes) }}</span>
+                        </div>
+
+                        <!-- No Problems Found -->
+                        <div v-if="!entry.auditDetails.cashAuditNotes && !entry.auditDetails.qrAuditNotes && !entry.auditDetails.bankAuditNotes && !entry.auditDetails.governmentAuditNotes" class="text-xs text-gray-500">
+                          ✓ ไม่พบปัญหา
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </td>
               </tr>
@@ -422,43 +478,59 @@ const isRowExpanded = (entryId: string): boolean => {
     </div>
 
     <!-- Pagination -->
-    <div v-if="totalPages > 1" class="flex justify-between items-center bg-white rounded-lg shadow p-4">
-      <div class="text-sm text-gray-600">
-        หน้า {{ currentPage }} จาก {{ totalPages }}
-        <span class="ml-2">|</span>
-        <span class="ml-2">{{ itemsPerPage }} รายการต่อหน้า</span>
-      </div>
+    <div class="bg-white rounded-lg shadow p-4">
+      <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+        <!-- Left: Items Per Page Dropdown -->
+        <div class="flex items-center gap-2">
+          <label class="text-sm font-medium text-gray-700">แสดงรายการต่อหน้า:</label>
+          <select
+            v-model.number="itemsPerPage"
+            @change="currentPage = 1"
+            class="px-3 py-2 pr-8 min-w-fit border border-gray-300 rounded-lg text-sm text-gray-700 hover:border-gray-400 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-colors"
+          >
+            <option :value="10">10</option>
+            <option :value="25">25</option>
+            <option :value="50">50</option>
+          </select>
+        </div>
 
-      <div class="flex gap-2">
-        <button
-          @click="currentPage = Math.max(1, currentPage - 1)"
-          :disabled="currentPage === 1"
-          class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          ← ก่อนหน้า
-        </button>
+        <!-- Middle: Pagination Buttons -->
+        <div class="flex gap-2 flex-wrap justify-center">
+          <button
+            @click="currentPage = Math.max(1, currentPage - 1)"
+            :disabled="currentPage === 1"
+            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            ← ก่อนหน้า
+          </button>
 
-        <button
-          v-for="page in Math.min(5, totalPages)"
-          :key="page"
-          @click="currentPage = page"
-          :class="[
-            'px-4 py-2 rounded-lg font-medium transition-colors',
-            currentPage === page
-              ? 'bg-red-600 text-white'
-              : 'border border-gray-300 text-gray-700 hover:bg-gray-100',
-          ]"
-        >
-          {{ page }}
-        </button>
+          <button
+            v-for="page in Math.min(5, totalPages)"
+            :key="page"
+            @click="currentPage = page"
+            :class="[
+              'px-4 py-2 rounded-lg font-medium transition-colors',
+              currentPage === page
+                ? 'bg-red-600 text-white'
+                : 'border border-gray-300 text-gray-700 hover:bg-gray-100',
+            ]"
+          >
+            {{ page }}
+          </button>
 
-        <button
-          @click="currentPage = Math.min(totalPages, currentPage + 1)"
-          :disabled="currentPage === totalPages"
-          class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          ถัดไป →
-        </button>
+          <button
+            @click="currentPage = Math.min(totalPages, currentPage + 1)"
+            :disabled="currentPage === totalPages"
+            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            ถัดไป →
+          </button>
+        </div>
+
+        <!-- Right: Page Info -->
+        <div class="text-sm text-gray-600 font-medium">
+          หน้า {{ currentPage }} จาก {{ totalPages }}
+        </div>
       </div>
     </div>
   </div>
