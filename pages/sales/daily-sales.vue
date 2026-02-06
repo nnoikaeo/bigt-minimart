@@ -86,6 +86,22 @@ const handleDelete = async (id: string) => {
   }
 }
 
+// Handle approve
+const handleApprove = async (id: string) => {
+  submitError.value = ''
+  try {
+    await salesStore.approveSale(id)
+    successMessage.value = 'อนุมัติรายงานเรียบร้อย'
+    logger.log('Approved entry:', id)
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 3000)
+  } catch (err: any) {
+    submitError.value = err.message || 'เกิดข้อผิดพลาดในการอนุมัติ'
+    logger.error('Error approving entry', err)
+  }
+}
+
 // Handle modal close
 const handleModalClose = () => {
   showModal.value = false
@@ -150,6 +166,7 @@ const openCreateModal = () => {
       :loading="loading"
       @edit="handleEdit"
       @delete="handleDelete"
+      @approve="handleApprove"
     />
 
     <!-- Modal -->
@@ -158,6 +175,7 @@ const openCreateModal = () => {
       :editing-entry="editingEntry"
       @close="handleModalClose"
       @submit="handleModalSubmit"
+      @approve="handleApprove"
     />
   </div>
 </template>

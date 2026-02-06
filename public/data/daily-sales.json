@@ -1,275 +1,18 @@
 [
   {
-    "id": "sales-1674882645000-abc123def",
-    "date": "2026-01-28",
-    "cashierId": "kpTHjc5TcrQFtU42KY48guEl5Av1",
-    "cashierName": "วราณี อุบลแย้ม",
-    "expectedCash": 10000,
-    "expectedQR": 5000,
-    "expectedBank": 3000,
-    "expectedGovernment": 2000,
-    "posData": {
-      "cash": 10000,
-      "qr": 5000,
-      "bank": 3000,
-      "government": 2000
-    },
-    "differences": {
-      "cashDiff": 0,
-      "qrDiff": 0,
-      "bankDiff": 0,
-      "governmentDiff": 0
-    },
-    "cashReconciliation": {
-      "expectedAmount": 20000,
-      "actualAmount": 20000,
-      "difference": 0,
-      "notes": ""
-    },
-    "total": 20000,
-    "status": "submitted",
-    "submittedAt": "2026-01-28T14:30:45.000Z",
-    "submittedBy": "dAuL8YQfWDcbiP4NL0z8z2J0wIy2",
-    "auditNotes": ""
-  },
-  {
-    "id": "sales-1674968745000-xyz789uvw",
-    "date": "2026-01-29",
-    "cashierId": "1OweeO8XGAeXl61Oy10YRrNcaSt2",
-    "cashierName": "น้ำผึ้ง พ่วงพลับ",
-    "expectedCash": 15000,
-    "expectedQR": 8000,
-    "expectedBank": 5000,
-    "expectedGovernment": 2000,
-    "posData": {
-      "cash": 15000,
-      "qr": 8000,
-      "bank": 5000,
-      "government": 2000
-    },
-    "differences": {
-      "cashDiff": 0,
-      "qrDiff": 0,
-      "bankDiff": 0,
-      "governmentDiff": 0
-    },
-    "cashReconciliation": {
-      "expectedAmount": 30000,
-      "actualAmount": 30000,
-      "difference": 0,
-      "notes": ""
-    },
-    "total": 30000,
-    "status": "approved",
-    "submittedAt": "2026-01-29T15:45:30.000Z",
-    "submittedBy": "dAuL8YQfWDcbiP4NL0z8z2J0wIy2",
-    "auditedAt": "2026-01-29T16:00:00.000Z",
-    "auditedBy": "dAuL8YQfWDcbiP4NL0z8z2J0wIy2",
-    "auditNotes": "All records verified"
-  },
-  {
-    "id": "sales-1675054845000-def456ghi",
-    "date": "2026-01-30",
-    "cashierId": "kpTHjc5TcrQFtU42KY48guEl5Av1",
-    "cashierName": "วราณี อุบลแย้ม",
-    "expectedCash": 12000,
-    "expectedQR": 6000,
-    "expectedBank": 4000,
-    "expectedGovernment": 1500,
-    "posData": {
-      "cash": 12000,
-      "qr": 6000,
-      "bank": 4000,
-      "government": 1500
-    },
-    "differences": {
-      "cashDiff": 0,
-      "qrDiff": 0,
-      "bankDiff": 0,
-      "governmentDiff": 0
-    },
-    "cashReconciliation": {
-      "expectedAmount": 23500,
-      "actualAmount": 23500,
-      "difference": 0,
-      "notes": ""
-    },
-    "total": 23500,
-    "status": "submitted",
-    "submittedAt": "2026-01-30T16:20:15.000Z",
-    "submittedBy": "dAuL8YQfWDcbiP4NL0z8z2J0wIy2",
-    "auditNotes": ""
-  },
-  {
-    "id": "sales-1675141245000-jkl789mno",
-    "date": "2026-01-31",
+    "id": "sales-1770387616920-6k8976wy2",
+    "date": "2026-02-01",
     "cashierId": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
     "cashierName": "กัลญา ผิวขำทองดี",
-    "expectedCash": 8500,
-    "expectedQR": 4300,
-    "expectedBank": 1000,
-    "expectedGovernment": 900,
-    "posData": {
-      "cash": 8500,
-      "qr": 4200,
-      "bank": 1000,
-      "government": 900
-    },
-    "differences": {
-      "cashDiff": 0,
-      "qrDiff": -100,
-      "bankDiff": 0,
-      "governmentDiff": 0
-    },
-    "cashReconciliation": {
-      "expectedAmount": 14700,
-      "actualAmount": 14600,
-      "difference": -100,
-      "notes": ""
-    },
-    "total": 14600,
-    "status": "submitted",
-    "submittedAt": "2026-01-31T17:45:30.000Z",
-    "submittedBy": "current-user-id",
-    "auditNotes": "",
-    "auditDetails": {
-      "cashAuditNotes": "",
-      "qrAuditNotes": "cancel_bill",
-      "bankAuditNotes": "",
-      "governmentAuditNotes": "",
-      "recommendation": ""
-    },
-    "updatedAt": "2026-02-06T11:26:59.957Z"
-  },
-  {
-    "id": "sales-1675227645000-pqr012stu",
-    "date": "2026-02-01",
-    "cashierId": "1OweeO8XGAeXl61Oy10YRrNcaSt2",
-    "cashierName": "น้ำผึ้ง พ่วงพลับ",
-    "expectedCash": 18000,
-    "expectedQR": 9500,
-    "expectedBank": 6000,
-    "expectedGovernment": 2500,
-    "posData": {
-      "cash": 18000,
-      "qr": 9500,
-      "bank": 6000,
-      "government": 2500
-    },
-    "differences": {
-      "cashDiff": 0,
-      "qrDiff": 0,
-      "bankDiff": 0,
-      "governmentDiff": 0
-    },
-    "cashReconciliation": {
-      "expectedAmount": 36000,
-      "actualAmount": 36000,
-      "difference": 0,
-      "notes": ""
-    },
-    "total": 36000,
-    "status": "audited",
-    "submittedAt": "2026-02-01T18:30:00.000Z",
-    "submittedBy": "dAuL8YQfWDcbiP4NL0z8z2J0wIy2",
-    "auditedAt": "2026-02-01T19:00:00.000Z",
-    "auditedBy": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2",
-    "auditNotes": "Verified and balanced"
-  },
-  {
-    "id": "sales-1769968206170-rv9d0n3qs",
-    "date": "2026-02-01",
-    "cashierId": "kpTHjc5TcrQFtU42KY48guEl5Av1",
-    "cashierName": "วราณี อุบลแย้ม",
-    "expectedCash": 4475,
-    "expectedQR": 530,
+    "expectedCash": 11323,
+    "expectedQR": 2296,
     "expectedBank": 0,
-    "expectedGovernment": 900,
+    "expectedGovernment": 5400,
     "posData": {
-      "cash": 4473,
-      "qr": 530,
+      "cash": 11324,
+      "qr": 2296,
       "bank": 0,
-      "government": 900
-    },
-    "differences": {
-      "cashDiff": -2,
-      "qrDiff": 0,
-      "bankDiff": 0,
-      "governmentDiff": 0
-    },
-    "cashReconciliation": {
-      "expectedAmount": 5905,
-      "actualAmount": 5903,
-      "difference": -2,
-      "notes": ""
-    },
-    "auditDetails": {
-      "cashAuditNotes": "ทอนเงินผิดหรือนับเงินผิด",
-      "qrAuditNotes": "",
-      "bankAuditNotes": "",
-      "governmentAuditNotes": "",
-      "recommendation": ""
-    },
-    "total": 5903,
-    "status": "submitted",
-    "submittedBy": "kpTHjc5TcrQFtU42KY48guEl5Av1",
-    "submittedAt": "2026-02-01T17:50:06.170Z",
-    "updatedAt": "2026-02-01T17:50:06.170Z"
-  },
-  {
-    "id": "sales-1770026876362-jjsf0cbel",
-    "date": "2026-02-02",
-    "cashierId": "kpTHjc5TcrQFtU42KY48guEl5Av1",
-    "cashierName": "วราณี อุบลแย้ม",
-    "expectedCash": 4800,
-    "expectedQR": 570,
-    "expectedBank": 0,
-    "expectedGovernment": 900,
-    "posData": {
-      "cash": 4803,
-      "qr": 570,
-      "bank": 0,
-      "government": 900
-    },
-    "differences": {
-      "cashDiff": 3,
-      "qrDiff": 0,
-      "bankDiff": 0,
-      "governmentDiff": 0
-    },
-    "cashReconciliation": {
-      "expectedAmount": 6270,
-      "actualAmount": 6273,
-      "difference": 3,
-      "notes": ""
-    },
-    "auditDetails": {
-      "cashAuditNotes": "cash_counting_error",
-      "qrAuditNotes": "",
-      "bankAuditNotes": "",
-      "governmentAuditNotes": "",
-      "recommendation": ""
-    },
-    "total": 6273,
-    "status": "submitted",
-    "submittedBy": "current-user-id",
-    "submittedAt": "2026-02-02T10:07:56.362Z",
-    "updatedAt": "2026-02-06T11:26:35.353Z"
-  },
-  {
-    "id": "sales-1770372034837-ao4wb63e0",
-    "date": "2026-02-02",
-    "cashierId": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
-    "cashierName": "กัลญา ผิวขำทองดี",
-    "expectedCash": 5000,
-    "expectedQR": 480,
-    "expectedBank": 0,
-    "expectedGovernment": 1200,
-    "posData": {
-      "cash": 5001,
-      "qr": 480,
-      "bank": 0,
-      "government": 1200
+      "government": 5400
     },
     "differences": {
       "cashDiff": 1,
@@ -278,8 +21,8 @@
       "governmentDiff": 0
     },
     "cashReconciliation": {
-      "expectedAmount": 6680,
-      "actualAmount": 6681,
+      "expectedAmount": 19019,
+      "actualAmount": 19020,
       "difference": 1,
       "notes": ""
     },
@@ -290,50 +33,180 @@
       "governmentAuditNotes": "",
       "recommendation": ""
     },
-    "total": 6681,
-    "status": "submitted",
-    "submittedBy": "current-user-id",
-    "submittedAt": "2026-02-06T10:00:34.837Z",
-    "updatedAt": "2026-02-06T11:26:28.450Z"
+    "total": 19020,
+    "status": "approved",
+    "submittedBy": "dev-user-1770387616917",
+    "submittedAt": "2026-02-06T14:20:16.920Z",
+    "updatedAt": "2026-02-06T14:39:28.126Z",
+    "approvedAt": "2026-02-06T14:39:28.126Z",
+    "approvedBy": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2"
   },
   {
-    "id": "sales-1770375882799-aue9qeqne",
-    "date": "2026-02-03",
-    "cashierId": "1OweeO8XGAeXl61Oy10YRrNcaSt2",
-    "cashierName": "น้ำผึ้ง พ่วงพลับ",
-    "expectedCash": 7538,
-    "expectedQR": 735,
+    "id": "sales-1770387715453-dqlvdd65y",
+    "date": "2026-02-01",
+    "cashierId": "kpTHjc5TcrQFtU42KY48guEl5Av1",
+    "cashierName": "วราณี อุบลแย้ม",
+    "expectedCash": 7219,
+    "expectedQR": 2041,
     "expectedBank": 0,
-    "expectedGovernment": 1200,
+    "expectedGovernment": 6759,
     "posData": {
-      "cash": 7541,
-      "qr": 735,
+      "cash": 7219,
+      "qr": 2041,
       "bank": 0,
-      "government": 900
+      "government": 6759
     },
     "differences": {
-      "cashDiff": 3,
+      "cashDiff": 0,
       "qrDiff": 0,
       "bankDiff": 0,
-      "governmentDiff": -300
+      "governmentDiff": 0
     },
     "cashReconciliation": {
-      "expectedAmount": 9473,
-      "actualAmount": 9176,
-      "difference": -297,
+      "expectedAmount": 16019,
+      "actualAmount": 16019,
+      "difference": 0,
+      "notes": ""
+    },
+    "auditDetails": {
+      "cashAuditNotes": "",
+      "qrAuditNotes": "",
+      "bankAuditNotes": "",
+      "governmentAuditNotes": "",
+      "recommendation": ""
+    },
+    "total": 16019,
+    "status": "approved",
+    "submittedBy": "dev-user-1770387715450",
+    "submittedAt": "2026-02-06T14:21:55.453Z",
+    "updatedAt": "2026-02-06T14:52:50.399Z",
+    "approvedAt": "2026-02-06T14:52:50.399Z",
+    "approvedBy": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2"
+  },
+  {
+    "id": "sales-1770387832147-ijml1ssrd",
+    "date": "2026-02-02",
+    "cashierId": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
+    "cashierName": "กัลญา ผิวขำทองดี",
+    "expectedCash": 6319,
+    "expectedQR": 1397,
+    "expectedBank": 0,
+    "expectedGovernment": 1800,
+    "posData": {
+      "cash": 6299,
+      "qr": 1397,
+      "bank": 0,
+      "government": 1800
+    },
+    "differences": {
+      "cashDiff": -20,
+      "qrDiff": 0,
+      "bankDiff": 0,
+      "governmentDiff": 0
+    },
+    "cashReconciliation": {
+      "expectedAmount": 9516,
+      "actualAmount": 9496,
+      "difference": -20,
       "notes": ""
     },
     "auditDetails": {
       "cashAuditNotes": "cash_counting_error",
       "qrAuditNotes": "",
       "bankAuditNotes": "",
-      "governmentAuditNotes": "customer_deposit",
+      "governmentAuditNotes": "",
       "recommendation": ""
     },
-    "total": 9176,
-    "status": "submitted",
+    "total": 9496,
+    "status": "approved",
     "submittedBy": "current-user-id",
-    "submittedAt": "2026-02-06T11:04:42.799Z",
-    "updatedAt": "2026-02-06T11:09:29.836Z"
+    "submittedAt": "2026-02-06T14:23:52.147Z",
+    "updatedAt": "2026-02-06T14:52:58.619Z",
+    "approvedAt": "2026-02-06T14:52:58.619Z",
+    "approvedBy": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2"
+  },
+  {
+    "id": "sales-1770387962067-tc0xgnjfr",
+    "date": "2026-02-02",
+    "cashierId": "1OweeO8XGAeXl61Oy10YRrNcaSt2",
+    "cashierName": "น้ำผึ้ง พ่วงพลับ",
+    "expectedCash": 3979,
+    "expectedQR": 992,
+    "expectedBank": 0,
+    "expectedGovernment": 1500,
+    "posData": {
+      "cash": 4000,
+      "qr": 992,
+      "bank": 0,
+      "government": 1500
+    },
+    "differences": {
+      "cashDiff": 21,
+      "qrDiff": 0,
+      "bankDiff": 0,
+      "governmentDiff": 0
+    },
+    "cashReconciliation": {
+      "expectedAmount": 6471,
+      "actualAmount": 6492,
+      "difference": 21,
+      "notes": ""
+    },
+    "auditDetails": {
+      "cashAuditNotes": "cash_counting_error",
+      "qrAuditNotes": "",
+      "bankAuditNotes": "",
+      "governmentAuditNotes": "",
+      "recommendation": ""
+    },
+    "total": 6492,
+    "status": "approved",
+    "submittedBy": "dev-user-1770387962064",
+    "submittedAt": "2026-02-06T14:26:02.067Z",
+    "updatedAt": "2026-02-06T14:52:59.948Z",
+    "approvedAt": "2026-02-06T14:52:59.948Z",
+    "approvedBy": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2"
+  },
+  {
+    "id": "sales-1770388174875-uq0jsu28a",
+    "date": "2026-02-02",
+    "cashierId": "kpTHjc5TcrQFtU42KY48guEl5Av1",
+    "cashierName": "วราณี อุบลแย้ม",
+    "expectedCash": 6797,
+    "expectedQR": 245,
+    "expectedBank": 0,
+    "expectedGovernment": 4200,
+    "posData": {
+      "cash": 6797,
+      "qr": 245,
+      "bank": 0,
+      "government": 4200
+    },
+    "differences": {
+      "cashDiff": 0,
+      "qrDiff": 0,
+      "bankDiff": 0,
+      "governmentDiff": 0
+    },
+    "cashReconciliation": {
+      "expectedAmount": 11242,
+      "actualAmount": 11242,
+      "difference": 0,
+      "notes": ""
+    },
+    "auditDetails": {
+      "cashAuditNotes": "",
+      "qrAuditNotes": "",
+      "bankAuditNotes": "",
+      "governmentAuditNotes": "",
+      "recommendation": ""
+    },
+    "total": 11242,
+    "status": "approved",
+    "submittedBy": "dev-user-1770388174872",
+    "submittedAt": "2026-02-06T14:29:34.875Z",
+    "updatedAt": "2026-02-06T15:47:23.643Z",
+    "approvedAt": "2026-02-06T15:47:23.643Z",
+    "approvedBy": "dev-user-owner"
   }
 ]

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useLogger } from '~/composables/useLogger'
+import { useAuthStore } from '~/stores/auth'
+import { useAccessControlStore } from '~/stores/access-control'
 import type { DailySalesEntry } from '~/types/repositories'
 
 interface Props {
@@ -15,9 +17,39 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   edit: [entry: DailySalesEntry]
   delete: [id: string]
+  approve: [id: string]
 }>()
 
 const logger = useLogger('DailySalesTable')
+const authStore = useAuthStore()
+const accessControlStore = useAccessControlStore()
+
+// Check if user is owner
+const isOwner = computed(() => {
+  return authStore.getCurrentUser?.primaryRole === 'owner'
+})
+
+// Helper to get approver display name
+const getApproverName = (approvedById: string | undefined): string => {
+  if (!approvedById) {
+    logger.warn('[getApproverName] No approvedById provided')
+    return 'Unknown'
+  }
+
+  const user = accessControlStore.getUserById(approvedById)
+  logger.log('[getApproverName] Looking up user:', {
+    approvedById,
+    userFound: !!user,
+    displayName: user?.displayName,
+    allUsers: accessControlStore.getAllUsers.length,
+  })
+
+  if (!user) {
+    logger.warn('[getApproverName] User not found in access control store:', approvedById)
+  }
+
+  return user?.displayName || approvedById
+}
 
 // Helper functions
 const formatCurrency = (amount: number): string => {
@@ -40,10 +72,16 @@ const formatDate = (dateStr: string): string => {
   return formatted.replace(/\d{4}(?=\s|$)/, (year) => String(parseInt(year) - 543))
 }
 
+const formatApprovedDate = (approvedAt: string | Date | undefined): string => {
+  if (!approvedAt) return ''
+  const dateStr = typeof approvedAt === 'string' ? approvedAt : (approvedAt as Date).toISOString()
+  const datePart = dateStr.split('T')[0] || ''
+  return formatDate(datePart)
+}
+
 const formatStatus = (status: string): string => {
   const statusMap: Record<string, string> = {
-    submitted: 'รอตรวจสอบ',
-    audited: 'ตรวจสอบแล้ว',
+    pending: 'รออนุมัติ',
     approved: 'อนุมัติแล้ว',
   }
   return statusMap[status] || status
@@ -150,8 +188,7 @@ const totalPages = computed(() => Math.ceil(sortedEntries.value.length / itemsPe
 // Status badge styling
 const getStatusBadgeClass = (status: string): string => {
   const classes: Record<string, string> = {
-    submitted: 'bg-blue-100 text-blue-800 border border-blue-300',
-    audited: 'bg-yellow-100 text-yellow-800 border border-yellow-300',
+    pending: 'bg-orange-100 text-orange-800 border border-orange-300',
     approved: 'bg-green-100 text-green-800 border border-green-300',
   }
   return classes[status] || 'bg-gray-100 text-gray-800'
@@ -392,6 +429,16 @@ const isRowExpanded = (entryId: string): boolean => {
                       </div>
                     </div>
                   </div>
+
+                  <!-- Approve Button (Owner Only) -->
+                  <button
+                    v-if="isOwner && entry.status === 'pending'"
+                    @click="emit('approve', entry.id!)"
+                    class="inline-block px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors font-medium"
+                    title="อนุมัติ"
+                  >
+                    ✓
+                  </button>
                 </td>
               </tr>
 
@@ -399,6 +446,9 @@ const isRowExpanded = (entryId: string): boolean => {
               <tr v-if="isRowExpanded(entry.id!)" class="bg-gray-50 border-b border-gray-200">
                 <td colspan="6" class="px-6 py-3 text-xs">
                   <div class="space-y-1">
+                    <!-- Section Header: Expected/Actual/Difference -->
+                    <div class="font-semibold text-gray-800 mb-2">ค่าที่คาดหวัง/ค่าจริง/ผลต่าง:</div>
+
                     <!-- Expected Row -->
                     <div v-if="entry.expectedCash !== undefined" class="flex flex-wrap gap-4">
                       <span class="font-medium text-gray-700">ค่าที่คาดหวัง:</span>
@@ -435,8 +485,8 @@ const isRowExpanded = (entryId: string): boolean => {
                     </div>
 
                     <!-- Problem Types Row (Audit Details) -->
-                    <div v-if="entry.auditDetails" class="flex flex-wrap gap-4 border-t border-gray-300 pt-2 mt-2">
-                      <span class="font-medium text-gray-700 w-full">ประเภทปัญหาที่พบ:</span>
+                    <div v-if="entry.auditDetails" class="flex flex-wrap gap-2 border-t border-gray-300 pt-2 mt-2">
+                      <span class="font-semibold text-gray-800 w-full">ประเภทปัญหาที่พบ:</span>
                       <div class="w-full flex flex-wrap gap-2">
                         <!-- Cash Problem -->
                         <div v-if="entry.auditDetails.cashAuditNotes" class="flex items-center gap-1 bg-blue-50 px-3 py-1 rounded-full border border-blue-200 text-xs">
@@ -466,6 +516,15 @@ const isRowExpanded = (entryId: string): boolean => {
                         <div v-if="!entry.auditDetails.cashAuditNotes && !entry.auditDetails.qrAuditNotes && !entry.auditDetails.bankAuditNotes && !entry.auditDetails.governmentAuditNotes" class="text-xs text-gray-500">
                           ✓ ไม่พบปัญหา
                         </div>
+                      </div>
+                    </div>
+
+                    <!-- Approval Info -->
+                    <div v-if="entry.approvedAt && entry.approvedBy" class="border-t border-gray-300 pt-2 mt-2">
+                      <span class="font-semibold text-gray-800">ข้อมูลการอนุมัติ:</span>
+                      <div class="text-xs text-green-700 mt-1">
+                        ✓ อนุมัติเมื่อ: {{ formatApprovedDate(entry.approvedAt) }}
+                        <span> โดย: {{ getApproverName(entry.approvedBy) }}</span>
                       </div>
                     </div>
                   </div>
