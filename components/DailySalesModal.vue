@@ -2,6 +2,7 @@
 import { ref, reactive, watch, computed } from 'vue'
 import { useLogger } from '~/composables/useLogger'
 import { useAccessControlStore } from '~/stores/access-control'
+import { useAuthStore } from '~/stores/auth'
 import type { DailySalesEntry } from '~/types/repositories'
 
 interface Props {
@@ -17,10 +18,25 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   close: []
   submit: [entry: Omit<DailySalesEntry, 'id' | 'submittedAt'>]
+  approve: [id: string]
 }>()
 
 const logger = useLogger('DailySalesModal')
 const accessControlStore = useAccessControlStore()
+const authStore = useAuthStore()
+
+// Check if user is owner
+const isOwner = computed(() => {
+  return authStore.getCurrentUser?.primaryRole === 'owner'
+})
+
+const canApprove = computed(() => {
+  return isOwner.value && props.editingEntry?.status === 'pending'
+})
+
+const isFormDisabled = computed(() => {
+  return props.editingEntry?.status === 'approved'
+})
 
 // Problem type categories for difference analysis
 const PROBLEM_TYPES = [
@@ -42,8 +58,49 @@ const formatCurrency = (amount: number): string => {
   }).format(amount)
 }
 
+const formatStatus = (status: string): string => {
+  const statusMap: Record<string, string> = {
+    pending: 'รออนุมัติ',
+    approved: 'อนุมัติแล้ว',
+  }
+  return statusMap[status] || status
+}
+
+const formatDate = (dateStr: string): string => {
+  const date = new Date(dateStr)
+  const formatter = new Intl.DateTimeFormat('th-TH', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+  const formatted = formatter.format(date)
+  return formatted.replace(/\d{4}(?=\s|$)/, (year) => String(parseInt(year) - 543))
+}
+
 const calculateTotal = (posData: any): number => {
   return (posData.cash || 0) + (posData.qr || 0) + (posData.bank || 0) + (posData.government || 0)
+}
+
+// Helper to get approver display name
+const getApproverName = (approvedById: string | undefined): string => {
+  if (!approvedById) {
+    logger.warn('[getApproverName] No approvedById provided')
+    return 'Unknown'
+  }
+
+  const user = accessControlStore.getUserById(approvedById)
+  logger.log('[getApproverName] Looking up user:', {
+    approvedById,
+    userFound: !!user,
+    displayName: user?.displayName,
+    allUsers: accessControlStore.getAllUsers.length,
+  })
+
+  if (!user) {
+    logger.warn('[getApproverName] User not found in access control store:', approvedById)
+  }
+
+  return user?.displayName || approvedById
 }
 
 // Get cashiers from access control store
@@ -78,7 +135,7 @@ interface FormDataType {
     governmentAuditNotes: string
     recommendation: string
   }
-  status: 'submitted' | 'audited' | 'approved'
+  status: 'pending' | 'approved'
 }
 
 const formData = reactive<FormDataType>({
@@ -108,7 +165,7 @@ const formData = reactive<FormDataType>({
     governmentAuditNotes: '',
     recommendation: '',
   },
-  status: 'submitted',
+  status: 'pending',
 })
 
 logger.log('Form initialized:', formData)
@@ -239,7 +296,7 @@ const resetForm = () => {
     governmentAuditNotes: '',
     recommendation: '',
   }
-  formData.status = 'submitted'
+  formData.status = 'pending'
   validationErrors.value = {}
   successMessage.value = ''
 }
@@ -336,6 +393,22 @@ const handleSubmit = async () => {
     }, 500)
   } catch (error) {
     logger.error('Failed to submit', error)
+  } finally {
+    submitting.value = false
+  }
+}
+
+// Handle approve
+const handleApprove = async () => {
+  if (!props.editingEntry?.id) return
+
+  submitting.value = true
+  try {
+    emit('approve', props.editingEntry.id)
+    successMessage.value = 'อนุมัติรายงานเรียบร้อย'
+    setTimeout(() => {
+      emit('close')
+    }, 500)
   } finally {
     submitting.value = false
   }
@@ -791,6 +864,54 @@ const handleClose = () => {
           </div>
         </div>
 
+        <!-- Approval Section (Owner Only) -->
+        <div v-if="editingEntry && isOwner" class="space-y-4 bg-green-50 p-6 border-b border-green-200">
+          <h3 class="text-lg font-semibold text-green-800 border-b border-green-300 pb-2">
+            การอนุมัติ (Owner)
+          </h3>
+
+          <!-- Current Status -->
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-medium text-gray-700">สถานะปัจจุบัน:</span>
+            <span :class="[
+              'px-3 py-1 rounded-full text-xs font-semibold',
+              formData.status === 'pending'
+                ? 'bg-orange-100 text-orange-800'
+                : 'bg-green-100 text-green-800'
+            ]">
+              {{ formatStatus(formData.status) }}
+            </span>
+          </div>
+
+          <!-- Approval Info (if already approved) -->
+          <div v-if="editingEntry.approvedAt" class="text-sm text-green-700">
+            <div class="flex items-center gap-2">
+              <span>✓</span>
+              <span>อนุมัติแล้วเมื่อ: {{ formatDate(editingEntry.approvedAt.toString().split('T')[0]) }}</span>
+            </div>
+            <div v-if="editingEntry.approvedBy" class="ml-6 text-xs text-gray-600">
+              โดย: {{ getApproverName(editingEntry.approvedBy) }}
+            </div>
+          </div>
+
+          <!-- Approve Button (if not yet approved) -->
+          <button
+            v-if="canApprove"
+            @click="handleApprove"
+            :disabled="submitting"
+            class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-semibold hover:from-green-700 hover:to-green-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            <span>✓</span>
+            <span v-if="submitting">กำลังอนุมัติ...</span>
+            <span v-else>อนุมัติรายงาน</span>
+          </button>
+
+          <!-- Note: Editing disabled after approval -->
+          <p v-if="editingEntry.status === 'approved'" class="text-xs text-gray-500 italic">
+            หมายเหตุ: รายการที่อนุมัติแล้วไม่สามารถแก้ไขได้
+          </p>
+        </div>
+
         <!-- Footer -->
         <div class="sticky bottom-0 bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t">
           <button
@@ -803,10 +924,11 @@ const handleClose = () => {
           <button
             @click="handleSubmit"
             type="button"
-            :disabled="submitting"
+            :disabled="submitting || isFormDisabled"
             class="px-6 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg font-medium hover:from-red-700 hover:to-red-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             <span v-if="submitting">{{ editingEntry ? 'กำลังอัปเดต...' : 'กำลังบันทึก...' }}</span>
+            <span v-else-if="isFormDisabled">รายการที่อนุมัติแล้ว</span>
             <span v-else>{{ editingEntry ? 'อัปเดต' : 'บันทึก' }}</span>
           </button>
         </div>

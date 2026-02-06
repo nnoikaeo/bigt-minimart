@@ -105,7 +105,7 @@ export class SalesJsonRepository implements ISalesRepository {
   /**
    * READ: Filter by status
    */
-  async getByStatus(status: 'submitted' | 'audited' | 'approved'): Promise<DailySalesEntry[]> {
+  async getByStatus(status: 'pending' | 'approved'): Promise<DailySalesEntry[]> {
     return this.data.filter(s => s.status === status)
   }
 
@@ -146,6 +146,8 @@ export class SalesJsonRepository implements ISalesRepository {
       submittedAt: new Date().toISOString(),
       auditedAt: sale.auditedAt,
       auditedBy: sale.auditedBy,
+      approvedAt: undefined,
+      approvedBy: undefined,
       updatedAt: new Date().toISOString(),
     }
 
@@ -206,6 +208,8 @@ export class SalesJsonRepository implements ISalesRepository {
       submittedAt: existing.submittedAt, // Never update
       auditedAt: updates.auditedAt ?? existing.auditedAt,
       auditedBy: updates.auditedBy ?? existing.auditedBy,
+      approvedAt: updates.approvedAt ?? existing.approvedAt,
+      approvedBy: updates.approvedBy ?? existing.approvedBy,
       updatedAt: new Date().toISOString(),
     }
 

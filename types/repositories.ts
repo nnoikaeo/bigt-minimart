@@ -62,15 +62,17 @@ export interface DailySalesEntry {
   total?: number // Auto-calculated total (cash + qr + bank + government)
   
   // Status & workflow
-  status: 'submitted' | 'audited' | 'approved'
+  status: 'pending' | 'approved'
   auditNotes?: string
-  
+
   // User & timestamps
   submittedAt: string | Date // ISO format or Date object
   submittedBy?: string
   auditedAt?: string | Date // ISO format or Date object
   auditedBy?: string
-  
+  approvedAt?: string | Date // ISO format or Date object (when owner approved)
+  approvedBy?: string // Owner user ID who approved (lookup displayName from access-control store)
+
   // System timestamps
   createdAt?: string | Date
   updatedAt?: string | Date
@@ -121,7 +123,7 @@ export interface ISalesRepository {
   /**
    * Filter by status
    */
-  getByStatus(status: 'submitted' | 'audited' | 'approved'): Promise<DailySalesEntry[]>
+  getByStatus(status: 'pending' | 'approved'): Promise<DailySalesEntry[]>
 
   /**
    * Count total records

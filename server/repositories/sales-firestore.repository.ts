@@ -76,6 +76,7 @@ export class SalesFirestoreRepository implements ISalesRepository {
       ...doc.data(),
       submittedAt: (doc.data().submittedAt as Timestamp).toDate(),
       auditedAt: doc.data().auditedAt ? (doc.data().auditedAt as Timestamp).toDate() : undefined,
+      approvedAt: doc.data().approvedAt ? (doc.data().approvedAt as Timestamp).toDate() : undefined,
     })) as DailySalesEntry[]
   }
 
@@ -94,8 +95,11 @@ export class SalesFirestoreRepository implements ISalesRepository {
       id: snapshot.id,
       ...snapshot.data(),
       submittedAt: (snapshot.data().submittedAt as Timestamp).toDate(),
-      auditedAt: snapshot.data().auditedAt 
-        ? (snapshot.data().auditedAt as Timestamp).toDate() 
+      auditedAt: snapshot.data().auditedAt
+        ? (snapshot.data().auditedAt as Timestamp).toDate()
+        : undefined,
+      approvedAt: snapshot.data().approvedAt
+        ? (snapshot.data().approvedAt as Timestamp).toDate()
         : undefined,
     } as DailySalesEntry
   }
@@ -112,13 +116,14 @@ export class SalesFirestoreRepository implements ISalesRepository {
       ...doc.data(),
       submittedAt: (doc.data().submittedAt as Timestamp).toDate(),
       auditedAt: doc.data().auditedAt ? (doc.data().auditedAt as Timestamp).toDate() : undefined,
+      approvedAt: doc.data().approvedAt ? (doc.data().approvedAt as Timestamp).toDate() : undefined,
     })) as DailySalesEntry[]
   }
 
   /**
    * READ: Filter by status
    */
-  async getByStatus(status: 'submitted' | 'audited' | 'approved'): Promise<DailySalesEntry[]> {
+  async getByStatus(status: 'pending' | 'approved'): Promise<DailySalesEntry[]> {
     const q = query(
       collection(this.db, this.collectionName),
       where('status', '==', status)
@@ -130,6 +135,7 @@ export class SalesFirestoreRepository implements ISalesRepository {
       ...doc.data(),
       submittedAt: (doc.data().submittedAt as Timestamp).toDate(),
       auditedAt: doc.data().auditedAt ? (doc.data().auditedAt as Timestamp).toDate() : undefined,
+      approvedAt: doc.data().approvedAt ? (doc.data().approvedAt as Timestamp).toDate() : undefined,
     })) as DailySalesEntry[]
   }
 

@@ -45,7 +45,7 @@ const updateDailySalesSchema = z.object({
     governmentAuditNotes: z.string().optional(),
     recommendation: z.string().optional(),
   }).optional(),
-  status: z.enum(['submitted', 'audited', 'approved']).optional(),
+  status: z.enum(['pending', 'approved']).optional(),
   submittedBy: z.string().optional(),
 }).strict()
 
@@ -83,6 +83,14 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 404,
         message: 'Sales entry not found',
+      })
+    }
+
+    // Prevent editing approved entries
+    if (existingEntry.status === 'approved') {
+      throw createError({
+        statusCode: 400,
+        message: 'Cannot edit approved entries',
       })
     }
 
