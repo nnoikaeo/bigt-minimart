@@ -22,6 +22,17 @@ const emit = defineEmits<{
 const logger = useLogger('DailySalesModal')
 const accessControlStore = useAccessControlStore()
 
+// Problem type categories for difference analysis
+const PROBLEM_TYPES = [
+  { id: 'cash_counting_error', label: 'นับเงินผิดหรือทอนเงินผิด' },
+  { id: 'pos_operation_error', label: 'การใช้งานโปรแกรม POS' },
+  { id: 'cancel_bill', label: 'ยกเลิกบิล' },
+  { id: 'customer_deposit', label: 'ลูกค้าฝาก (ประชารัฐ/คนละครึ่ง)' },
+  { id: 'bank_system_error', label: 'ระบบธนาคารขัดข้อง' },
+  { id: 'supplier_issue', label: 'ปัญหาจากซัพพลายเออร์' },
+  { id: 'other', label: 'อื่นๆ' },
+] as const
+
 // Helper functions
 const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('th-TH', {
@@ -38,10 +49,15 @@ const calculateTotal = (posData: any): number => {
 // Get cashiers from access control store
 // This getter filters users who have 'cashier' role and are active
 const cashiers = computed(() => {
-  return accessControlStore.getCashiers.map((user) => ({
+  const cashierList = accessControlStore.getCashiers.map((user) => ({
     id: user.uid,
     name: user.displayName,
   }))
+  logger.log('[cashiers] Retrieved cashiers:', cashierList)
+  if (cashierList.length === 0) {
+    logger.warn('[cashiers] No cashiers found in access control store')
+  }
+  return cashierList
 })
 
 // Form state with explicit type annotation
@@ -56,7 +72,7 @@ interface FormDataType {
   posData: { cash: number; qr: number; bank: number; government: number }
   cashReconciliation: { expectedAmount: number; actualAmount: number; difference: number; notes: string }
   auditDetails: {
-    cashAuditNotes: string
+    cashAuditNotes: string // Problem category selected
     qrAuditNotes: string
     bankAuditNotes: string
     governmentAuditNotes: string
@@ -258,20 +274,20 @@ const handleSubmit = async () => {
   }
 
   // Conditional validation: per-channel audit notes only when difference exists
-  if (cashDiff.value !== 0 && !formData.auditDetails.cashAuditNotes.trim()) {
-    validationErrors.value.cashAuditNotes = 'กรุณาอธิบายสาเหตุของผลต่าง (เงินสด)'
+  if (cashDiff.value !== 0 && formData.auditDetails.cashAuditNotes === '') {
+    validationErrors.value.cashAuditNotes = 'กรุณาเลือกประเภทปัญหา (เงินสด)'
   }
 
-  if (qrDiff.value !== 0 && !formData.auditDetails.qrAuditNotes.trim()) {
-    validationErrors.value.qrAuditNotes = 'กรุณาอธิบายสาเหตุของผลต่าง (QR Code)'
+  if (qrDiff.value !== 0 && formData.auditDetails.qrAuditNotes === '') {
+    validationErrors.value.qrAuditNotes = 'กรุณาเลือกประเภทปัญหา (QR Code)'
   }
 
-  if (bankDiff.value !== 0 && !formData.auditDetails.bankAuditNotes.trim()) {
-    validationErrors.value.bankAuditNotes = 'กรุณาอธิบายสาเหตุของผลต่าง (ธนาคาร)'
+  if (bankDiff.value !== 0 && formData.auditDetails.bankAuditNotes === '') {
+    validationErrors.value.bankAuditNotes = 'กรุณาเลือกประเภทปัญหา (ธนาคาร)'
   }
 
-  if (governmentDiff.value !== 0 && !formData.auditDetails.governmentAuditNotes.trim()) {
-    validationErrors.value.governmentAuditNotes = 'กรุณาอธิบายสาเหตุของผลต่าง (โครงการรัฐ)'
+  if (governmentDiff.value !== 0 && formData.auditDetails.governmentAuditNotes === '') {
+    validationErrors.value.governmentAuditNotes = 'กรุณาเลือกประเภทปัญหา (โครงการรัฐ)'
   }
 
   if (Object.keys(validationErrors.value).length > 0) {
@@ -341,7 +357,7 @@ const handleClose = () => {
         <!-- Header -->
         <div class="sticky top-0 bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex justify-between items-center border-b border-red-800">
           <h2 class="text-xl font-bold text-white">
-            {{ editingEntry ? 'แก้ไขบันทึกยอดขาย' : 'บันทึกยอดขายใหม่' }}
+            {{ editingEntry ? 'แก้ไข' : 'เพิ่ม' }}
           </h2>
           <button
             @click="handleClose"
@@ -388,7 +404,11 @@ const handleClose = () => {
               <label class="block text-sm font-medium text-gray-700 mb-1">
                 แคชเชียร์ <span class="text-red-500">*</span>
               </label>
+              <div v-if="cashiers.length === 0" class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-yellow-800 text-sm">
+                ⚠️ ไม่พบข้อมูลแคชเชียร์ในระบบ กรุณาติดต่อผู้ดูแลระบบ
+              </div>
               <select
+                v-else
                 v-model="formData.cashierId"
                 @change="handleCashierChange"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
@@ -606,7 +626,12 @@ const handleClose = () => {
                   <div :class="['text-sm font-semibold px-2 py-1 rounded', cashDiff > 0 ? 'bg-green-100 text-green-800' : cashDiff < 0 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800']">
                     ผลต่าง: {{ formatCurrency(cashDiff) }}
                   </div>
-                  <textarea v-if="cashDiff !== 0" v-model="formData.auditDetails.cashAuditNotes" placeholder="วิเคราะห์สาเหตุ..." class="w-full p-2 border border-gray-300 rounded text-xs h-16" />
+                  <select v-if="cashDiff !== 0" v-model="formData.auditDetails.cashAuditNotes" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500">
+                    <option value="">-- เลือกประเภทปัญหา --</option>
+                    <option v-for="problem in PROBLEM_TYPES" :key="problem.id" :value="problem.id">
+                      {{ problem.label }}
+                    </option>
+                  </select>
                   <div v-else class="text-xs text-gray-500">✓ ตรวจสอบแล้ว (ไม่มีผลต่าง)</div>
                   <p v-if="validationErrors.cashAuditNotes" class="text-red-500 text-xs">{{ validationErrors.cashAuditNotes }}</p>
                 </div>
@@ -620,7 +645,12 @@ const handleClose = () => {
                   <div :class="['text-sm font-semibold px-2 py-1 rounded', qrDiff > 0 ? 'bg-green-100 text-green-800' : qrDiff < 0 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800']">
                     ผลต่าง: {{ formatCurrency(qrDiff) }}
                   </div>
-                  <textarea v-if="qrDiff !== 0" v-model="formData.auditDetails.qrAuditNotes" placeholder="วิเคราะห์สาเหตุ..." class="w-full p-2 border border-gray-300 rounded text-xs h-16" />
+                  <select v-if="qrDiff !== 0" v-model="formData.auditDetails.qrAuditNotes" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-purple-500">
+                    <option value="">-- เลือกประเภทปัญหา --</option>
+                    <option v-for="problem in PROBLEM_TYPES" :key="problem.id" :value="problem.id">
+                      {{ problem.label }}
+                    </option>
+                  </select>
                   <div v-else class="text-xs text-gray-500">✓ ตรวจสอบแล้ว (ไม่มีผลต่าง)</div>
                   <p v-if="validationErrors.qrAuditNotes" class="text-red-500 text-xs">{{ validationErrors.qrAuditNotes }}</p>
                 </div>
@@ -634,7 +664,12 @@ const handleClose = () => {
                   <div :class="['text-sm font-semibold px-2 py-1 rounded', bankDiff > 0 ? 'bg-green-100 text-green-800' : bankDiff < 0 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800']">
                     ผลต่าง: {{ formatCurrency(bankDiff) }}
                   </div>
-                  <textarea v-if="bankDiff !== 0" v-model="formData.auditDetails.bankAuditNotes" placeholder="วิเคราะห์สาเหตุ..." class="w-full p-2 border border-gray-300 rounded text-xs h-16" />
+                  <select v-if="bankDiff !== 0" v-model="formData.auditDetails.bankAuditNotes" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-green-500">
+                    <option value="">-- เลือกประเภทปัญหา --</option>
+                    <option v-for="problem in PROBLEM_TYPES" :key="problem.id" :value="problem.id">
+                      {{ problem.label }}
+                    </option>
+                  </select>
                   <div v-else class="text-xs text-gray-500">✓ ตรวจสอบแล้ว (ไม่มีผลต่าง)</div>
                   <p v-if="validationErrors.bankAuditNotes" class="text-red-500 text-xs">{{ validationErrors.bankAuditNotes }}</p>
                 </div>
@@ -648,7 +683,12 @@ const handleClose = () => {
                   <div :class="['text-sm font-semibold px-2 py-1 rounded', governmentDiff > 0 ? 'bg-green-100 text-green-800' : governmentDiff < 0 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800']">
                     ผลต่าง: {{ formatCurrency(governmentDiff) }}
                   </div>
-                  <textarea v-if="governmentDiff !== 0" v-model="formData.auditDetails.governmentAuditNotes" placeholder="วิเคราะห์สาเหตุ..." class="w-full p-2 border border-gray-300 rounded text-xs h-16" />
+                  <select v-if="governmentDiff !== 0" v-model="formData.auditDetails.governmentAuditNotes" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-amber-500">
+                    <option value="">-- เลือกประเภทปัญหา --</option>
+                    <option v-for="problem in PROBLEM_TYPES" :key="problem.id" :value="problem.id">
+                      {{ problem.label }}
+                    </option>
+                  </select>
                   <div v-else class="text-xs text-gray-500">✓ ตรวจสอบแล้ว (ไม่มีผลต่าง)</div>
                   <p v-if="validationErrors.governmentAuditNotes" class="text-red-500 text-xs">{{ validationErrors.governmentAuditNotes }}</p>
                 </div>
