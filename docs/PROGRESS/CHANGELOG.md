@@ -4,6 +4,60 @@ All notable changes to this project are documented here.
 
 ---
 
+## [1.5] - 2026-02-06
+
+### ✨ Week 4: Problem Type Selection UI for Daily Sales Audit
+
+**Added**
+- [NEW] Problem type dropdown selections in DailySalesModal.vue
+  - 7 predefined problem categories (cash_counting_error, pos_operation_error, cancel_bill, customer_deposit, bank_system_error, supplier_issue, other)
+  - Conditional dropdowns per payment channel (only shown when difference exists)
+  - Thai language labels for all categories
+- [ENHANCED] Daily Sales validation logic
+  - Changed from free-text validation to dropdown value checking
+  - Per-channel audit validation (conditional based on differences)
+  - Clear error messages when problem type not selected
+- [ENHANCED] DailySalesTable.vue with problem type badges
+  - Color-coded badges for each payment channel (blue, purple, green, amber)
+  - Display only non-empty problem types
+  - Helper functions: getProblemTypeLabel(), getChannelEmoji()
+  - Badge styling matches payment channel colors
+- [UPDATED] Sample data in public/data/daily-sales.json
+  - Added auditDetails with problem types examples
+  - Includes examples: "cash_counting_error" and "customer_deposit"
+
+**Features Implemented**
+- Problem categorization: 7 predefined types instead of free-text
+- Visual UI: Color-coded problem type badges in table
+- Validation: Conditional field validation based on differences
+- UX: Dropdown selection for consistency and data quality
+- Data: Sample data with problem types for testing
+
+**Fixes**
+- Fixed TypeScript error in middleware/auth.ts
+  - Changed: currentUser.role → currentUser.primaryRole
+  - Added assistant_manager to rolesNeedingAccessControl
+  - Error resolution: TS2551 type mismatch fixed
+- Improved form field organization in DailySalesModal
+
+**Quality Assurance**
+- TypeScript: 0 errors ✅
+- npm run lint: PASS ✅
+- Components responsive and accessible ✅
+- Sample data updated with new format ✅
+- Validation working correctly ✅
+
+**Feature Branch**
+- Branch: feature/week4-problem-types-ui
+- Commits: 4 commits
+  - c66f15e: Problem type dropdowns and validation
+  - 5113acb: Problem type display in table
+  - 43778a5: Sample data updates
+  - 6a6f783: TypeScript fix (auth middleware)
+- Status: Ready for merge
+
+---
+
 ## [1.4] - 2026-02-03
 
 ### ✨ Week 4: Access Control System (User/Role Management)
