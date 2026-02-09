@@ -25,6 +25,11 @@ const isViewOnly = ref(false)
 const successMessage = ref('')
 const successType = ref<'success' | 'error'>('success')
 
+// Confirmation dialog state
+const showConfirmDialog = ref(false)
+const confirmMessage = ref('')
+const confirmCallback = ref<(() => Promise<void>) | null>(null)
+
 // Computed properties from store
 const sales = computed(() => salesStore.getAllSales)
 const loading = computed(() => salesStore.isLoading)
@@ -163,32 +168,49 @@ const handleDelete = async (id: string) => {
   }
 }
 
-// Handle approve with confirmation
-const handleApprove = async (id: string) => {
+// Handle approve - show confirmation dialog
+const handleApprove = (id: string) => {
   if (!can(PERMISSIONS.APPROVE_SALES)) {
     successMessage.value = 'คุณไม่มีสิทธิ์อนุมัติยอดขาย'
     successType.value = 'error'
     return
   }
 
-  // Show confirmation dialog
-  if (!confirm('ยืนยันการอนุมัติรายการนี้หรือไม่?')) {
-    return
+  // Set up confirmation callback
+  confirmMessage.value = 'ยืนยันการอนุมัติรายการนี้หรือไม่?'
+  confirmCallback.value = async () => {
+    try {
+      await salesStore.approveSale(id)
+      successMessage.value = 'อนุมัติรายงานเรียบร้อย'
+      successType.value = 'success'
+      logger.log('Approved entry:', id)
+      setTimeout(() => {
+        successMessage.value = ''
+      }, 3000)
+    } catch (err: any) {
+      successMessage.value = err.message || 'เกิดข้อผิดพลาดในการอนุมัติ'
+      successType.value = 'error'
+      logger.error('Error approving entry', err)
+    }
   }
 
-  try {
-    await salesStore.approveSale(id)
-    successMessage.value = 'อนุมัติรายงานเรียบร้อย'
-    successType.value = 'success'
-    logger.log('Approved entry:', id)
-    setTimeout(() => {
-      successMessage.value = ''
-    }, 3000)
-  } catch (err: any) {
-    successMessage.value = err.message || 'เกิดข้อผิดพลาดในการอนุมัติ'
-    successType.value = 'error'
-    logger.error('Error approving entry', err)
+  // Show dialog
+  showConfirmDialog.value = true
+}
+
+// Handle confirmation dialog confirm
+const handleConfirmDialogConfirm = async () => {
+  if (confirmCallback.value) {
+    await confirmCallback.value()
   }
+  showConfirmDialog.value = false
+  confirmCallback.value = null
+}
+
+// Handle confirmation dialog cancel
+const handleConfirmDialogCancel = () => {
+  showConfirmDialog.value = false
+  confirmCallback.value = null
 }
 
 // Format date to Thai locale (CE year)
@@ -364,6 +386,18 @@ const openCreateModal = () => {
     @close="handleModalClose"
     @submit="handleModalSubmit"
     @approve="handleApprove"
+  />
+
+  <!-- Confirmation dialog for approval -->
+  <ConfirmDialog
+    :open="showConfirmDialog"
+    title="ยืนยันการอนุมัติ"
+    :message="confirmMessage"
+    confirm-text="อนุมัติ"
+    cancel-text="ยกเลิก"
+    variant="warning"
+    @confirm="handleConfirmDialogConfirm"
+    @cancel="handleConfirmDialogCancel"
   />
 </template>
 
