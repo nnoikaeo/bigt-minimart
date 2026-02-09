@@ -16,6 +16,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { $fetch } from 'ofetch'
+import { ROLE_PERMISSIONS } from '~/types/permissions'
 import type {
   User,
   CreateUserInput,
@@ -97,7 +98,16 @@ export const useAccessControlStore = defineStore('accessControl', () => {
   }
 
   const hasPermission = (roleId: string, permissionId: string): boolean => {
-    return getRolePermissions(roleId)[permissionId] === true
+    // First, try to use API data
+    const apiPermissions = getRolePermissions(roleId)
+    if (Object.keys(apiPermissions).length > 0) {
+      return apiPermissions[permissionId] === true
+    }
+
+    // Fallback to hardcoded ROLE_PERMISSIONS if API data not available
+    const roleKey = roleId as keyof typeof ROLE_PERMISSIONS
+    const rolePerms = ROLE_PERMISSIONS[roleKey]
+    return rolePerms ? rolePerms.includes(permissionId as any) : false
   }
 
   // =========================================================================

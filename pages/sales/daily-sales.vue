@@ -21,6 +21,7 @@ const { can } = usePermissions()
 // Modal state
 const showModal = ref(false)
 const editingEntry = ref<DailySalesEntry | null>(null)
+const isViewOnly = ref(false)
 const successMessage = ref('')
 const successType = ref<'success' | 'error'>('success')
 
@@ -120,9 +121,17 @@ const handleModalSubmit = async (entry: Omit<DailySalesEntry, 'id' | 'submittedA
   }
 }
 
-// Handle edit
+// Handle view (read-only mode)
+const handleView = (entry: DailySalesEntry) => {
+  editingEntry.value = entry
+  isViewOnly.value = true
+  showModal.value = true
+}
+
+// Handle edit (editable mode)
 const handleEdit = (entry: DailySalesEntry) => {
   editingEntry.value = entry
+  isViewOnly.value = false
   showModal.value = true
 }
 
@@ -212,6 +221,7 @@ const getAvailableActions = (role: string): string[] => {
 const handleModalClose = () => {
   showModal.value = false
   editingEntry.value = null
+  isViewOnly.value = false
   successMessage.value = ''
 }
 
@@ -300,7 +310,7 @@ const openCreateModal = () => {
           <!-- View button -->
           <button
             v-if="getAvailableActions(getUserRole()).includes('view')"
-            @click="handleEdit(row)"
+            @click="handleView(row)"
             class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium text-purple-700 bg-purple-100 rounded hover:bg-purple-200 transition-colors"
             title="ดูรายละเอียด"
           >
@@ -341,10 +351,11 @@ const openCreateModal = () => {
     </DataTable>
   </PageWrapper>
 
-  <!-- Modal for create/edit -->
+  <!-- Modal for create/edit/view -->
   <DailySalesModal
     :open="showModal"
     :editing-entry="editingEntry"
+    :view-only="isViewOnly"
     @close="handleModalClose"
     @submit="handleModalSubmit"
     @approve="handleApprove"

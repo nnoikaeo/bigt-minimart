@@ -8,11 +8,13 @@ import type { DailySalesEntry } from '~/types/repositories'
 interface Props {
   open: boolean
   editingEntry?: DailySalesEntry | null
+  viewOnly?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   open: false,
   editingEntry: null,
+  viewOnly: false,
 })
 
 const emit = defineEmits<{
@@ -35,7 +37,7 @@ const canApprove = computed(() => {
 })
 
 const isFormDisabled = computed(() => {
-  return props.editingEntry?.status === 'approved'
+  return props.viewOnly || props.editingEntry?.status === 'approved'
 })
 
 // Problem type categories for difference analysis
@@ -443,7 +445,7 @@ const handleClose = () => {
         <!-- Header -->
         <div class="sticky top-0 bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex justify-between items-center border-b border-red-800">
           <h2 class="text-xl font-bold text-white">
-            {{ editingEntry ? 'แก้ไข' : 'เพิ่ม' }}
+            {{ viewOnly ? 'ดูรายละเอียด' : editingEntry ? 'แก้ไข' : 'เพิ่ม' }}
           </h2>
           <button
             @click="handleClose"
@@ -478,7 +480,8 @@ const handleClose = () => {
               <input
                 v-model="formData.date"
                 type="date"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                :disabled="isFormDisabled"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
               />
               <p v-if="validationErrors.date" class="text-red-500 text-sm mt-1">
                 {{ validationErrors.date }}
@@ -497,7 +500,8 @@ const handleClose = () => {
                 v-else
                 v-model="formData.cashierId"
                 @change="handleCashierChange"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                :disabled="isFormDisabled"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
               >
                 <option value="">-- เลือกแคชเชียร์ --</option>
                 <option v-for="cashier in cashiers" :key="cashier.id" :value="cashier.id">
@@ -532,7 +536,8 @@ const handleClose = () => {
                     type="number"
                     min="0"
                     step="0.01"
-                    class="flex-1 px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    :disabled="isFormDisabled"
+                    class="flex-1 px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -549,7 +554,8 @@ const handleClose = () => {
                     type="number"
                     min="0"
                     step="0.01"
-                    class="flex-1 px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:border-purple-500"
+                    :disabled="isFormDisabled"
+                    class="flex-1 px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:border-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -566,7 +572,8 @@ const handleClose = () => {
                     type="number"
                     min="0"
                     step="0.01"
-                    class="flex-1 px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:border-green-500"
+                    :disabled="isFormDisabled"
+                    class="flex-1 px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:border-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -583,7 +590,8 @@ const handleClose = () => {
                     type="number"
                     min="0"
                     step="0.01"
-                    class="flex-1 px-3 py-2 border border-amber-300 rounded-lg focus:outline-none focus:border-amber-500"
+                    :disabled="isFormDisabled"
+                    class="flex-1 px-3 py-2 border border-amber-300 rounded-lg focus:outline-none focus:border-amber-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -628,7 +636,8 @@ const handleClose = () => {
                     type="number"
                     min="0"
                     step="0.01"
-                    class="flex-1 px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    :disabled="isFormDisabled"
+                    class="flex-1 px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -645,7 +654,8 @@ const handleClose = () => {
                     type="number"
                     min="0"
                     step="0.01"
-                    class="flex-1 px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:border-purple-500"
+                    :disabled="isFormDisabled"
+                    class="flex-1 px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:border-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -662,7 +672,8 @@ const handleClose = () => {
                     type="number"
                     min="0"
                     step="0.01"
-                    class="flex-1 px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:border-green-500"
+                    :disabled="isFormDisabled"
+                    class="flex-1 px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:border-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -679,7 +690,8 @@ const handleClose = () => {
                     type="number"
                     min="0"
                     step="0.01"
-                    class="flex-1 px-3 py-2 border border-amber-300 rounded-lg focus:outline-none focus:border-amber-500"
+                    :disabled="isFormDisabled"
+                    class="flex-1 px-3 py-2 border border-amber-300 rounded-lg focus:outline-none focus:border-amber-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -712,7 +724,7 @@ const handleClose = () => {
                   <div :class="['text-sm font-semibold px-2 py-1 rounded', cashDiff > 0 ? 'bg-green-100 text-green-800' : cashDiff < 0 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800']">
                     ผลต่าง: {{ formatCurrency(cashDiff) }}
                   </div>
-                  <select v-if="cashDiff !== 0" v-model="formData.auditDetails.cashAuditNotes" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500">
+                  <select v-if="cashDiff !== 0" v-model="formData.auditDetails.cashAuditNotes" :disabled="isFormDisabled" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
                     <option value="">-- เลือกประเภทปัญหา --</option>
                     <option v-for="problem in PROBLEM_TYPES" :key="problem.id" :value="problem.id">
                       {{ problem.label }}
@@ -731,7 +743,7 @@ const handleClose = () => {
                   <div :class="['text-sm font-semibold px-2 py-1 rounded', qrDiff > 0 ? 'bg-green-100 text-green-800' : qrDiff < 0 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800']">
                     ผลต่าง: {{ formatCurrency(qrDiff) }}
                   </div>
-                  <select v-if="qrDiff !== 0" v-model="formData.auditDetails.qrAuditNotes" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-purple-500">
+                  <select v-if="qrDiff !== 0" v-model="formData.auditDetails.qrAuditNotes" :disabled="isFormDisabled" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
                     <option value="">-- เลือกประเภทปัญหา --</option>
                     <option v-for="problem in PROBLEM_TYPES" :key="problem.id" :value="problem.id">
                       {{ problem.label }}
@@ -750,7 +762,7 @@ const handleClose = () => {
                   <div :class="['text-sm font-semibold px-2 py-1 rounded', bankDiff > 0 ? 'bg-green-100 text-green-800' : bankDiff < 0 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800']">
                     ผลต่าง: {{ formatCurrency(bankDiff) }}
                   </div>
-                  <select v-if="bankDiff !== 0" v-model="formData.auditDetails.bankAuditNotes" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-green-500">
+                  <select v-if="bankDiff !== 0" v-model="formData.auditDetails.bankAuditNotes" :disabled="isFormDisabled" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
                     <option value="">-- เลือกประเภทปัญหา --</option>
                     <option v-for="problem in PROBLEM_TYPES" :key="problem.id" :value="problem.id">
                       {{ problem.label }}
@@ -769,7 +781,7 @@ const handleClose = () => {
                   <div :class="['text-sm font-semibold px-2 py-1 rounded', governmentDiff > 0 ? 'bg-green-100 text-green-800' : governmentDiff < 0 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800']">
                     ผลต่าง: {{ formatCurrency(governmentDiff) }}
                   </div>
-                  <select v-if="governmentDiff !== 0" v-model="formData.auditDetails.governmentAuditNotes" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-amber-500">
+                  <select v-if="governmentDiff !== 0" v-model="formData.auditDetails.governmentAuditNotes" :disabled="isFormDisabled" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-amber-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
                     <option value="">-- เลือกประเภทปัญหา --</option>
                     <option v-for="problem in PROBLEM_TYPES" :key="problem.id" :value="problem.id">
                       {{ problem.label }}
@@ -790,13 +802,13 @@ const handleClose = () => {
             <!-- Recommendation (full-width) -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">ข้อแนะนำการปรับปรุง</label>
-              <textarea v-model="formData.auditDetails.recommendation" placeholder="เช่น ควรเพิ่มความระมัดระวัง..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 resize-none h-20" />
+              <textarea v-model="formData.auditDetails.recommendation" placeholder="เช่น ควรเพิ่มความระมัดระวัง..." :disabled="isFormDisabled" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 resize-none h-20 disabled:bg-gray-100 disabled:cursor-not-allowed" />
             </div>
 
             <!-- Notes (full-width) -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">หมายเหตุเพิ่มเติม</label>
-              <textarea v-model="formData.cashReconciliation.notes" placeholder="ข้อมูลสรุปเพิ่มเติม..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 resize-none h-16" />
+              <textarea v-model="formData.cashReconciliation.notes" placeholder="ข้อมูลสรุปเพิ่มเติม..." :disabled="isFormDisabled" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 resize-none h-16 disabled:bg-gray-100 disabled:cursor-not-allowed" />
             </div>
           </div>
 
@@ -932,9 +944,10 @@ const handleClose = () => {
             type="button"
             class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 transition-colors"
           >
-            ยกเลิก
+            {{ viewOnly ? 'ปิด' : 'ยกเลิก' }}
           </button>
           <button
+            v-if="!viewOnly"
             @click="handleSubmit"
             type="button"
             :disabled="submitting || isFormDisabled"
