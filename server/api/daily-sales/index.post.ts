@@ -50,24 +50,25 @@ const createDailySalesSchema = z.object({
 
 export default defineEventHandler(async (event) => {
   try {
-    // Get user from context (set by auth middleware)
-    const user = (event.context as any).user
-    console.log('[POST /api/daily-sales] User context:', user)
-
-    // For development, use fallback if no auth context
-    // In production, this would require real authentication
-    // Using Ve1ykzh3vFNKiPsUhw5HgK13H6r2 (owner) as fallback
-    const userId = user?.uid || 'Ve1ykzh3vFNKiPsUhw5HgK13H6r2'
-    console.log('[POST /api/daily-sales] Using user ID:', userId)
-
     // Initialize repository
     await salesJsonRepository.init()
 
     const body = await readBody(event)
     console.log('[POST /api/daily-sales] Request body:', body)
-    
+
     const validatedData = createDailySalesSchema.parse(body)
     console.log('[POST /api/daily-sales] Validated data:', validatedData)
+
+    // Get submittedBy from request body (already validated by client)
+    // Client has already verified authentication, so trust the value sent
+    const submittedBy = (body as any).submittedBy
+    if (!submittedBy) {
+      throw createError({
+        statusCode: 400,
+        message: 'submittedBy is required',
+      })
+    }
+    console.log('[POST /api/daily-sales] Using submittedBy from client:', submittedBy)
 
     // Calculate difference and total
     const difference =
@@ -112,7 +113,7 @@ export default defineEventHandler(async (event) => {
       total,
       status: validatedData.status,
       submittedAt: new Date().toISOString(),
-      submittedBy: userId,
+      submittedBy: submittedBy,
       auditedAt: undefined,
       auditedBy: undefined,
       updatedAt: new Date().toISOString(),
