@@ -13,8 +13,6 @@
       <!-- Main Content (flex-1, responsive margin for sidebar) -->
       <main class="flex-1 overflow-y-auto ml-0 md:ml-64">
         <div class="px-4 py-6 sm:px-6 sm:py-8">
-          <!-- Breadcrumb Navigation (responsive) -->
-          <Breadcrumb />
           <slot />
         </div>
       </main>
