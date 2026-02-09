@@ -28,11 +28,32 @@
     "createdAt": "2024-01-15T08:00:00Z"
   },
   {
+    "id": "delete-sales",
+    "name": "Delete Sales",
+    "description": "Can delete sales transactions",
+    "category": "sales",
+    "createdAt": "2026-02-09T08:00:00Z"
+  },
+  {
+    "id": "approve-sales",
+    "name": "Approve Sales",
+    "description": "Can approve pending sales transactions",
+    "category": "sales",
+    "createdAt": "2026-02-09T08:00:00Z"
+  },
+  {
     "id": "view-finance",
     "name": "View Finance",
     "description": "Can view financial reports and data",
     "category": "finance",
     "createdAt": "2024-01-15T08:00:00Z"
+  },
+  {
+    "id": "edit-finance",
+    "name": "Edit Finance",
+    "description": "Can edit financial data and reports",
+    "category": "finance",
+    "createdAt": "2026-02-09T08:00:00Z"
   },
   {
     "id": "manage-users",
