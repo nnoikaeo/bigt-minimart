@@ -4,14 +4,23 @@ definePageMeta({
   middleware: 'auth'
 })
 
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted, watch, computed } from 'vue'
 import type { User, CreateUserInput, UpdateUserInput } from '~/types/user'
+import { usePermissions } from '~/composables/usePermissions'
+import { PERMISSIONS } from '~/types/permissions'
+import type { DataTableColumn } from '~/components/ui/table/DataTable.vue'
 
 // Setup
 const { fetchUsers, createUser, updateUser, deleteUser, users, loading } = useUser()
+const { can } = usePermissions()
 const showCreateForm = ref(false)
 const editingUser = ref<User | null>(null)
 const error = ref('')
+
+// Confirmation dialog state
+const showConfirmDialog = ref(false)
+const confirmMessage = ref('')
+const deleteUserId = ref<string | null>(null)
 
 // Form data
 const formData = reactive({
@@ -21,6 +30,24 @@ const formData = reactive({
   role: '',
   isActive: true,
 })
+
+// Role options for select
+const roleOptions = [
+  { label: 'เจ้าของร้าน', value: 'owner' },
+  { label: 'ผู้จัดการร้าน', value: 'manager' },
+  { label: 'ผู้ช่วยผู้จัดการ', value: 'assistant_manager' },
+  { label: 'แคชเชียร์', value: 'cashier' },
+  { label: 'ผู้ตรวจสอบ', value: 'auditor' },
+]
+
+// DataTable columns configuration
+const columns: DataTableColumn[] = [
+  { key: 'displayName', label: '👤 ชื่อ', sortable: true },
+  { key: 'email', label: '📧 อีเมล', sortable: true },
+  { key: 'role', label: '🔐 บทบาท', sortable: true },
+  { key: 'isActive', label: '✓ สถานะ', sortable: true },
+  { key: 'actions', label: '🎯 การกระทำ', sortable: false, align: 'center' },
+]
 
 // Reset form
 const resetForm = () => {
@@ -58,6 +85,9 @@ const translateRole = (role: string): string => {
   }
   return roleMap[role] || role
 }
+
+// Check if current user can manage users
+const canManageUsers = computed(() => can(PERMISSIONS.MANAGE_USERS))
 
 // Handle form submit
 const handleSubmit = async () => {
@@ -104,14 +134,42 @@ const handleSubmit = async () => {
   }
 }
 
-// Delete user handler
-const deleteUserHandler = async (uid: string) => {
-  if (confirm('คุณแน่ใจหรือว่าต้องการลบผู้ใช้งานนี้?')) {
-    const result = await deleteUser(uid)
-    if (!result.success) {
-      alert('เกิดข้อผิดพลาด: ' + result.error)
-    }
+// Handle delete user - show confirmation dialog
+const handleDeleteClick = (uid: string) => {
+  if (!canManageUsers.value) {
+    error.value = 'คุณไม่มีสิทธิ์ลบผู้ใช้งาน'
+    return
   }
+
+  deleteUserId.value = uid
+  confirmMessage.value = 'คุณแน่ใจหรือว่าต้องการลบผู้ใช้งานนี้?'
+  showConfirmDialog.value = true
+}
+
+// Confirm delete action
+const handleConfirmDelete = async () => {
+  if (!deleteUserId.value) return
+
+  const result = await deleteUser(deleteUserId.value)
+  if (!result.success) {
+    error.value = result.error || 'เกิดข้อผิดพลาดในการลบผู้ใช้งาน'
+  }
+
+  showConfirmDialog.value = false
+  deleteUserId.value = null
+}
+
+// Handle modal close
+const handleModalClose = () => {
+  showCreateForm.value = false
+  editingUser.value = null
+  resetForm()
+}
+
+// Open create modal
+const openCreateModal = () => {
+  editingUser.value = null
+  showCreateForm.value = true
 }
 
 // Load users on mount
@@ -121,193 +179,193 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-800">
-        จัดการผู้ใช้งาน
-      </h1>
-      <button
-        @click="showCreateForm = true; editingUser = null"
-        class="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg transition"
+  <PageWrapper
+    title="จัดการผู้ใช้งาน"
+    description="สร้าง แก้ไข และลบบัญชีผู้ใช้งาน"
+    icon="👤"
+    :loading="loading"
+    :error="error"
+  >
+    <!-- Action button in header -->
+    <template #actions>
+      <ActionButton
+        :permission="PERMISSIONS.MANAGE_USERS"
+        variant="primary"
+        @click="openCreateModal"
       >
         ✚ เพิ่ม
-      </button>
-    </div>
+      </ActionButton>
+    </template>
 
-    <!-- User List Table -->
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-      <table class="w-full">
-        <thead class="bg-gray-50 border-b border-gray-200">
-          <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-              ชื่อ
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-              อีเมล
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-              บทบาท
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-              สถานะ
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-              การกระทำ
-            </th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-200">
-          <tr v-for="user in users" :key="user.uid" class="hover:bg-gray-50">
-            <td class="px-6 py-4 text-sm text-gray-800">{{ user.displayName }}</td>
-            <td class="px-6 py-4 text-sm text-gray-600">{{ user.email }}</td>
-            <td class="px-6 py-4 text-sm">
-              <span class="px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
-                {{ translateRole(user.role) }}
-              </span>
-            </td>
-            <td class="px-6 py-4 text-sm">
-              <span 
-                :class="user.isActive ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'"
-                class="px-3 py-1 rounded-full text-xs font-medium"
-              >
-                {{ user.isActive ? 'ใช้งาน' : 'ปิดใช้งาน' }}
-              </span>
-            </td>
-            <td class="px-6 py-4 text-sm space-x-2">
-              <button
-                @click="editingUser = user; showCreateForm = true"
-                class="text-blue-600 hover:text-blue-800 font-medium"
-              >
-                แก้ไข
-              </button>
-              <button
-                @click="deleteUserHandler(user.uid)"
-                class="text-red-600 hover:text-red-800 font-medium"
-              >
-                ลบ
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- Empty State -->
-      <div v-if="users.length === 0" class="px-6 py-12 text-center text-gray-500">
-        <p>ไม่มีผู้ใช้งาน</p>
-      </div>
-    </div>
-
-    <!-- Create/Edit Modal -->
-    <div 
-      v-if="showCreateForm"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+    <!-- DataTable -->
+    <DataTable
+      :data="users"
+      :columns="columns"
+      :loading="loading"
+      row-key="uid"
+      :pagination="true"
+      :page-size="10"
+      empty-message="ไม่มีผู้ใช้งาน"
     >
-      <div class="bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
-        <h2 class="text-xl font-semibold text-gray-800 mb-6">
-          {{ editingUser ? 'แก้ไขผู้ใช้' : 'เพิ่มผู้ใช้' }}
-        </h2>
+      <!-- Role cell with badge -->
+      <template #cell-role="{ value }">
+        <BaseBadge variant="default" size="sm">
+          {{ translateRole(value) }}
+        </BaseBadge>
+      </template>
 
-        <!-- Form -->
-        <form @submit.prevent="handleSubmit" class="space-y-4">
-          <!-- Display Name -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-              ชื่อผู้ใช้
-            </label>
-            <input
-              v-model="formData.displayName"
-              type="text"
-              required
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="ชื่อ-นามสกุล"
-            />
-          </div>
+      <!-- Active status cell with badge -->
+      <template #cell-isActive="{ value }">
+        <BaseBadge :variant="value ? 'success' : 'error'" size="sm">
+          {{ value ? '✓ ใช้งาน' : '✕ ปิดใช้งาน' }}
+        </BaseBadge>
+      </template>
 
-          <!-- Email (disabled for edit) -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-              อีเมล
-            </label>
-            <input
-              v-model="formData.email"
-              type="email"
-              :disabled="!!editingUser"
-              required
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-100"
-              placeholder="example@email.com"
-            />
-          </div>
+      <!-- Actions slot for row buttons -->
+      <template #actions="{ row }">
+        <div class="flex gap-2 justify-center">
+          <!-- Edit button -->
+          <ActionButton
+            :permission="PERMISSIONS.MANAGE_USERS"
+            variant="ghost"
+            size="sm"
+            @click="editingUser = row; showCreateForm = true"
+            title="แก้ไข"
+          >
+            ✏️
+          </ActionButton>
 
-          <!-- Password (only for create) -->
-          <div v-if="!editingUser">
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-              รหัสผ่าน
-            </label>
-            <input
-              v-model="formData.password"
-              type="password"
-              required
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="••••••••"
-              minlength="6"
-            />
-          </div>
+          <!-- Delete button -->
+          <ActionButton
+            :permission="PERMISSIONS.MANAGE_USERS"
+            variant="danger"
+            size="sm"
+            @click="handleDeleteClick(row.uid)"
+            title="ลบ"
+          >
+            🗑️
+          </ActionButton>
+        </div>
+      </template>
+    </DataTable>
+  </PageWrapper>
 
-          <!-- Role -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-              บทบาท
-            </label>
-            <select
-              v-model="formData.role"
-              required
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-            >
-              <option value="">เลือกบทบาท</option>
-              <option value="owner">เจ้าของร้าน</option>
-              <option value="manager">ผู้จัดการร้าน</option>
-              <option value="assistant_manager">ผู้ช่วยผู้จัดการ</option>
-              <option value="cashier">แคชเชียร์</option>
-              <option value="auditor">ผู้ตรวจสอบ</option>
-            </select>
-          </div>
+  <!-- Create/Edit Modal -->
+  <BaseModal
+    :open="showCreateForm"
+    :title="editingUser ? 'แก้ไขผู้ใช้' : 'เพิ่มผู้ใช้'"
+    size="md"
+    @close="handleModalClose"
+  >
+    <!-- Modal content -->
+    <form @submit.prevent="handleSubmit" class="space-y-4">
+      <!-- Display Name -->
+      <FormField
+        label="ชื่อผู้ใช้"
+        :error="formData.displayName === '' && error ? 'กรุณาป้อนชื่อ' : ''"
+        required
+      >
+        <BaseInput
+          v-model="formData.displayName"
+          type="text"
+          placeholder="ชื่อ-นามสกุล"
+        />
+      </FormField>
 
-          <!-- Active Status (only for edit) -->
-          <div v-if="editingUser" class="flex items-center">
-            <input
-              v-model="formData.isActive"
-              type="checkbox"
-              class="h-4 w-4 text-primary rounded"
-            />
-            <label class="ml-2 text-sm text-gray-700">
-              ใช้งาน
-            </label>
-          </div>
+      <!-- Email (disabled for edit) -->
+      <FormField
+        label="อีเมล"
+        :error="formData.email === '' && error ? 'กรุณาป้อนอีเมล' : ''"
+        required
+      >
+        <BaseInput
+          v-model="formData.email"
+          type="email"
+          :disabled="!!editingUser"
+          placeholder="example@email.com"
+        />
+      </FormField>
 
-          <!-- Error Message -->
-          <div v-if="error" class="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
-            {{ error }}
-          </div>
+      <!-- Password (only for create) -->
+      <FormField
+        v-if="!editingUser"
+        label="รหัสผ่าน"
+        :error="formData.password === '' && error ? 'กรุณาป้อนรหัสผ่าน' : ''"
+        hint="ต้องมีความยาวอย่างน้อย 6 ตัวอักษร"
+        required
+      >
+        <BaseInput
+          v-model="formData.password"
+          type="password"
+          placeholder="••••••••"
+        />
+      </FormField>
 
-          <!-- Buttons -->
-          <div class="flex gap-3 pt-4">
-            <button
-              type="button"
-              @click="showCreateForm = false; editingUser = null; resetForm()"
-              class="flex-1 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
-            >
-              ยกเลิก
-            </button>
-            <button
-              type="submit"
-              :disabled="loading"
-              class="flex-1 px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg transition disabled:opacity-50"
-            >
-              {{ loading ? 'กำลังบันทึก...' : 'บันทึก' }}
-            </button>
-          </div>
-        </form>
+      <!-- Role -->
+      <FormField
+        label="บทบาท"
+        :error="formData.role === '' && error ? 'กรุณาเลือกบทบาท' : ''"
+        required
+      >
+        <BaseSelect
+          v-model="formData.role"
+          :options="roleOptions"
+          placeholder="เลือกบทบาท"
+        />
+      </FormField>
+
+      <!-- Active Status (only for edit) -->
+      <div v-if="editingUser" class="flex items-center gap-2">
+        <input
+          v-model="formData.isActive"
+          type="checkbox"
+          id="isActive"
+          class="h-4 w-4 text-primary rounded"
+        />
+        <label for="isActive" class="text-sm text-gray-700">
+          ใช้งาน
+        </label>
       </div>
-    </div>
-  </div>
+
+      <!-- Error Message -->
+      <BaseAlert
+        v-if="error"
+        variant="error"
+        :message="error"
+        dismissible
+      />
+
+      <!-- Modal footer buttons -->
+      <div class="flex gap-3 pt-4 border-t">
+        <BaseButton
+          type="button"
+          variant="secondary"
+          full-width
+          @click="handleModalClose"
+        >
+          ยกเลิก
+        </BaseButton>
+        <BaseButton
+          type="submit"
+          variant="primary"
+          full-width
+          :loading="loading"
+        >
+          {{ loading ? 'กำลังบันทึก...' : 'บันทึก' }}
+        </BaseButton>
+      </div>
+    </form>
+  </BaseModal>
+
+  <!-- Confirmation dialog for delete -->
+  <ConfirmDialog
+    :open="showConfirmDialog"
+    title="ยืนยันการลบ"
+    :message="confirmMessage"
+    confirm-text="ลบ"
+    cancel-text="ยกเลิก"
+    variant="danger"
+    @confirm="handleConfirmDelete"
+    @cancel="showConfirmDialog = false"
+  />
 </template>
