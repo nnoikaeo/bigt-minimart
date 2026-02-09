@@ -103,7 +103,7 @@
               <div class="detail-row">
                 <span class="label">Shortfall:</span>
                 <span class="value shortfall">
-                  {{ formatCurrency(draft.amount - store.currentBalance.bankAccount) }}
+                  {{ formatCurrency(draft.amount - (store.currentBalance?.bankAccount ?? 0)) }}
                 </span>
               </div>
               <div class="detail-row">
