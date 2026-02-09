@@ -52,7 +52,7 @@ export function useValidatedForm<T extends z.ZodType>(
       if (error instanceof z.ZodError) {
         // Build error map
         const errorMap: Record<string, string> = {}
-        error.errors.forEach((err) => {
+        error.issues.forEach((err) => {
           const path = err.path.join('.')
           errorMap[path] = err.message
         })
@@ -175,7 +175,7 @@ export function useValidatedForm<T extends z.ZodType>(
       return true
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const fieldError = error.errors[0]
+        const fieldError = error.issues[0]
         if (fieldError) {
           errors.value[fieldName] = fieldError.message
         }

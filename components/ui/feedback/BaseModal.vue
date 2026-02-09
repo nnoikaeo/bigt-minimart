@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch, onMounted, onUnmounted } from 'vue'
 
 type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full'
 
