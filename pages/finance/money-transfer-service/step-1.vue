@@ -29,7 +29,7 @@
     <template v-else>
       <!-- Current Balance Display -->
       <section class="balance-section">
-        <BalanceDisplay :balances="store.currentBalance" />
+        <BalanceDisplay v-if="store.currentBalance" :balances="store.currentBalance" />
       </section>
 
       <!-- Step 1 Status Card -->
@@ -64,6 +64,7 @@
       <!-- Transaction Form -->
       <section class="form-section">
         <TransactionForm
+          v-if="store.currentBalance"
           :current-balance="store.currentBalance"
           :recorded-by="currentUser.uid"
           :recorded-by-name="currentUser.displayName"
@@ -279,6 +280,7 @@ const filterTabs = [
  * Get filtered transactions based on active filter
  */
 const filteredTransactions = computed(() => {
+  if (!selectedDate.value) return []
   const txns = store.getTransactionsByDate(selectedDate.value)
 
   if (activeFilter.value === 'all') {
@@ -292,6 +294,7 @@ const filteredTransactions = computed(() => {
  * Get count for a filter tab
  */
 function getFilteredCount(status: string): number {
+  if (!selectedDate.value) return 0
   const txns = store.getTransactionsByDate(selectedDate.value)
 
   if (status === 'all') {
@@ -305,7 +308,7 @@ function getFilteredCount(status: string): number {
  * Check if draft can be completed
  */
 function canCompleteDraft(draft: any): boolean {
-  return store.currentBalance.bankAccount >= draft.amount
+  return store.currentBalance ? store.currentBalance.bankAccount >= draft.amount : false
 }
 
 /**
@@ -359,6 +362,7 @@ function formatTime(datetime: string | Date): string {
  * Handle date change
  */
 async function handleDateChange() {
+  if (!selectedDate.value) return
   await store.fetchTransactionsByDate(selectedDate.value)
   await store.fetchDailySummary(selectedDate.value)
 }
@@ -370,9 +374,9 @@ async function handleSubmitTransaction(transactionData: any) {
   try {
     await store.createTransaction(transactionData)
     // Refresh transactions
-    await store.fetchTransactionsByDate(selectedDate.value)
-    // Show success message
-    useNuxtData()
+    if (selectedDate.value) {
+      await store.fetchTransactionsByDate(selectedDate.value)
+    }
   } catch (error: any) {
     console.error('Failed to create transaction:', error)
   }
@@ -386,7 +390,9 @@ async function handleCompleteDraft(transactionId: string) {
 
   try {
     await store.completeDraftTransaction(transactionId)
-    await store.fetchTransactionsByDate(selectedDate.value)
+    if (selectedDate.value) {
+      await store.fetchTransactionsByDate(selectedDate.value)
+    }
   } catch (error: any) {
     console.error('Failed to complete draft:', error)
   }
@@ -400,7 +406,9 @@ async function handleDeleteDraft(transactionId: string) {
 
   try {
     await store.deleteTransaction(transactionId)
-    await store.fetchTransactionsByDate(selectedDate.value)
+    if (selectedDate.value) {
+      await store.fetchTransactionsByDate(selectedDate.value)
+    }
   } catch (error: any) {
     console.error('Failed to delete transaction:', error)
   }
@@ -438,7 +446,9 @@ async function handleDeleteTransaction(transactionId: string) {
 
   try {
     await store.deleteTransaction(transactionId)
-    await store.fetchTransactionsByDate(selectedDate.value)
+    if (selectedDate.value) {
+      await store.fetchTransactionsByDate(selectedDate.value)
+    }
   } catch (error: any) {
     console.error('Failed to delete transaction:', error)
   }
@@ -465,6 +475,11 @@ async function handleCompleteStep1() {
     return
   }
 
+  if (!selectedDate.value) {
+    alert('Please select a date first.')
+    return
+  }
+
   try {
     await store.completeStep1(selectedDate.value)
     alert('Step 1 completed! Proceed to Step 2.')
@@ -485,7 +500,9 @@ function goToStep2() {
  */
 onMounted(async () => {
   await store.initializeStore()
-  await store.fetchTransactionsByDate(selectedDate.value)
+  if (selectedDate.value) {
+    await store.fetchTransactionsByDate(selectedDate.value)
+  }
 })
 </script>
 
