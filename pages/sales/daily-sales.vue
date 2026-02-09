@@ -2,7 +2,10 @@
 import { ref, onMounted, computed } from 'vue'
 import { useSalesStore } from '~/stores/sales'
 import { useLogger } from '~/composables/useLogger'
+import { usePermissions } from '~/composables/usePermissions'
+import { PERMISSIONS } from '~/types/permissions'
 import type { DailySalesEntry } from '~/types/repositories'
+import type { DataTableColumn } from '~/components/ui/table/DataTable.vue'
 
 // Require authentication to access this page
 definePageMeta({
@@ -12,17 +15,51 @@ definePageMeta({
 // Setup
 const logger = useLogger('DailySales')
 const salesStore = useSalesStore()
+const { can } = usePermissions()
 
 // Modal state
 const showModal = ref(false)
 const editingEntry = ref<DailySalesEntry | null>(null)
 const successMessage = ref('')
-const submitError = ref('')
+const successType = ref<'success' | 'error'>('success')
 
 // Computed properties from store
 const sales = computed(() => salesStore.getAllSales)
 const loading = computed(() => salesStore.isLoading)
 const error = computed(() => salesStore.error)
+
+// Table columns configuration
+const columns: DataTableColumn[] = [
+  {
+    key: 'date',
+    label: '📅 วันที่',
+    sortable: true,
+  },
+  {
+    key: 'cashierName',
+    label: '👤 แคชเชียร์',
+    sortable: true,
+  },
+  {
+    key: 'posData',
+    label: '💰 ยอดขาย',
+    sortable: false,
+    align: 'right',
+    formatter: (posData: any) => {
+      const total = (posData?.cash || 0) + (posData?.qr || 0) + (posData?.bank || 0) + (posData?.government || 0)
+      return new Intl.NumberFormat('th-TH', {
+        style: 'currency',
+        currency: 'THB',
+        minimumFractionDigits: 0,
+      }).format(total)
+    },
+  },
+  {
+    key: 'status',
+    label: '📊 สถานะ',
+    sortable: true,
+  },
+]
 
 // Load sales on mount
 onMounted(async () => {
@@ -35,7 +72,7 @@ onMounted(async () => {
 
 // Handle modal submit
 const handleModalSubmit = async (entry: Omit<DailySalesEntry, 'id' | 'submittedAt'>) => {
-  submitError.value = ''
+  successType.value = 'success'
   try {
     if (editingEntry.value?.id) {
       // Update
@@ -48,16 +85,17 @@ const handleModalSubmit = async (entry: Omit<DailySalesEntry, 'id' | 'submittedA
       successMessage.value = 'บันทึกยอดขายเรียบร้อย'
       logger.log('Created new entry')
     }
-    
+
     editingEntry.value = null
     showModal.value = false
-    
+
     // Clear success message after 3 seconds
     setTimeout(() => {
       successMessage.value = ''
     }, 3000)
   } catch (err: any) {
-    submitError.value = err.message || 'เกิดข้อผิดพลาด'
+    successMessage.value = err.message || 'เกิดข้อผิดพลาด'
+    successType.value = 'error'
     logger.error('Error submitting entry', err)
   }
 }
@@ -70,34 +108,51 @@ const handleEdit = (entry: DailySalesEntry) => {
 
 // Handle delete
 const handleDelete = async (id: string) => {
-  // Confirmation is already handled in DailySalesTable component
-  // So we just proceed with deletion directly
+  if (!can(PERMISSIONS.DELETE_SALES)) {
+    successMessage.value = 'คุณไม่มีสิทธิ์ลบบันทึกยอดขาย'
+    successType.value = 'error'
+    return
+  }
+
+  if (!confirm('คุณต้องการลบบันทึกนี้หรือไม่?')) {
+    return
+  }
+
   try {
     logger.log('Deleting entry:', id)
     await salesStore.deleteDailySale(id)
     successMessage.value = 'ลบบันทึกเรียบร้อย'
+    successType.value = 'success'
     logger.log('Deleted entry:', id)
     setTimeout(() => {
       successMessage.value = ''
     }, 3000)
   } catch (err: any) {
-    submitError.value = err.message || 'เกิดข้อผิดพลาดในการลบ'
+    successMessage.value = err.message || 'เกิดข้อผิดพลาดในการลบ'
+    successType.value = 'error'
     logger.error('Error deleting entry', err)
   }
 }
 
 // Handle approve
 const handleApprove = async (id: string) => {
-  submitError.value = ''
+  if (!can(PERMISSIONS.APPROVE_SALES)) {
+    successMessage.value = 'คุณไม่มีสิทธิ์อนุมัติยอดขาย'
+    successType.value = 'error'
+    return
+  }
+
   try {
     await salesStore.approveSale(id)
     successMessage.value = 'อนุมัติรายงานเรียบร้อย'
+    successType.value = 'success'
     logger.log('Approved entry:', id)
     setTimeout(() => {
       successMessage.value = ''
     }, 3000)
   } catch (err: any) {
-    submitError.value = err.message || 'เกิดข้อผิดพลาดในการอนุมัติ'
+    successMessage.value = err.message || 'เกิดข้อผิดพลาดในการอนุมัติ'
+    successType.value = 'error'
     logger.error('Error approving entry', err)
   }
 }
@@ -106,7 +161,7 @@ const handleApprove = async (id: string) => {
 const handleModalClose = () => {
   showModal.value = false
   editingEntry.value = null
-  submitError.value = ''
+  successMessage.value = ''
 }
 
 // Open create modal
@@ -117,89 +172,111 @@ const openCreateModal = () => {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <!-- Page Header -->
-    <div class="flex justify-between items-center">
-      <div>
-        <h1 class="text-3xl font-bold text-gray-900">💰 ยอดขาย</h1>
-        <p class="text-gray-600 mt-1">บันทึกและจัดการยอดขายรายวันจากแคชเชียร์</p>
-      </div>
-      <button
+  <PageWrapper
+    title="ยอดขาย"
+    description="บันทึกและจัดการยอดขายรายวันจากแคชเชียร์"
+    icon="💰"
+    :loading="loading"
+    :error="error || (successType === 'error' ? successMessage : null)"
+  >
+    <!-- Action button in header -->
+    <template #actions>
+      <ActionButton
+        :permission="PERMISSIONS.CREATE_SALES"
+        variant="primary"
         @click="openCreateModal"
-        class="px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg font-medium hover:from-red-700 hover:to-red-800 transition-all shadow-md hover:shadow-lg flex items-center gap-2"
       >
-        เพิ่ม
-      </button>
-    </div>
+        ➕ เพิ่ม
+      </ActionButton>
+    </template>
 
     <!-- Success Message -->
-    <transition name="fade">
-      <div
-        v-if="successMessage"
-        class="bg-green-50 border border-green-200 rounded-lg p-4 text-green-800 flex items-start gap-3"
-      >
-        <span class="text-xl">✓</span>
-        <div>
-          <p class="font-semibold">สำเร็จ</p>
-          <p class="text-sm">{{ successMessage }}</p>
-        </div>
-      </div>
-    </transition>
+    <BaseAlert
+      v-if="successMessage && successType === 'success'"
+      variant="success"
+      :message="successMessage"
+      class="mb-4"
+    />
 
-    <!-- Error Message -->
-    <transition name="fade">
-      <div
-        v-if="submitError || error"
-        class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800 flex items-start gap-3"
-      >
-        <span class="text-xl">⚠️</span>
-        <div>
-          <p class="font-semibold">เกิดข้อผิดพลาด</p>
-          <p class="text-sm">{{ submitError || error }}</p>
-        </div>
-      </div>
-    </transition>
-
-    <!-- Daily Sales Table -->
-    <DailySalesTable
-      :entries="sales"
+    <!-- DataTable -->
+    <DataTable
+      :data="sales"
+      :columns="columns"
       :loading="loading"
-      @edit="handleEdit"
-      @delete="handleDelete"
-      @approve="handleApprove"
-    />
+      row-key="id"
+      :pagination="true"
+      :page-size="10"
+    >
+      <!-- Status cell with badge -->
+      <template #cell-status="{ value }">
+        <BaseBadge
+          :variant="value === 'approved' ? 'success' : 'warning'"
+          size="sm"
+        >
+          {{ value === 'approved' ? '✓ อนุมัติแล้ว' : '⏳ รออนุมัติ' }}
+        </BaseBadge>
+      </template>
 
-    <!-- Modal -->
-    <DailySalesModal
-      :open="showModal"
-      :editing-entry="editingEntry"
-      @close="handleModalClose"
-      @submit="handleModalSubmit"
-      @approve="handleApprove"
-    />
-  </div>
+      <!-- Actions slot for row buttons -->
+      <template #actions="{ row }">
+        <div class="flex gap-2 justify-center flex-wrap">
+          <!-- View button -->
+          <ActionButton
+            :permission="PERMISSIONS.VIEW_SALES"
+            size="sm"
+            variant="ghost"
+            title="ดูรายละเอียด"
+          >
+            👁️
+          </ActionButton>
+
+          <!-- Edit button -->
+          <ActionButton
+            :permission="PERMISSIONS.EDIT_SALES"
+            size="sm"
+            variant="ghost"
+            :disabled="row.status === 'approved'"
+            title="แก้ไข"
+            @click="handleEdit(row)"
+          >
+            ✏️
+          </ActionButton>
+
+          <!-- Delete button -->
+          <ActionButton
+            :permission="PERMISSIONS.DELETE_SALES"
+            size="sm"
+            variant="danger"
+            :disabled="row.status === 'approved'"
+            title="ลบ"
+            @click="handleDelete(row.id)"
+          >
+            🗑️
+          </ActionButton>
+
+          <!-- Approve button (owner only, pending status only) -->
+          <ActionButton
+            v-if="row.status === 'pending'"
+            :permission="PERMISSIONS.APPROVE_SALES"
+            size="sm"
+            variant="success"
+            title="อนุมัติ"
+            @click="handleApprove(row.id)"
+          >
+            ✓
+          </ActionButton>
+        </div>
+      </template>
+    </DataTable>
+  </PageWrapper>
+
+  <!-- Modal for create/edit -->
+  <DailySalesModal
+    :open="showModal"
+    :editing-entry="editingEntry"
+    @close="handleModalClose"
+    @submit="handleModalSubmit"
+    @approve="handleApprove"
+  />
 </template>
 
-<style scoped>
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: all 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
-}
-</style>
