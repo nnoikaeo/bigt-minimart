@@ -76,9 +76,6 @@ const currentPageSize = ref(props.pageSize)
 // Selection state
 const selectedRows = ref<Set<any>>(new Set())
 
-// Page size options
-const pageSizeOptions = [10, 25, 50]
-
 /**
  * Handle column header click for sorting
  */
@@ -316,62 +313,14 @@ const getSortIndicator = (column: DataTableColumn): string => {
     </div>
 
     <!-- Pagination Controls -->
-    <div v-if="pagination && totalPages > 1" class="flex items-center justify-between px-4 py-4 gap-4">
-      <!-- Left: Items per page dropdown -->
-      <div class="flex items-center gap-2">
-        <label class="text-sm text-gray-600">รายการต่อหน้า:</label>
-        <select
-          v-model.number="currentPageSize"
-          @change="currentPage = 1"
-          class="px-3 py-2 pr-8 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded cursor-pointer hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-0"
-        >
-          <option v-for="size in pageSizeOptions" :key="size" :value="size">
-            {{ size }}
-          </option>
-        </select>
-      </div>
-
-      <!-- Middle: Page navigation -->
-      <div class="flex items-center gap-2">
-        <button
-          @click="currentPage = Math.max(1, currentPage - 1)"
-          :disabled="currentPage === 1"
-          class="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          ← ก่อนหน้า
-        </button>
-
-        <!-- Page numbers -->
-        <div class="flex gap-1">
-          <button
-            v-for="page in totalPages"
-            :key="page"
-            @click="currentPage = page"
-            :class="[
-              'px-3 py-1 text-sm font-medium rounded',
-              currentPage === page
-                ? 'bg-red-600 text-white'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50',
-            ]"
-          >
-            {{ page }}
-          </button>
-        </div>
-
-        <button
-          @click="currentPage = Math.min(totalPages, currentPage + 1)"
-          :disabled="currentPage === totalPages"
-          class="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          ถัดไป →
-        </button>
-      </div>
-
-      <!-- Right: Page info -->
-      <div class="text-sm text-gray-600 whitespace-nowrap">
-        หน้า {{ currentPage }} / {{ totalPages }}
-        <span class="ml-2">({{ processedData.length }} รายการ)</span>
-      </div>
-    </div>
+    <PaginationControl
+      :current-page="currentPage"
+      :page-size="currentPageSize"
+      :total-pages="totalPages"
+      :total-items="processedData.length"
+      :pagination="pagination"
+      @update:current-page="currentPage = $event"
+      @update:page-size="currentPageSize = $event"
+    />
   </div>
 </template>

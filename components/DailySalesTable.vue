@@ -452,7 +452,7 @@ const closeDetailsModal = () => {
           <select
             v-model.number="itemsPerPage"
             @change="currentPage = 1"
-            class="px-3 py-2 pr-8 min-w-fit border border-gray-300 rounded-lg text-sm text-gray-700 hover:border-gray-400 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-colors"
+            class="px-3 py-1 pr-8 min-w-fit border border-gray-300 rounded-lg text-sm text-gray-700 hover:border-gray-400 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-colors"
           >
             <option :value="10">10</option>
             <option :value="25">25</option>
