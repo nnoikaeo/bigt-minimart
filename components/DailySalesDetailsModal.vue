@@ -108,7 +108,7 @@ const handleClose = () => {
           </div>
 
           <!-- Row 2: Date + Cashier + Status -->
-          <div class="flex items-center gap-3 flex-wrap mb-4 pb-4 border-b border-red-500">
+          <div class="flex items-center gap-3 flex-wrap mb-4 ">
             <span class="text-white text-sm">📅 {{ formatDate(entry.date) }}</span>
             <span class="text-white text-sm">•</span>
             <span class="text-white text-sm">💼 {{ entry.cashierName }}</span>
