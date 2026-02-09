@@ -71,9 +71,13 @@ const sortOrder = ref<'asc' | 'desc'>('asc')
 
 // Pagination state
 const currentPage = ref(1)
+const currentPageSize = ref(props.pageSize)
 
 // Selection state
 const selectedRows = ref<Set<any>>(new Set())
+
+// Page size options
+const pageSizeOptions = [10, 25, 50]
 
 /**
  * Handle column header click for sorting
@@ -124,8 +128,8 @@ const processedData = computed(() => {
 const paginatedData = computed(() => {
   if (!props.pagination) return processedData.value
 
-  const start = (currentPage.value - 1) * props.pageSize
-  const end = start + props.pageSize
+  const start = (currentPage.value - 1) * currentPageSize.value
+  const end = start + currentPageSize.value
   return processedData.value.slice(start, end)
 })
 
@@ -134,7 +138,7 @@ const paginatedData = computed(() => {
  */
 const totalPages = computed(() => {
   if (!props.pagination) return 1
-  return Math.ceil(processedData.value.length / props.pageSize)
+  return Math.ceil(processedData.value.length / currentPageSize.value)
 })
 
 /**
@@ -312,13 +316,23 @@ const getSortIndicator = (column: DataTableColumn): string => {
     </div>
 
     <!-- Pagination Controls -->
-    <div v-if="pagination && totalPages > 1" class="flex items-center justify-between px-4">
-      <div class="text-sm text-gray-600">
-        หน้า {{ currentPage }} / {{ totalPages }}
-        <span class="ml-2">({{ processedData.length }} รายการ)</span>
+    <div v-if="pagination && totalPages > 1" class="flex items-center justify-between px-4 py-4 gap-4">
+      <!-- Left: Items per page dropdown -->
+      <div class="flex items-center gap-2">
+        <label class="text-sm text-gray-600">รายการต่อหน้า:</label>
+        <select
+          v-model.number="currentPageSize"
+          @change="currentPage = 1"
+          class="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
+        >
+          <option v-for="size in pageSizeOptions" :key="size" :value="size">
+            {{ size }}
+          </option>
+        </select>
       </div>
 
-      <div class="flex gap-2">
+      <!-- Middle: Page navigation -->
+      <div class="flex items-center gap-2">
         <button
           @click="currentPage = Math.max(1, currentPage - 1)"
           :disabled="currentPage === 1"
@@ -351,6 +365,12 @@ const getSortIndicator = (column: DataTableColumn): string => {
         >
           ถัดไป →
         </button>
+      </div>
+
+      <!-- Right: Page info -->
+      <div class="text-sm text-gray-600 whitespace-nowrap">
+        หน้า {{ currentPage }} / {{ totalPages }}
+        <span class="ml-2">({{ processedData.length }} รายการ)</span>
       </div>
     </div>
   </div>
