@@ -323,7 +323,7 @@ const getSortIndicator = (column: DataTableColumn): string => {
         <select
           v-model.number="currentPageSize"
           @change="currentPage = 1"
-          class="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
+          class="px-3 py-2 pr-8 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded cursor-pointer hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-0"
         >
           <option v-for="size in pageSizeOptions" :key="size" :value="size">
             {{ size }}
