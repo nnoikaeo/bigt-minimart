@@ -272,6 +272,52 @@ const { can } = usePermissions()
 </template>
 ```
 
+### ✅ Button State Pattern
+
+Design decision: **Visible + Disabled** vs **Hidden (v-if)**
+
+**Recommendation: Use Visible + Disabled** for better UX:
+- ✓ Discoverability - Users see available actions
+- ✓ Clear feedback - Disabled state explains why action unavailable
+- ✓ Consistency - UI remains stable as state changes
+- ✓ Accessibility - Screen readers recognize disabled elements
+
+**Pattern for Status-Based Buttons**:
+
+```vue
+<!-- Records with status field (e.g., approved, pending) -->
+<ActionButton
+  :permission="PERMISSIONS.EDIT_SALES"
+  :disabled="row.status === 'approved'"  <!-- Show but disable -->
+  @click="handleEdit(row)"
+>
+  ✏️ แก้ไข
+</ActionButton>
+
+<ActionButton
+  :permission="PERMISSIONS.DELETE_SALES"
+  :disabled="row.status === 'approved'"  <!-- Show but disable -->
+  @click="handleDelete(row.id)"
+>
+  🗑️ ลบ
+</ActionButton>
+
+<!-- Actions that only exist in certain states - use v-if -->
+<ActionButton
+  v-if="row.status === 'pending'"  <!-- Hide when not applicable -->
+  :permission="PERMISSIONS.APPROVE_SALES"
+  @click="handleApprove(row.id)"
+>
+  ✅ อนุมัติ
+</ActionButton>
+```
+
+**Guidelines**:
+- Use `:disabled="condition"` when action exists but restricted by state
+- Use `v-if="condition"` when action doesn't make sense (e.g., approve button when already approved)
+- Always check permission first with `:permission="..."`
+- Combine both: permission + state check for complete protection
+
 ### ✅ Permission Testing Checklist
 
 Test with each role:
@@ -283,6 +329,13 @@ Test with each role:
 | **Assistant Manager** | Can see view, create, edit (NO delete, approve) |
 | **Cashier** | Can see view, create ONLY |
 | **Auditor** | Can see view ONLY (read-only) |
+
+Test with each record status:
+
+| Status | View | Edit | Delete | Approve |
+|--------|------|------|--------|---------|
+| **Pending** | ✓ Active | ✓ Active | ✓ Active | ✓ Active |
+| **Approved** | ✓ Active | ✕ Disabled | ✕ Disabled | ✕ Hidden |
 
 ---
 
@@ -319,6 +372,12 @@ import { PencilIcon, TrashIcon, CheckIcon } from '@heroicons/vue/24/outline'
 ### ✅ Component Variants
 
 - [ ] Button variants: `primary`, `secondary`, `danger`, `success`, `ghost`
+  - `primary` (red) - Main actions
+  - `secondary` (gray) - Alternative actions
+  - `danger` (red) - Destructive actions (delete, remove)
+  - `success` (green) - Confirm/Approve actions
+  - `ghost` (transparent) - Secondary/Read-only actions
+- [ ] Buttons support `:disabled` state with visual feedback
 - [ ] Badge variants: `success`, `warning`, `error`, `info`, `default`
 - [ ] Alert variants: `success`, `error`, `warning`, `info`
 - [ ] Uses consistent sizing: `sm`, `md`, `lg`
