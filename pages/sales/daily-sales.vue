@@ -55,9 +55,28 @@ const columns: DataTableColumn[] = [
     },
   },
   {
+    key: 'cashReconciliation',
+    label: '⚖️ ผลต่าง',
+    sortable: false,
+    align: 'right',
+    formatter: (cashReconciliation: any) => {
+      return new Intl.NumberFormat('th-TH', {
+        style: 'currency',
+        currency: 'THB',
+        minimumFractionDigits: 0,
+      }).format(cashReconciliation?.difference || 0)
+    },
+  },
+  {
     key: 'status',
     label: '📊 สถานะ',
     sortable: true,
+  },
+  {
+    key: 'actions',
+    label: '🎯 การกระทำ',
+    sortable: false,
+    align: 'center',
   },
 ]
 

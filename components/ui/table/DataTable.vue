@@ -296,16 +296,22 @@ const getSortIndicator = (column: DataTableColumn): string => {
                     ? 'text-right'
                     : 'text-left',
               ]"
-              @click="emit('rowClick', row)"
+              @click="column.key !== 'actions' && emit('rowClick', row)"
             >
-              <slot
-                :name="`cell-${column.key}`"
-                :value="column.formatter ? column.formatter(row[column.key]) : row[column.key]"
-                :row="row"
-                :column="column"
-              >
-                {{ column.formatter ? column.formatter(row[column.key]) : row[column.key] }}
-              </slot>
+              <!-- Actions column -->
+              <slot v-if="column.key === 'actions'" name="actions" :row="row" />
+
+              <!-- Regular columns -->
+              <template v-else>
+                <slot
+                  :name="`cell-${column.key}`"
+                  :value="column.formatter ? column.formatter(row[column.key]) : row[column.key]"
+                  :row="row"
+                  :column="column"
+                >
+                  {{ column.formatter ? column.formatter(row[column.key]) : row[column.key] }}
+                </slot>
+              </template>
             </td>
           </tr>
         </tbody>
