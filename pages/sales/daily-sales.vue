@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useSalesStore } from '~/stores/sales'
-import { useAuthStore } from '~/stores/auth'
 import { useLogger } from '~/composables/useLogger'
 import { usePermissions } from '~/composables/usePermissions'
 import { PERMISSIONS } from '~/types/permissions'
@@ -232,23 +231,7 @@ const formatDate = (dateStr: string): string => {
   return formatted.replace(/\d{4}(?=\s|$)/, (year) => String(parseInt(year) - 543))
 }
 
-// Get current user's role
-const getUserRole = (): string => {
-  const authStore = useAuthStore()
-  return authStore.getCurrentUser?.primaryRole || 'cashier'
-}
 
-// Determine which action buttons to show based on role
-const getAvailableActions = (role: string): string[] => {
-  const roleActions: Record<string, string[]> = {
-    owner: ['view', 'edit', 'delete'],
-    manager: ['view'],
-    assistant_manager: ['view'],
-    auditor: ['view', 'edit'],
-    cashier: ['view'],
-  }
-  return roleActions[role] || ['view']
-}
 
 // Handle modal close
 const handleModalClose = () => {
@@ -342,45 +325,52 @@ const openCreateModal = () => {
       <!-- Actions slot for row buttons -->
       <template #actions="{ row }">
         <div class="flex gap-2 justify-center flex-wrap">
-          <!-- View button -->
-          <button
-            v-if="getAvailableActions(getUserRole()).includes('view')"
+          <!-- View button - always available -->
+          <ActionButton
+            :permission="PERMISSIONS.VIEW_SALES"
+            variant="ghost"
+            size="sm"
             @click="handleView(row)"
-            class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium text-purple-700 bg-purple-100 rounded hover:bg-purple-200 transition-colors"
             title="ดูรายละเอียด"
           >
             🔍
-          </button>
+          </ActionButton>
 
           <!-- Edit button -->
-          <button
-            v-if="getAvailableActions(getUserRole()).includes('edit') && row.status !== 'approved'"
+          <ActionButton
+            :permission="PERMISSIONS.EDIT_SALES"
+            variant="ghost"
+            size="sm"
+            :disabled="row.status === 'approved'"
             @click="handleEdit(row)"
-            class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-100 rounded hover:bg-blue-200 transition-colors"
             title="แก้ไข"
           >
             ✏️
-          </button>
+          </ActionButton>
 
           <!-- Delete button -->
-          <button
-            v-if="getAvailableActions(getUserRole()).includes('delete') && row.status !== 'approved'"
+          <ActionButton
+            :permission="PERMISSIONS.DELETE_SALES"
+            variant="danger"
+            size="sm"
+            :disabled="row.status === 'approved'"
             @click="handleDelete(row.id)"
-            class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium text-red-700 bg-red-100 rounded hover:bg-red-200 transition-colors"
             title="ลบ"
           >
             🗑️
-          </button>
+          </ActionButton>
 
           <!-- Approve button (owner only, pending status only) -->
-          <button
-            v-if="getUserRole() === 'owner' && row.status !== 'approved'"
+          <ActionButton
+            v-if="row.status !== 'approved'"
+            :permission="PERMISSIONS.APPROVE_SALES"
+            variant="success"
+            size="sm"
             @click="handleApprove(row.id)"
-            class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium text-green-700 bg-green-100 rounded hover:bg-green-200 transition-colors"
             title="อนุมัติ"
           >
             ✅
-          </button>
+          </ActionButton>
         </div>
       </template>
     </DataTable>
