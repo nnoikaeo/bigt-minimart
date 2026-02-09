@@ -1,0 +1,554 @@
+/**
+ * JSON Repository Implementation for Money Transfer Service
+ * ✅ Used during development
+ * 📝 Uses local JSON files for data storage
+ * 🔄 Can be swapped with FirestoreRepository later without changing stores/components
+ */
+
+import { promises as fs } from 'fs'
+import { join } from 'path'
+import type {
+  MoneyTransferTransaction,
+  MoneyTransferDailySummary,
+  MoneyTransferBalance,
+  IMoneyTransferRepository,
+} from '~/types/repositories'
+
+/**
+ * JSON Repository for Money Transfer Service
+ * - Loads/saves data from/to JSON files
+ * - Perfect for development and testing
+ * - Can be replaced with Firestore version later
+ */
+export class MoneyTransferJsonRepository implements IMoneyTransferRepository {
+  private transactions: MoneyTransferTransaction[] = []
+  private summaries: MoneyTransferDailySummary[] = []
+  private balances: MoneyTransferBalance[] = []
+
+  private transactionsFile: string
+  private summariesFile: string
+  private balancesFile: string
+
+  constructor() {
+    // Store data in public directory for easy access during development
+    this.transactionsFile = join(
+      process.cwd(),
+      'public',
+      'data',
+      'money-transfer-transactions.json'
+    )
+    this.summariesFile = join(process.cwd(), 'public', 'data', 'money-transfer-summaries.json')
+    this.balancesFile = join(process.cwd(), 'public', 'data', 'money-transfer-balances.json')
+  }
+
+  /**
+   * Initialize: Load data from JSON files
+   * Called once on server startup
+   */
+  async init(): Promise<void> {
+    try {
+      // Load transactions
+      try {
+        const transContent = await fs.readFile(this.transactionsFile, 'utf-8')
+        this.transactions = JSON.parse(transContent) as MoneyTransferTransaction[]
+      } catch {
+        this.transactions = []
+      }
+
+      // Load summaries
+      try {
+        const summContent = await fs.readFile(this.summariesFile, 'utf-8')
+        this.summaries = JSON.parse(summContent) as MoneyTransferDailySummary[]
+      } catch {
+        this.summaries = []
+      }
+
+      // Load balances
+      try {
+        const balContent = await fs.readFile(this.balancesFile, 'utf-8')
+        this.balances = JSON.parse(balContent) as MoneyTransferBalance[]
+      } catch {
+        this.balances = []
+      }
+
+      console.log(`✅ Loaded ${this.transactions.length} transactions from JSON`)
+      console.log(`✅ Loaded ${this.summaries.length} summaries from JSON`)
+      console.log(`✅ Loaded ${this.balances.length} balance records from JSON`)
+    } catch (error) {
+      console.log('📝 No data files found, starting with empty data')
+      this.transactions = []
+      this.summaries = []
+      this.balances = []
+      await this.ensureDataDir()
+    }
+  }
+
+  /**
+   * Ensure data directory exists
+   */
+  private async ensureDataDir(): Promise<void> {
+    try {
+      const dir = join(process.cwd(), 'public', 'data')
+      await fs.mkdir(dir, { recursive: true })
+    } catch (error) {
+      console.error('Failed to create data directory:', error)
+    }
+  }
+
+  /**
+   * Save all data to JSON files
+   * Called after every write operation
+   */
+  private async save(): Promise<void> {
+    try {
+      await this.ensureDataDir()
+
+      // Save transactions
+      const transJson = JSON.stringify(this.transactions, null, 2)
+      await fs.writeFile(this.transactionsFile, transJson, 'utf-8')
+
+      // Save summaries
+      const summJson = JSON.stringify(this.summaries, null, 2)
+      await fs.writeFile(this.summariesFile, summJson, 'utf-8')
+
+      // Save balances
+      const balJson = JSON.stringify(this.balances, null, 2)
+      await fs.writeFile(this.balancesFile, balJson, 'utf-8')
+
+      console.log(`✅ Saved ${this.transactions.length} transactions to JSON`)
+    } catch (error) {
+      console.error('❌ Failed to save to JSON:', error)
+      throw new Error('Failed to save money transfer data')
+    }
+  }
+
+  /**
+   * READ: Get single transaction by ID
+   */
+  async getTransaction(id: string): Promise<MoneyTransferTransaction> {
+    const transaction = this.transactions.find(t => t.id === id)
+    if (!transaction) {
+      throw new Error(`Transaction with ID ${id} not found`)
+    }
+    return transaction
+  }
+
+  /**
+   * READ: Get transactions for a specific date
+   */
+  async getTransactionsByDate(date: string): Promise<MoneyTransferTransaction[]> {
+    return this.transactions.filter(t => t.date === date)
+  }
+
+  /**
+   * READ: Get transactions by date range
+   */
+  async getTransactionsByDateRange(
+    startDate: string,
+    endDate: string
+  ): Promise<MoneyTransferTransaction[]> {
+    const start = new Date(startDate + 'T00:00:00')
+    const end = new Date(endDate + 'T23:59:59')
+
+    return this.transactions.filter(t => {
+      const txnDate = new Date(t.date + 'T00:00:00')
+      return txnDate >= start && txnDate <= end
+    })
+  }
+
+  /**
+   * READ: Get transactions by status
+   */
+  async getTransactionsByStatus(status: MoneyTransferTransaction['status']): Promise<MoneyTransferTransaction[]> {
+    return this.transactions.filter(t => t.status === status)
+  }
+
+  /**
+   * READ: Get draft transactions for a date
+   */
+  async getDraftTransactions(date: string): Promise<MoneyTransferTransaction[]> {
+    return this.transactions.filter(t => t.date === date && t.status === 'draft')
+  }
+
+  /**
+   * WRITE: Add new transaction
+   * - Generates unique ID
+   * - Sets createdAt timestamp
+   * - Saves to JSON file
+   */
+  async addTransaction(
+    transaction: Omit<MoneyTransferTransaction, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<MoneyTransferTransaction> {
+    // Generate unique ID
+    const id = `mts-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+    // Create new transaction with timestamps
+    const newTransaction: MoneyTransferTransaction = {
+      ...transaction,
+      id,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+
+    // Validate
+    this.validateTransaction(newTransaction)
+
+    // Add to in-memory data
+    this.transactions.push(newTransaction)
+
+    // Save to file
+    await this.save()
+
+    console.log(`✅ Added transaction: ${id}`)
+    return newTransaction
+  }
+
+  /**
+   * WRITE: Update existing transaction
+   */
+  async updateTransaction(
+    id: string,
+    updates: Partial<MoneyTransferTransaction>
+  ): Promise<MoneyTransferTransaction> {
+    const index = this.transactions.findIndex(t => t.id === id)
+    if (index === -1) {
+      throw new Error(`Transaction with ID ${id} not found`)
+    }
+
+    const existing = this.transactions[index]
+    const updated: MoneyTransferTransaction = {
+      ...existing,
+      ...updates,
+      id: existing.id, // Always use original ID
+      createdAt: existing.createdAt, // Never update
+      updatedAt: new Date().toISOString(),
+    }
+
+    // Validate
+    this.validateTransaction(updated)
+
+    // Update in-memory data
+    this.transactions[index] = updated
+
+    // Save to file
+    await this.save()
+
+    console.log(`✅ Updated transaction: ${id}`)
+    return updated
+  }
+
+  /**
+   * WRITE: Delete transaction
+   */
+  async deleteTransaction(id: string): Promise<void> {
+    const index = this.transactions.findIndex(t => t.id === id)
+    if (index === -1) {
+      throw new Error(`Transaction with ID ${id} not found`)
+    }
+
+    this.transactions.splice(index, 1)
+    await this.save()
+
+    console.log(`✅ Deleted transaction: ${id}`)
+  }
+
+  /**
+   * WRITE: Complete draft transaction
+   * Updates transaction status and balance impacts
+   */
+  async completeDraftTransaction(
+    id: string,
+    updates: Partial<MoneyTransferTransaction>
+  ): Promise<MoneyTransferTransaction> {
+    const transaction = await this.getTransaction(id)
+
+    if (transaction.status !== 'draft') {
+      throw new Error('Only draft transactions can be completed')
+    }
+
+    return this.updateTransaction(id, {
+      ...updates,
+      status: 'completed',
+      completedAt: new Date().toISOString(),
+    })
+  }
+
+  /**
+   * READ: Get daily summary
+   */
+  async getDailySummary(date: string): Promise<MoneyTransferDailySummary | null> {
+    const summary = this.summaries.find(s => s.date === date)
+    return summary || null
+  }
+
+  /**
+   * WRITE: Create daily summary
+   */
+  async createDailySummary(date: string): Promise<MoneyTransferDailySummary> {
+    // Check if already exists
+    const existing = this.summaries.find(s => s.date === date)
+    if (existing) {
+      throw new Error(`Summary for ${date} already exists`)
+    }
+
+    const summary: MoneyTransferDailySummary = {
+      id: `mtsum-${date}`,
+      date,
+      step1: {
+        status: 'in_progress',
+        totalTransactions: 0,
+        completedTransactions: 0,
+        draftTransactions: 0,
+        totalAmount: 0,
+        totalCommission: 0,
+      },
+      workflowStatus: 'step1_in_progress',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+
+    this.summaries.push(summary)
+    await this.save()
+
+    console.log(`✅ Created summary for ${date}`)
+    return summary
+  }
+
+  /**
+   * WRITE: Update daily summary
+   */
+  async updateDailySummary(
+    date: string,
+    updates: Partial<MoneyTransferDailySummary>
+  ): Promise<MoneyTransferDailySummary> {
+    const index = this.summaries.findIndex(s => s.date === date)
+    if (index === -1) {
+      throw new Error(`Summary for ${date} not found`)
+    }
+
+    const existing = this.summaries[index]
+    const updated: MoneyTransferDailySummary = {
+      ...existing,
+      ...updates,
+      id: existing.id,
+      date: existing.date,
+      updatedAt: new Date().toISOString(),
+    }
+
+    this.summaries[index] = updated
+    await this.save()
+
+    console.log(`✅ Updated summary for ${date}`)
+    return updated
+  }
+
+  /**
+   * READ: Get current balance for a date
+   */
+  async getCurrentBalance(date: string): Promise<MoneyTransferBalance> {
+    let balance = this.balances.find(b => b.date === date)
+
+    if (!balance) {
+      // Initialize with zero balance if doesn't exist
+      balance = await this.initializeBalance(date)
+    }
+
+    return balance
+  }
+
+  /**
+   * WRITE: Initialize balance for a date
+   */
+  async initializeBalance(date: string): Promise<MoneyTransferBalance> {
+    const balance: MoneyTransferBalance = {
+      id: `mtbal-${date}`,
+      date,
+      bankAccount: 0,
+      transferCash: 0,
+      serviceFeeTransfer: 0,
+      serviceFeeCash: 0,
+      history: [],
+      updatedAt: new Date().toISOString(),
+    }
+
+    this.balances.push(balance)
+    await this.save()
+
+    console.log(`✅ Initialized balance for ${date}`)
+    return balance
+  }
+
+  /**
+   * WRITE: Update balance
+   */
+  async updateBalance(
+    date: string,
+    updates: Partial<MoneyTransferBalance>
+  ): Promise<MoneyTransferBalance> {
+    const index = this.balances.findIndex(b => b.date === date)
+    if (index === -1) {
+      throw new Error(`Balance for ${date} not found`)
+    }
+
+    const existing = this.balances[index]
+    const updated: MoneyTransferBalance = {
+      ...existing,
+      ...updates,
+      id: existing.id,
+      date: existing.date,
+      updatedAt: new Date().toISOString(),
+    }
+
+    this.balances[index] = updated
+    await this.save()
+
+    console.log(`✅ Updated balance for ${date}`)
+    return updated
+  }
+
+  /**
+   * WRITE: Complete Step 1 (Manager transaction recording)
+   */
+  async completeStep1(
+    date: string,
+    userId: string,
+    userName: string
+  ): Promise<MoneyTransferDailySummary> {
+    // Get or create summary
+    let summary = await this.getDailySummary(date)
+    if (!summary) {
+      summary = await this.createDailySummary(date)
+    }
+
+    // Get transactions for this date
+    const transactions = await this.getTransactionsByDate(date)
+    const completed = transactions.filter(t => t.status === 'completed')
+
+    // Update summary
+    return this.updateDailySummary(date, {
+      step1: {
+        ...summary.step1,
+        status: 'completed',
+        completedAt: new Date().toISOString(),
+        completedBy: userId,
+        completedByName: userName,
+        totalTransactions: transactions.length,
+        completedTransactions: completed.length,
+        draftTransactions: transactions.filter(t => t.status === 'draft').length,
+        totalAmount: completed.reduce((sum, t) => sum + t.amount, 0),
+        totalCommission: completed.reduce((sum, t) => sum + (t.commission || 0), 0),
+      },
+      workflowStatus: 'step1_completed',
+    })
+  }
+
+  /**
+   * WRITE: Complete Step 2 (Manager cash verification)
+   */
+  async completeStep2(
+    date: string,
+    step2Data: MoneyTransferDailySummary['step2']
+  ): Promise<MoneyTransferDailySummary> {
+    const summary = await this.getDailySummary(date)
+    if (!summary) {
+      throw new Error(`Summary for ${date} not found`)
+    }
+
+    return this.updateDailySummary(date, {
+      step2: {
+        ...step2Data,
+        status: 'completed',
+      },
+      workflowStatus: 'step2_completed',
+    })
+  }
+
+  /**
+   * WRITE: Complete audit (Workflow 2.2)
+   */
+  async completeAudit(
+    date: string,
+    auditData: MoneyTransferDailySummary['auditorVerification']
+  ): Promise<MoneyTransferDailySummary> {
+    const summary = await this.getDailySummary(date)
+    if (!summary) {
+      throw new Error(`Summary for ${date} not found`)
+    }
+
+    return this.updateDailySummary(date, {
+      auditorVerification: {
+        ...auditData,
+        status: 'completed',
+      },
+      workflowStatus: 'audited',
+    })
+  }
+
+  /**
+   * WRITE: Owner approval (Workflow 2.3)
+   */
+  async approveByOwner(
+    date: string,
+    approvalData: MoneyTransferDailySummary['ownerApproval']
+  ): Promise<MoneyTransferDailySummary> {
+    const summary = await this.getDailySummary(date)
+    if (!summary) {
+      throw new Error(`Summary for ${date} not found`)
+    }
+
+    // Determine workflow status based on approval decision
+    let workflowStatus: MoneyTransferDailySummary['workflowStatus'] = 'approved'
+    if (approvalData?.decision === 'request_correction') {
+      workflowStatus = 'needs_correction'
+    }
+
+    return this.updateDailySummary(date, {
+      ownerApproval: {
+        ...approvalData,
+        status:
+          approvalData?.decision === 'approve'
+            ? 'approved'
+            : approvalData?.decision === 'approve_with_notes'
+              ? 'approved_with_notes'
+              : 'correction_requested',
+      },
+      workflowStatus,
+    })
+  }
+
+  /**
+   * READ: Get transaction count for a date
+   */
+  async getTransactionCount(date: string): Promise<number> {
+    return this.transactions.filter(t => t.date === date).length
+  }
+
+  /**
+   * READ: Get transaction count by status
+   */
+  async getTransactionCountByStatus(date: string, status: string): Promise<number> {
+    return this.transactions.filter(t => t.date === date && t.status === status).length
+  }
+
+  /**
+   * Validate transaction data
+   * Throws error if data is invalid
+   */
+  private validateTransaction(transaction: MoneyTransferTransaction): void {
+    if (!transaction.date) throw new Error('Date is required')
+    if (!transaction.datetime) throw new Error('DateTime is required')
+    if (!transaction.transactionType)
+      throw new Error('Transaction type is required (transfer, withdrawal, owner_deposit)')
+    if (transaction.amount < 0) throw new Error('Amount cannot be negative')
+    if ((transaction.commission || 0) < 0) throw new Error('Commission cannot be negative')
+    if (!transaction.balanceImpact) throw new Error('Balance impact snapshot is required')
+    if (!transaction.recordedBy) throw new Error('Recorded by user ID is required')
+    if (!transaction.recordedByName) throw new Error('Recorded by user name is required')
+  }
+}
+
+/**
+ * Export singleton instance
+ * Used throughout the application
+ */
+export const moneyTransferJsonRepository = new MoneyTransferJsonRepository()
