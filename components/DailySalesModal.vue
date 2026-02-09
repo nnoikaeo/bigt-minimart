@@ -113,7 +113,7 @@ const getApproverName = (approvedById: string | undefined): string => {
 // Get cashiers from access control store
 // This getter filters users who have 'cashier' role and are active
 const cashiers = computed(() => {
-  const cashierList = accessControlStore.getCashiers.map((user) => ({
+  const cashierList = accessControlStore.getCashiers.map((user: any) => ({
     id: user.uid,
     name: user.displayName,
   }))
@@ -234,7 +234,7 @@ const handleCashierChange = (event: Event) => {
     return
   }
   
-  const selected = cashiers.value.find(c => c.id === selectedId)
+  const selected = cashiers.value.find((c: any) => c.id === selectedId)
   logger.log('[handleCashierChange] Found cashier:', selected)
   
   if (selected) {
