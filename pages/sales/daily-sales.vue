@@ -226,6 +226,27 @@ const openCreateModal = () => {
       :pagination="true"
       :page-size="10"
     >
+      <!-- Difference cell with conditional styling -->
+      <template #cell-cashReconciliation="{ row }">
+        <div
+          :class="[
+            'inline-flex items-center gap-1.5 font-medium rounded-full px-3 py-0 text-sm',
+            row.cashReconciliation?.difference === 0
+              ? 'bg-green-100 text-green-800 border border-green-300'
+              : 'bg-red-100 text-red-800 border border-red-300',
+          ]"
+        >
+          {{ row.cashReconciliation?.difference === 0 ? '✓' : '⚠️' }}
+          {{
+            new Intl.NumberFormat('th-TH', {
+              style: 'currency',
+              currency: 'THB',
+              minimumFractionDigits: 0,
+            }).format(row.cashReconciliation?.difference || 0)
+          }}
+        </div>
+      </template>
+
       <!-- Status cell with badge -->
       <template #cell-status="{ value }">
         <BaseBadge
