@@ -889,15 +889,10 @@ const handleClose = () => {
           </div>
         </div>
 
-        <!-- Approval Section (Owner Only) -->
-        <div v-if="editingEntry && isOwner" class="space-y-4 bg-green-50 p-6 border-b border-green-200">
-          <h3 class="text-lg font-semibold text-green-800 border-b border-green-300 pb-2">
-            การอนุมัติ (Owner)
-          </h3>
-
-          <!-- Current Status -->
-          <div class="flex items-center justify-between">
-            <span class="text-sm font-medium text-gray-700">สถานะปัจจุบัน:</span>
+        <!-- Status Info (read-only, informational) -->
+        <div v-if="editingEntry && isOwner" class="bg-blue-50 p-4 border-b border-blue-200">
+          <div class="flex items-center justify-between text-sm">
+            <span class="font-medium text-gray-700">สถานะ:</span>
             <span :class="[
               'px-3 py-1 rounded-full text-xs font-semibold',
               formData.status === 'pending'
@@ -907,34 +902,12 @@ const handleClose = () => {
               {{ formatStatus(formData.status) }}
             </span>
           </div>
-
-          <!-- Approval Info (if already approved) -->
-          <div v-if="editingEntry.approvedAt" class="text-sm text-green-700">
-            <div class="flex items-center gap-2">
-              <span>✓</span>
-              <span>อนุมัติแล้วเมื่อ: {{ formatApprovedDate(editingEntry.approvedAt) }}</span>
-            </div>
-            <div v-if="editingEntry.approvedBy" class="ml-6 text-xs text-gray-600">
+          <div v-if="editingEntry.approvedAt" class="mt-2 text-xs text-blue-700">
+            <div>✓ อนุมัติแล้วเมื่อ: {{ formatApprovedDate(editingEntry.approvedAt) }}</div>
+            <div v-if="editingEntry.approvedBy" class="text-gray-600">
               โดย: {{ getApproverName(editingEntry.approvedBy) }}
             </div>
           </div>
-
-          <!-- Approve Button (if not yet approved) -->
-          <button
-            v-if="canApprove"
-            @click="handleApprove"
-            :disabled="submitting"
-            class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-semibold hover:from-green-700 hover:to-green-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            <span>✓</span>
-            <span v-if="submitting">กำลังอนุมัติ...</span>
-            <span v-else>อนุมัติรายงาน</span>
-          </button>
-
-          <!-- Note: Editing disabled after approval -->
-          <p v-if="editingEntry.status === 'approved'" class="text-xs text-gray-500 italic">
-            หมายเหตุ: รายการที่อนุมัติแล้วไม่สามารถแก้ไขได้
-          </p>
         </div>
 
         <!-- Footer -->

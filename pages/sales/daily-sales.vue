@@ -163,11 +163,16 @@ const handleDelete = async (id: string) => {
   }
 }
 
-// Handle approve
+// Handle approve with confirmation
 const handleApprove = async (id: string) => {
   if (!can(PERMISSIONS.APPROVE_SALES)) {
     successMessage.value = 'คุณไม่มีสิทธิ์อนุมัติยอดขาย'
     successType.value = 'error'
+    return
+  }
+
+  // Show confirmation dialog
+  if (!confirm('ยืนยันการอนุมัติรายการนี้หรือไม่?')) {
     return
   }
 
@@ -314,7 +319,7 @@ const openCreateModal = () => {
             class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium text-purple-700 bg-purple-100 rounded hover:bg-purple-200 transition-colors"
             title="ดูรายละเอียด"
           >
-            👁️
+            🔍
           </button>
 
           <!-- Edit button -->
