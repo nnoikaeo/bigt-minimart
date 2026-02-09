@@ -118,40 +118,29 @@ const handleClose = () => {
             </span>
           </div>
 
-          <!-- Row 3: Submitted Info -->
-          <div class="text-white text-sm mb-2">
-            📝 ส่งเมื่อ {{ formatApprovedDate(entry.submittedAt) }}
-            โดย {{ entry.submittedBy || entry.cashierName }}
-          </div>
-
-          <!-- Row 4: Approval Info (Show Only If Approved) -->
-          <div v-if="entry.approvedAt && entry.approvedBy" class="text-white text-sm">
-            ✓ อนุมัติเมื่อ {{ formatApprovedDate(entry.approvedAt) }}
-            โดย {{ getApproverName(entry.approvedBy) }}
-          </div>
         </div>
 
         <!-- Body (Scrollable) -->
         <div class="p-6 space-y-6 overflow-y-auto flex-1">
           <!-- Channel Cards Grid (2x2) -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- 💵 Cash Channel - Green -->
-            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div class="font-semibold text-green-800 mb-3 flex items-center gap-2">
+            <!-- 💵 Cash Channel - Blue -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div class="font-semibold text-blue-800 mb-3 flex items-center gap-2">
                 <span>💵</span>
                 <span>เงินสด</span>
               </div>
               <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
-                  <span class="text-green-700">คาดหวัง:</span>
+                  <span class="text-blue-700">คาดหวัง:</span>
                   <span class="font-medium">{{ formatCurrency(entry.expectedCash || 0) }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-green-700">ยอดจริง:</span>
+                  <span class="text-blue-700">ยอดจริง:</span>
                   <span class="font-medium">{{ formatCurrency(entry.posData.cash) }}</span>
                 </div>
-                <div class="flex justify-between border-t border-green-200 pt-2">
-                  <span class="text-green-700">ผลต่าง:</span>
+                <div class="flex justify-between border-t border-blue-200 pt-2">
+                  <span class="text-blue-700">ผลต่าง:</span>
                   <span
                     :class="[
                       'font-semibold',
@@ -170,7 +159,7 @@ const handleClose = () => {
                     ⚠️ {{ getProblemTypeLabel(entry.auditDetails.cashAuditNotes) }}
                   </span>
                 </div>
-                <div v-else class="mt-3 pt-2 border-t border-green-200 text-xs text-green-600">
+                <div v-else class="mt-3 pt-2 border-t border-blue-200 text-xs text-blue-600">
                   ✓ ไม่พบปัญหา
                 </div>
               </div>
