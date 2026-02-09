@@ -326,6 +326,16 @@ const openCreateModal = () => {
           >
             🗑️
           </button>
+
+          <!-- Approve button (owner only, pending status only) -->
+          <button
+            v-if="getUserRole() === 'owner' && row.status !== 'approved'"
+            @click="handleApprove(row.id)"
+            class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium text-green-700 bg-green-100 rounded hover:bg-green-200 transition-colors"
+            title="อนุมัติ"
+          >
+            ✅
+          </button>
         </div>
       </template>
     </DataTable>
