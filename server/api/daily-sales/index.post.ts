@@ -50,12 +50,20 @@ const createDailySalesSchema = z.object({
 
 export default defineEventHandler(async (event) => {
   try {
-    // Get user from context (optional for now - will be enforced in production)
+    // Get user from context (required for submission)
     const user = (event.context as any).user
     console.log('[POST /api/daily-sales] User context:', user)
-    
-    // For now, use a fallback user ID for development
-    const userId = user?.uid || 'dev-user-' + Date.now()
+
+    // Require valid user ID - cannot submit without authentication
+    if (!user?.uid) {
+      console.log('[POST /api/daily-sales] Missing user authentication')
+      throw createError({
+        statusCode: 401,
+        message: 'User authentication required to create daily sales entry',
+      })
+    }
+
+    const userId = user.uid
     console.log('[POST /api/daily-sales] Using user ID:', userId)
 
     // Initialize repository

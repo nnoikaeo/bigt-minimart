@@ -34,9 +34,16 @@ export default defineEventHandler(async (event) => {
     console.log('[POST /api/daily-sales/[id]/approve] User uid:', user?.uid)
     console.log('[POST /api/daily-sales/[id]/approve] User role:', user?.primaryRole || user?.role)
 
-    // For development, use fallback if no auth context
-    // In production, this would require real authentication
-    const userId = user?.uid || 'dev-user-owner'
+    // Require valid user ID - cannot approve without authentication
+    if (!user?.uid) {
+      console.log('[POST /api/daily-sales/[id]/approve] Missing user authentication')
+      throw createError({
+        statusCode: 401,
+        message: 'User authentication required to approve sales entry',
+      })
+    }
+
+    const userId = user.uid
     const userRole = user?.primaryRole || user?.role || 'owner'
 
     console.log('[POST /api/daily-sales/[id]/approve] Using user ID:', userId)

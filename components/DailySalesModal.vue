@@ -361,7 +361,9 @@ const handleSubmit = async () => {
 
   submitting.value = true
   try {
+    const currentUserId = authStore.getCurrentUser?.uid || 'unknown-user'
     logger.log('Submitting daily sales entry', formData)
+    logger.log('Current user ID:', currentUserId)
     emit('submit', {
       date: formData.date,
       cashierId: formData.cashierId,
@@ -391,7 +393,7 @@ const handleSubmit = async () => {
         recommendation: formData.auditDetails.recommendation,
       },
       status: formData.status,
-      submittedBy: 'current-user-id',
+      submittedBy: currentUserId,
     })
     successMessage.value = 'บันทึกข้อมูลสำเร็จ'
     setTimeout(() => {
