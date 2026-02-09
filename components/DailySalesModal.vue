@@ -361,7 +361,13 @@ const handleSubmit = async () => {
 
   submitting.value = true
   try {
+    const currentUserId = authStore.getCurrentUser?.uid
+    if (!currentUserId) {
+      logger.error('No authenticated user, cannot submit')
+      throw new Error('User authentication required to submit daily sales entry')
+    }
     logger.log('Submitting daily sales entry', formData)
+    logger.log('Current user ID:', currentUserId)
     emit('submit', {
       date: formData.date,
       cashierId: formData.cashierId,
@@ -391,7 +397,7 @@ const handleSubmit = async () => {
         recommendation: formData.auditDetails.recommendation,
       },
       status: formData.status,
-      submittedBy: 'current-user-id',
+      submittedBy: currentUserId,
     })
     successMessage.value = 'บันทึกข้อมูลสำเร็จ'
     setTimeout(() => {
