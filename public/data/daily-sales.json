@@ -210,7 +210,7 @@
     "approvedBy": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2"
   },
   {
-    "id": "sales-1770619544705-wfkfabkg1",
+    "id": "sales-1770619931167-1b2ieap95",
     "date": "2026-02-03",
     "cashierId": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
     "cashierName": "กัลญา ผิวขำทองดี",
@@ -244,13 +244,15 @@
       "recommendation": ""
     },
     "total": 14095,
-    "status": "pending",
-    "submittedBy": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2",
-    "submittedAt": "2026-02-09T06:45:44.705Z",
-    "updatedAt": "2026-02-09T06:45:44.705Z"
+    "status": "approved",
+    "submittedBy": "dAuL8YQfWDcbiP4NL0z8z2J0wIy2",
+    "submittedAt": "2026-02-09T06:52:11.167Z",
+    "updatedAt": "2026-02-09T06:53:41.765Z",
+    "approvedAt": "2026-02-09T06:53:41.764Z",
+    "approvedBy": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2"
   },
   {
-    "id": "sales-1770619603175-o15u7e443",
+    "id": "sales-1770619989029-0g64jikoc",
     "date": "2026-02-03",
     "cashierId": "kpTHjc5TcrQFtU42KY48guEl5Av1",
     "cashierName": "วราณี อุบลแย้ม",
@@ -284,9 +286,11 @@
       "recommendation": ""
     },
     "total": 9670,
-    "status": "pending",
-    "submittedBy": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2",
-    "submittedAt": "2026-02-09T06:46:43.175Z",
-    "updatedAt": "2026-02-09T06:46:43.175Z"
+    "status": "approved",
+    "submittedBy": "dAuL8YQfWDcbiP4NL0z8z2J0wIy2",
+    "submittedAt": "2026-02-09T06:53:09.029Z",
+    "updatedAt": "2026-02-09T06:53:46.369Z",
+    "approvedAt": "2026-02-09T06:53:46.369Z",
+    "approvedBy": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2"
   }
 ]
