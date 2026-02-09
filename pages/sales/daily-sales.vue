@@ -28,6 +28,7 @@ const successType = ref<'success' | 'error'>('success')
 // Confirmation dialog state
 const showConfirmDialog = ref(false)
 const confirmMessage = ref('')
+const confirmDialogVariant = ref<'danger' | 'warning' | 'info' | 'success'>('warning')
 const confirmCallback = ref<(() => Promise<void>) | null>(null)
 
 // Computed properties from store
@@ -140,32 +141,36 @@ const handleEdit = (entry: DailySalesEntry) => {
   showModal.value = true
 }
 
-// Handle delete
-const handleDelete = async (id: string) => {
+// Handle delete - show confirmation dialog
+const handleDelete = (id: string) => {
   if (!can(PERMISSIONS.DELETE_SALES)) {
     successMessage.value = 'คุณไม่มีสิทธิ์ลบบันทึกยอดขาย'
     successType.value = 'error'
     return
   }
 
-  if (!confirm('คุณต้องการลบบันทึกนี้หรือไม่?')) {
-    return
+  // Set up confirmation callback
+  confirmMessage.value = 'คุณต้องการลบบันทึกนี้หรือไม่?'
+  confirmDialogVariant.value = 'danger'
+  confirmCallback.value = async () => {
+    try {
+      logger.log('Deleting entry:', id)
+      await salesStore.deleteDailySale(id)
+      successMessage.value = 'ลบบันทึกเรียบร้อย'
+      successType.value = 'success'
+      logger.log('Deleted entry:', id)
+      setTimeout(() => {
+        successMessage.value = ''
+      }, 3000)
+    } catch (err: any) {
+      successMessage.value = err.message || 'เกิดข้อผิดพลาดในการลบ'
+      successType.value = 'error'
+      logger.error('Error deleting entry', err)
+    }
   }
 
-  try {
-    logger.log('Deleting entry:', id)
-    await salesStore.deleteDailySale(id)
-    successMessage.value = 'ลบบันทึกเรียบร้อย'
-    successType.value = 'success'
-    logger.log('Deleted entry:', id)
-    setTimeout(() => {
-      successMessage.value = ''
-    }, 3000)
-  } catch (err: any) {
-    successMessage.value = err.message || 'เกิดข้อผิดพลาดในการลบ'
-    successType.value = 'error'
-    logger.error('Error deleting entry', err)
-  }
+  // Show dialog with danger variant
+  showConfirmDialog.value = true
 }
 
 // Handle approve - show confirmation dialog
@@ -178,6 +183,7 @@ const handleApprove = (id: string) => {
 
   // Set up confirmation callback
   confirmMessage.value = 'ยืนยันการอนุมัติรายการนี้หรือไม่?'
+  confirmDialogVariant.value = 'success'
   confirmCallback.value = async () => {
     try {
       await salesStore.approveSale(id)
@@ -307,10 +313,12 @@ const openCreateModal = () => {
             'inline-flex items-center gap-1.5 font-medium rounded-full px-3 py-0 text-sm',
             row.cashReconciliation?.difference === 0
               ? 'bg-green-100 text-green-800 border border-green-300'
-              : 'bg-red-100 text-red-800 border border-red-300',
+              : Math.abs(row.cashReconciliation?.difference || 0) <= 5
+                ? 'bg-yellow-100 text-yellow-800 border border-yellow-300'
+                : 'bg-red-100 text-red-800 border border-red-300',
           ]"
         >
-          {{ row.cashReconciliation?.difference === 0 ? '✓' : '⚠️' }}
+          {{ row.cashReconciliation?.difference === 0 ? '✓' : row.cashReconciliation?.difference && Math.abs(row.cashReconciliation.difference) <= 5 ? '⚠️' : '❌' }}
           {{
             new Intl.NumberFormat('th-TH', {
               style: 'currency',
@@ -388,14 +396,14 @@ const openCreateModal = () => {
     @approve="handleApprove"
   />
 
-  <!-- Confirmation dialog for approval -->
+  <!-- Confirmation dialog for approve/delete -->
   <ConfirmDialog
     :open="showConfirmDialog"
-    title="ยืนยันการอนุมัติ"
+    :title="confirmDialogVariant === 'danger' ? 'ยืนยันการลบ' : 'ยืนยันการอนุมัติ'"
     :message="confirmMessage"
-    confirm-text="อนุมัติ"
+    :confirm-text="confirmDialogVariant === 'danger' ? 'ลบ' : 'อนุมัติ'"
     cancel-text="ยกเลิก"
-    variant="warning"
+    :variant="confirmDialogVariant"
     @confirm="handleConfirmDialogConfirm"
     @cancel="handleConfirmDialogCancel"
   />

@@ -43,7 +43,6 @@ const createDailySalesSchema = z.object({
     qrAuditNotes: z.string().optional(),
     bankAuditNotes: z.string().optional(),
     governmentAuditNotes: z.string().optional(),
-    recommendation: z.string().optional(),
   }).optional(),
   status: z.enum(['pending', 'approved']).default('pending'),
 })
@@ -108,7 +107,6 @@ export default defineEventHandler(async (event) => {
         qrAuditNotes: '',
         bankAuditNotes: '',
         governmentAuditNotes: '',
-        recommendation: '',
       },
       total,
       status: validatedData.status,

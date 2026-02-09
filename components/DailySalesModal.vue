@@ -86,7 +86,6 @@ interface FormDataType {
     qrAuditNotes: string
     bankAuditNotes: string
     governmentAuditNotes: string
-    recommendation: string
   }
   status: 'pending' | 'approved'
 }
@@ -116,7 +115,6 @@ const formData = reactive<FormDataType>({
     qrAuditNotes: '',
     bankAuditNotes: '',
     governmentAuditNotes: '',
-    recommendation: '',
   },
   status: 'pending',
 })
@@ -216,7 +214,6 @@ watch(
         qrAuditNotes: '',
         bankAuditNotes: '',
         governmentAuditNotes: '',
-        recommendation: '',
       }
       formData.status = entry.status
     } else {
@@ -247,7 +244,6 @@ const resetForm = () => {
     qrAuditNotes: '',
     bankAuditNotes: '',
     governmentAuditNotes: '',
-    recommendation: '',
   }
   formData.status = 'pending'
   validationErrors.value = {}
@@ -340,7 +336,6 @@ const handleSubmit = async () => {
         qrAuditNotes: formData.auditDetails.qrAuditNotes,
         bankAuditNotes: formData.auditDetails.bankAuditNotes,
         governmentAuditNotes: formData.auditDetails.governmentAuditNotes,
-        recommendation: formData.auditDetails.recommendation,
       },
       status: formData.status,
       submittedBy: currentUserId,
@@ -725,12 +720,6 @@ const handleClose = () => {
             <div :class="['p-4 rounded-lg border-2 font-semibold text-center', difference > 0 ? 'bg-green-50 border-green-300 text-green-700' : difference < 0 ? 'bg-red-50 border-red-300 text-red-700' : 'bg-gray-50 border-gray-300 text-gray-700']">
               <div class="text-sm">รวมผลต่าง</div>
               <div class="text-2xl">{{ formatCurrency(difference) }}</div>
-            </div>
-
-            <!-- Recommendation (full-width) -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">ข้อแนะนำการปรับปรุง</label>
-              <textarea v-model="formData.auditDetails.recommendation" placeholder="เช่น ควรเพิ่มความระมัดระวัง..." :disabled="isFormDisabled" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 resize-none h-20 disabled:bg-gray-100 disabled:cursor-not-allowed" />
             </div>
 
             <!-- Notes (full-width) -->

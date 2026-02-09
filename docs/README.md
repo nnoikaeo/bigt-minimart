@@ -1,8 +1,8 @@
 # 📚 BigT Minimart Documentation Hub
 
-**Version**: 1.0  
-**Last Updated**: Jan 13, 2026  
-**Status**: 📖 Complete Documentation Structure
+**Version**: 1.4
+**Last Updated**: Feb 9, 2026 (Daily Sales UI Refinements)
+**Status**: 📖 Complete Documentation Structure + Daily Work Updates
 
 ---
 
@@ -400,6 +400,7 @@ See [REFERENCE/RESOURCES.md](./REFERENCE/RESOURCES.md) for more links.
 
 | Version | Date | Description |
 |---------|------|-------------|
+| 1.4 | 2026-02-09 | ✅ Daily Sales UI Refinements (ConfirmDialog, 3-color difference, data cleanup) |
 | 1.3 | 2026-02-06 | ✅ Week 4 Problem Types UI + Documentation Complete |
 | 1.2 | 2026-01-30 | ✅ Documentation reorganized + old PROGRESS files archived |
 | 1.1 | 2026-01-07 | ✅ Documentation restructured + old files archived |

@@ -55,7 +55,6 @@ export interface DailySalesEntry {
     qrAuditNotes: string // วิเคราะห์สาเหตุ (QR Code)
     bankAuditNotes: string // วิเคราะห์สาเหตุ (ธนาคาร)
     governmentAuditNotes: string // วิเคราะห์สาเหตุ (โครงการรัฐ)
-    recommendation: string // ข้อแนะนำการปรับปรุง
   }
   
   // Calculated fields
