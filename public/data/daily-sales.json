@@ -538,11 +538,8 @@
       "recommendation": ""
     },
     "total": 6999,
-    "status": "approved",
+    "status": "pending",
     "submittedBy": "dAuL8YQfWDcbiP4NL0z8z2J0wIy2",
-    "submittedAt": "2026-02-09T07:28:12.316Z",
-    "approvedAt": "2026-02-09T13:14:56.981Z",
-    "approvedBy": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2",
-    "updatedAt": "2026-02-09T13:14:56.981Z"
+    "submittedAt": "2026-02-09T07:28:12.316Z"
   }
 ]

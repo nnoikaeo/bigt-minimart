@@ -28,14 +28,6 @@ const accessControlStore = useAccessControlStore()
 const authStore = useAuthStore()
 
 // Check if user is owner
-const isOwner = computed(() => {
-  return authStore.getCurrentUser?.primaryRole === 'owner'
-})
-
-const canApprove = computed(() => {
-  return isOwner.value && props.editingEntry?.status === 'pending'
-})
-
 const isFormDisabled = computed(() => {
   return props.viewOnly || props.editingEntry?.status === 'approved'
 })
@@ -60,56 +52,8 @@ const formatCurrency = (amount: number): string => {
   }).format(amount)
 }
 
-const formatStatus = (status: string): string => {
-  const statusMap: Record<string, string> = {
-    pending: 'รออนุมัติ',
-    approved: 'อนุมัติแล้ว',
-  }
-  return statusMap[status] || status
-}
-
-const formatDate = (dateStr: string): string => {
-  const date = new Date(dateStr)
-  const formatter = new Intl.DateTimeFormat('th-TH', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-  const formatted = formatter.format(date)
-  return formatted.replace(/\d{4}(?=\s|$)/, (year) => String(parseInt(year) - 543))
-}
-
-const formatApprovedDate = (approvedAt: string | Date | undefined): string => {
-  if (!approvedAt) return ''
-  const dateStr = typeof approvedAt === 'string' ? approvedAt : (approvedAt as Date).toISOString()
-  const datePart = dateStr.split('T')[0] || ''
-  return formatDate(datePart)
-}
-
 const calculateTotal = (posData: any): number => {
   return (posData.cash || 0) + (posData.qr || 0) + (posData.bank || 0) + (posData.government || 0)
-}
-
-// Helper to get approver display name
-const getApproverName = (approvedById: string | undefined): string => {
-  if (!approvedById) {
-    logger.warn('[getApproverName] No approvedById provided')
-    return 'Unknown'
-  }
-
-  const user = accessControlStore.getUserById(approvedById)
-  logger.log('[getApproverName] Looking up user:', {
-    approvedById,
-    userFound: !!user,
-    displayName: user?.displayName,
-    allUsers: accessControlStore.getAllUsers.length,
-  })
-
-  if (!user) {
-    logger.warn('[getApproverName] User not found in access control store:', approvedById)
-  }
-
-  return user?.displayName || approvedById
 }
 
 // Get cashiers from access control store
@@ -408,22 +352,6 @@ const handleSubmit = async () => {
     }, 500)
   } catch (error) {
     logger.error('Failed to submit', error)
-  } finally {
-    submitting.value = false
-  }
-}
-
-// Handle approve
-const handleApprove = async () => {
-  if (!props.editingEntry?.id) return
-
-  submitting.value = true
-  try {
-    emit('approve', props.editingEntry.id)
-    successMessage.value = 'อนุมัติรายงานเรียบร้อย'
-    setTimeout(() => {
-      emit('close')
-    }, 500)
   } finally {
     submitting.value = false
   }
@@ -889,26 +817,6 @@ const handleClose = () => {
           </div>
         </div>
 
-        <!-- Status Info (read-only, informational) -->
-        <div v-if="editingEntry && isOwner" class="bg-blue-50 p-4 border-b border-blue-200">
-          <div class="flex items-center justify-between text-sm">
-            <span class="font-medium text-gray-700">สถานะ:</span>
-            <span :class="[
-              'px-3 py-1 rounded-full text-xs font-semibold',
-              formData.status === 'pending'
-                ? 'bg-orange-100 text-orange-800'
-                : 'bg-green-100 text-green-800'
-            ]">
-              {{ formatStatus(formData.status) }}
-            </span>
-          </div>
-          <div v-if="editingEntry.approvedAt" class="mt-2 text-xs text-blue-700">
-            <div>✓ อนุมัติแล้วเมื่อ: {{ formatApprovedDate(editingEntry.approvedAt) }}</div>
-            <div v-if="editingEntry.approvedBy" class="text-gray-600">
-              โดย: {{ getApproverName(editingEntry.approvedBy) }}
-            </div>
-          </div>
-        </div>
 
         <!-- Footer -->
         <div class="sticky bottom-0 bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t">

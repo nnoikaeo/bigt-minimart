@@ -252,7 +252,7 @@ const openCreateModal = () => {
         variant="primary"
         @click="openCreateModal"
       >
-        ➕ เพิ่ม
+        ✚ เพิ่ม
       </ActionButton>
     </template>
 
