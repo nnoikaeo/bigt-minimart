@@ -176,6 +176,17 @@ const handleApprove = async (id: string) => {
   }
 }
 
+// Format date to Thai locale
+const formatDate = (dateStr: string): string => {
+  const date = new Date(dateStr + 'T00:00:00')
+  const formatter = new Intl.DateTimeFormat('th-TH', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+  return formatter.format(date)
+}
+
 // Handle modal close
 const handleModalClose = () => {
   showModal.value = false
@@ -226,6 +237,11 @@ const openCreateModal = () => {
       :pagination="true"
       :page-size="10"
     >
+      <!-- Date cell with Thai locale formatting -->
+      <template #cell-date="{ value }">
+        <span class="font-medium text-gray-900">{{ formatDate(value) }}</span>
+      </template>
+
       <!-- Difference cell with conditional styling -->
       <template #cell-cashReconciliation="{ row }">
         <div
