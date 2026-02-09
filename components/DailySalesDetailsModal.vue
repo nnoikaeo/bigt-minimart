@@ -92,38 +92,42 @@ const handleClose = () => {
       @keydown.esc="handleClose"
     >
       <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
-        <!-- Header (Sticky) -->
-        <div class="sticky top-0 bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4">
+        <!-- Header (Sticky) - Red Theme -->
+        <div class="sticky top-0 bg-gradient-to-r from-red-600 to-red-700 px-6 py-4">
           <!-- Row 1: Title + Close Button -->
-          <div class="flex justify-between items-start mb-3">
+          <div class="flex justify-between items-start mb-4">
             <h2 class="text-xl font-bold text-white">
-              👁 รายละเอียดยอดขาย - {{ formatDate(entry.date) }} - {{ entry.cashierName }}
+              👁 รายละเอียดยอดขาย
             </h2>
             <button
               @click="handleClose"
-              class="text-white hover:bg-purple-800 p-2 rounded transition-colors"
+              class="text-white hover:bg-red-800 p-2 rounded transition-colors"
             >
               ✕
             </button>
           </div>
 
-          <!-- Row 2: Status + Submitted Info (Always Show) -->
-          <div class="flex items-center gap-3 flex-wrap">
+          <!-- Row 2: Date + Cashier + Status -->
+          <div class="flex items-center gap-3 flex-wrap mb-4 pb-4 border-b border-red-500">
+            <span class="text-white text-sm">📅 {{ formatDate(entry.date) }}</span>
+            <span class="text-white text-sm">•</span>
+            <span class="text-white text-sm">💼 {{ entry.cashierName }}</span>
+            <span class="text-white text-sm">•</span>
             <span :class="['px-3 py-1 rounded-full text-xs font-semibold', getStatusBadgeClass]">
               {{ getStatusBadgeText }}
             </span>
-            <span class="text-purple-100 text-sm">
-              📝 ส่งเมื่อ {{ formatApprovedDate(entry.submittedAt) }}
-              โดย {{ entry.submittedBy || entry.cashierName }}
-            </span>
           </div>
 
-          <!-- Row 3: Approval Info (Show Only If Approved) -->
-          <div v-if="entry.approvedAt && entry.approvedBy" class="mt-2">
-            <span class="text-purple-100 text-sm">
-              ✓ อนุมัติเมื่อ {{ formatApprovedDate(entry.approvedAt) }}
-              โดย {{ getApproverName(entry.approvedBy) }}
-            </span>
+          <!-- Row 3: Submitted Info -->
+          <div class="text-white text-sm mb-2">
+            📝 ส่งเมื่อ {{ formatApprovedDate(entry.submittedAt) }}
+            โดย {{ entry.submittedBy || entry.cashierName }}
+          </div>
+
+          <!-- Row 4: Approval Info (Show Only If Approved) -->
+          <div v-if="entry.approvedAt && entry.approvedBy" class="text-white text-sm">
+            ✓ อนุมัติเมื่อ {{ formatApprovedDate(entry.approvedAt) }}
+            โดย {{ getApproverName(entry.approvedBy) }}
           </div>
         </div>
 
@@ -131,23 +135,23 @@ const handleClose = () => {
         <div class="p-6 space-y-6 overflow-y-auto flex-1">
           <!-- Channel Cards Grid (2x2) -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- 💵 Cash Channel -->
-            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <div class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <!-- 💵 Cash Channel - Green -->
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div class="font-semibold text-green-800 mb-3 flex items-center gap-2">
                 <span>💵</span>
                 <span>เงินสด</span>
               </div>
               <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
-                  <span class="text-gray-600">คาดหวัง:</span>
+                  <span class="text-green-700">คาดหวัง:</span>
                   <span class="font-medium">{{ formatCurrency(entry.expectedCash || 0) }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-gray-600">ยอดจริง:</span>
+                  <span class="text-green-700">ยอดจริง:</span>
                   <span class="font-medium">{{ formatCurrency(entry.posData.cash) }}</span>
                 </div>
-                <div class="flex justify-between border-t pt-2">
-                  <span class="text-gray-600">ผลต่าง:</span>
+                <div class="flex justify-between border-t border-green-200 pt-2">
+                  <span class="text-green-700">ผลต่าง:</span>
                   <span
                     :class="[
                       'font-semibold',
@@ -166,29 +170,29 @@ const handleClose = () => {
                     ⚠️ {{ getProblemTypeLabel(entry.auditDetails.cashAuditNotes) }}
                   </span>
                 </div>
-                <div v-else class="mt-3 pt-2 border-t text-xs text-gray-500">
+                <div v-else class="mt-3 pt-2 border-t border-green-200 text-xs text-green-600">
                   ✓ ไม่พบปัญหา
                 </div>
               </div>
             </div>
 
-            <!-- 📱 QR Code Channel -->
-            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <div class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <!-- 📱 QR Code Channel - Purple -->
+            <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+              <div class="font-semibold text-purple-800 mb-3 flex items-center gap-2">
                 <span>📱</span>
                 <span>QR Code</span>
               </div>
               <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
-                  <span class="text-gray-600">คาดหวัง:</span>
+                  <span class="text-purple-700">คาดหวัง:</span>
                   <span class="font-medium">{{ formatCurrency(entry.expectedQR || 0) }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-gray-600">ยอดจริง:</span>
+                  <span class="text-purple-700">ยอดจริง:</span>
                   <span class="font-medium">{{ formatCurrency(entry.posData.qr) }}</span>
                 </div>
-                <div class="flex justify-between border-t pt-2">
-                  <span class="text-gray-600">ผลต่าง:</span>
+                <div class="flex justify-between border-t border-purple-200 pt-2">
+                  <span class="text-purple-700">ผลต่าง:</span>
                   <span
                     :class="[
                       'font-semibold',
@@ -207,29 +211,29 @@ const handleClose = () => {
                     ⚠️ {{ getProblemTypeLabel(entry.auditDetails.qrAuditNotes) }}
                   </span>
                 </div>
-                <div v-else class="mt-3 pt-2 border-t text-xs text-gray-500">
+                <div v-else class="mt-3 pt-2 border-t border-purple-200 text-xs text-purple-600">
                   ✓ ไม่พบปัญหา
                 </div>
               </div>
             </div>
 
-            <!-- 🏦 Bank Channel -->
-            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <div class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <!-- 🏦 Bank Channel - Green -->
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div class="font-semibold text-green-800 mb-3 flex items-center gap-2">
                 <span>🏦</span>
                 <span>ธนาคาร</span>
               </div>
               <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
-                  <span class="text-gray-600">คาดหวัง:</span>
+                  <span class="text-green-700">คาดหวัง:</span>
                   <span class="font-medium">{{ formatCurrency(entry.expectedBank || 0) }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-gray-600">ยอดจริง:</span>
+                  <span class="text-green-700">ยอดจริง:</span>
                   <span class="font-medium">{{ formatCurrency(entry.posData.bank) }}</span>
                 </div>
-                <div class="flex justify-between border-t pt-2">
-                  <span class="text-gray-600">ผลต่าง:</span>
+                <div class="flex justify-between border-t border-green-200 pt-2">
+                  <span class="text-green-700">ผลต่าง:</span>
                   <span
                     :class="[
                       'font-semibold',
@@ -248,29 +252,29 @@ const handleClose = () => {
                     ⚠️ {{ getProblemTypeLabel(entry.auditDetails.bankAuditNotes) }}
                   </span>
                 </div>
-                <div v-else class="mt-3 pt-2 border-t text-xs text-gray-500">
+                <div v-else class="mt-3 pt-2 border-t border-green-200 text-xs text-green-600">
                   ✓ ไม่พบปัญหา
                 </div>
               </div>
             </div>
 
-            <!-- 🏛️ Government Channel -->
-            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <div class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <!-- 🏛️ Government Channel - Yellow -->
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <div class="font-semibold text-amber-800 mb-3 flex items-center gap-2">
                 <span>🏛️</span>
                 <span>โครงการรัฐ</span>
               </div>
               <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
-                  <span class="text-gray-600">คาดหวัง:</span>
+                  <span class="text-amber-700">คาดหวัง:</span>
                   <span class="font-medium">{{ formatCurrency(entry.expectedGovernment || 0) }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-gray-600">ยอดจริง:</span>
+                  <span class="text-amber-700">ยอดจริง:</span>
                   <span class="font-medium">{{ formatCurrency(entry.posData.government) }}</span>
                 </div>
-                <div class="flex justify-between border-t pt-2">
-                  <span class="text-gray-600">ผลต่าง:</span>
+                <div class="flex justify-between border-t border-amber-200 pt-2">
+                  <span class="text-amber-700">ผลต่าง:</span>
                   <span
                     :class="[
                       'font-semibold',
@@ -289,7 +293,7 @@ const handleClose = () => {
                     ⚠️ {{ getProblemTypeLabel(entry.auditDetails.governmentAuditNotes) }}
                   </span>
                 </div>
-                <div v-else class="mt-3 pt-2 border-t text-xs text-gray-500">
+                <div v-else class="mt-3 pt-2 border-t border-amber-200 text-xs text-amber-600">
                   ✓ ไม่พบปัญหา
                 </div>
               </div>
