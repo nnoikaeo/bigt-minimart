@@ -361,7 +361,11 @@ const handleSubmit = async () => {
 
   submitting.value = true
   try {
-    const currentUserId = authStore.getCurrentUser?.uid || 'unknown-user'
+    const currentUserId = authStore.getCurrentUser?.uid
+    if (!currentUserId) {
+      logger.error('No authenticated user, cannot submit')
+      throw new Error('User authentication required to submit daily sales entry')
+    }
     logger.log('Submitting daily sales entry', formData)
     logger.log('Current user ID:', currentUserId)
     emit('submit', {

@@ -63,6 +63,66 @@ export default defineNuxtPlugin(async (nuxtApp) => {
 
     console.log('[Firebase] ✅ Connected successfully')
 
+    // Listen to auth state changes and update Pinia auth store
+    const { useAuthStore } = await import('~/stores/auth')
+    const authStore = useAuthStore()
+
+    auth.onAuthStateChanged(async (firebaseUser) => {
+      console.log('[Firebase] Auth state changed:', firebaseUser?.uid || 'logged out')
+
+      if (firebaseUser) {
+        // User is logged in - get user details from access control
+        try {
+          const { useAccessControlStore } = await import('~/stores/access-control')
+          const accessControlStore = useAccessControlStore()
+
+          // Try to get user from access control store
+          let user = accessControlStore.getUserById(firebaseUser.uid)
+
+          if (!user) {
+            // If not in access control, load the data first
+            console.log('[Firebase] User not in access control, loading data...')
+            await accessControlStore.loadAllData()
+            user = accessControlStore.getUserById(firebaseUser.uid)
+          }
+
+          if (user) {
+            console.log('[Firebase] Setting auth store user:', user.displayName)
+            authStore.setUser({
+              uid: user.uid,
+              email: user.email || null,
+              displayName: user.displayName || null,
+              primaryRole: user.primaryRole as any,
+              roles: user.roles,
+              isActive: user.isActive,
+            })
+          } else {
+            console.warn('[Firebase] User not found in access control:', firebaseUser.uid)
+            // Still set basic user info from Firebase
+            authStore.setUser({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email || null,
+              displayName: firebaseUser.displayName || null,
+              primaryRole: 'unknown',
+            })
+          }
+        } catch (error) {
+          console.error('[Firebase] Error setting user in auth store:', error)
+          // Fallback: set basic Firebase user info
+          authStore.setUser({
+            uid: firebaseUser.uid,
+            email: firebaseUser.email || null,
+            displayName: firebaseUser.displayName || null,
+            primaryRole: 'unknown',
+          })
+        }
+      } else {
+        // User logged out
+        console.log('[Firebase] User logged out')
+        authStore.clearUser()
+      }
+    })
+
     nuxtApp.provide('firebase', app)
     nuxtApp.provide('auth', auth)
     nuxtApp.provide('db', db)
