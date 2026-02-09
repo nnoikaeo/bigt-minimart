@@ -113,7 +113,7 @@ const handleClose = () => {
               {{ getStatusBadgeText }}
             </span>
             <span class="text-purple-100 text-sm">
-              📝 ส่งเมื่อ {{ formatDate(entry.submittedAt as any) }}
+              📝 ส่งเมื่อ {{ formatApprovedDate(entry.submittedAt) }}
               โดย {{ entry.submittedBy || entry.cashierName }}
             </span>
           </div>
