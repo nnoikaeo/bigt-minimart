@@ -16,6 +16,12 @@ export default defineEventHandler(async (event) => {
 
     // Get today's date
     const today = new Date().toISOString().split('T')[0]
+    if (!today) {
+      throw createError({
+        statusCode: 500,
+        message: 'Failed to get current date',
+      })
+    }
     console.log('[GET /api/money-transfer/balances/current] Fetching balance for', today)
 
     // Get or initialize balance

@@ -456,8 +456,15 @@ export class MoneyTransferJsonRepository implements IMoneyTransferRepository {
 
     return this.updateDailySummary(date, {
       step2: {
-        ...step2Data,
         status: 'completed',
+        completedAt: step2Data?.completedAt,
+        completedBy: step2Data?.completedBy,
+        completedByName: step2Data?.completedByName,
+        expectedCash: step2Data?.expectedCash ?? { transferWithdrawal: 0, serviceFee: 0, total: 0 },
+        actualCash: step2Data?.actualCash ?? { transferWithdrawal: 0, serviceFee: 0, total: 0 },
+        differences: step2Data?.differences ?? { transferWithdrawal: 0, serviceFee: 0, total: 0 },
+        verificationNotes: step2Data?.verificationNotes,
+        hasDiscrepancies: step2Data?.hasDiscrepancies ?? false,
       },
       workflowStatus: 'step2_completed',
     })
@@ -477,8 +484,17 @@ export class MoneyTransferJsonRepository implements IMoneyTransferRepository {
 
     return this.updateDailySummary(date, {
       auditorVerification: {
-        ...auditData,
         status: 'completed',
+        completedAt: auditData?.completedAt,
+        completedBy: auditData?.completedBy,
+        completedByName: auditData?.completedByName,
+        transactionsVerified: auditData?.transactionsVerified ?? 0,
+        transactionsWithIssues: auditData?.transactionsWithIssues ?? 0,
+        bankStatementVerified: auditData?.bankStatementVerified ?? false,
+        bankBalanceMatches: auditData?.bankBalanceMatches ?? false,
+        auditNotes: auditData?.auditNotes ?? '',
+        issuesFound: auditData?.issuesFound,
+        auditResult: auditData?.auditResult ?? 'no_issues',
       },
       workflowStatus: 'audited',
     })
@@ -496,21 +512,24 @@ export class MoneyTransferJsonRepository implements IMoneyTransferRepository {
       throw new Error(`Summary for ${date} not found`)
     }
 
-    // Determine workflow status based on approval decision
-    let workflowStatus: MoneyTransferDailySummary['workflowStatus'] = 'approved'
-    if (approvalData?.decision === 'request_correction') {
-      workflowStatus = 'needs_correction'
-    }
+    // Determine workflow status and approval status based on decision
+    const decision = approvalData?.decision ?? 'approve'
+    const workflowStatus: MoneyTransferDailySummary['workflowStatus'] = decision === 'request_correction' ? 'needs_correction' : 'approved'
+    const approvalStatus: 'approved' | 'approved_with_notes' | 'correction_requested' =
+      decision === 'approve'
+        ? 'approved'
+        : decision === 'approve_with_notes'
+          ? 'approved_with_notes'
+          : 'correction_requested'
 
     return this.updateDailySummary(date, {
       ownerApproval: {
-        ...approvalData,
-        status:
-          approvalData?.decision === 'approve'
-            ? 'approved'
-            : approvalData?.decision === 'approve_with_notes'
-              ? 'approved_with_notes'
-              : 'correction_requested',
+        status: approvalStatus,
+        completedAt: approvalData?.completedAt,
+        completedBy: approvalData?.completedBy,
+        completedByName: approvalData?.completedByName,
+        decision,
+        ownerNotes: approvalData?.ownerNotes,
       },
       workflowStatus,
     })

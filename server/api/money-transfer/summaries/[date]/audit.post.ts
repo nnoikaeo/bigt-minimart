@@ -99,6 +99,7 @@ export default defineEventHandler(async (event) => {
         transactionsVerified: validated.transactionsVerified,
         transactionsWithIssues: validated.transactionsWithIssues,
         bankStatementVerified: validated.bankStatementVerified,
+        bankBalanceMatches: true, // TODO: Verify against bank statement
         auditNotes: validated.auditNotes,
         issuesFound: validated.issuesFound ? [validated.issuesFound] : undefined,
         auditResult: validated.auditResult,

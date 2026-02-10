@@ -79,7 +79,7 @@
                     no_issues: '✅ No Issues',
                     minor_issues: '⚠️ Minor Issues',
                     major_issues: '🔴 Major Issues',
-                  }[store.currentSummary?.auditorVerification?.auditResult || '']
+                  }[(store.currentSummary?.auditorVerification?.auditResult as 'no_issues' | 'minor_issues' | 'major_issues') || ''] || '-'
                 }}
               </span>
             </div>

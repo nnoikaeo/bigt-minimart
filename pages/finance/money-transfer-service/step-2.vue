@@ -341,6 +341,9 @@ const isSubmitting = ref(false)
  * Expected cash amounts (calculated from completed transactions)
  */
 const expectedCash = computed(() => {
+  if (!selectedDate.value) {
+    return { transferWithdrawal: 0, serviceFee: 0, total: 0 }
+  }
   const transactions = store.getTransactionsByDate(selectedDate.value)
   const completed = transactions.filter((t: any) => t.status === 'completed')
 
@@ -390,6 +393,7 @@ const differences = computed(() => ({
  * Get completed transactions for reference
  */
 const completedTransactions = computed(() => {
+  if (!selectedDate.value) return []
   const transactions = store.getTransactionsByDate(selectedDate.value)
   return transactions.filter((t: any) => t.status === 'completed')
 })
@@ -517,6 +521,7 @@ onMounted(async () => {
                store.currentSummary.step2.actualCash.serviceFee,
       }
       verificationNotes.value = store.currentSummary.step2.verificationNotes || ''
+    }
   }
 })
 </script>
