@@ -215,14 +215,14 @@ export class MoneyTransferJsonRepository implements IMoneyTransferRepository {
       throw new Error(`Transaction with ID ${id} not found`)
     }
 
-    const existing = this.transactions[index]
-    const updated: MoneyTransferTransaction = {
+    const existing = this.transactions[index]!
+    const updated = {
       ...existing,
       ...updates,
       id: existing.id, // Always use original ID
       createdAt: existing.createdAt, // Never update
       updatedAt: new Date().toISOString(),
-    }
+    } as MoneyTransferTransaction
 
     // Validate
     this.validateTransaction(updated)
@@ -326,14 +326,14 @@ export class MoneyTransferJsonRepository implements IMoneyTransferRepository {
       throw new Error(`Summary for ${date} not found`)
     }
 
-    const existing = this.summaries[index]
-    const updated: MoneyTransferDailySummary = {
+    const existing = this.summaries[index]!
+    const updated = {
       ...existing,
       ...updates,
       id: existing.id,
       date: existing.date,
       updatedAt: new Date().toISOString(),
-    }
+    } as MoneyTransferDailySummary
 
     this.summaries[index] = updated
     await this.save()
@@ -390,14 +390,14 @@ export class MoneyTransferJsonRepository implements IMoneyTransferRepository {
       throw new Error(`Balance for ${date} not found`)
     }
 
-    const existing = this.balances[index]
-    const updated: MoneyTransferBalance = {
+    const existing = this.balances[index]!
+    const updated = {
       ...existing,
       ...updates,
       id: existing.id,
       date: existing.date,
       updatedAt: new Date().toISOString(),
-    }
+    } as MoneyTransferBalance
 
     this.balances[index] = updated
     await this.save()
