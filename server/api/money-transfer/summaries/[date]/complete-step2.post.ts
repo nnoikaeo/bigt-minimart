@@ -99,6 +99,12 @@ export default defineEventHandler(async (event) => {
     console.log('[POST /api/money-transfer/summaries/[date]/complete-step2] Actual cash:', validated.actualCash)
     console.log('[POST /api/money-transfer/summaries/[date]/complete-step2] Differences:', differences)
 
+    // Add total to actualCash for consistency
+    const actualCashWithTotal = {
+      ...validated.actualCash,
+      total: validated.actualCash.transferWithdrawal + validated.actualCash.serviceFee,
+    }
+
     // Update summary with Step 2 data
     const updatedSummary = await moneyTransferJsonRepository.updateDailySummary(date, {
       step2: {
@@ -107,7 +113,7 @@ export default defineEventHandler(async (event) => {
         completedBy: 'manager', // TODO: Get from auth context
         completedByName: 'Manager', // TODO: Get from auth context
         expectedCash,
-        actualCash: validated.actualCash,
+        actualCash: actualCashWithTotal,
         differences,
         verificationNotes: validated.verificationNotes,
         hasDiscrepancies: differences.total !== 0,

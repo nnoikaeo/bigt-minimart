@@ -237,7 +237,7 @@
                   no_issues: '✅ No Issues',
                   minor_issues: '⚠️ Minor Issues',
                   major_issues: '🔴 Major Issues',
-                }[store.currentSummary?.auditorVerification?.auditResult || '']
+                }[(store.currentSummary?.auditorVerification?.auditResult as 'no_issues' | 'minor_issues' | 'major_issues') || ''] || '-'
               }}
             </span>
           </div>
@@ -349,6 +349,7 @@ const isFormValid = computed(() => {
  * Get completed transactions
  */
 const completedTransactions = computed(() => {
+  if (!selectedDate.value) return []
   const transactions = store.getTransactionsByDate(selectedDate.value)
   return transactions.filter((t: any) => t.status === 'completed')
 })
@@ -400,6 +401,7 @@ function formatDateTime(dt?: string | Date): string {
  * Handle date change
  */
 async function handleDateChange() {
+  if (!selectedDate.value) return
   await store.fetchTransactionsByDate(selectedDate.value)
   await store.fetchDailySummary(selectedDate.value)
 
@@ -409,7 +411,7 @@ async function handleDateChange() {
     auditData.value.transactionsVerified = audit.transactionsVerified
     auditData.value.transactionsWithIssues = audit.transactionsWithIssues
     auditData.value.bankStatementVerified = audit.bankStatementVerified
-    auditData.value.bankBalanceMatches = audit.bankBalanceMatches
+    auditData.value.bankBalanceMatches = audit.bankBalanceMatches ?? false
     auditData.value.auditNotes = audit.auditNotes
     auditData.value.auditResult = audit.auditResult
     auditData.value.issuesFound = audit.issuesFound || []
@@ -420,13 +422,13 @@ async function handleDateChange() {
  * Handle submit audit
  */
 async function handleSubmitAudit() {
-  if (!isFormValid.value) return
+  if (!isFormValid.value || !selectedDate.value) return
 
   isSubmitting.value = true
 
   try {
     // Parse issues from textarea
-    const issuesFound = auditData.value.issuesFoundText
+    const issuesFound: string[] = auditData.value.issuesFoundText
       .split('\n')
       .map((line: string) => line.trim())
       .filter((line: string) => line.length > 0)
@@ -439,10 +441,10 @@ async function handleSubmitAudit() {
       transactionsVerified: auditData.value.transactionsVerified,
       transactionsWithIssues: auditData.value.transactionsWithIssues,
       bankStatementVerified: auditData.value.bankStatementVerified,
-      bankBalanceMatches: auditData.value.bankBalanceMatches,
+      bankBalanceMatches: auditData.value.bankBalanceMatches ?? false,
       auditNotes: auditData.value.auditNotes,
       issuesFound,
-      auditResult: auditData.value.auditResult,
+      auditResult: auditData.value.auditResult as 'no_issues' | 'minor_issues' | 'major_issues',
     })
 
     alert('Audit submitted! Ready for owner approval.')
@@ -472,8 +474,10 @@ function goToOwnerApproval() {
  */
 onMounted(async () => {
   await store.initializeStore()
-  await store.fetchTransactionsByDate(selectedDate.value)
-  await store.fetchDailySummary(selectedDate.value)
+  if (selectedDate.value) {
+    await store.fetchTransactionsByDate(selectedDate.value)
+    await store.fetchDailySummary(selectedDate.value)
+  }
 })
 </script>
 

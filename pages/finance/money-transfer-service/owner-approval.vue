@@ -210,8 +210,8 @@
                 {
                   approve: 'Approved',
                   approve_with_notes: 'Approved with Notes',
-                  correction_requested: 'Correction Requested',
-                }[store.currentSummary?.ownerApproval?.decision || '']
+                  request_correction: 'Correction Requested',
+                }[(store.currentSummary?.ownerApproval?.decision as 'approve' | 'approve_with_notes' | 'request_correction') || ''] || '-'
               }}
             </span>
           </div>
@@ -234,12 +234,12 @@
           <p>This day's money transfer operations have been completed and approved.</p>
         </div>
 
-        <div v-if="store.currentSummary?.ownerApproval?.decision === 'approval_with_notes'" class="alert alert-info">
+        <div v-if="store.currentSummary?.ownerApproval?.decision === 'approve_with_notes'" class="alert alert-info">
           <strong>📝 Approved with Notes</strong>
           <p>Operations approved with owner comments. Please review the notes above.</p>
         </div>
 
-        <div v-if="store.currentSummary?.ownerApproval?.decision === 'correction_requested'" class="alert alert-warning">
+        <div v-if="store.currentSummary?.ownerApproval?.decision === 'request_correction'" class="alert alert-warning">
           <strong>🔄 Correction Requested</strong>
           <p>Please return to the team and make the necessary corrections.</p>
         </div>
@@ -389,12 +389,13 @@ function formatDateTime(dt?: string | Date): string {
  * Handle date change
  */
 async function handleDateChange() {
+  if (!selectedDate.value) return
   await store.fetchTransactionsByDate(selectedDate.value)
   await store.fetchDailySummary(selectedDate.value)
 
   // Load existing approval if available
   if (store.currentSummary?.ownerApproval) {
-    decision.value = store.currentSummary.ownerApproval.decision
+    decision.value = store.currentSummary.ownerApproval.decision || ''
     ownerNotes.value = store.currentSummary.ownerApproval.ownerNotes || ''
   } else {
     decision.value = ''
@@ -407,7 +408,7 @@ async function handleDateChange() {
  * Handle submit approval
  */
 async function handleSubmitApproval() {
-  if (!confirmed.value || !decision.value) return
+  if (!confirmed.value || !decision.value || !selectedDate.value) return
   if (decision.value !== 'approve' && !ownerNotes.value.trim()) return
 
   isSubmitting.value = true
@@ -418,7 +419,7 @@ async function handleSubmitApproval() {
       completedAt: new Date().toISOString(),
       completedBy: 'owner-id',
       completedByName: 'Owner',
-      decision: decision.value,
+      decision: decision.value as 'approve' | 'approve_with_notes' | 'request_correction',
       ownerNotes: ownerNotes.value,
     })
 
@@ -442,8 +443,10 @@ function goBackToAudit() {
  */
 onMounted(async () => {
   await store.initializeStore()
-  await store.fetchTransactionsByDate(selectedDate.value)
-  await store.fetchDailySummary(selectedDate.value)
+  if (selectedDate.value) {
+    await store.fetchTransactionsByDate(selectedDate.value)
+    await store.fetchDailySummary(selectedDate.value)
+  }
 })
 </script>
 

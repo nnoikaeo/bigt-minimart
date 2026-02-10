@@ -91,10 +91,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Determine workflow status based on decision
-    let workflowStatus = 'approved'
-    if (validated.decision === 'request_correction') {
-      workflowStatus = 'needs_correction'
-    }
+    const workflowStatus = (validated.decision === 'request_correction' ? 'needs_correction' : 'approved') as const
 
     console.log(
       `[POST /api/money-transfer/summaries/[date]/approve] Owner decision: ${validated.decision}`

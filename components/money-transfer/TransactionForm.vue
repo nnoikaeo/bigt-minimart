@@ -238,7 +238,7 @@ const promptpayData = ref({
 })
 
 const bankData = ref({
-  accountType: '' as 'savings' | 'current' | 'other' | '',
+  accountType: undefined as 'savings' | 'current' | 'other' | undefined,
   accountNumber: '',
   accountName: '',
 })

@@ -224,7 +224,7 @@
         <div v-else class="completed-box">
           <h4>✅ Step 2 Completed</h4>
 
-          <div class="verification-summary">
+          <div v-if="store.currentSummary?.step2" class="verification-summary">
             <div class="summary-row">
               <span class="label">Expected Transfer/Withdrawal:</span>
               <span class="value">{{ formatCurrency(store.currentSummary.step2.expectedCash.transferWithdrawal) }}</span>
@@ -445,6 +445,7 @@ function formatTime(datetime: string | Date): string {
  * Handle date change
  */
 async function handleDateChange() {
+  if (!selectedDate.value) return
   await store.fetchTransactionsByDate(selectedDate.value)
   await store.fetchDailySummary(selectedDate.value)
 
@@ -464,6 +465,7 @@ async function handleDateChange() {
  * Handle complete Step 2
  */
 async function handleCompleteStep2() {
+  if (!selectedDate.value) return
   isSubmitting.value = true
 
   try {
@@ -502,18 +504,19 @@ function goToAuditReview() {
  */
 onMounted(async () => {
   await store.initializeStore()
-  await store.fetchTransactionsByDate(selectedDate.value)
-  await store.fetchDailySummary(selectedDate.value)
+  if (selectedDate.value) {
+    await store.fetchTransactionsByDate(selectedDate.value)
+    await store.fetchDailySummary(selectedDate.value)
 
-  // Load existing data if available
-  if (store.currentSummary?.step2) {
-    actualCash.value = {
-      transferWithdrawal: store.currentSummary.step2.actualCash.transferWithdrawal,
-      serviceFee: store.currentSummary.step2.actualCash.serviceFee,
-      total: store.currentSummary.step2.actualCash.transferWithdrawal +
-             store.currentSummary.step2.actualCash.serviceFee,
-    }
-    verificationNotes.value = store.currentSummary.step2.verificationNotes || ''
+    // Load existing data if available
+    if (store.currentSummary?.step2) {
+      actualCash.value = {
+        transferWithdrawal: store.currentSummary.step2.actualCash.transferWithdrawal,
+        serviceFee: store.currentSummary.step2.actualCash.serviceFee,
+        total: store.currentSummary.step2.actualCash.transferWithdrawal +
+               store.currentSummary.step2.actualCash.serviceFee,
+      }
+      verificationNotes.value = store.currentSummary.step2.verificationNotes || ''
   }
 })
 </script>

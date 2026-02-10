@@ -100,7 +100,7 @@ export default defineEventHandler(async (event) => {
         transactionsWithIssues: validated.transactionsWithIssues,
         bankStatementVerified: validated.bankStatementVerified,
         auditNotes: validated.auditNotes,
-        issuesFound: validated.issuesFound,
+        issuesFound: validated.issuesFound ? [validated.issuesFound] : undefined,
         auditResult: validated.auditResult,
       },
       workflowStatus: 'audited',
