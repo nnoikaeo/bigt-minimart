@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
       message: `Page ${pageKey} access control updated successfully`,
     }
   } catch (error: any) {
-    console.error('PUT /api/sidebar/pages error:', error)
+    console.error('[API] PUT /api/sidebar/pages error:', error)
     setResponseStatus(event, 500)
     return {
       success: false,

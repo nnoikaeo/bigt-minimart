@@ -225,131 +225,147 @@
         </div>
 
         <!-- Menu Content with Status Bar -->
-        <div v-else class="space-y-6">
+        <div v-else class="space-y-2">
           <!-- Status Bar -->
           <div
-            v-if="dirtyPages.length > 0"
-            class="bg-yellow-50 border border-yellow-300 rounded-lg p-4 flex items-center justify-between"
+            :class="[
+              'rounded-lg p-4 flex items-center justify-between transition',
+              dirtyPages.length > 0
+                ? 'bg-yellow-50 border border-yellow-300'
+                : 'bg-gray-50 border border-gray-200'
+            ]"
           >
-            <div class="text-sm text-yellow-800">
-              <span class="font-medium">⚠️ มี {{ dirtyPages.length }} pages ที่เปลี่ยนแปลง</span>
-              <span v-if="selectedDirtyPages.length > 0" class="ml-2">(เลือก {{ selectedDirtyPages.length }})</span>
+            <div class="text-sm" :class="dirtyPages.length > 0 ? 'text-yellow-800' : 'text-gray-600'">
+              <span class="font-medium">
+                <span v-if="dirtyPages.length > 0">⚠️ มี {{ dirtyPages.length }} pages ที่เปลี่ยนแปลง</span>
+                <span v-else>✅ ไม่มีการเปลี่ยนแปลง</span>
+              </span>
+              <span v-if="dirtyPages.length > 0 && selectedDirtyPages.length > 0" class="ml-2">(เลือก {{ selectedDirtyPages.length }})</span>
             </div>
             <div class="flex gap-2">
               <button
                 @click="saveBatchPages"
-                :disabled="selectedDirtyPages.length === 0 || isSavingBatch"
-                class="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white rounded-lg transition font-medium text-sm"
+                :disabled="dirtyPages.length === 0 || selectedDirtyPages.length === 0 || isSavingBatch"
+                class="px-4 py-2 rounded-lg transition font-medium text-sm"
+                :class="dirtyPages.length === 0 ? 'border border-gray-300 text-gray-600 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 text-white'"
               >
                 <span v-if="isSavingBatch" class="inline-block animate-spin">🔄</span>
                 <span v-else>💾 บันทึกที่เลือก ({{ selectedDirtyPages.length }})</span>
               </button>
               <button
-                @click="resetChanges"
-                :disabled="isSavingBatch"
-                class="px-4 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg transition font-medium text-sm"
+                @click="openResetConfirm"
+                :disabled="dirtyPages.length === 0 || isSavingBatch"
+                class="px-4 py-2 rounded-lg transition font-medium text-sm"
+                :class="dirtyPages.length === 0 ? 'border border-gray-300 text-gray-600 cursor-not-allowed' : 'border border-gray-300 hover:bg-gray-50 text-gray-700'"
               >
                 🔄 รีเซ็ต
               </button>
             </div>
           </div>
-          <div v-for="group in sidebarStore.sidebarMenu" :key="group.groupKey" class="bg-white rounded-lg shadow p-6">
-            <!-- Group Header with Save Button -->
-            <div class="mb-4 pb-4 border-b border-gray-200 flex items-center justify-between">
-              <div>
-                <h3 class="text-lg font-bold text-gray-900">
-                  {{ group.icon }} {{ group.groupName }}
-                </h3>
-                <p class="text-sm text-gray-500 mt-1">{{ group.pages.length }} pages</p>
-              </div>
-              <button
-                @click="saveBatchPages"
-                :disabled="selectedDirtyPages.length === 0 || isSavingBatch"
-                class="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white rounded-lg transition font-medium text-sm whitespace-nowrap"
-              >
-                <span v-if="isSavingBatch" class="inline-block animate-spin">🔄</span>
-                <span v-else>💾 บันทึก ({{ selectedDirtyPages.length }})</span>
-              </button>
+          <div v-for="group in sidebarStore.sidebarMenu.filter(g => g.groupKey !== 'dashboard')" :key="group.groupKey" class="bg-white rounded-lg shadow">
+            <!-- Group Header with Collapse Toggle -->
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition" @click="toggleGroupExpanded(group.groupKey)">
+              <span class="text-xl transition-transform flex-shrink-0" :style="{ transform: isGroupExpanded(group.groupKey) ? 'rotate(0deg)' : 'rotate(-90deg)' }">
+                ▼
+              </span>
+              <h3 class="text-base font-bold text-gray-900">
+                {{ group.icon }} {{ group.groupName }} <span class="text-sm text-gray-500 font-normal">({{ group.pages.length }} หน้า)</span>
+              </h3>
             </div>
 
-            <!-- Pages in Group -->
-            <div class="space-y-4">
-              <div
-                v-for="page in group.pages"
-                :key="page.pageKey"
-                class="p-4 bg-gray-50 rounded-lg border-2 transition"
-                :class="[
-                  dirtyPages.includes(page.pageKey)
-                    ? 'border-yellow-300 bg-yellow-50'
-                    : 'border-gray-200',
-                ]"
-              >
-                <!-- Page Header with Checkbox -->
-                <div class="flex items-start justify-between mb-3">
-                  <div class="flex items-start gap-3 flex-1">
-                    <input
-                      type="checkbox"
-                      :checked="isPageSelected(page.pageKey)"
-                      @change="togglePageSelection(page.pageKey)"
-                      class="mt-1 rounded border-gray-300 text-green-600 focus:ring-green-500"
-                    />
-                    <div>
-                      <h4 class="font-semibold text-gray-900 flex items-center gap-2">
-                        <span v-if="page.icon">{{ page.icon }}</span>
-                        {{ page.pageName }}
-                        <span
-                          v-if="dirtyPages.includes(page.pageKey)"
-                          class="inline-block w-2 h-2 bg-yellow-500 rounded-full"
-                          title="มีการเปลี่ยนแปลง"
-                        />
-                      </h4>
-                      <p class="text-xs text-gray-500 mt-1">
-                        <span class="block">Page Key: {{ page.pageKey }}</span>
-                        <span class="block">Route: {{ page.route }}</span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Required Roles Multiselect -->
-                <div class="mt-4 pt-4 border-t border-gray-200">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">
-                    บทบาทที่สามารถเข้าถึง:
-                  </label>
-                  <div class="space-y-2">
-                    <label v-for="role in store.getAllRoles" :key="role.id" class="flex items-center">
+            <!-- Pages in Group (Expandable Table) -->
+            <div v-if="isGroupExpanded(group.groupKey)" class="border-t border-gray-200 overflow-x-auto">
+                <table class="w-full">
+                  <thead class="bg-gray-100">
+                    <tr class="text-xs font-semibold text-gray-700">
+                      <th class="px-3 py-3 text-center w-14">เลือก</th>
+                      <th class="px-4 py-3 text-left min-w-56">ชื่อเพจ</th>
+                      <th class="px-3 py-3 text-center w-20" title="เจ้าของ">เจ้าของ</th>
+                      <th class="px-3 py-3 text-center w-20" title="ผู้จัดการ">ผู้จัดการ</th>
+                      <th class="px-3 py-3 text-center w-20" title="ผู้ช่วยผู้จัดการ">ผู้ช่วย</th>
+                      <th class="px-3 py-3 text-center w-20" title="ผู้ตรวจสอบ">ออดิท</th>
+                      <th class="px-3 py-3 text-center w-20" title="แคชเชียร์">แคชเชียร์</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200">
+                    <tr
+                      v-for="page in group.pages.filter(p => p.pageKey !== 'dashboard')"
+                      :key="page.pageKey"
+                      class="hover:bg-gray-50 transition"
+                      :class="[
+                        dirtyPages.includes(page.pageKey)
+                          ? 'bg-yellow-50'
+                          : 'bg-white',
+                      ]"
+                    >
+                    <!-- Checkbox Column -->
+                    <td class="px-4 py-3 text-center">
                       <input
                         type="checkbox"
-                        :checked="page.requiredRoles === null || page.requiredRoles.includes(role.id)"
-                        @change="(e) => togglePageRole(page, role.id, e.target.checked)"
-                        :disabled="isUpdatingPage === page.pageKey"
-                        class="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                        :checked="dirtyPages.includes(page.pageKey)"
+                        @change="(e) => {
+                          if ((e.target as any).checked) {
+                            selectedPages.add(page.pageKey)
+                          } else {
+                            selectedPages.delete(page.pageKey)
+                          }
+                        }"
+                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                       />
-                      <span class="ml-2 text-sm text-gray-700">{{ role.name }}</span>
-                    </label>
-                    <label class="flex items-center">
+                    </td>
+
+                    <!-- Page Name Column -->
+                    <td class="px-4 py-3">
+                      <div class="flex items-center gap-2">
+                        <span v-if="page.icon" class="text-lg">{{ page.icon }}</span>
+                        <span class="font-medium text-gray-900">{{ page.pageName }}</span>
+                      </div>
+                    </td>
+
+                    <!-- Role Checkboxes (Owner, Manager, Assistant Manager, Auditor, Cashier) -->
+                    <td class="px-4 py-3 text-center">
                       <input
                         type="checkbox"
-                        :checked="page.requiredRoles === null"
-                        @change="(e) => toggleAllRoles(page, e.target.checked)"
-                        :disabled="isUpdatingPage === page.pageKey"
-                        class="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                        :checked="isRoleIncluded(page.pageKey, 'owner')"
+                        @change="(e) => togglePageRole(page, 'owner', (e.target as any).checked)"
+                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                       />
-                      <span class="ml-2 text-sm text-gray-700 font-medium">🌐 ทุกคน</span>
-                    </label>
-                  </div>
-                </div>
-
-                <!-- Save Button -->
-                <button
-                  @click="savePageAccess(page)"
-                  :disabled="isUpdatingPage === page.pageKey"
-                  class="mt-4 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white rounded-lg transition font-medium text-sm"
-                >
-                  <span v-if="isUpdatingPage === page.pageKey" class="inline-block animate-spin">🔄</span>
-                  <span v-else>💾 บันทึก</span>
-                </button>
-              </div>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                      <input
+                        type="checkbox"
+                        :checked="isRoleIncluded(page.pageKey, 'manager')"
+                        @change="(e) => togglePageRole(page, 'manager', (e.target as any).checked)"
+                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                      />
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                      <input
+                        type="checkbox"
+                        :checked="isRoleIncluded(page.pageKey, 'assistant_manager')"
+                        @change="(e) => togglePageRole(page, 'assistant_manager', (e.target as any).checked)"
+                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                      />
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                      <input
+                        type="checkbox"
+                        :checked="isRoleIncluded(page.pageKey, 'auditor')"
+                        @change="(e) => togglePageRole(page, 'auditor', (e.target as any).checked)"
+                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                      />
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                      <input
+                        type="checkbox"
+                        :checked="isRoleIncluded(page.pageKey, 'cashier')"
+                        @change="(e) => togglePageRole(page, 'cashier', (e.target as any).checked)"
+                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -521,6 +537,35 @@
         </div>
       </div>
     </div>
+
+    <!-- Confirm Reset Modal -->
+    <div
+      v-if="showResetConfirm"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+      style="z-index: 51"
+      @click.self="closeResetConfirm"
+    >
+      <div class="bg-white rounded-lg shadow-lg max-w-sm w-full p-6">
+        <h2 class="text-lg font-bold mb-4 text-gray-900">ยืนยันการรีเซ็ต</h2>
+        <p class="text-gray-600 mb-6">
+          คุณแน่ใจหรือว่าต้องการรีเซ็ตการเปลี่ยนแปลงทั้งหมด? การเปลี่ยนแปลงที่ยังไม่ได้บันทึกจะหายไป
+        </p>
+        <div class="flex gap-3">
+          <button
+            @click="closeResetConfirm"
+            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+          >
+            ไม่
+          </button>
+          <button
+            @click="confirmReset"
+            class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition"
+          >
+            ใช่
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -528,7 +573,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useAccessControlStore } from '~/stores/access-control'
 import { useSidebarStore } from '~/stores/sidebar'
-import type { User, Role } from '~/types/access-control'
+import type { User, Role, UserRole } from '~/types/access-control'
 import type { SidebarPage } from '~/utils/sidebar-menu'
 
 // Stores
@@ -559,12 +604,15 @@ const permissionsForm = ref<Record<string, boolean>>({})
 const showDeleteConfirm = ref(false)
 const userToDelete = ref<User | null>(null)
 
+// Reset Confirmation
+const showResetConfirm = ref(false)
+
 // Sidebar Menu Management
-const isUpdatingPage = ref<string | null>(null)
 const editingPages = ref<Record<string, SidebarPage>>({})
 const originalPages = ref<Record<string, SidebarPage>>({})
 const selectedPages = ref<Set<string>>(new Set())
 const isSavingBatch = ref(false)
+const expandedGroups = ref<Set<string>>(new Set())
 
 /**
  * Track dirty pages (มีการเปลี่ยนแปลง)
@@ -578,13 +626,10 @@ const dirtyPages = computed(() => {
     const editedRoles = editedPage.requiredRoles
     const originalRoles = original.requiredRoles
 
-    // เปรียบเทียบ roles
-    const rolesChanged =
-      (editedRoles === null && originalRoles !== null) ||
-      (editedRoles !== null && originalRoles === null) ||
-      (editedRoles !== null &&
-        originalRoles !== null &&
-        JSON.stringify([...(editedRoles || [])].sort()) !== JSON.stringify([...(originalRoles || [])].sort()))
+    // เปรียบเทียบ roles - สำหรับ deep equality
+    const editedSorted = JSON.stringify(editedRoles?.sort() || [])
+    const originalSorted = JSON.stringify(originalRoles?.sort() || [])
+    const rolesChanged = editedSorted !== originalSorted
 
     if (rolesChanged) {
       dirty.push(pageKey)
@@ -831,6 +876,32 @@ const deleteUser = async () => {
   }
 }
 
+/**
+ * Open reset confirmation dialog
+ */
+const openResetConfirm = () => {
+  showResetConfirm.value = true
+}
+
+/**
+ * Close reset confirmation dialog
+ */
+const closeResetConfirm = () => {
+  showResetConfirm.value = false
+}
+
+/**
+ * Confirm and execute reset
+ */
+const confirmReset = () => {
+  for (const [pageKey, originalPage] of Object.entries(originalPages.value)) {
+    editingPages.value[pageKey] = JSON.parse(JSON.stringify(originalPage))
+  }
+
+  selectedPages.value.clear()
+  closeResetConfirm()
+}
+
 // =========================================================================
 // Lifecycle
 // =========================================================================
@@ -844,79 +915,53 @@ const togglePageRole = (page: SidebarPage, roleId: string, isChecked: boolean) =
 
   if (!current) return
 
-  if (current.requiredRoles === null) {
+  // Ensure requiredRoles is an array
+  if (!current.requiredRoles || current.requiredRoles === null) {
     // All roles selected, start fresh with deselected roles
-    const allRoles = store.getAllRoles.map((r) => r.id)
-    current.requiredRoles = allRoles.filter((r) => r !== roleId)
+    const allRoles = store.getAllRoles.map((r) => r.id) as any
+    current.requiredRoles = allRoles.filter((r: string) => r !== roleId)
   } else {
     // Toggle the role
     if (isChecked) {
-      if (!current.requiredRoles.includes(roleId)) {
-        current.requiredRoles.push(roleId)
+      if (!(current.requiredRoles as any).includes(roleId)) {
+        (current.requiredRoles as any).push(roleId)
       }
     } else {
-      current.requiredRoles = current.requiredRoles.filter((r) => r !== roleId)
+      current.requiredRoles = (current.requiredRoles as any).filter((r: string) => r !== roleId)
     }
   }
-}
 
-/**
- * Toggle all roles for a page
- */
-const toggleAllRoles = (page: SidebarPage, selectAll: boolean) => {
-  const pageKey = page.pageKey
-  const current = editingPages.value[pageKey]
-
-  if (!current) return
-
-  if (selectAll) {
-    current.requiredRoles = null
-  } else {
-    current.requiredRoles = []
-  }
-}
-
-/**
- * Toggle page selection for batch save
- */
-const togglePageSelection = (pageKey: string) => {
-  if (selectedPages.value.has(pageKey)) {
-    selectedPages.value.delete(pageKey)
-  } else {
+  // Auto-select the page when its roles are modified
+  if (!selectedPages.value.has(pageKey)) {
     selectedPages.value.add(pageKey)
   }
 }
 
 /**
- * Check if page is selected
+ * Check if a role is included for a page
  */
-const isPageSelected = (pageKey: string): boolean => {
-  return selectedPages.value.has(pageKey)
+const isRoleIncluded = (pageKey: string, roleId: UserRole): boolean => {
+  const page = editingPages.value[pageKey]
+  if (!page) return false
+  return !page.requiredRoles || page.requiredRoles.includes(roleId)
 }
 
 /**
- * Save page access changes via API (individual)
+ * Toggle group expansion
  */
-const savePageAccess = async (page: SidebarPage) => {
-  isUpdatingPage.value = page.pageKey
-  try {
-    const editedPage = editingPages.value[page.pageKey]
-    if (!editedPage) return
-
-    const result = await sidebarStore.updatePageAccess(page.pageKey, editedPage.requiredRoles)
-
-    if (result.success) {
-      // Update original pages
-      originalPages.value[page.pageKey] = JSON.parse(JSON.stringify(editedPage))
-      alert(`✅ บันทึก "${page.pageName}" เสร็จแล้ว`)
-    } else {
-      alert(`❌ ข้อผิดพลาด: ${result.error}`)
-    }
-  } catch (error: any) {
-    alert(`❌ เกิดข้อผิดพลาด: ${error.message}`)
-  } finally {
-    isUpdatingPage.value = null
+const toggleGroupExpanded = (groupKey: string) => {
+  if (expandedGroups.value.has(groupKey)) {
+    expandedGroups.value.delete(groupKey)
+  } else {
+    expandedGroups.value.add(groupKey)
   }
+}
+
+/**
+ * Check if group is expanded
+ */
+const isGroupExpanded = (groupKey: string): boolean => {
+  return expandedGroups.value.has(groupKey)
 }
 
 /**
@@ -940,7 +985,7 @@ const saveBatchPages = async () => {
         const editedPage = editingPages.value[pageKey]
         if (!editedPage) return
 
-        const result = await sidebarStore.updatePageAccess(pageKey, editedPage.requiredRoles)
+        const result = await sidebarStore.updatePageAccess(pageKey, editedPage.requiredRoles ?? null)
 
         if (result.success) {
           originalPages.value[pageKey] = JSON.parse(JSON.stringify(editedPage))
@@ -977,17 +1022,6 @@ const saveBatchPages = async () => {
   } finally {
     isSavingBatch.value = false
   }
-}
-
-/**
- * Reset all changes
- */
-const resetChanges = () => {
-  for (const [pageKey, originalPage] of Object.entries(originalPages.value)) {
-    editingPages.value[pageKey] = JSON.parse(JSON.stringify(originalPage))
-  }
-  selectedPages.value.clear()
-  alert('✅ รีเซ็ตทั้งหมด')
 }
 
 onMounted(async () => {

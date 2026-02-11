@@ -24,6 +24,9 @@ import type {
 } from '~/types/access-control'
 import type { IAccessControlRepository } from './access-control.repository'
 
+// Global file lock to prevent concurrent writes to sidebar-menu.json
+let sidebarMenuWriteLock: Promise<void> = Promise.resolve()
+
 export class AccessControlJsonRepository implements IAccessControlRepository {
   private basePath = join(process.cwd(), 'public/data')
 
@@ -207,31 +210,45 @@ export class AccessControlJsonRepository implements IAccessControlRepository {
     pageKey: string,
     requiredRoles: string[] | null,
   ): Promise<void> {
-    try {
-      const content = await fs.readFile(this.sidebarMenuPath, 'utf-8')
-      const data = JSON.parse(content)
-      const menu = data.menu || []
+    // Queue this write operation to prevent concurrent file writes
+    const writeOperation = async () => {
+      try {
+        const content = await fs.readFile(this.sidebarMenuPath, 'utf-8')
+        const data = JSON.parse(content)
+        const menu = data.menu || []
 
-      // Find and update the page
-      let found = false
-      for (const group of menu) {
-        const page = group.pages.find((p: any) => p.pageKey === pageKey)
-        if (page) {
-          page.requiredRoles = requiredRoles
-          found = true
-          break
+        // Find and update the page
+        let found = false
+
+        for (const group of menu) {
+          const page = group.pages.find((p: any) => p.pageKey === pageKey)
+          if (page) {
+            page.requiredRoles = requiredRoles
+            found = true
+            break
+          }
         }
-      }
 
-      if (!found) {
-        throw new Error(`Page ${pageKey} not found in sidebar menu`)
-      }
+        if (!found) {
+          throw new Error(`Page ${pageKey} not found in sidebar menu`)
+        }
 
-      // Write updated data back to file
-      await fs.writeFile(this.sidebarMenuPath, JSON.stringify(data, null, 2), 'utf-8')
-    } catch (error) {
-      console.error(`Failed to update page ${pageKey}:`, error)
-      throw new Error(`Failed to update sidebar menu: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        // Write updated data back to file
+        const updatedContent = JSON.stringify(data, null, 2)
+        await fs.writeFile(this.sidebarMenuPath, updatedContent, 'utf-8')
+      } catch (error) {
+        console.error(`Failed to update page ${pageKey}:`, error)
+        throw new Error(`Failed to update sidebar menu: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      }
     }
+
+    // Chain this operation to the lock to ensure sequential writes
+    sidebarMenuWriteLock = sidebarMenuWriteLock.then(
+      () => writeOperation(),
+      () => writeOperation()
+    )
+
+    // Wait for this operation to complete
+    await sidebarMenuWriteLock
   }
 }
