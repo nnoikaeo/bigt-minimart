@@ -274,30 +274,38 @@
             </div>
 
             <!-- Pages in Group (Expandable Table) -->
-            <div v-if="isGroupExpanded(group.groupKey)" class="border-t border-gray-200 overflow-x-auto">
-              <table class="w-full">
-                <thead class="bg-gray-100">
-                  <tr class="text-xs font-semibold text-gray-700">
-                    <th class="px-3 py-3 text-center w-14">เลือก</th>
-                    <th class="px-4 py-3 text-left min-w-56">ชื่อเพจ</th>
-                    <th class="px-3 py-3 text-center w-20" title="เจ้าของ">เจ้าของ</th>
-                    <th class="px-3 py-3 text-center w-20" title="ผู้จัดการ">ผู้จัดการ</th>
-                    <th class="px-3 py-3 text-center w-20" title="ผู้ช่วยผู้จัดการ">ผู้ช่วย</th>
-                    <th class="px-3 py-3 text-center w-20" title="ผู้ตรวจสอบ">ออดิท</th>
-                    <th class="px-3 py-3 text-center w-20" title="แคชเชียร์">แคชเชียร์</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                  <tr
-                    v-for="page in group.pages"
-                    :key="page.pageKey"
-                    class="hover:bg-gray-50 transition"
-                    :class="[
-                      dirtyPages.includes(page.pageKey)
-                        ? 'bg-yellow-50'
-                        : 'bg-white',
-                    ]"
-                  >
+            <div v-if="isGroupExpanded(group.groupKey)" class="border-t border-gray-200">
+              <!-- Note about protected pages -->
+              <div v-if="group.groupKey === 'dashboard'" class="px-6 py-3 bg-blue-50 border-b border-blue-200">
+                <p class="text-sm text-blue-700">
+                  🔒 หน้าหลักมีสิทธิ์การเข้าถึงสำหรับทุก role และไม่สามารถแก้ไขได้
+                </p>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full">
+                  <thead class="bg-gray-100">
+                    <tr class="text-xs font-semibold text-gray-700">
+                      <th class="px-3 py-3 text-center w-14">เลือก</th>
+                      <th class="px-4 py-3 text-left min-w-56">ชื่อเพจ</th>
+                      <th class="px-3 py-3 text-center w-20" title="เจ้าของ">เจ้าของ</th>
+                      <th class="px-3 py-3 text-center w-20" title="ผู้จัดการ">ผู้จัดการ</th>
+                      <th class="px-3 py-3 text-center w-20" title="ผู้ช่วยผู้จัดการ">ผู้ช่วย</th>
+                      <th class="px-3 py-3 text-center w-20" title="ผู้ตรวจสอบ">ออดิท</th>
+                      <th class="px-3 py-3 text-center w-20" title="แคชเชียร์">แคชเชียร์</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200">
+                    <tr
+                      v-for="page in group.pages.filter(p => p.pageKey !== 'dashboard')"
+                      :key="page.pageKey"
+                      class="hover:bg-gray-50 transition"
+                      :class="[
+                        dirtyPages.includes(page.pageKey)
+                          ? 'bg-yellow-50'
+                          : 'bg-white',
+                      ]"
+                    >
                     <!-- Checkbox Column -->
                     <td class="px-4 py-3 text-center">
                       <input
@@ -365,7 +373,8 @@
                     </td>
                   </tr>
                 </tbody>
-              </table>
+                </table>
+              </div>
             </div>
           </div>
         </div>
