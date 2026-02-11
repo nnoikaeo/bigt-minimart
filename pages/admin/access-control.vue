@@ -270,13 +270,13 @@
               <table class="w-full">
                 <thead class="bg-gray-100">
                   <tr class="text-xs font-semibold text-gray-700">
-                    <th class="px-4 py-3 text-center w-10">เลือก</th>
-                    <th class="px-4 py-3 text-left min-w-48">ชื่อเพจ</th>
-                    <th class="px-4 py-3 text-center w-12" title="เจ้าของ">เจ้า</th>
-                    <th class="px-4 py-3 text-center w-12" title="ผู้จัดการ">ผ.จ.ร</th>
-                    <th class="px-4 py-3 text-center w-12" title="ผู้ช่วยผู้จัดการ">ผ.ช่วย</th>
-                    <th class="px-4 py-3 text-center w-12" title="ผู้ตรวจสอบ">ออดิท</th>
-                    <th class="px-4 py-3 text-center w-12" title="แคชเชียร์">แคช</th>
+                    <th class="px-3 py-3 text-center w-14">เลือก</th>
+                    <th class="px-4 py-3 text-left min-w-56">ชื่อเพจ</th>
+                    <th class="px-3 py-3 text-center w-20" title="เจ้าของ">เจ้าของ</th>
+                    <th class="px-3 py-3 text-center w-20" title="ผู้จัดการ">ผู้จัดการ</th>
+                    <th class="px-3 py-3 text-center w-20" title="ผู้ช่วยผู้จัดการ">ผ.ช่วย</th>
+                    <th class="px-3 py-3 text-center w-20" title="ผู้ตรวจสอบ">ผู้ตรวจสอบ</th>
+                    <th class="px-3 py-3 text-center w-20" title="แคชเชียร์">แคชเชียร์</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
