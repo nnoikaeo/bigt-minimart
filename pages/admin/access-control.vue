@@ -269,84 +269,98 @@
               </div>
             </div>
 
-            <!-- Pages in Group (Expandable) -->
-            <div v-if="isGroupExpanded(group.groupKey)" class="p-6 space-y-4 border-t border-gray-200">
-              <div
-                v-for="page in group.pages"
-                :key="page.pageKey"
-                class="p-4 bg-gray-50 rounded-lg border-2 transition"
-                :class="[
-                  dirtyPages.includes(page.pageKey)
-                    ? 'border-yellow-300 bg-yellow-50'
-                    : 'border-gray-200',
-                ]"
-              >
-                <!-- Page Header with Checkbox -->
-                <div class="flex items-start justify-between mb-3">
-                  <div class="flex items-start gap-3 flex-1">
-                    <input
-                      type="checkbox"
-                      :checked="isPageSelected(page.pageKey)"
-                      @change="togglePageSelection(page.pageKey)"
-                      class="mt-1 rounded border-gray-300 text-green-600 focus:ring-green-500"
-                    />
-                    <div>
-                      <h4 class="font-semibold text-gray-900 flex items-center gap-2">
-                        <span v-if="page.icon">{{ page.icon }}</span>
-                        {{ page.pageName }}
+            <!-- Pages in Group (Expandable Table) -->
+            <div v-if="isGroupExpanded(group.groupKey)" class="border-t border-gray-200 overflow-x-auto">
+              <table class="w-full">
+                <thead class="bg-gray-100">
+                  <tr class="text-xs font-semibold text-gray-700 uppercase">
+                    <th class="px-4 py-3 text-left w-8">Sel</th>
+                    <th class="px-4 py-3 text-left min-w-48">Page Name</th>
+                    <th class="px-4 py-3 text-center w-12" title="Owner">Owner</th>
+                    <th class="px-4 py-3 text-center w-12" title="Manager">Mgr</th>
+                    <th class="px-4 py-3 text-center w-12" title="Assistant Manager">Asst</th>
+                    <th class="px-4 py-3 text-center w-12" title="Auditor">Aud</th>
+                    <th class="px-4 py-3 text-center w-12" title="Cashier">Cash</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                  <tr
+                    v-for="page in group.pages"
+                    :key="page.pageKey"
+                    class="hover:bg-gray-50 transition"
+                    :class="[
+                      dirtyPages.includes(page.pageKey)
+                        ? 'bg-yellow-50'
+                        : 'bg-white',
+                    ]"
+                  >
+                    <!-- Checkbox Column -->
+                    <td class="px-4 py-3 text-center">
+                      <input
+                        type="checkbox"
+                        :checked="isPageSelected(page.pageKey)"
+                        @change="togglePageSelection(page.pageKey)"
+                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                      />
+                    </td>
+
+                    <!-- Page Name Column -->
+                    <td class="px-4 py-3">
+                      <div class="flex items-center gap-2">
+                        <span v-if="page.icon" class="text-lg">{{ page.icon }}</span>
+                        <span class="font-medium text-gray-900">{{ page.pageName }}</span>
                         <span
                           v-if="dirtyPages.includes(page.pageKey)"
                           class="inline-block w-2 h-2 bg-yellow-500 rounded-full"
                           title="มีการเปลี่ยนแปลง"
                         />
-                      </h4>
-                      <p class="text-xs text-gray-500 mt-1">
-                        <span class="block">Page Key: {{ page.pageKey }}</span>
-                        <span class="block">Route: {{ page.route }}</span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                      </div>
+                    </td>
 
-                <!-- Required Roles Multiselect -->
-                <div class="mt-4 pt-4 border-t border-gray-200">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">
-                    บทบาทที่สามารถเข้าถึง:
-                  </label>
-                  <div class="space-y-2">
-                    <label v-for="role in store.getAllRoles" :key="role.id" class="flex items-center">
+                    <!-- Role Checkboxes (Owner, Manager, Assistant Manager, Auditor, Cashier) -->
+                    <td class="px-4 py-3 text-center">
                       <input
                         type="checkbox"
-                        :checked="page.requiredRoles === null || page.requiredRoles.includes(role.id)"
-                        @change="(e) => togglePageRole(page, role.id, e.target.checked)"
-                        :disabled="isUpdatingPage === page.pageKey"
-                        class="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                        :checked="page.requiredRoles === null || page.requiredRoles.includes('owner')"
+                        @change="(e) => togglePageRole(page, 'owner', (e.target as any).checked)"
+                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                       />
-                      <span class="ml-2 text-sm text-gray-700">{{ role.name }}</span>
-                    </label>
-                    <label class="flex items-center">
+                    </td>
+                    <td class="px-4 py-3 text-center">
                       <input
                         type="checkbox"
-                        :checked="page.requiredRoles === null"
-                        @change="(e) => toggleAllRoles(page, e.target.checked)"
-                        :disabled="isUpdatingPage === page.pageKey"
-                        class="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                        :checked="page.requiredRoles === null || page.requiredRoles.includes('manager')"
+                        @change="(e) => togglePageRole(page, 'manager', (e.target as any).checked)"
+                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                       />
-                      <span class="ml-2 text-sm text-gray-700 font-medium">🌐 ทุกคน</span>
-                    </label>
-                  </div>
-                </div>
-
-                <!-- Save Button -->
-                <button
-                  @click="savePageAccess(page)"
-                  :disabled="isUpdatingPage === page.pageKey"
-                  class="mt-4 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white rounded-lg transition font-medium text-sm"
-                >
-                  <span v-if="isUpdatingPage === page.pageKey" class="inline-block animate-spin">🔄</span>
-                  <span v-else>💾 บันทึก</span>
-                </button>
-              </div>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                      <input
+                        type="checkbox"
+                        :checked="page.requiredRoles === null || page.requiredRoles.includes('assistant_manager')"
+                        @change="(e) => togglePageRole(page, 'assistant_manager', (e.target as any).checked)"
+                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                      />
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                      <input
+                        type="checkbox"
+                        :checked="page.requiredRoles === null || page.requiredRoles.includes('auditor')"
+                        @change="(e) => togglePageRole(page, 'auditor', (e.target as any).checked)"
+                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                      />
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                      <input
+                        type="checkbox"
+                        :checked="page.requiredRoles === null || page.requiredRoles.includes('cashier')"
+                        @change="(e) => togglePageRole(page, 'cashier', (e.target as any).checked)"
+                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
