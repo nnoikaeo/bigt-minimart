@@ -868,11 +868,11 @@ const togglePageRole = (page: SidebarPage, roleId: string, isChecked: boolean) =
   } else {
     // Toggle the role
     if (isChecked) {
-      if (!current.requiredRoles.includes(roleId)) {
-        current.requiredRoles.push(roleId)
+      if (!(current.requiredRoles as any).includes(roleId)) {
+        (current.requiredRoles as any).push(roleId)
       }
     } else {
-      current.requiredRoles = current.requiredRoles.filter((r: string) => r !== roleId)
+      current.requiredRoles = (current.requiredRoles as any).filter((r: string) => r !== roleId)
     }
   }
 }
