@@ -242,19 +242,21 @@
               </span>
               <span v-if="dirtyPages.length > 0 && selectedDirtyPages.length > 0" class="ml-2">(เลือก {{ selectedDirtyPages.length }})</span>
             </div>
-            <div class="flex gap-2" v-if="dirtyPages.length > 0">
+            <div class="flex gap-2">
               <button
                 @click="saveBatchPages"
-                :disabled="selectedDirtyPages.length === 0 || isSavingBatch"
-                class="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white rounded-lg transition font-medium text-sm"
+                :disabled="dirtyPages.length === 0 || selectedDirtyPages.length === 0 || isSavingBatch"
+                class="px-4 py-2 rounded-lg transition font-medium text-sm"
+                :class="dirtyPages.length === 0 ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 text-white'"
               >
                 <span v-if="isSavingBatch" class="inline-block animate-spin">🔄</span>
                 <span v-else>💾 บันทึกที่เลือก ({{ selectedDirtyPages.length }})</span>
               </button>
               <button
                 @click="resetChanges"
-                :disabled="isSavingBatch"
-                class="px-4 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg transition font-medium text-sm"
+                :disabled="dirtyPages.length === 0 || isSavingBatch"
+                class="px-4 py-2 rounded-lg transition font-medium text-sm"
+                :class="dirtyPages.length === 0 ? 'border border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50' : 'border border-gray-300 hover:bg-gray-50 text-gray-700'"
               >
                 🔄 รีเซ็ต
               </button>
