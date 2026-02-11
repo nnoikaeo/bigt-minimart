@@ -900,7 +900,6 @@ const confirmReset = () => {
 
   selectedPages.value.clear()
   closeResetConfirm()
-  alert('✅ รีเซ็ตทั้งหมด')
 }
 
 // =========================================================================
