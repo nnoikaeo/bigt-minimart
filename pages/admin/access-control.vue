@@ -247,7 +247,7 @@
                 @click="saveBatchPages"
                 :disabled="dirtyPages.length === 0 || selectedDirtyPages.length === 0 || isSavingBatch"
                 class="px-4 py-2 rounded-lg transition font-medium text-sm"
-                :class="dirtyPages.length === 0 ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 text-white'"
+                :class="dirtyPages.length === 0 ? 'border border-gray-300 text-gray-600 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 text-white'"
               >
                 <span v-if="isSavingBatch" class="inline-block animate-spin">🔄</span>
                 <span v-else>💾 บันทึกที่เลือก ({{ selectedDirtyPages.length }})</span>
@@ -256,7 +256,7 @@
                 @click="resetChanges"
                 :disabled="dirtyPages.length === 0 || isSavingBatch"
                 class="px-4 py-2 rounded-lg transition font-medium text-sm"
-                :class="dirtyPages.length === 0 ? 'border border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50' : 'border border-gray-300 hover:bg-gray-50 text-gray-700'"
+                :class="dirtyPages.length === 0 ? 'border border-gray-300 text-gray-600 cursor-not-allowed' : 'border border-gray-300 hover:bg-gray-50 text-gray-700'"
               >
                 🔄 รีเซ็ต
               </button>
@@ -325,7 +325,7 @@
                     <td class="px-4 py-3 text-center">
                       <input
                         type="checkbox"
-                        :checked="page.requiredRoles === null || page.requiredRoles.includes('owner')"
+                        :checked="!page.requiredRoles || page.requiredRoles.includes('owner')"
                         @change="(e) => togglePageRole(page, 'owner', (e.target as any).checked)"
                         class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                       />
@@ -333,7 +333,7 @@
                     <td class="px-4 py-3 text-center">
                       <input
                         type="checkbox"
-                        :checked="page.requiredRoles === null || page.requiredRoles.includes('manager')"
+                        :checked="!page.requiredRoles || page.requiredRoles.includes('manager')"
                         @change="(e) => togglePageRole(page, 'manager', (e.target as any).checked)"
                         class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                       />
@@ -341,7 +341,7 @@
                     <td class="px-4 py-3 text-center">
                       <input
                         type="checkbox"
-                        :checked="page.requiredRoles === null || page.requiredRoles.includes('assistant_manager')"
+                        :checked="!page.requiredRoles || page.requiredRoles.includes('assistant_manager')"
                         @change="(e) => togglePageRole(page, 'assistant_manager', (e.target as any).checked)"
                         class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                       />
@@ -349,7 +349,7 @@
                     <td class="px-4 py-3 text-center">
                       <input
                         type="checkbox"
-                        :checked="page.requiredRoles === null || page.requiredRoles.includes('auditor')"
+                        :checked="!page.requiredRoles || page.requiredRoles.includes('auditor')"
                         @change="(e) => togglePageRole(page, 'auditor', (e.target as any).checked)"
                         class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                       />
@@ -357,7 +357,7 @@
                     <td class="px-4 py-3 text-center">
                       <input
                         type="checkbox"
-                        :checked="page.requiredRoles === null || page.requiredRoles.includes('cashier')"
+                        :checked="!page.requiredRoles || page.requiredRoles.includes('cashier')"
                         @change="(e) => togglePageRole(page, 'cashier', (e.target as any).checked)"
                         class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                       />
@@ -860,10 +860,11 @@ const togglePageRole = (page: SidebarPage, roleId: string, isChecked: boolean) =
 
   if (!current) return
 
-  if (current.requiredRoles === null) {
+  // Ensure requiredRoles is an array
+  if (!current.requiredRoles || current.requiredRoles === null) {
     // All roles selected, start fresh with deselected roles
-    const allRoles = store.getAllRoles.map((r) => r.id)
-    current.requiredRoles = allRoles.filter((r) => r !== roleId)
+    const allRoles = store.getAllRoles.map((r) => r.id) as any
+    current.requiredRoles = allRoles.filter((r: string) => r !== roleId)
   } else {
     // Toggle the role
     if (isChecked) {
@@ -871,7 +872,7 @@ const togglePageRole = (page: SidebarPage, roleId: string, isChecked: boolean) =
         current.requiredRoles.push(roleId)
       }
     } else {
-      current.requiredRoles = current.requiredRoles.filter((r) => r !== roleId)
+      current.requiredRoles = current.requiredRoles.filter((r: string) => r !== roleId)
     }
   }
 }
@@ -937,7 +938,7 @@ const savePageAccess = async (page: SidebarPage) => {
     const editedPage = editingPages.value[page.pageKey]
     if (!editedPage) return
 
-    const result = await sidebarStore.updatePageAccess(page.pageKey, editedPage.requiredRoles)
+    const result = await sidebarStore.updatePageAccess(page.pageKey, editedPage.requiredRoles ?? null)
 
     if (result.success) {
       // Update original pages
@@ -974,7 +975,7 @@ const saveBatchPages = async () => {
         const editedPage = editingPages.value[pageKey]
         if (!editedPage) return
 
-        const result = await sidebarStore.updatePageAccess(pageKey, editedPage.requiredRoles)
+        const result = await sidebarStore.updatePageAccess(pageKey, editedPage.requiredRoles ?? null)
 
         if (result.success) {
           originalPages.value[pageKey] = JSON.parse(JSON.stringify(editedPage))
