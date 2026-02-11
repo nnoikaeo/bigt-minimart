@@ -225,7 +225,7 @@
         </div>
 
         <!-- Menu Content with Status Bar -->
-        <div v-else class="space-y-6">
+        <div v-else class="space-y-4">
           <!-- Status Bar -->
           <div
             v-if="dirtyPages.length > 0"
