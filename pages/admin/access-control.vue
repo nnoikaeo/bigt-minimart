@@ -262,7 +262,7 @@
               </button>
             </div>
           </div>
-          <div v-for="group in sidebarStore.sidebarMenu" :key="group.groupKey" class="bg-white rounded-lg shadow">
+          <div v-for="group in sidebarStore.sidebarMenu.filter(g => g.groupKey !== 'dashboard')" :key="group.groupKey" class="bg-white rounded-lg shadow">
             <!-- Group Header with Collapse Toggle -->
             <div class="px-6 py-4 border-b border-gray-200 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition" @click="toggleGroupExpanded(group.groupKey)">
               <span class="text-xl transition-transform flex-shrink-0" :style="{ transform: isGroupExpanded(group.groupKey) ? 'rotate(0deg)' : 'rotate(-90deg)' }">
@@ -274,15 +274,7 @@
             </div>
 
             <!-- Pages in Group (Expandable Table) -->
-            <div v-if="isGroupExpanded(group.groupKey)" class="border-t border-gray-200">
-              <!-- Note about protected pages -->
-              <div v-if="group.groupKey === 'dashboard'" class="px-6 py-3 bg-blue-50 border-b border-blue-200">
-                <p class="text-sm text-blue-700">
-                  🔒 หน้าหลักมีสิทธิ์การเข้าถึงสำหรับทุก role และไม่สามารถแก้ไขได้
-                </p>
-              </div>
-
-              <div class="overflow-x-auto">
+            <div v-if="isGroupExpanded(group.groupKey)" class="border-t border-gray-200 overflow-x-auto">
                 <table class="w-full">
                   <thead class="bg-gray-100">
                     <tr class="text-xs font-semibold text-gray-700">
@@ -373,8 +365,7 @@
                     </td>
                   </tr>
                 </tbody>
-                </table>
-              </div>
+              </table>
             </div>
           </div>
         </div>
