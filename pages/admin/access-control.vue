@@ -541,7 +541,8 @@
     <!-- Confirm Reset Modal -->
     <div
       v-if="showResetConfirm"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+      style="z-index: 51"
       @click.self="closeResetConfirm"
     >
       <div class="bg-white rounded-lg shadow-lg max-w-sm w-full p-6">
