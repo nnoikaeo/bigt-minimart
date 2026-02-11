@@ -326,7 +326,7 @@
                     <td class="px-4 py-3 text-center">
                       <input
                         type="checkbox"
-                        :checked="!page.requiredRoles || page.requiredRoles.includes('owner')"
+                        :checked="isRoleIncluded(page.pageKey, 'owner')"
                         @change="(e) => togglePageRole(page, 'owner', (e.target as any).checked)"
                         class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                       />
@@ -334,7 +334,7 @@
                     <td class="px-4 py-3 text-center">
                       <input
                         type="checkbox"
-                        :checked="!page.requiredRoles || page.requiredRoles.includes('manager')"
+                        :checked="isRoleIncluded(page.pageKey, 'manager')"
                         @change="(e) => togglePageRole(page, 'manager', (e.target as any).checked)"
                         class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                       />
@@ -342,7 +342,7 @@
                     <td class="px-4 py-3 text-center">
                       <input
                         type="checkbox"
-                        :checked="!page.requiredRoles || page.requiredRoles.includes('assistant_manager')"
+                        :checked="isRoleIncluded(page.pageKey, 'assistant_manager')"
                         @change="(e) => togglePageRole(page, 'assistant_manager', (e.target as any).checked)"
                         class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                       />
@@ -350,7 +350,7 @@
                     <td class="px-4 py-3 text-center">
                       <input
                         type="checkbox"
-                        :checked="!page.requiredRoles || page.requiredRoles.includes('auditor')"
+                        :checked="isRoleIncluded(page.pageKey, 'auditor')"
                         @change="(e) => togglePageRole(page, 'auditor', (e.target as any).checked)"
                         class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                       />
@@ -358,7 +358,7 @@
                     <td class="px-4 py-3 text-center">
                       <input
                         type="checkbox"
-                        :checked="!page.requiredRoles || page.requiredRoles.includes('cashier')"
+                        :checked="isRoleIncluded(page.pageKey, 'cashier')"
                         @change="(e) => togglePageRole(page, 'cashier', (e.target as any).checked)"
                         class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                       />
@@ -544,7 +544,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useAccessControlStore } from '~/stores/access-control'
 import { useSidebarStore } from '~/stores/sidebar'
-import type { User, Role } from '~/types/access-control'
+import type { User, Role, UserRole } from '~/types/access-control'
 import type { SidebarPage } from '~/utils/sidebar-menu'
 
 // Stores
@@ -879,6 +879,14 @@ const togglePageRole = (page: SidebarPage, roleId: string, isChecked: boolean) =
   }
 }
 
+/**
+ * Check if a role is included for a page
+ */
+const isRoleIncluded = (pageKey: string, roleId: UserRole): boolean => {
+  const page = editingPages.value[pageKey]
+  if (!page) return false
+  return !page.requiredRoles || page.requiredRoles.includes(roleId)
+}
 
 /**
  * Toggle group expansion
