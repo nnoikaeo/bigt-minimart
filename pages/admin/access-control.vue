@@ -253,27 +253,24 @@
               </button>
             </div>
           </div>
-          <div v-for="group in sidebarStore.sidebarMenu" :key="group.groupKey" class="bg-white rounded-lg shadow p-6">
-            <!-- Group Header with Save Button -->
-            <div class="mb-4 pb-4 border-b border-gray-200 flex items-center justify-between">
-              <div>
-                <h3 class="text-lg font-bold text-gray-900">
-                  {{ group.icon }} {{ group.groupName }}
-                </h3>
-                <p class="text-sm text-gray-500 mt-1">{{ group.pages.length }} pages</p>
+          <div v-for="group in sidebarStore.sidebarMenu" :key="group.groupKey" class="bg-white rounded-lg shadow">
+            <!-- Group Header with Collapse Toggle -->
+            <div class="p-6 border-b border-gray-200 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition" @click="toggleGroupExpanded(group.groupKey)">
+              <div class="flex items-center gap-3 flex-1">
+                <span class="text-xl transition-transform" :style="{ transform: isGroupExpanded(group.groupKey) ? 'rotate(0deg)' : 'rotate(-90deg)' }">
+                  ▼
+                </span>
+                <div>
+                  <h3 class="text-lg font-bold text-gray-900">
+                    {{ group.icon }} {{ group.groupName }}
+                  </h3>
+                  <p class="text-sm text-gray-500 mt-1">{{ group.pages.length }} หน้า</p>
+                </div>
               </div>
-              <button
-                @click="saveBatchPages"
-                :disabled="selectedDirtyPages.length === 0 || isSavingBatch"
-                class="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white rounded-lg transition font-medium text-sm whitespace-nowrap"
-              >
-                <span v-if="isSavingBatch" class="inline-block animate-spin">🔄</span>
-                <span v-else>💾 บันทึก ({{ selectedDirtyPages.length }})</span>
-              </button>
             </div>
 
-            <!-- Pages in Group -->
-            <div class="space-y-4">
+            <!-- Pages in Group (Expandable) -->
+            <div v-if="isGroupExpanded(group.groupKey)" class="p-6 space-y-4 border-t border-gray-200">
               <div
                 v-for="page in group.pages"
                 :key="page.pageKey"
@@ -565,6 +562,7 @@ const editingPages = ref<Record<string, SidebarPage>>({})
 const originalPages = ref<Record<string, SidebarPage>>({})
 const selectedPages = ref<Set<string>>(new Set())
 const isSavingBatch = ref(false)
+const expandedGroups = ref<Set<string>>(new Set())
 
 /**
  * Track dirty pages (มีการเปลี่ยนแปลง)
@@ -609,6 +607,9 @@ const initializeEditingPages = async () => {
   }
   // Copy menu data to editing state
   for (const group of sidebarStore.sidebarMenu) {
+    // Expand all groups by default
+    expandedGroups.value.add(group.groupKey)
+
     for (const page of group.pages) {
       editingPages.value[page.pageKey] = JSON.parse(JSON.stringify(page))
       originalPages.value[page.pageKey] = JSON.parse(JSON.stringify(page))
@@ -892,6 +893,24 @@ const togglePageSelection = (pageKey: string) => {
  */
 const isPageSelected = (pageKey: string): boolean => {
   return selectedPages.value.has(pageKey)
+}
+
+/**
+ * Toggle group expansion
+ */
+const toggleGroupExpanded = (groupKey: string) => {
+  if (expandedGroups.value.has(groupKey)) {
+    expandedGroups.value.delete(groupKey)
+  } else {
+    expandedGroups.value.add(groupKey)
+  }
+}
+
+/**
+ * Check if group is expanded
+ */
+const isGroupExpanded = (groupKey: string): boolean => {
+  return expandedGroups.value.has(groupKey)
 }
 
 /**
