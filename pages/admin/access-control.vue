@@ -255,32 +255,28 @@
           </div>
           <div v-for="group in sidebarStore.sidebarMenu" :key="group.groupKey" class="bg-white rounded-lg shadow">
             <!-- Group Header with Collapse Toggle -->
-            <div class="p-6 border-b border-gray-200 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition" @click="toggleGroupExpanded(group.groupKey)">
-              <div class="flex items-center gap-3 flex-1">
-                <span class="text-xl transition-transform" :style="{ transform: isGroupExpanded(group.groupKey) ? 'rotate(0deg)' : 'rotate(-90deg)' }">
-                  ▼
-                </span>
-                <div>
-                  <h3 class="text-lg font-bold text-gray-900">
-                    {{ group.icon }} {{ group.groupName }}
-                  </h3>
-                  <p class="text-sm text-gray-500 mt-1">{{ group.pages.length }} หน้า</p>
-                </div>
-              </div>
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition" @click="toggleGroupExpanded(group.groupKey)">
+              <span class="text-xl transition-transform flex-shrink-0" :style="{ transform: isGroupExpanded(group.groupKey) ? 'rotate(0deg)' : 'rotate(-90deg)' }">
+                ▼
+              </span>
+              <h3 class="text-lg font-bold text-gray-900 flex-grow">
+                {{ group.icon }} {{ group.groupName }}
+              </h3>
+              <span class="text-sm text-gray-500 whitespace-nowrap">({{ group.pages.length }} หน้า)</span>
             </div>
 
             <!-- Pages in Group (Expandable Table) -->
             <div v-if="isGroupExpanded(group.groupKey)" class="border-t border-gray-200 overflow-x-auto">
               <table class="w-full">
                 <thead class="bg-gray-100">
-                  <tr class="text-xs font-semibold text-gray-700 uppercase">
-                    <th class="px-4 py-3 text-left w-8">Sel</th>
-                    <th class="px-4 py-3 text-left min-w-48">Page Name</th>
-                    <th class="px-4 py-3 text-center w-12" title="Owner">Owner</th>
-                    <th class="px-4 py-3 text-center w-12" title="Manager">Mgr</th>
-                    <th class="px-4 py-3 text-center w-12" title="Assistant Manager">Asst</th>
-                    <th class="px-4 py-3 text-center w-12" title="Auditor">Aud</th>
-                    <th class="px-4 py-3 text-center w-12" title="Cashier">Cash</th>
+                  <tr class="text-xs font-semibold text-gray-700">
+                    <th class="px-4 py-3 text-center w-10">เลือก</th>
+                    <th class="px-4 py-3 text-left min-w-48">ชื่อเพจ</th>
+                    <th class="px-4 py-3 text-center w-12" title="เจ้าของ">เจ้า</th>
+                    <th class="px-4 py-3 text-center w-12" title="ผู้จัดการ">ผ.จ.ร</th>
+                    <th class="px-4 py-3 text-center w-12" title="ผู้ช่วยผู้จัดการ">ผ.ช่วย</th>
+                    <th class="px-4 py-3 text-center w-12" title="ผู้ตรวจสอบ">ออดิท</th>
+                    <th class="px-4 py-3 text-center w-12" title="แคชเชียร์">แคช</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
