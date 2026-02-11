@@ -616,9 +616,6 @@ const initializeEditingPages = async () => {
   }
   // Copy menu data to editing state
   for (const group of sidebarStore.sidebarMenu) {
-    // Expand all groups by default
-    expandedGroups.value.add(group.groupKey)
-
     for (const page of group.pages) {
       editingPages.value[page.pageKey] = JSON.parse(JSON.stringify(page))
       originalPages.value[page.pageKey] = JSON.parse(JSON.stringify(page))
