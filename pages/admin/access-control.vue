@@ -259,10 +259,9 @@
               <span class="text-xl transition-transform flex-shrink-0" :style="{ transform: isGroupExpanded(group.groupKey) ? 'rotate(0deg)' : 'rotate(-90deg)' }">
                 ▼
               </span>
-              <h3 class="text-lg font-bold text-gray-900 flex-grow">
-                {{ group.icon }} {{ group.groupName }}
+              <h3 class="text-lg font-bold text-gray-900">
+                {{ group.icon }} {{ group.groupName }} <span class="text-sm text-gray-500 font-normal">({{ group.pages.length }} หน้า)</span>
               </h3>
-              <span class="text-sm text-gray-500 whitespace-nowrap">({{ group.pages.length }} หน้า)</span>
             </div>
 
             <!-- Pages in Group (Expandable Table) -->
@@ -274,8 +273,8 @@
                     <th class="px-4 py-3 text-left min-w-56">ชื่อเพจ</th>
                     <th class="px-3 py-3 text-center w-20" title="เจ้าของ">เจ้าของ</th>
                     <th class="px-3 py-3 text-center w-20" title="ผู้จัดการ">ผู้จัดการ</th>
-                    <th class="px-3 py-3 text-center w-20" title="ผู้ช่วยผู้จัดการ">ผ.ช่วย</th>
-                    <th class="px-3 py-3 text-center w-20" title="ผู้ตรวจสอบ">ผู้ตรวจสอบ</th>
+                    <th class="px-3 py-3 text-center w-20" title="ผู้ช่วยผู้จัดการ">ผู้ช่วย</th>
+                    <th class="px-3 py-3 text-center w-20" title="ผู้ตรวจสอบ">ออดิท</th>
                     <th class="px-3 py-3 text-center w-20" title="แคชเชียร์">แคชเชียร์</th>
                   </tr>
                 </thead>
