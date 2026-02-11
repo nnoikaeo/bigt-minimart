@@ -31,6 +31,7 @@ export class AccessControlJsonRepository implements IAccessControlRepository {
   private rolesPath = join(this.basePath, 'roles.json')
   private permissionsPath = join(this.basePath, 'permissions.json')
   private rolePermissionsPath = join(this.basePath, 'role-permissions.json')
+  private sidebarMenuPath = join(this.basePath, 'sidebar-menu.json')
 
   // =========================================================================
   // Helper Methods
@@ -185,5 +186,52 @@ export class AccessControlJsonRepository implements IAccessControlRepository {
 
     await this.writeFile(this.rolePermissionsPath, rolePermissions)
     return updated
+  }
+
+  // =========================================================================
+  // Sidebar Menu Operations
+  // =========================================================================
+
+  async getSidebarMenu(): Promise<any> {
+    try {
+      const content = await fs.readFile(this.sidebarMenuPath, 'utf-8')
+      const data = JSON.parse(content)
+      return data.menu || []
+    } catch (error) {
+      console.error(`Failed to read ${this.sidebarMenuPath}:`, error)
+      return []
+    }
+  }
+
+  async updatePageRequiredRoles(
+    pageKey: string,
+    requiredRoles: string[] | null,
+  ): Promise<void> {
+    try {
+      const content = await fs.readFile(this.sidebarMenuPath, 'utf-8')
+      const data = JSON.parse(content)
+      const menu = data.menu || []
+
+      // Find and update the page
+      let found = false
+      for (const group of menu) {
+        const page = group.pages.find((p: any) => p.pageKey === pageKey)
+        if (page) {
+          page.requiredRoles = requiredRoles
+          found = true
+          break
+        }
+      }
+
+      if (!found) {
+        throw new Error(`Page ${pageKey} not found in sidebar menu`)
+      }
+
+      // Write updated data back to file
+      await fs.writeFile(this.sidebarMenuPath, JSON.stringify(data, null, 2), 'utf-8')
+    } catch (error) {
+      console.error(`Failed to update page ${pageKey}:`, error)
+      throw new Error(`Failed to update sidebar menu: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
 }
