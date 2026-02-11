@@ -224,30 +224,91 @@
           </button>
         </div>
 
-        <!-- Menu Content -->
+        <!-- Menu Content with Status Bar -->
         <div v-else class="space-y-6">
+          <!-- Status Bar -->
+          <div
+            v-if="dirtyPages.length > 0"
+            class="bg-yellow-50 border border-yellow-300 rounded-lg p-4 flex items-center justify-between"
+          >
+            <div class="text-sm text-yellow-800">
+              <span class="font-medium">⚠️ มี {{ dirtyPages.length }} pages ที่เปลี่ยนแปลง</span>
+              <span v-if="selectedDirtyPages.length > 0" class="ml-2">(เลือก {{ selectedDirtyPages.length }})</span>
+            </div>
+            <div class="flex gap-2">
+              <button
+                @click="saveBatchPages"
+                :disabled="selectedDirtyPages.length === 0 || isSavingBatch"
+                class="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white rounded-lg transition font-medium text-sm"
+              >
+                <span v-if="isSavingBatch" class="inline-block animate-spin">🔄</span>
+                <span v-else>💾 บันทึกที่เลือก ({{ selectedDirtyPages.length }})</span>
+              </button>
+              <button
+                @click="resetChanges"
+                :disabled="isSavingBatch"
+                class="px-4 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg transition font-medium text-sm"
+              >
+                🔄 รีเซ็ต
+              </button>
+            </div>
+          </div>
           <div v-for="group in sidebarStore.sidebarMenu" :key="group.groupKey" class="bg-white rounded-lg shadow p-6">
-            <!-- Group Header -->
-            <div class="mb-4 pb-4 border-b border-gray-200">
-              <h3 class="text-lg font-bold text-gray-900">
-                {{ group.icon }} {{ group.groupName }}
-              </h3>
-              <p class="text-sm text-gray-500 mt-1">Group Key: {{ group.groupKey }}</p>
+            <!-- Group Header with Save Button -->
+            <div class="mb-4 pb-4 border-b border-gray-200 flex items-center justify-between">
+              <div>
+                <h3 class="text-lg font-bold text-gray-900">
+                  {{ group.icon }} {{ group.groupName }}
+                </h3>
+                <p class="text-sm text-gray-500 mt-1">{{ group.pages.length }} pages</p>
+              </div>
+              <button
+                @click="saveBatchPages"
+                :disabled="selectedDirtyPages.length === 0 || isSavingBatch"
+                class="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white rounded-lg transition font-medium text-sm whitespace-nowrap"
+              >
+                <span v-if="isSavingBatch" class="inline-block animate-spin">🔄</span>
+                <span v-else>💾 บันทึก ({{ selectedDirtyPages.length }})</span>
+              </button>
             </div>
 
             <!-- Pages in Group -->
             <div class="space-y-4">
-              <div v-for="page in group.pages" :key="page.pageKey" class="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <!-- Page Info -->
-                <div class="mb-3">
-                  <h4 class="font-semibold text-gray-900 flex items-center gap-2">
-                    <span v-if="page.icon">{{ page.icon }}</span>
-                    {{ page.pageName }}
-                  </h4>
-                  <p class="text-xs text-gray-500 mt-1">
-                    <span class="block">Page Key: {{ page.pageKey }}</span>
-                    <span class="block">Route: {{ page.route }}</span>
-                  </p>
+              <div
+                v-for="page in group.pages"
+                :key="page.pageKey"
+                class="p-4 bg-gray-50 rounded-lg border-2 transition"
+                :class="[
+                  dirtyPages.includes(page.pageKey)
+                    ? 'border-yellow-300 bg-yellow-50'
+                    : 'border-gray-200',
+                ]"
+              >
+                <!-- Page Header with Checkbox -->
+                <div class="flex items-start justify-between mb-3">
+                  <div class="flex items-start gap-3 flex-1">
+                    <input
+                      type="checkbox"
+                      :checked="isPageSelected(page.pageKey)"
+                      @change="togglePageSelection(page.pageKey)"
+                      class="mt-1 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    />
+                    <div>
+                      <h4 class="font-semibold text-gray-900 flex items-center gap-2">
+                        <span v-if="page.icon">{{ page.icon }}</span>
+                        {{ page.pageName }}
+                        <span
+                          v-if="dirtyPages.includes(page.pageKey)"
+                          class="inline-block w-2 h-2 bg-yellow-500 rounded-full"
+                          title="มีการเปลี่ยนแปลง"
+                        />
+                      </h4>
+                      <p class="text-xs text-gray-500 mt-1">
+                        <span class="block">Page Key: {{ page.pageKey }}</span>
+                        <span class="block">Route: {{ page.route }}</span>
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Required Roles Multiselect -->
@@ -501,19 +562,59 @@ const userToDelete = ref<User | null>(null)
 // Sidebar Menu Management
 const isUpdatingPage = ref<string | null>(null)
 const editingPages = ref<Record<string, SidebarPage>>({})
+const originalPages = ref<Record<string, SidebarPage>>({})
+const selectedPages = ref<Set<string>>(new Set())
+const isSavingBatch = ref(false)
 
-// Initialize editing pages from sidebar menu on mount
-onMounted(async () => {
+/**
+ * Track dirty pages (มีการเปลี่ยนแปลง)
+ */
+const dirtyPages = computed(() => {
+  const dirty: string[] = []
+  for (const [pageKey, editedPage] of Object.entries(editingPages.value)) {
+    const original = originalPages.value[pageKey]
+    if (!original) continue
+
+    const editedRoles = editedPage.requiredRoles
+    const originalRoles = original.requiredRoles
+
+    // เปรียบเทียบ roles
+    const rolesChanged =
+      (editedRoles === null && originalRoles !== null) ||
+      (editedRoles !== null && originalRoles === null) ||
+      (editedRoles !== null &&
+        originalRoles !== null &&
+        JSON.stringify([...(editedRoles || [])].sort()) !== JSON.stringify([...(originalRoles || [])].sort()))
+
+    if (rolesChanged) {
+      dirty.push(pageKey)
+    }
+  }
+  return dirty
+})
+
+/**
+ * Get selected pages that are dirty
+ */
+const selectedDirtyPages = computed(() => {
+  return Array.from(selectedPages.value).filter((pageKey) => dirtyPages.value.includes(pageKey))
+})
+
+/**
+ * Initialize editing pages from sidebar menu on mount
+ */
+const initializeEditingPages = async () => {
   if (sidebarStore.sidebarMenu.length === 0) {
     await sidebarStore.loadSidebarMenu()
   }
   // Copy menu data to editing state
   for (const group of sidebarStore.sidebarMenu) {
     for (const page of group.pages) {
-      editingPages.value[page.pageKey] = { ...page }
+      editingPages.value[page.pageKey] = JSON.parse(JSON.stringify(page))
+      originalPages.value[page.pageKey] = JSON.parse(JSON.stringify(page))
     }
   }
-})
+}
 
 // =========================================================================
 // Watchers
@@ -776,7 +877,25 @@ const toggleAllRoles = (page: SidebarPage, selectAll: boolean) => {
 }
 
 /**
- * Save page access changes via API
+ * Toggle page selection for batch save
+ */
+const togglePageSelection = (pageKey: string) => {
+  if (selectedPages.value.has(pageKey)) {
+    selectedPages.value.delete(pageKey)
+  } else {
+    selectedPages.value.add(pageKey)
+  }
+}
+
+/**
+ * Check if page is selected
+ */
+const isPageSelected = (pageKey: string): boolean => {
+  return selectedPages.value.has(pageKey)
+}
+
+/**
+ * Save page access changes via API (individual)
  */
 const savePageAccess = async (page: SidebarPage) => {
   isUpdatingPage.value = page.pageKey
@@ -787,6 +906,8 @@ const savePageAccess = async (page: SidebarPage) => {
     const result = await sidebarStore.updatePageAccess(page.pageKey, editedPage.requiredRoles)
 
     if (result.success) {
+      // Update original pages
+      originalPages.value[page.pageKey] = JSON.parse(JSON.stringify(editedPage))
       alert(`✅ บันทึก "${page.pageName}" เสร็จแล้ว`)
     } else {
       alert(`❌ ข้อผิดพลาด: ${result.error}`)
@@ -798,7 +919,79 @@ const savePageAccess = async (page: SidebarPage) => {
   }
 }
 
+/**
+ * Save batch selected pages
+ */
+const saveBatchPages = async () => {
+  if (selectedDirtyPages.value.length === 0) {
+    alert('❌ ไม่มี pages ที่มีการเปลี่ยนแปลง')
+    return
+  }
+
+  isSavingBatch.value = true
+  const pagesToSave = selectedDirtyPages.value
+  const successCount = { value: 0 }
+  const failureCount = { value: 0 }
+
+  try {
+    // Save all selected pages concurrently
+    const savePromises = pagesToSave.map(async (pageKey) => {
+      try {
+        const editedPage = editingPages.value[pageKey]
+        if (!editedPage) return
+
+        const result = await sidebarStore.updatePageAccess(pageKey, editedPage.requiredRoles)
+
+        if (result.success) {
+          originalPages.value[pageKey] = JSON.parse(JSON.stringify(editedPage))
+          successCount.value++
+        } else {
+          failureCount.value++
+          console.error(`Failed to save ${pageKey}:`, result.error)
+        }
+      } catch (error: any) {
+        failureCount.value++
+        console.error(`Error saving ${pageKey}:`, error.message)
+      }
+    })
+
+    await Promise.all(savePromises)
+
+    // Show result message
+    let message = ''
+    if (successCount.value > 0) {
+      message += `✅ บันทึก ${successCount.value} pages สำเร็จ`
+    }
+    if (failureCount.value > 0) {
+      message += `\n❌ ล้มเหลว ${failureCount.value} pages`
+    }
+
+    alert(message)
+
+    // Clear selection after successful save
+    if (failureCount.value === 0) {
+      selectedPages.value.clear()
+    }
+  } catch (error: any) {
+    alert(`❌ เกิดข้อผิดพลาด: ${error.message}`)
+  } finally {
+    isSavingBatch.value = false
+  }
+}
+
+/**
+ * Reset all changes
+ */
+const resetChanges = () => {
+  for (const [pageKey, originalPage] of Object.entries(originalPages.value)) {
+    editingPages.value[pageKey] = JSON.parse(JSON.stringify(originalPage))
+  }
+  selectedPages.value.clear()
+  alert('✅ รีเซ็ตทั้งหมด')
+}
+
 onMounted(async () => {
   await loadData()
+  await initializeEditingPages()
 })
 </script>
