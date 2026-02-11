@@ -259,7 +259,7 @@
               <span class="text-xl transition-transform flex-shrink-0" :style="{ transform: isGroupExpanded(group.groupKey) ? 'rotate(0deg)' : 'rotate(-90deg)' }">
                 ▼
               </span>
-              <h3 class="text-lg font-bold text-gray-900">
+              <h3 class="text-base font-bold text-gray-900">
                 {{ group.icon }} {{ group.groupName }} <span class="text-sm text-gray-500 font-normal">({{ group.pages.length }} หน้า)</span>
               </h3>
             </div>
