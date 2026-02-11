@@ -37,6 +37,20 @@
             บทบาท และ สิทธิ์
           </span>
         </button>
+        <button
+          @click="activeTab = 'menu'"
+          :class="[
+            'py-4 px-1 border-b-2 font-medium text-sm',
+            activeTab === 'menu'
+              ? 'border-green-500 text-green-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+          ]"
+        >
+          <span class="flex items-center gap-2">
+            🗂️
+            จัดการเมนู Sidebar
+          </span>
+        </button>
       </nav>
     </div>
 
@@ -188,6 +202,95 @@
 
         <div v-if="store.getAllRoles.length === 0" class="p-8 bg-white rounded-lg text-center">
           <p class="text-gray-600">ไม่พบบทบาท</p>
+        </div>
+      </div>
+
+      <!-- Menu Tab -->
+      <div v-show="activeTab === 'menu'" class="space-y-6">
+        <!-- Loading State -->
+        <div v-if="sidebarStore.loading" class="p-8 bg-white rounded-lg text-center">
+          <div class="inline-block animate-spin">🔄</div>
+          <p class="mt-2 text-gray-600">กำลังโหลดเมนู...</p>
+        </div>
+
+        <!-- Error State -->
+        <div v-else-if="sidebarStore.error" class="p-8 bg-white rounded-lg text-center">
+          <div class="text-red-600 text-sm">{{ sidebarStore.error }}</div>
+          <button
+            @click="sidebarStore.loadSidebarMenu"
+            class="mt-4 text-green-600 hover:text-green-700 font-medium"
+          >
+            ลองใหม่
+          </button>
+        </div>
+
+        <!-- Menu Content -->
+        <div v-else class="space-y-6">
+          <div v-for="group in sidebarStore.sidebarMenu" :key="group.groupKey" class="bg-white rounded-lg shadow p-6">
+            <!-- Group Header -->
+            <div class="mb-4 pb-4 border-b border-gray-200">
+              <h3 class="text-lg font-bold text-gray-900">
+                {{ group.icon }} {{ group.groupName }}
+              </h3>
+              <p class="text-sm text-gray-500 mt-1">Group Key: {{ group.groupKey }}</p>
+            </div>
+
+            <!-- Pages in Group -->
+            <div class="space-y-4">
+              <div v-for="page in group.pages" :key="page.pageKey" class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <!-- Page Info -->
+                <div class="mb-3">
+                  <h4 class="font-semibold text-gray-900 flex items-center gap-2">
+                    <span v-if="page.icon">{{ page.icon }}</span>
+                    {{ page.pageName }}
+                  </h4>
+                  <p class="text-xs text-gray-500 mt-1">
+                    <span class="block">Page Key: {{ page.pageKey }}</span>
+                    <span class="block">Route: {{ page.route }}</span>
+                  </p>
+                </div>
+
+                <!-- Required Roles Multiselect -->
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    บทบาทที่สามารถเข้าถึง:
+                  </label>
+                  <div class="space-y-2">
+                    <label v-for="role in store.getAllRoles" :key="role.id" class="flex items-center">
+                      <input
+                        type="checkbox"
+                        :checked="page.requiredRoles === null || page.requiredRoles.includes(role.id)"
+                        @change="(e) => togglePageRole(page, role.id, e.target.checked)"
+                        :disabled="isUpdatingPage === page.pageKey"
+                        class="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                      />
+                      <span class="ml-2 text-sm text-gray-700">{{ role.name }}</span>
+                    </label>
+                    <label class="flex items-center">
+                      <input
+                        type="checkbox"
+                        :checked="page.requiredRoles === null"
+                        @change="(e) => toggleAllRoles(page, e.target.checked)"
+                        :disabled="isUpdatingPage === page.pageKey"
+                        class="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                      />
+                      <span class="ml-2 text-sm text-gray-700 font-medium">🌐 ทุกคน</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Save Button -->
+                <button
+                  @click="savePageAccess(page)"
+                  :disabled="isUpdatingPage === page.pageKey"
+                  class="mt-4 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white rounded-lg transition font-medium text-sm"
+                >
+                  <span v-if="isUpdatingPage === page.pageKey" class="inline-block animate-spin">🔄</span>
+                  <span v-else>💾 บันทึก</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -363,13 +466,16 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useAccessControlStore } from '~/stores/access-control'
+import { useSidebarStore } from '~/stores/sidebar'
 import type { User, Role } from '~/types/access-control'
+import type { SidebarPage } from '~/utils/sidebar-menu'
 
-// Store
+// Stores
 const store = useAccessControlStore()
+const sidebarStore = useSidebarStore()
 
 // Tabs
-const activeTab = ref<'users' | 'roles'>('users')
+const activeTab = ref<'users' | 'roles' | 'menu'>('users')
 
 // User Modal
 const showUserModal = ref(false)
@@ -391,6 +497,23 @@ const permissionsForm = ref<Record<string, boolean>>({})
 // Delete Confirmation
 const showDeleteConfirm = ref(false)
 const userToDelete = ref<User | null>(null)
+
+// Sidebar Menu Management
+const isUpdatingPage = ref<string | null>(null)
+const editingPages = ref<Record<string, SidebarPage>>({})
+
+// Initialize editing pages from sidebar menu on mount
+onMounted(async () => {
+  if (sidebarStore.sidebarMenu.length === 0) {
+    await sidebarStore.loadSidebarMenu()
+  }
+  // Copy menu data to editing state
+  for (const group of sidebarStore.sidebarMenu) {
+    for (const page of group.pages) {
+      editingPages.value[page.pageKey] = { ...page }
+    }
+  }
+})
 
 // =========================================================================
 // Watchers
@@ -610,6 +733,70 @@ const deleteUser = async () => {
 // =========================================================================
 // Lifecycle
 // =========================================================================
+
+/**
+ * Toggle a specific role for a page
+ */
+const togglePageRole = (page: SidebarPage, roleId: string, isChecked: boolean) => {
+  const pageKey = page.pageKey
+  const current = editingPages.value[pageKey]
+
+  if (!current) return
+
+  if (current.requiredRoles === null) {
+    // All roles selected, start fresh with deselected roles
+    const allRoles = store.getAllRoles.map((r) => r.id)
+    current.requiredRoles = allRoles.filter((r) => r !== roleId)
+  } else {
+    // Toggle the role
+    if (isChecked) {
+      if (!current.requiredRoles.includes(roleId)) {
+        current.requiredRoles.push(roleId)
+      }
+    } else {
+      current.requiredRoles = current.requiredRoles.filter((r) => r !== roleId)
+    }
+  }
+}
+
+/**
+ * Toggle all roles for a page
+ */
+const toggleAllRoles = (page: SidebarPage, selectAll: boolean) => {
+  const pageKey = page.pageKey
+  const current = editingPages.value[pageKey]
+
+  if (!current) return
+
+  if (selectAll) {
+    current.requiredRoles = null
+  } else {
+    current.requiredRoles = []
+  }
+}
+
+/**
+ * Save page access changes via API
+ */
+const savePageAccess = async (page: SidebarPage) => {
+  isUpdatingPage.value = page.pageKey
+  try {
+    const editedPage = editingPages.value[page.pageKey]
+    if (!editedPage) return
+
+    const result = await sidebarStore.updatePageAccess(page.pageKey, editedPage.requiredRoles)
+
+    if (result.success) {
+      alert(`✅ บันทึก "${page.pageName}" เสร็จแล้ว`)
+    } else {
+      alert(`❌ ข้อผิดพลาด: ${result.error}`)
+    }
+  } catch (error: any) {
+    alert(`❌ เกิดข้อผิดพลาด: ${error.message}`)
+  } finally {
+    isUpdatingPage.value = null
+  }
+}
 
 onMounted(async () => {
   await loadData()
