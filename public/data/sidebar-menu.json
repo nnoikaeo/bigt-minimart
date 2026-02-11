@@ -26,9 +26,9 @@
           "requiredRoles": [
             "owner",
             "manager",
-            "assistant_manager",
             "cashier",
-            "auditor"
+            "auditor",
+            "assistant_manager"
           ]
         },
         {
@@ -39,8 +39,8 @@
           "requiredRoles": [
             "owner",
             "manager",
-            "assistant_manager",
-            "auditor"
+            "auditor",
+            "assistant_manager"
           ]
         },
         {
@@ -51,8 +51,8 @@
           "requiredRoles": [
             "owner",
             "manager",
-            "assistant_manager",
-            "auditor"
+            "auditor",
+            "assistant_manager"
           ]
         },
         {
@@ -62,7 +62,9 @@
           "route": "/finance/daily-expenses",
           "requiredRoles": [
             "manager",
-            "owner"
+            "owner",
+            "auditor",
+            "assistant_manager"
           ]
         }
       ]
@@ -78,6 +80,8 @@
           "pageName": "รายงานการขาย",
           "route": "/sales/sales-report",
           "requiredRoles": [
+            "assistant_manager",
+            "auditor",
             "manager",
             "owner"
           ]
@@ -88,6 +92,9 @@
           "pageName": "กระแสเงินสด",
           "route": "/finance/cash-flow",
           "requiredRoles": [
+            "assistant_manager",
+            "auditor",
+            "manager",
             "owner"
           ]
         },
@@ -97,6 +104,9 @@
           "pageName": "รายงานประจำเดือน",
           "route": "/finance/monthly-report",
           "requiredRoles": [
+            "assistant_manager",
+            "auditor",
+            "manager",
             "owner"
           ]
         }
@@ -112,6 +122,9 @@
           "pageName": "เวลาเข้าออก",
           "route": "/hr/attendance",
           "requiredRoles": [
+            "assistant_manager",
+            "auditor",
+            "cashier",
             "manager",
             "owner"
           ]
@@ -121,6 +134,9 @@
           "pageName": "โอที",
           "route": "/hr/overtime",
           "requiredRoles": [
+            "assistant_manager",
+            "auditor",
+            "cashier",
             "manager",
             "owner"
           ]
