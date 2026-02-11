@@ -225,17 +225,24 @@
         </div>
 
         <!-- Menu Content with Status Bar -->
-        <div v-else class="space-y-4">
+        <div v-else class="space-y-2">
           <!-- Status Bar -->
           <div
-            v-if="dirtyPages.length > 0"
-            class="bg-yellow-50 border border-yellow-300 rounded-lg p-4 flex items-center justify-between"
+            :class="[
+              'rounded-lg p-4 flex items-center justify-between transition',
+              dirtyPages.length > 0
+                ? 'bg-yellow-50 border border-yellow-300'
+                : 'bg-gray-50 border border-gray-200'
+            ]"
           >
-            <div class="text-sm text-yellow-800">
-              <span class="font-medium">⚠️ มี {{ dirtyPages.length }} pages ที่เปลี่ยนแปลง</span>
-              <span v-if="selectedDirtyPages.length > 0" class="ml-2">(เลือก {{ selectedDirtyPages.length }})</span>
+            <div class="text-sm" :class="dirtyPages.length > 0 ? 'text-yellow-800' : 'text-gray-600'">
+              <span class="font-medium">
+                <span v-if="dirtyPages.length > 0">⚠️ มี {{ dirtyPages.length }} pages ที่เปลี่ยนแปลง</span>
+                <span v-else>✅ ไม่มีการเปลี่ยนแปลง</span>
+              </span>
+              <span v-if="dirtyPages.length > 0 && selectedDirtyPages.length > 0" class="ml-2">(เลือก {{ selectedDirtyPages.length }})</span>
             </div>
-            <div class="flex gap-2">
+            <div class="flex gap-2" v-if="dirtyPages.length > 0">
               <button
                 @click="saveBatchPages"
                 :disabled="selectedDirtyPages.length === 0 || isSavingBatch"
