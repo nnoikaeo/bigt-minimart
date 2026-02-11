@@ -253,7 +253,7 @@
                 <span v-else>💾 บันทึกที่เลือก ({{ selectedDirtyPages.length }})</span>
               </button>
               <button
-                @click="resetChanges"
+                @click="openResetConfirm"
                 :disabled="dirtyPages.length === 0 || isSavingBatch"
                 class="px-4 py-2 rounded-lg transition font-medium text-sm"
                 :class="dirtyPages.length === 0 ? 'border border-gray-300 text-gray-600 cursor-not-allowed' : 'border border-gray-300 hover:bg-gray-50 text-gray-700'"
@@ -537,6 +537,34 @@
         </div>
       </div>
     </div>
+
+    <!-- Confirm Reset Modal -->
+    <div
+      v-if="showResetConfirm"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      @click.self="closeResetConfirm"
+    >
+      <div class="bg-white rounded-lg shadow-lg max-w-sm w-full p-6">
+        <h2 class="text-lg font-bold mb-4 text-gray-900">ยืนยันการรีเซ็ต</h2>
+        <p class="text-gray-600 mb-6">
+          คุณแน่ใจหรือว่าต้องการรีเซ็ตการเปลี่ยนแปลงทั้งหมด? การเปลี่ยนแปลงที่ยังไม่ได้บันทึกจะหายไป
+        </p>
+        <div class="flex gap-3">
+          <button
+            @click="closeResetConfirm"
+            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+          >
+            ไม่
+          </button>
+          <button
+            @click="confirmReset"
+            class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition"
+          >
+            ใช่
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -574,6 +602,9 @@ const permissionsForm = ref<Record<string, boolean>>({})
 // Delete Confirmation
 const showDeleteConfirm = ref(false)
 const userToDelete = ref<User | null>(null)
+
+// Reset Confirmation
+const showResetConfirm = ref(false)
 
 // Sidebar Menu Management
 const editingPages = ref<Record<string, SidebarPage>>({})
@@ -844,6 +875,33 @@ const deleteUser = async () => {
   }
 }
 
+/**
+ * Open reset confirmation dialog
+ */
+const openResetConfirm = () => {
+  showResetConfirm.value = true
+}
+
+/**
+ * Close reset confirmation dialog
+ */
+const closeResetConfirm = () => {
+  showResetConfirm.value = false
+}
+
+/**
+ * Confirm and execute reset
+ */
+const confirmReset = () => {
+  for (const [pageKey, originalPage] of Object.entries(originalPages.value)) {
+    editingPages.value[pageKey] = JSON.parse(JSON.stringify(originalPage))
+  }
+
+  selectedPages.value.clear()
+  closeResetConfirm()
+  alert('✅ รีเซ็ตทั้งหมด')
+}
+
 // =========================================================================
 // Lifecycle
 // =========================================================================
@@ -964,18 +1022,6 @@ const saveBatchPages = async () => {
   } finally {
     isSavingBatch.value = false
   }
-}
-
-/**
- * Reset all changes
- */
-const resetChanges = () => {
-  for (const [pageKey, originalPage] of Object.entries(originalPages.value)) {
-    editingPages.value[pageKey] = JSON.parse(JSON.stringify(originalPage))
-  }
-
-  selectedPages.value.clear()
-  alert('✅ รีเซ็ตทั้งหมด')
 }
 
 onMounted(async () => {
