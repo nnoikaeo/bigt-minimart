@@ -302,8 +302,14 @@
                     <td class="px-4 py-3 text-center">
                       <input
                         type="checkbox"
-                        :checked="isPageSelected(page.pageKey)"
-                        @change="togglePageSelection(page.pageKey)"
+                        :checked="dirtyPages.includes(page.pageKey)"
+                        @change="(e) => {
+                          if ((e.target as any).checked) {
+                            selectedPages.add(page.pageKey)
+                          } else {
+                            selectedPages.delete(page.pageKey)
+                          }
+                        }"
                         class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                       />
                     </td>
@@ -313,11 +319,6 @@
                       <div class="flex items-center gap-2">
                         <span v-if="page.icon" class="text-lg">{{ page.icon }}</span>
                         <span class="font-medium text-gray-900">{{ page.pageName }}</span>
-                        <span
-                          v-if="dirtyPages.includes(page.pageKey)"
-                          class="inline-block w-2 h-2 bg-yellow-500 rounded-full"
-                          title="มีการเปลี่ยนแปลง"
-                        />
                       </div>
                     </td>
 
@@ -575,7 +576,6 @@ const showDeleteConfirm = ref(false)
 const userToDelete = ref<User | null>(null)
 
 // Sidebar Menu Management
-const isUpdatingPage = ref<string | null>(null)
 const editingPages = ref<Record<string, SidebarPage>>({})
 const originalPages = ref<Record<string, SidebarPage>>({})
 const selectedPages = ref<Set<string>>(new Set())
@@ -594,13 +594,10 @@ const dirtyPages = computed(() => {
     const editedRoles = editedPage.requiredRoles
     const originalRoles = original.requiredRoles
 
-    // เปรียบเทียบ roles
-    const rolesChanged =
-      (editedRoles === null && originalRoles !== null) ||
-      (editedRoles !== null && originalRoles === null) ||
-      (editedRoles !== null &&
-        originalRoles !== null &&
-        JSON.stringify([...(editedRoles || [])].sort()) !== JSON.stringify([...(originalRoles || [])].sort()))
+    // เปรียบเทียบ roles - สำหรับ deep equality
+    const editedSorted = JSON.stringify(editedRoles?.sort() || [])
+    const originalSorted = JSON.stringify(originalRoles?.sort() || [])
+    const rolesChanged = editedSorted !== originalSorted
 
     if (rolesChanged) {
       dirty.push(pageKey)
@@ -875,41 +872,13 @@ const togglePageRole = (page: SidebarPage, roleId: string, isChecked: boolean) =
       current.requiredRoles = (current.requiredRoles as any).filter((r: string) => r !== roleId)
     }
   }
-}
 
-/**
- * Toggle all roles for a page
- */
-const toggleAllRoles = (page: SidebarPage, selectAll: boolean) => {
-  const pageKey = page.pageKey
-  const current = editingPages.value[pageKey]
-
-  if (!current) return
-
-  if (selectAll) {
-    current.requiredRoles = null
-  } else {
-    current.requiredRoles = []
-  }
-}
-
-/**
- * Toggle page selection for batch save
- */
-const togglePageSelection = (pageKey: string) => {
-  if (selectedPages.value.has(pageKey)) {
-    selectedPages.value.delete(pageKey)
-  } else {
+  // Auto-select the page when its roles are modified
+  if (!selectedPages.value.has(pageKey)) {
     selectedPages.value.add(pageKey)
   }
 }
 
-/**
- * Check if page is selected
- */
-const isPageSelected = (pageKey: string): boolean => {
-  return selectedPages.value.has(pageKey)
-}
 
 /**
  * Toggle group expansion
@@ -927,31 +896,6 @@ const toggleGroupExpanded = (groupKey: string) => {
  */
 const isGroupExpanded = (groupKey: string): boolean => {
   return expandedGroups.value.has(groupKey)
-}
-
-/**
- * Save page access changes via API (individual)
- */
-const savePageAccess = async (page: SidebarPage) => {
-  isUpdatingPage.value = page.pageKey
-  try {
-    const editedPage = editingPages.value[page.pageKey]
-    if (!editedPage) return
-
-    const result = await sidebarStore.updatePageAccess(page.pageKey, editedPage.requiredRoles ?? null)
-
-    if (result.success) {
-      // Update original pages
-      originalPages.value[page.pageKey] = JSON.parse(JSON.stringify(editedPage))
-      alert(`✅ บันทึก "${page.pageName}" เสร็จแล้ว`)
-    } else {
-      alert(`❌ ข้อผิดพลาด: ${result.error}`)
-    }
-  } catch (error: any) {
-    alert(`❌ เกิดข้อผิดพลาด: ${error.message}`)
-  } finally {
-    isUpdatingPage.value = null
-  }
 }
 
 /**
@@ -1021,6 +965,7 @@ const resetChanges = () => {
   for (const [pageKey, originalPage] of Object.entries(originalPages.value)) {
     editingPages.value[pageKey] = JSON.parse(JSON.stringify(originalPage))
   }
+
   selectedPages.value.clear()
   alert('✅ รีเซ็ตทั้งหมด')
 }
