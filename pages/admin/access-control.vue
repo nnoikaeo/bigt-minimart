@@ -48,7 +48,7 @@
         >
           <span class="flex items-center gap-2">
             🔐
-            บทบาท และ สิทธิ์
+            บทบาทและสิทธิ์
           </span>
         </button>
       </nav>
@@ -193,7 +193,7 @@
         >
           <div class="text-sm" :class="dirtyRoles.length > 0 ? 'text-yellow-800' : 'text-gray-600'">
             <span class="font-medium">
-              <span v-if="dirtyRoles.length > 0">⚠️ มี {{ dirtyRoles.length }} roles ที่เปลี่ยนแปลง</span>
+              <span v-if="dirtyRoles.length > 0">⚠️ มี {{ dirtyRoles.length }} บทบาท ที่เปลี่ยนแปลง</span>
               <span v-else>✅ ไม่มีการเปลี่ยนแปลง</span>
             </span>
             <span v-if="dirtyRoles.length > 0 && selectedDirtyRoles.length > 0" class="ml-2">(เลือก {{ selectedDirtyRoles.length }})</span>
@@ -243,7 +243,7 @@
               </template>
               <template #content>
                 <table class="w-full">
-                  <!-- Table Header (Consistent Styling) -->
+                  <!-- หัวตารางสิทธิ์ -->
                   <thead class="bg-gray-100">
                     <tr class="text-xs font-semibold text-gray-700 uppercase">
                       <th class="px-4 py-3 text-center w-14">เลือก</th>
@@ -258,7 +258,7 @@
                       </th>
                     </tr>
                   </thead>
-                  <!-- Table Body (Consistent Display) -->
+                  <!-- เนื้อหาตารางสิทธิ์ -->
                   <tbody class="divide-y divide-gray-200">
                     <tr
                       v-for="perm in permissions"
@@ -270,7 +270,7 @@
                           : 'bg-white hover:bg-gray-50',
                       ]"
                     >
-                      <!-- Selection Checkbox Column -->
+                      <!-- คอลัมน์เลือก -->
                       <td class="px-4 py-3 text-center">
                         <input
                           type="checkbox"
@@ -286,12 +286,12 @@
                         />
                       </td>
 
-                      <!-- Item Name Column -->
+                      <!-- คอลัมน์ชื่อสิทธิ์ -->
                       <td class="px-4 py-3">
                         <p class="font-medium text-gray-900">{{ perm.name }}</p>
                       </td>
 
-                      <!-- Role Checkboxes (Consistent Width) -->
+                      <!-- คอลัมน์ช่องทำเครื่องหมายบทบาท -->
                       <td
                         v-for="role in store.getAllRoles"
                         :key="`${role.id}-${perm.id}`"
@@ -388,7 +388,7 @@
               </template>
               <template #content>
                 <table class="w-full">
-                  <!-- Table Header (Consistent Styling) -->
+                  <!-- หัวตารางเมนู -->
                   <thead class="bg-gray-100">
                     <tr class="text-xs font-semibold text-gray-700 uppercase">
                       <th class="px-4 py-3 text-center w-14">เลือก</th>
@@ -403,7 +403,7 @@
                       </th>
                     </tr>
                   </thead>
-                  <!-- Table Body (Consistent Display) -->
+                  <!-- เนื้อหาตารางเมนู -->
                   <tbody class="divide-y divide-gray-200">
                     <tr
                       v-for="page in group.pages.filter(p => p.pageKey !== 'dashboard')"
@@ -415,7 +415,7 @@
                           : 'bg-white hover:bg-gray-50',
                       ]"
                     >
-                      <!-- Selection Checkbox Column -->
+                      <!-- คอลัมน์เลือก -->
                       <td class="px-4 py-3 text-center">
                         <input
                           type="checkbox"
@@ -431,7 +431,7 @@
                         />
                       </td>
 
-                      <!-- Item Name Column (with Icon) -->
+                      <!-- คอลัมน์ชื่อเพจและไอคอน -->
                       <td class="px-4 py-3">
                         <div class="flex items-center gap-2">
                           <span v-if="page.icon" class="text-lg flex-shrink-0">{{ page.icon }}</span>
@@ -441,7 +441,7 @@
                         </div>
                       </td>
 
-                      <!-- Role Checkboxes (Dynamic Columns - Consistent Width) -->
+                      <!-- คอลัมน์ช่องทำเครื่องหมายบทบาท -->
                       <td
                         v-for="role in store.getAllRoles"
                         :key="`${role.id}-${page.pageKey}`"
