@@ -2,31 +2,31 @@
   {
     "id": "owner",
     "name": "เจ้าของ",
-    "description": "Owner of the business - full system access",
+    "description": "เจ้าของธุรกิจ - มีสิทธิ์เข้าถึงระบบทั้งหมด",
     "createdAt": "2024-01-15T08:00:00Z"
   },
   {
     "id": "manager",
     "name": "ผู้จัดการ",
-    "description": "Manager - can manage users, sales, and finances",
+    "description": "ผู้จัดการ - สามารถจัดการผู้ใช้ ขาย และการเงิน",
     "createdAt": "2024-01-15T08:00:00Z"
   },
   {
     "id": "assistant_manager",
     "name": "ผู้ช่วยผู้จัดการ",
-    "description": "Assistant Manager - can view and assist with management tasks",
+    "description": "ผู้ช่วยผู้จัดการ - สามารถดูและช่วยในงานการจัดการ",
     "createdAt": "2024-01-15T08:00:00Z"
   },
   {
     "id": "auditor",
     "name": "ผู้ตรวจสอบ",
-    "description": "Auditor - can view all reports and audit logs",
+    "description": "ผู้ตรวจสอบ - สามารถดูรายงานทั้งหมดและบันทึกการตรวจสอบ",
     "createdAt": "2024-01-15T08:00:00Z"
   },
   {
     "id": "cashier",
     "name": "แคชเชียร์",
-    "description": "Cashier - can process sales and view reports",
+    "description": "แคชเชียร์ - สามารถประมวลผลการขายและดูรายงาน",
     "createdAt": "2024-01-15T08:00:00Z"
   }
 ]
