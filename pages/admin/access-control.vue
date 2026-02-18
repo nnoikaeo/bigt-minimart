@@ -286,12 +286,9 @@
                         />
                       </td>
 
-                      <!-- Item Name Column (with Description) -->
+                      <!-- Item Name Column -->
                       <td class="px-4 py-3">
-                        <div>
-                          <p class="font-medium text-gray-900">{{ perm.name }}</p>
-                          <p class="text-xs text-gray-500 mt-1">{{ perm.description }}</p>
-                        </div>
+                        <p class="font-medium text-gray-900">{{ perm.name }}</p>
                       </td>
 
                       <!-- Role Checkboxes (Consistent Width) -->
@@ -739,7 +736,7 @@ const originalRolePermissions = ref<Record<string, RolePermission>>({})
 const selectedRoles = ref<Set<string>>(new Set())
 const selectedPermissions = ref<Set<string>>(new Set())
 const isSavingRoles = ref(false)
-const expandedPermGroups = ref<Set<string>>(new Set(['dashboard', 'sales', 'finance', 'users']))
+const expandedPermGroups = ref<Set<string>>(new Set())
 
 /**
  * Track dirty pages (มีการเปลี่ยนแปลง)
