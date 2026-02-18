@@ -801,8 +801,9 @@ const groupedPermissions = computed(() => {
   }
 
   for (const perm of perms) {
-    if (perm.category && grouped[perm.category]) {
-      grouped[perm.category].push(perm)
+    const category = perm.category as string
+    if (category && category in grouped) {
+      grouped[category as keyof typeof grouped]!.push(perm)
     }
   }
 
@@ -1243,7 +1244,10 @@ const togglePermissionForRole = (roleId: string, permissionId: string) => {
   newPerms[permissionId] = !newPerms[permissionId]
 
   // Update the store
-  store.rolePermissions[roleId].permissions = newPerms
+  const rolePermsRef = store.rolePermissions[roleId]
+  if (rolePermsRef) {
+    rolePermsRef.permissions = newPerms
+  }
 
   // Mark role as selected for batch tracking
   if (!selectedRoles.value.has(roleId)) {
@@ -1259,7 +1263,10 @@ const resetRolePermissions = (roleId: string) => {
   if (!original) return
 
   // Reset to original
-  store.rolePermissions[roleId].permissions = JSON.parse(JSON.stringify(original.permissions))
+  const rolePermsRef = store.rolePermissions[roleId]
+  if (rolePermsRef) {
+    rolePermsRef.permissions = JSON.parse(JSON.stringify(original.permissions))
+  }
 
   // Remove from selected if now clean
   if (!dirtyRoles.value.includes(roleId)) {
