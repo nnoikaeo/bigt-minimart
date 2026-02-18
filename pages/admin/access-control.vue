@@ -227,81 +227,72 @@
           </div>
         </div>
 
-        <!-- Permissions Matrix -->
-        <div v-if="store.getAllRoles.length > 0" class="bg-white rounded-lg shadow overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="w-full">
-              <!-- Header with Role Names -->
-              <thead class="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase w-64">
-                    สิทธิ์
-                  </th>
-                  <th
-                    v-for="role in store.getAllRoles"
-                    :key="role.id"
-                    class="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase whitespace-nowrap"
-                  >
-                    {{ role.name }}
-                  </th>
-                </tr>
-              </thead>
+        <!-- Permission Categories with Collapse Toggle (matching Menu Tab pattern) -->
+        <div v-if="store.getAllRoles.length > 0" class="space-y-4">
+          <template v-for="(permissions, category) in groupedPermissions" :key="category">
+            <div v-if="permissions.length > 0" class="bg-white rounded-lg shadow">
+              <!-- Category Header with Collapse Toggle -->
+              <div
+                class="px-6 py-4 border-b border-gray-200 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition"
+                @click="togglePermGroupExpanded(category)"
+              >
+                <span class="text-xl transition-transform flex-shrink-0" :style="{ transform: isPermGroupExpanded(category) ? 'rotate(0deg)' : 'rotate(-90deg)' }">
+                  ▼
+                </span>
+                <h3 class="text-base font-bold text-gray-900">
+                  {{ getCategoryLabel(category) }} <span class="text-sm text-gray-500 font-normal">({{ permissions.length }} สิทธิ์)</span>
+                </h3>
+              </div>
 
-              <!-- Permission Rows -->
-              <tbody class="divide-y divide-gray-200">
-                <!-- For each category -->
-                <template v-for="(permissions, category) in groupedPermissions" :key="category">
-                  <!-- Category Header (Expandable) -->
-                  <tr
-                    v-if="permissions.length > 0"
-                    class="bg-blue-50 hover:bg-blue-100 cursor-pointer transition"
-                    @click="togglePermGroupExpanded(category)"
-                  >
-                    <td colspan="100" class="px-6 py-3">
-                      <div class="flex items-center gap-2">
-                        <span class="text-lg">
-                          {{ isPermGroupExpanded(category) ? '▼' : '▶' }}
-                        </span>
-                        <span class="font-semibold text-gray-900">
-                          {{ getCategoryLabel(category) }}
-                        </span>
-                        <span class="text-xs text-gray-500 ml-2">
-                          ({{ permissions.length }} สิทธิ์)
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-
-                  <!-- Individual Permissions (shown when category is expanded) -->
-                  <tr
-                    v-for="perm in permissions"
-                    v-show="isPermGroupExpanded(category)"
-                    :key="perm.id"
-                    class="hover:bg-gray-50 transition"
-                  >
-                    <td class="px-6 py-3 text-sm text-gray-900 font-medium w-64">
-                      <div>
-                        <p class="font-medium">{{ perm.name }}</p>
-                        <p class="text-xs text-gray-500 mt-1">{{ perm.description }}</p>
-                      </div>
-                    </td>
-                    <td
-                      v-for="role in store.getAllRoles"
-                      :key="`${role.id}-${perm.id}`"
-                      class="px-4 py-3 text-center"
+              <!-- Permissions Table (Expandable) -->
+              <div v-if="isPermGroupExpanded(category)" class="border-t border-gray-200 overflow-x-auto">
+                <table class="w-full">
+                  <thead class="bg-gray-100">
+                    <tr class="text-xs font-semibold text-gray-700">
+                      <th class="px-4 py-3 text-left min-w-56">สิทธิ์</th>
+                      <th
+                        v-for="role in store.getAllRoles"
+                        :key="`header-${role.id}`"
+                        class="px-4 py-3 text-center min-w-32"
+                        :title="role.description"
+                      >
+                        {{ role.name }}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200">
+                    <tr
+                      v-for="perm in permissions"
+                      :key="perm.id"
+                      class="hover:bg-gray-50 transition"
                     >
-                      <input
-                        type="checkbox"
-                        :checked="isPermissionGranted(role.id, perm.id)"
-                        @change="togglePermissionForRole(role.id, perm.id)"
-                        class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
-                      />
-                    </td>
-                  </tr>
-                </template>
-              </tbody>
-            </table>
-          </div>
+                      <!-- Permission Name Column -->
+                      <td class="px-4 py-3">
+                        <div>
+                          <p class="font-medium text-gray-900">{{ perm.name }}</p>
+                          <p class="text-xs text-gray-500 mt-1">{{ perm.description }}</p>
+                        </div>
+                      </td>
+
+                      <!-- Role Checkboxes -->
+                      <td
+                        v-for="role in store.getAllRoles"
+                        :key="`${role.id}-${perm.id}`"
+                        class="px-4 py-3 text-center"
+                      >
+                        <input
+                          type="checkbox"
+                          :checked="isPermissionGranted(role.id, perm.id)"
+                          @change="togglePermissionForRole(role.id, perm.id)"
+                          class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                        />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </template>
         </div>
 
         <div v-else class="p-8 bg-white rounded-lg text-center">
