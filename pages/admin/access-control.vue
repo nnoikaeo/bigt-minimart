@@ -180,27 +180,131 @@
         </div>
       </div>
 
-      <!-- Roles Tab -->
+      <!-- Roles Tab - Matrix View -->
       <div v-show="activeTab === 'roles'" class="space-y-6">
-        <!-- Roles Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div
-            v-for="role in store.getAllRoles"
-            :key="role.id"
-            class="bg-white rounded-lg shadow p-4 hover:shadow-md transition"
-          >
-            <h3 class="font-semibold text-gray-900">{{ role.name }}</h3>
-            <p class="text-sm text-gray-600 mt-1">{{ role.description }}</p>
+        <!-- Status Bar -->
+        <div
+          :class="[
+            'rounded-lg p-4 flex items-center justify-between transition',
+            dirtyRoles.length > 0
+              ? 'bg-yellow-50 border border-yellow-300'
+              : 'bg-gray-50 border border-gray-200'
+          ]"
+        >
+          <div class="text-sm" :class="dirtyRoles.length > 0 ? 'text-yellow-800' : 'text-gray-600'">
+            <span class="font-medium">
+              <span v-if="dirtyRoles.length > 0">⚠️ มี {{ dirtyRoles.length }} roles ที่เปลี่ยนแปลง</span>
+              <span v-else>✅ ไม่มีการเปลี่ยนแปลง</span>
+            </span>
+            <span v-if="dirtyRoles.length > 0 && selectedDirtyRoles.length > 0" class="ml-2">(เลือก {{ selectedDirtyRoles.length }})</span>
+          </div>
+          <div class="flex gap-2">
             <button
-              @click="openPermissionsModal(role)"
-              class="mt-3 text-sm text-green-600 hover:text-green-700 font-medium"
+              @click="saveBatchRoles"
+              :disabled="dirtyRoles.length === 0 || selectedDirtyRoles.length === 0 || isSavingRoles"
+              class="px-4 py-2 rounded-lg transition font-medium text-sm"
+              :class="
+                dirtyRoles.length > 0 && selectedDirtyRoles.length > 0 && !isSavingRoles
+                  ? 'bg-green-600 hover:bg-green-700 text-white'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              "
             >
-              ตั้งค่าสิทธิ์ →
+              <span v-if="isSavingRoles">💾 กำลังบันทึก...</span>
+              <span v-else>💾 บันทึก</span>
+            </button>
+            <button
+              @click="openResetConfirm"
+              :disabled="dirtyRoles.length === 0"
+              class="px-4 py-2 rounded-lg transition font-medium text-sm"
+              :class="
+                dirtyRoles.length > 0
+                  ? 'bg-orange-600 hover:bg-orange-700 text-white'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              "
+            >
+              🔄 รีเซ็ต
             </button>
           </div>
         </div>
 
-        <div v-if="store.getAllRoles.length === 0" class="p-8 bg-white rounded-lg text-center">
+        <!-- Permissions Matrix -->
+        <div v-if="store.getAllRoles.length > 0" class="bg-white rounded-lg shadow overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <!-- Header with Role Names -->
+              <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase w-64">
+                    สิทธิ์
+                  </th>
+                  <th
+                    v-for="role in store.getAllRoles"
+                    :key="role.id"
+                    class="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase whitespace-nowrap"
+                  >
+                    {{ role.name }}
+                  </th>
+                </tr>
+              </thead>
+
+              <!-- Permission Rows -->
+              <tbody class="divide-y divide-gray-200">
+                <!-- For each category -->
+                <template v-for="(permissions, category) in groupedPermissions" :key="category">
+                  <!-- Category Header (Expandable) -->
+                  <tr
+                    v-if="permissions.length > 0"
+                    class="bg-blue-50 hover:bg-blue-100 cursor-pointer transition"
+                    @click="togglePermGroupExpanded(category)"
+                  >
+                    <td colspan="100" class="px-6 py-3">
+                      <div class="flex items-center gap-2">
+                        <span class="text-lg">
+                          {{ isPermGroupExpanded(category) ? '▼' : '▶' }}
+                        </span>
+                        <span class="font-semibold text-gray-900">
+                          {{ getCategoryLabel(category) }}
+                        </span>
+                        <span class="text-xs text-gray-500 ml-2">
+                          ({{ permissions.length }} สิทธิ์)
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!-- Individual Permissions (shown when category is expanded) -->
+                  <tr
+                    v-for="perm in permissions"
+                    v-show="isPermGroupExpanded(category)"
+                    :key="perm.id"
+                    class="hover:bg-gray-50 transition"
+                  >
+                    <td class="px-6 py-3 text-sm text-gray-900 font-medium w-64">
+                      <div>
+                        <p class="font-medium">{{ perm.name }}</p>
+                        <p class="text-xs text-gray-500 mt-1">{{ perm.description }}</p>
+                      </div>
+                    </td>
+                    <td
+                      v-for="role in store.getAllRoles"
+                      :key="`${role.id}-${perm.id}`"
+                      class="px-4 py-3 text-center"
+                    >
+                      <input
+                        type="checkbox"
+                        :checked="isPermissionGranted(role.id, perm.id)"
+                        @change="togglePermissionForRole(role.id, perm.id)"
+                        class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                      />
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div v-else class="p-8 bg-white rounded-lg text-center">
           <p class="text-gray-600">ไม่พบบทบาท</p>
         </div>
       </div>
@@ -618,6 +722,7 @@ const expandedGroups = ref<Set<string>>(new Set())
 const originalRolePermissions = ref<Record<string, RolePermission>>({})
 const selectedRoles = ref<Set<string>>(new Set())
 const isSavingRoles = ref(false)
+const expandedPermGroups = ref<Set<string>>(new Set(['dashboard', 'sales', 'finance', 'users']))
 
 /**
  * Track dirty pages (มีการเปลี่ยนแปลง)
@@ -681,6 +786,28 @@ const dirtyRoles = computed(() => {
  */
 const selectedDirtyRoles = computed(() => {
   return Array.from(selectedRoles.value).filter((roleId) => dirtyRoles.value.includes(roleId))
+})
+
+/**
+ * Group permissions by category for matrix view
+ */
+const groupedPermissions = computed(() => {
+  const perms = store.getAllPermissions || []
+  const grouped: Record<string, any[]> = {
+    dashboard: [],
+    sales: [],
+    finance: [],
+    users: [],
+  }
+
+  for (const perm of perms) {
+    const category = perm.category as string
+    if (category && category in grouped) {
+      grouped[category as keyof typeof grouped]!.push(perm)
+    }
+  }
+
+  return grouped
 })
 
 /**
@@ -986,11 +1113,20 @@ const closeResetConfirm = () => {
  * Confirm and execute reset
  */
 const confirmReset = () => {
-  for (const [pageKey, originalPage] of Object.entries(originalPages.value)) {
-    editingPages.value[pageKey] = JSON.parse(JSON.stringify(originalPage))
+  if (activeTab.value === 'menu') {
+    // Reset Menu Tab
+    for (const [pageKey, originalPage] of Object.entries(originalPages.value)) {
+      editingPages.value[pageKey] = JSON.parse(JSON.stringify(originalPage))
+    }
+    selectedPages.value.clear()
+  } else if (activeTab.value === 'roles') {
+    // Reset Roles Tab
+    for (const roleId of dirtyRoles.value) {
+      resetRolePermissions(roleId)
+    }
+    selectedRoles.value.clear()
   }
 
-  selectedPages.value.clear()
   closeResetConfirm()
 }
 
@@ -1054,6 +1190,151 @@ const toggleGroupExpanded = (groupKey: string) => {
  */
 const isGroupExpanded = (groupKey: string): boolean => {
   return expandedGroups.value.has(groupKey)
+}
+
+/**
+ * Toggle permission group expansion (for Roles Tab matrix view)
+ */
+const togglePermGroupExpanded = (categoryKey: string) => {
+  if (expandedPermGroups.value.has(categoryKey)) {
+    expandedPermGroups.value.delete(categoryKey)
+  } else {
+    expandedPermGroups.value.add(categoryKey)
+  }
+}
+
+/**
+ * Check if permission group is expanded
+ */
+const isPermGroupExpanded = (categoryKey: string): boolean => {
+  return expandedPermGroups.value.has(categoryKey)
+}
+
+/**
+ * Get Thai label for permission category
+ */
+const getCategoryLabel = (category: string): string => {
+  const labels: Record<string, string> = {
+    dashboard: '📊 Dashboard',
+    sales: '👁️ ขาย',
+    finance: '💰 การเงิน',
+    users: '👥 ผู้ใช้ & บทบาท',
+  }
+  return labels[category] || category
+}
+
+/**
+ * Check if a role has a specific permission
+ */
+const isPermissionGranted = (roleId: string, permissionId: string): boolean => {
+  const rolePerms = store.rolePermissions[roleId]
+  if (!rolePerms) return false
+  return rolePerms.permissions?.[permissionId] ?? false
+}
+
+/**
+ * Toggle a permission for a role (inline in matrix view)
+ */
+const togglePermissionForRole = (roleId: string, permissionId: string) => {
+  const rolePerms = store.rolePermissions[roleId]
+  if (!rolePerms) return
+
+  // Create a copy to ensure reactivity
+  const newPerms = { ...rolePerms.permissions }
+  newPerms[permissionId] = !newPerms[permissionId]
+
+  // Update the store
+  const rolePermsRef = store.rolePermissions[roleId]
+  if (rolePermsRef) {
+    rolePermsRef.permissions = newPerms
+  }
+
+  // Mark role as selected for batch tracking
+  if (!selectedRoles.value.has(roleId)) {
+    selectedRoles.value.add(roleId)
+  }
+}
+
+/**
+ * Reset a role's permissions to original
+ */
+const resetRolePermissions = (roleId: string) => {
+  const original = originalRolePermissions.value[roleId]
+  if (!original) return
+
+  // Reset to original
+  const rolePermsRef = store.rolePermissions[roleId]
+  if (rolePermsRef) {
+    rolePermsRef.permissions = JSON.parse(JSON.stringify(original.permissions))
+  }
+
+  // Remove from selected if now clean
+  if (!dirtyRoles.value.includes(roleId)) {
+    selectedRoles.value.delete(roleId)
+  }
+}
+
+/**
+ * Save batch selected roles
+ */
+const saveBatchRoles = async () => {
+  if (selectedDirtyRoles.value.length === 0) {
+    alert('❌ ไม่มี roles ที่มีการเปลี่ยนแปลง')
+    return
+  }
+
+  isSavingRoles.value = true
+  const rolesToSave = selectedDirtyRoles.value
+  const successCount = { value: 0 }
+  const failureCount = { value: 0 }
+
+  try {
+    // Save all selected roles concurrently
+    const savePromises = rolesToSave.map(async (roleId) => {
+      try {
+        const rolePerms = store.rolePermissions[roleId]
+        if (!rolePerms) return
+
+        const result = await store.updateRolePermissions(roleId, rolePerms.permissions)
+
+        if (result.success) {
+          originalRolePermissions.value[roleId] = {
+            roleId,
+            permissions: JSON.parse(JSON.stringify(rolePerms.permissions)),
+          }
+          successCount.value++
+        } else {
+          failureCount.value++
+          console.error(`Failed to save ${roleId}:`, result.error)
+        }
+      } catch (error: any) {
+        failureCount.value++
+        console.error(`Error saving ${roleId}:`, error.message)
+      }
+    })
+
+    await Promise.all(savePromises)
+
+    // Show result message
+    let message = ''
+    if (successCount.value > 0) {
+      message += `✅ บันทึก ${successCount.value} roles สำเร็จ`
+    }
+    if (failureCount.value > 0) {
+      message += `\n❌ ล้มเหลว ${failureCount.value} roles`
+    }
+
+    alert(message)
+
+    // Clear selection after successful save
+    if (failureCount.value === 0) {
+      selectedRoles.value.clear()
+    }
+  } catch (error: any) {
+    alert(`❌ เกิดข้อผิดพลาด: ${error.message}`)
+  } finally {
+    isSavingRoles.value = false
+  }
 }
 
 /**
