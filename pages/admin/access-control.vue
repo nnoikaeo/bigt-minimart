@@ -227,25 +227,21 @@
           </div>
         </div>
 
-        <!-- Permission Categories with Collapse Toggle (matching Menu Tab pattern) -->
+        <!-- Permission Categories with Collapse Toggle (using CollapsibleGroup component) -->
         <div v-if="store.getAllRoles.length > 0" class="space-y-4">
           <template v-for="(permissions, category) in groupedPermissions" :key="category">
-            <div v-if="permissions.length > 0" class="bg-white rounded-lg shadow">
-              <!-- Category Header with Collapse Toggle -->
-              <div
-                class="px-6 py-4 border-b border-gray-200 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition"
-                @click="togglePermGroupExpanded(category)"
-              >
-                <span class="text-xl transition-transform flex-shrink-0" :style="{ transform: isPermGroupExpanded(category) ? 'rotate(0deg)' : 'rotate(-90deg)' }">
-                  ▼
-                </span>
-                <h3 class="text-base font-bold text-gray-900">
-                  {{ getCategoryLabel(category) }} <span class="text-sm text-gray-500 font-normal">({{ permissions.length }} สิทธิ์)</span>
-                </h3>
-              </div>
-
-              <!-- Permissions Table (Expandable) -->
-              <div v-if="isPermGroupExpanded(category)" class="border-t border-gray-200 overflow-x-auto">
+            <CollapsibleGroup
+              v-if="permissions.length > 0"
+              :group-id="`perm-${category}`"
+              :is-expanded="isPermGroupExpanded(category)"
+              :on-toggle="() => togglePermGroupExpanded(category)"
+              :item-count="permissions.length"
+              item-label="สิทธิ์"
+            >
+              <template #title>
+                {{ getCategoryLabel(category) }}
+              </template>
+              <template #content>
                 <table class="w-full">
                   <thead class="bg-gray-100">
                     <tr class="text-xs font-semibold text-gray-700">
@@ -290,8 +286,8 @@
                     </tr>
                   </tbody>
                 </table>
-              </div>
-            </div>
+              </template>
+            </CollapsibleGroup>
           </template>
         </div>
 
@@ -357,19 +353,19 @@
               </button>
             </div>
           </div>
-          <div v-for="group in sidebarStore.sidebarMenu.filter(g => g.groupKey !== 'dashboard')" :key="group.groupKey" class="bg-white rounded-lg shadow">
-            <!-- Group Header with Collapse Toggle -->
-            <div class="px-6 py-4 border-b border-gray-200 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition" @click="toggleGroupExpanded(group.groupKey)">
-              <span class="text-xl transition-transform flex-shrink-0" :style="{ transform: isGroupExpanded(group.groupKey) ? 'rotate(0deg)' : 'rotate(-90deg)' }">
-                ▼
-              </span>
-              <h3 class="text-base font-bold text-gray-900">
-                {{ group.icon }} {{ group.groupName }} <span class="text-sm text-gray-500 font-normal">({{ group.pages.length }} หน้า)</span>
-              </h3>
-            </div>
-
-            <!-- Pages in Group (Expandable Table) -->
-            <div v-if="isGroupExpanded(group.groupKey)" class="border-t border-gray-200 overflow-x-auto">
+          <template v-for="group in sidebarStore.sidebarMenu.filter(g => g.groupKey !== 'dashboard')" :key="group.groupKey">
+            <CollapsibleGroup
+              :group-id="group.groupKey"
+              :is-expanded="isGroupExpanded(group.groupKey)"
+              :on-toggle="() => toggleGroupExpanded(group.groupKey)"
+              :item-count="group.pages.length"
+              item-label="หน้า"
+              class="mb-4"
+            >
+              <template #title>
+                {{ group.icon }} {{ group.groupName }}
+              </template>
+              <template #content>
                 <table class="w-full">
                   <thead class="bg-gray-100">
                     <tr class="text-xs font-semibold text-gray-700">
@@ -393,76 +389,77 @@
                           : 'bg-white',
                       ]"
                     >
-                    <!-- Checkbox Column -->
-                    <td class="px-4 py-3 text-center">
-                      <input
-                        type="checkbox"
-                        :checked="dirtyPages.includes(page.pageKey)"
-                        @change="(e) => {
-                          if ((e.target as any).checked) {
-                            selectedPages.add(page.pageKey)
-                          } else {
-                            selectedPages.delete(page.pageKey)
-                          }
-                        }"
-                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
-                      />
-                    </td>
+                      <!-- Checkbox Column -->
+                      <td class="px-4 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          :checked="dirtyPages.includes(page.pageKey)"
+                          @change="(e) => {
+                            if ((e.target as any).checked) {
+                              selectedPages.add(page.pageKey)
+                            } else {
+                              selectedPages.delete(page.pageKey)
+                            }
+                          }"
+                          class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                        />
+                      </td>
 
-                    <!-- Page Name Column -->
-                    <td class="px-4 py-3">
-                      <div class="flex items-center gap-2">
-                        <span v-if="page.icon" class="text-lg">{{ page.icon }}</span>
-                        <span class="font-medium text-gray-900">{{ page.pageName }}</span>
-                      </div>
-                    </td>
+                      <!-- Page Name Column -->
+                      <td class="px-4 py-3">
+                        <div class="flex items-center gap-2">
+                          <span v-if="page.icon" class="text-lg">{{ page.icon }}</span>
+                          <span class="font-medium text-gray-900">{{ page.pageName }}</span>
+                        </div>
+                      </td>
 
-                    <!-- Role Checkboxes (Owner, Manager, Assistant Manager, Auditor, Cashier) -->
-                    <td class="px-4 py-3 text-center">
-                      <input
-                        type="checkbox"
-                        :checked="isRoleIncluded(page.pageKey, 'owner')"
-                        @change="(e) => togglePageRole(page, 'owner', (e.target as any).checked)"
-                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
-                      />
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <input
-                        type="checkbox"
-                        :checked="isRoleIncluded(page.pageKey, 'manager')"
-                        @change="(e) => togglePageRole(page, 'manager', (e.target as any).checked)"
-                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
-                      />
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <input
-                        type="checkbox"
-                        :checked="isRoleIncluded(page.pageKey, 'assistant_manager')"
-                        @change="(e) => togglePageRole(page, 'assistant_manager', (e.target as any).checked)"
-                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
-                      />
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <input
-                        type="checkbox"
-                        :checked="isRoleIncluded(page.pageKey, 'auditor')"
-                        @change="(e) => togglePageRole(page, 'auditor', (e.target as any).checked)"
-                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
-                      />
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <input
-                        type="checkbox"
-                        :checked="isRoleIncluded(page.pageKey, 'cashier')"
-                        @change="(e) => togglePageRole(page, 'cashier', (e.target as any).checked)"
-                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
-                      />
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+                      <!-- Role Checkboxes (Owner, Manager, Assistant Manager, Auditor, Cashier) -->
+                      <td class="px-4 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          :checked="isRoleIncluded(page.pageKey, 'owner')"
+                          @change="(e) => togglePageRole(page, 'owner', (e.target as any).checked)"
+                          class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                        />
+                      </td>
+                      <td class="px-4 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          :checked="isRoleIncluded(page.pageKey, 'manager')"
+                          @change="(e) => togglePageRole(page, 'manager', (e.target as any).checked)"
+                          class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                        />
+                      </td>
+                      <td class="px-4 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          :checked="isRoleIncluded(page.pageKey, 'assistant_manager')"
+                          @change="(e) => togglePageRole(page, 'assistant_manager', (e.target as any).checked)"
+                          class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                        />
+                      </td>
+                      <td class="px-4 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          :checked="isRoleIncluded(page.pageKey, 'auditor')"
+                          @change="(e) => togglePageRole(page, 'auditor', (e.target as any).checked)"
+                          class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                        />
+                      </td>
+                      <td class="px-4 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          :checked="isRoleIncluded(page.pageKey, 'cashier')"
+                          @change="(e) => togglePageRole(page, 'cashier', (e.target as any).checked)"
+                          class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                        />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </template>
+            </CollapsibleGroup>
+          </template>
         </div>
       </div>
     </div>
