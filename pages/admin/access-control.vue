@@ -717,6 +717,44 @@ watch(
   }
 )
 
+/**
+ * Monitor sidebar menu tab dirty state
+ * Alert when Menu tab has changes
+ */
+watch(
+  () => dirtyPages.value,
+  (dirty) => {
+    if (dirty && dirty.length > 0) {
+      console.log(`[AccessControl] Menu Tab: ${dirty.length} pages changed`)
+      // Suggest checking Roles tab for consistency
+      if (dirtyRoles.value.length > 0) {
+        console.warn(
+          `⚠️ Both Menu (${dirty.length}) and Roles (${dirtyRoles.value.length}) tabs have changes. Consider reviewing for consistency.`
+        )
+      }
+    }
+  }
+)
+
+/**
+ * Monitor roles tab dirty state
+ * Alert when Roles tab has changes
+ */
+watch(
+  () => dirtyRoles.value,
+  (dirty) => {
+    if (dirty && dirty.length > 0) {
+      console.log(`[AccessControl] Roles Tab: ${dirty.length} roles changed`)
+      // Suggest checking Menu tab for consistency
+      if (dirtyPages.value.length > 0) {
+        console.warn(
+          `⚠️ Both Roles (${dirty.length}) and Menu (${dirtyPages.value.length}) tabs have changes. Consider reviewing for consistency.`
+        )
+      }
+    }
+  }
+)
+
 // =========================================================================
 // Methods
 // ===================================================================
