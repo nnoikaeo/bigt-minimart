@@ -265,16 +265,16 @@
                       :key="perm.id"
                       class="transition"
                       :class="[
-                        selectedPermissions.has(perm.id)
-                          ? 'bg-blue-50 hover:bg-blue-100'
+                        isPermissionDirty(perm.id)
+                          ? 'bg-yellow-50 hover:bg-yellow-100'
                           : 'bg-white hover:bg-gray-50',
                       ]"
                     >
-                      <!-- คอลัมน์เลือก -->
+                      <!-- คอลัมน์เลือก (Auto-checks if dirty) -->
                       <td class="px-4 py-3 text-center">
                         <input
                           type="checkbox"
-                          :checked="selectedPermissions.has(perm.id)"
+                          :checked="isPermissionDirty(perm.id)"
                           @change="(e) => {
                             if ((e.target as any).checked) {
                               selectedPermissions.add(perm.id)
@@ -778,6 +778,22 @@ const selectedDirtyRoles = computed(() => {
 })
 
 /**
+ * Check if a permission has any dirty assignments (any role has changed for this permission)
+ */
+const isPermissionDirty = (permissionId: string): boolean => {
+  // Check each role to see if any has a different value for this permission
+  for (const roleId of dirtyRoles.value) {
+    const currentPerms = store.rolePermissions[roleId]?.permissions || {}
+    const originalPerms = originalRolePermissions.value[roleId]?.permissions || {}
+
+    if (currentPerms[permissionId] !== originalPerms[permissionId]) {
+      return true
+    }
+  }
+  return false
+}
+
+/**
  * Group permissions by category for matrix view
  */
 const groupedPermissions = computed(() => {
@@ -1204,7 +1220,7 @@ const isPermGroupExpanded = (categoryKey: string): boolean => {
  */
 const getCategoryLabel = (category: string): string => {
   const labels: Record<string, string> = {
-    dashboard: '📊 Dashboard',
+    dashboard: '📊 แดชบอร์ด',
     sales: '👁️ ขาย',
     finance: '💰 การเงิน',
     users: '👥 ผู้ใช้ & บทบาท',
