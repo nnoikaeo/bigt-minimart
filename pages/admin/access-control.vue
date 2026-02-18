@@ -246,6 +246,7 @@
                   <!-- Table Header (Consistent Styling) -->
                   <thead class="bg-gray-100">
                     <tr class="text-xs font-semibold text-gray-700 uppercase">
+                      <th class="px-4 py-3 text-center w-14">เลือก</th>
                       <th class="px-4 py-3 text-left min-w-56">สิทธิ์</th>
                       <th
                         v-for="role in store.getAllRoles"
@@ -262,8 +263,29 @@
                     <tr
                       v-for="perm in permissions"
                       :key="perm.id"
-                      class="bg-white hover:bg-gray-50 transition"
+                      class="transition"
+                      :class="[
+                        selectedPermissions.has(perm.id)
+                          ? 'bg-blue-50 hover:bg-blue-100'
+                          : 'bg-white hover:bg-gray-50',
+                      ]"
                     >
+                      <!-- Selection Checkbox Column -->
+                      <td class="px-4 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          :checked="selectedPermissions.has(perm.id)"
+                          @change="(e) => {
+                            if ((e.target as any).checked) {
+                              selectedPermissions.add(perm.id)
+                            } else {
+                              selectedPermissions.delete(perm.id)
+                            }
+                          }"
+                          class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                        />
+                      </td>
+
                       <!-- Item Name Column (with Description) -->
                       <td class="px-4 py-3">
                         <div>
@@ -377,7 +399,7 @@
                       <th class="px-4 py-3 text-center min-w-32" title="เจ้าของ">เจ้าของ</th>
                       <th class="px-4 py-3 text-center min-w-32" title="ผู้จัดการ">ผู้จัดการ</th>
                       <th class="px-4 py-3 text-center min-w-32" title="ผู้ช่วยผู้จัดการ">ผู้ช่วย</th>
-                      <th class="px-4 py-3 text-center min-w-32" title="ผู้ตรวจสอบ">ออดิท</th>
+                      <th class="px-4 py-3 text-center min-w-32" title="ผู้ตรวจสอบ">ผู้ตรวจสอบ</th>
                       <th class="px-4 py-3 text-center min-w-32" title="แคชเชียร์">แคชเชียร์</th>
                     </tr>
                   </thead>
@@ -715,6 +737,7 @@ const expandedGroups = ref<Set<string>>(new Set())
 // Roles & Permissions Management
 const originalRolePermissions = ref<Record<string, RolePermission>>({})
 const selectedRoles = ref<Set<string>>(new Set())
+const selectedPermissions = ref<Set<string>>(new Set())
 const isSavingRoles = ref(false)
 const expandedPermGroups = ref<Set<string>>(new Set(['dashboard', 'sales', 'finance', 'users']))
 
