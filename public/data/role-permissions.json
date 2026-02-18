@@ -26,7 +26,7 @@
       "approve-sales": false,
       "view-finance": true,
       "edit-finance": true,
-      "manage-users": true,
+      "manage-users": false,
       "manage-roles": false,
       "view-audit-log": true
     }

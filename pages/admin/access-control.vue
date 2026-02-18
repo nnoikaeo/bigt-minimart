@@ -182,54 +182,56 @@
 
       <!-- Roles Tab - Matrix View -->
       <div v-show="activeTab === 'roles'" class="space-y-6">
-        <!-- Status Bar -->
-        <div
-          :class="[
-            'rounded-lg p-4 flex items-center justify-between transition',
-            dirtyRoles.length > 0
-              ? 'bg-yellow-50 border border-yellow-300'
-              : 'bg-gray-50 border border-gray-200'
-          ]"
-        >
-          <div class="text-sm" :class="dirtyRoles.length > 0 ? 'text-yellow-800' : 'text-gray-600'">
-            <span class="font-medium">
-              <span v-if="dirtyRoles.length > 0">⚠️ มี {{ dirtyRoles.length }} บทบาท ที่เปลี่ยนแปลง</span>
-              <span v-else>✅ ไม่มีการเปลี่ยนแปลง</span>
-            </span>
-            <span v-if="dirtyRoles.length > 0 && selectedDirtyRoles.length > 0" class="ml-2">(เลือก {{ selectedDirtyRoles.length }})</span>
+        <!-- Roles Content with Status Bar -->
+        <div class="space-y-2">
+          <!-- Status Bar -->
+          <div
+            :class="[
+              'rounded-lg p-4 flex items-center justify-between transition',
+              dirtyRoles.length > 0
+                ? 'bg-yellow-50 border border-yellow-300'
+                : 'bg-gray-50 border border-gray-200'
+            ]"
+          >
+            <div class="text-sm" :class="dirtyRoles.length > 0 ? 'text-yellow-800' : 'text-gray-600'">
+              <span class="font-medium">
+                <span v-if="dirtyRoles.length > 0">⚠️ มี {{ dirtyRoles.length }} บทบาท ที่เปลี่ยนแปลง</span>
+                <span v-else>✅ ไม่มีการเปลี่ยนแปลง</span>
+              </span>
+              <span v-if="dirtyRoles.length > 0 && selectedDirtyRoles.length > 0" class="ml-2">(เลือก {{ selectedDirtyRoles.length }})</span>
+            </div>
+            <div class="flex gap-2">
+              <button
+                @click="saveBatchRoles"
+                :disabled="dirtyRoles.length === 0 || selectedDirtyRoles.length === 0 || isSavingRoles"
+                class="px-4 py-2 rounded-lg transition font-medium text-sm"
+                :class="
+                  dirtyRoles.length > 0 && selectedDirtyRoles.length > 0 && !isSavingRoles
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'border border-gray-300 text-gray-600 cursor-not-allowed'
+                "
+              >
+                <span v-if="isSavingRoles" class="inline-block animate-spin">🔄</span>
+                <span v-else>💾 บันทึกที่เลือก ({{ selectedDirtyRoles.length }})</span>
+              </button>
+              <button
+                @click="openResetConfirm"
+                :disabled="dirtyRoles.length === 0"
+                class="px-4 py-2 rounded-lg transition font-medium text-sm"
+                :class="
+                  dirtyRoles.length > 0
+                    ? 'bg-orange-600 hover:bg-orange-700 text-white'
+                    : 'border border-gray-300 text-gray-600 cursor-not-allowed'
+                "
+              >
+                🔄 รีเซ็ต
+              </button>
+            </div>
           </div>
-          <div class="flex gap-2">
-            <button
-              @click="saveBatchRoles"
-              :disabled="dirtyRoles.length === 0 || selectedDirtyRoles.length === 0 || isSavingRoles"
-              class="px-4 py-2 rounded-lg transition font-medium text-sm"
-              :class="
-                dirtyRoles.length > 0 && selectedDirtyRoles.length > 0 && !isSavingRoles
-                  ? 'bg-green-600 hover:bg-green-700 text-white'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              "
-            >
-              <span v-if="isSavingRoles">💾 กำลังบันทึก...</span>
-              <span v-else>💾 บันทึก</span>
-            </button>
-            <button
-              @click="openResetConfirm"
-              :disabled="dirtyRoles.length === 0"
-              class="px-4 py-2 rounded-lg transition font-medium text-sm"
-              :class="
-                dirtyRoles.length > 0
-                  ? 'bg-orange-600 hover:bg-orange-700 text-white'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              "
-            >
-              🔄 รีเซ็ต
-            </button>
-          </div>
-        </div>
 
-        <!-- Permission Categories with Collapse Toggle (using CollapsibleGroup component) -->
-        <div v-if="store.getAllRoles.length > 0" class="space-y-4">
-          <template v-for="(permissions, category) in groupedPermissions" :key="category">
+          <!-- Permission Categories with Collapse Toggle (using CollapsibleGroup component) -->
+          <div v-if="store.getAllRoles.length > 0">
+            <template v-for="(permissions, category) in groupedPermissions" :key="category">
             <CollapsibleGroup
               v-if="permissions.length > 0"
               :group-id="`perm-${category}`"
@@ -237,6 +239,7 @@
               :on-toggle="() => togglePermGroupExpanded(category)"
               :item-count="permissions.length"
               item-label="สิทธิ์"
+              class="mb-2"
             >
               <template #title>
                 {{ getCategoryLabel(category) }}
@@ -310,10 +313,11 @@
               </template>
             </CollapsibleGroup>
           </template>
-        </div>
+          </div>
 
-        <div v-else class="p-8 bg-white rounded-lg text-center">
-          <p class="text-gray-600">ไม่พบบทบาท</p>
+          <div v-else class="p-8 bg-white rounded-lg text-center">
+            <p class="text-gray-600">ไม่พบบทบาท</p>
+          </div>
         </div>
       </div>
 
@@ -767,6 +771,7 @@ const dirtyRoles = computed(() => {
       dirty.push(roleId)
     }
   }
+
   return dirty
 })
 
@@ -778,19 +783,40 @@ const selectedDirtyRoles = computed(() => {
 })
 
 /**
- * Check if a permission has any dirty assignments (any role has changed for this permission)
+ * Get set of dirty permission IDs (computed property for proper reactivity)
+ * This ensures Vue tracks changes and properly re-renders checkboxes
  */
-const isPermissionDirty = (permissionId: string): boolean => {
-  // Check each role to see if any has a different value for this permission
+const dirtyPermissions = computed(() => {
+  const dirty = new Set<string>()
+
+  // For each dirty role, find which permissions changed
   for (const roleId of dirtyRoles.value) {
     const currentPerms = store.rolePermissions[roleId]?.permissions || {}
     const originalPerms = originalRolePermissions.value[roleId]?.permissions || {}
 
-    if (currentPerms[permissionId] !== originalPerms[permissionId]) {
-      return true
+    // Check each permission
+    for (const permId in currentPerms) {
+      if (currentPerms[permId] !== originalPerms[permId]) {
+        dirty.add(permId)
+      }
+    }
+
+    // Also check permissions that were in original but not in current
+    for (const permId in originalPerms) {
+      if (currentPerms[permId] !== originalPerms[permId]) {
+        dirty.add(permId)
+      }
     }
   }
-  return false
+
+  return dirty
+})
+
+/**
+ * Check if a permission has any dirty assignments (any role has changed for this permission)
+ */
+const isPermissionDirty = (permissionId: string): boolean => {
+  return dirtyPermissions.value.has(permissionId)
 }
 
 /**
@@ -895,14 +921,17 @@ watch(
  * Load all data from store
  */
 const loadData = async () => {
-  console.log('[AccessControl Page] loadData called')
-  console.log('[AccessControl Page] store instance:', store)
-  console.log('[AccessControl Page] store.loadAllData type:', typeof store.loadAllData)
-
   try {
-    console.log('[AccessControl Page] Calling store.loadAllData()')
     await store.loadAllData()
-    console.log('[AccessControl Page] loadAllData completed successfully')
+
+    // Load role permissions for all roles
+    // Note: store.loadAllData() doesn't load role permissions, we need to fetch them separately
+    if (store.getAllRoles.length > 0) {
+      const fetchPromises = store.getAllRoles.map((role) =>
+        store.fetchRolePermissions(role.id)
+      )
+      await Promise.all(fetchPromises)
+    }
 
     // Initialize original role permissions for dirty tracking
     originalRolePermissions.value = JSON.parse(JSON.stringify(store.rolePermissions))
