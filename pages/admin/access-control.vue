@@ -393,11 +393,14 @@
                     <tr class="text-xs font-semibold text-gray-700 uppercase">
                       <th class="px-4 py-3 text-center w-14">เลือก</th>
                       <th class="px-4 py-3 text-left min-w-56">ชื่อเพจ</th>
-                      <th class="px-4 py-3 text-center min-w-32" title="เจ้าของ">เจ้าของ</th>
-                      <th class="px-4 py-3 text-center min-w-32" title="ผู้จัดการ">ผู้จัดการ</th>
-                      <th class="px-4 py-3 text-center min-w-32" title="ผู้ช่วยผู้จัดการ">ผู้ช่วย</th>
-                      <th class="px-4 py-3 text-center min-w-32" title="ผู้ตรวจสอบ">ผู้ตรวจสอบ</th>
-                      <th class="px-4 py-3 text-center min-w-32" title="แคชเชียร์">แคชเชียร์</th>
+                      <th
+                        v-for="role in store.getAllRoles"
+                        :key="`menu-header-${role.id}`"
+                        class="px-4 py-3 text-center min-w-32"
+                        :title="role.description"
+                      >
+                        {{ role.name }}
+                      </th>
                     </tr>
                   </thead>
                   <!-- Table Body (Consistent Display) -->
@@ -438,44 +441,16 @@
                         </div>
                       </td>
 
-                      <!-- Role Checkboxes (Consistent Width) -->
-                      <td class="px-4 py-3 text-center">
+                      <!-- Role Checkboxes (Dynamic Columns - Consistent Width) -->
+                      <td
+                        v-for="role in store.getAllRoles"
+                        :key="`${role.id}-${page.pageKey}`"
+                        class="px-4 py-3 text-center"
+                      >
                         <input
                           type="checkbox"
-                          :checked="isRoleIncluded(page.pageKey, 'owner')"
-                          @change="(e) => togglePageRole(page, 'owner', (e.target as any).checked)"
-                          class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
-                        />
-                      </td>
-                      <td class="px-4 py-3 text-center">
-                        <input
-                          type="checkbox"
-                          :checked="isRoleIncluded(page.pageKey, 'manager')"
-                          @change="(e) => togglePageRole(page, 'manager', (e.target as any).checked)"
-                          class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
-                        />
-                      </td>
-                      <td class="px-4 py-3 text-center">
-                        <input
-                          type="checkbox"
-                          :checked="isRoleIncluded(page.pageKey, 'assistant_manager')"
-                          @change="(e) => togglePageRole(page, 'assistant_manager', (e.target as any).checked)"
-                          class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
-                        />
-                      </td>
-                      <td class="px-4 py-3 text-center">
-                        <input
-                          type="checkbox"
-                          :checked="isRoleIncluded(page.pageKey, 'auditor')"
-                          @change="(e) => togglePageRole(page, 'auditor', (e.target as any).checked)"
-                          class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
-                        />
-                      </td>
-                      <td class="px-4 py-3 text-center">
-                        <input
-                          type="checkbox"
-                          :checked="isRoleIncluded(page.pageKey, 'cashier')"
-                          @change="(e) => togglePageRole(page, 'cashier', (e.target as any).checked)"
+                          :checked="isRoleIncluded(page.pageKey, role.id as UserRole)"
+                          @change="(e) => togglePageRole(page, role.id as UserRole, (e.target as any).checked)"
                           class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                         />
                       </td>
