@@ -1,78 +1,78 @@
 [
   {
     "id": "view-dashboard",
-    "name": "View Dashboard",
-    "description": "Can view the main dashboard",
+    "name": "ดูแดชบอร์ด",
+    "description": "สามารถดูแดชบอร์ดหลัก",
     "category": "dashboard",
     "createdAt": "2024-01-15T08:00:00Z"
   },
   {
     "id": "view-sales",
-    "name": "View Sales",
-    "description": "Can view sales records and reports",
+    "name": "ดูการขาย",
+    "description": "สามารถดูบันทึกการขายและรายงาน",
     "category": "sales",
     "createdAt": "2024-01-15T08:00:00Z"
   },
   {
     "id": "create-sales",
-    "name": "Create Sales",
-    "description": "Can create new sales transactions",
+    "name": "สร้างการขาย",
+    "description": "สามารถสร้างธุรกรรมการขายใหม่",
     "category": "sales",
     "createdAt": "2024-01-15T08:00:00Z"
   },
   {
     "id": "edit-sales",
-    "name": "Edit Sales",
-    "description": "Can edit existing sales transactions",
+    "name": "แก้ไขการขาย",
+    "description": "สามารถแก้ไขธุรกรรมการขายที่มีอยู่",
     "category": "sales",
     "createdAt": "2024-01-15T08:00:00Z"
   },
   {
     "id": "delete-sales",
-    "name": "Delete Sales",
-    "description": "Can delete sales transactions",
+    "name": "ลบการขาย",
+    "description": "สามารถลบธุรกรรมการขาย",
     "category": "sales",
     "createdAt": "2026-02-09T08:00:00Z"
   },
   {
     "id": "approve-sales",
-    "name": "Approve Sales",
-    "description": "Can approve pending sales transactions",
+    "name": "อนุมัติการขาย",
+    "description": "สามารถอนุมัติธุรกรรมการขายที่รอดำเนินการ",
     "category": "sales",
     "createdAt": "2026-02-09T08:00:00Z"
   },
   {
     "id": "view-finance",
-    "name": "View Finance",
-    "description": "Can view financial reports and data",
+    "name": "ดูการเงิน",
+    "description": "สามารถดูรายงานการเงินและข้อมูล",
     "category": "finance",
     "createdAt": "2024-01-15T08:00:00Z"
   },
   {
     "id": "edit-finance",
-    "name": "Edit Finance",
-    "description": "Can edit financial data and reports",
+    "name": "แก้ไขการเงิน",
+    "description": "สามารถแก้ไขข้อมูลและรายงานการเงิน",
     "category": "finance",
     "createdAt": "2026-02-09T08:00:00Z"
   },
   {
     "id": "manage-users",
-    "name": "Manage Users",
-    "description": "Can create, edit, and delete users",
+    "name": "จัดการผู้ใช้",
+    "description": "สามารถสร้าง แก้ไข และลบผู้ใช้",
     "category": "users",
     "createdAt": "2024-01-15T08:00:00Z"
   },
   {
     "id": "manage-roles",
-    "name": "Manage Roles",
-    "description": "Can manage roles and permissions",
+    "name": "จัดการบทบาท",
+    "description": "สามารถจัดการบทบาทและสิทธิ์",
     "category": "roles",
     "createdAt": "2024-01-15T08:00:00Z"
   },
   {
     "id": "view-audit-log",
-    "name": "View Audit Log",
-    "description": "Can view all system audit logs",
+    "name": "ดูบันทึกการตรวจสอบ",
+    "description": "สามารถดูบันทึกการตรวจสอบระบบทั้งหมด",
     "category": "dashboard",
     "createdAt": "2024-01-15T08:00:00Z"
   }

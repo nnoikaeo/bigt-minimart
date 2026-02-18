@@ -48,7 +48,7 @@
         >
           <span class="flex items-center gap-2">
             🔐
-            บทบาท และ สิทธิ์
+            บทบาทและสิทธิ์
           </span>
         </button>
       </nav>
@@ -182,130 +182,142 @@
 
       <!-- Roles Tab - Matrix View -->
       <div v-show="activeTab === 'roles'" class="space-y-6">
-        <!-- Status Bar -->
-        <div
-          :class="[
-            'rounded-lg p-4 flex items-center justify-between transition',
-            dirtyRoles.length > 0
-              ? 'bg-yellow-50 border border-yellow-300'
-              : 'bg-gray-50 border border-gray-200'
-          ]"
-        >
-          <div class="text-sm" :class="dirtyRoles.length > 0 ? 'text-yellow-800' : 'text-gray-600'">
-            <span class="font-medium">
-              <span v-if="dirtyRoles.length > 0">⚠️ มี {{ dirtyRoles.length }} roles ที่เปลี่ยนแปลง</span>
-              <span v-else>✅ ไม่มีการเปลี่ยนแปลง</span>
-            </span>
-            <span v-if="dirtyRoles.length > 0 && selectedDirtyRoles.length > 0" class="ml-2">(เลือก {{ selectedDirtyRoles.length }})</span>
+        <!-- Roles Content with Status Bar -->
+        <div class="space-y-2">
+          <!-- Status Bar -->
+          <div
+            :class="[
+              'rounded-lg p-4 flex items-center justify-between transition',
+              dirtyRoles.length > 0
+                ? 'bg-yellow-50 border border-yellow-300'
+                : 'bg-gray-50 border border-gray-200'
+            ]"
+          >
+            <div class="text-sm" :class="dirtyRoles.length > 0 ? 'text-yellow-800' : 'text-gray-600'">
+              <span class="font-medium">
+                <span v-if="dirtyRoles.length > 0">⚠️ มี {{ dirtyRoles.length }} บทบาท ที่เปลี่ยนแปลง</span>
+                <span v-else>✅ ไม่มีการเปลี่ยนแปลง</span>
+              </span>
+              <span v-if="dirtyRoles.length > 0 && selectedDirtyRoles.length > 0" class="ml-2">(เลือก {{ selectedDirtyRoles.length }})</span>
+            </div>
+            <div class="flex gap-2">
+              <button
+                @click="saveBatchRoles"
+                :disabled="dirtyRoles.length === 0 || selectedDirtyRoles.length === 0 || isSavingRoles"
+                class="px-4 py-2 rounded-lg transition font-medium text-sm"
+                :class="
+                  dirtyRoles.length > 0 && selectedDirtyRoles.length > 0 && !isSavingRoles
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'border border-gray-300 text-gray-600 cursor-not-allowed'
+                "
+              >
+                <span v-if="isSavingRoles" class="inline-block animate-spin">🔄</span>
+                <span v-else>💾 บันทึกที่เลือก ({{ selectedDirtyRoles.length }})</span>
+              </button>
+              <button
+                @click="openResetConfirm"
+                :disabled="dirtyRoles.length === 0"
+                class="px-4 py-2 rounded-lg transition font-medium text-sm"
+                :class="
+                  dirtyRoles.length > 0
+                    ? 'bg-orange-600 hover:bg-orange-700 text-white'
+                    : 'border border-gray-300 text-gray-600 cursor-not-allowed'
+                "
+              >
+                🔄 รีเซ็ต
+              </button>
+            </div>
           </div>
-          <div class="flex gap-2">
-            <button
-              @click="saveBatchRoles"
-              :disabled="dirtyRoles.length === 0 || selectedDirtyRoles.length === 0 || isSavingRoles"
-              class="px-4 py-2 rounded-lg transition font-medium text-sm"
-              :class="
-                dirtyRoles.length > 0 && selectedDirtyRoles.length > 0 && !isSavingRoles
-                  ? 'bg-green-600 hover:bg-green-700 text-white'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              "
+
+          <!-- Permission Categories with Collapse Toggle (using CollapsibleGroup component) -->
+          <div v-if="store.getAllRoles.length > 0">
+            <template v-for="(permissions, category) in groupedPermissions" :key="category">
+            <CollapsibleGroup
+              v-if="permissions.length > 0"
+              :group-id="`perm-${category}`"
+              :is-expanded="isPermGroupExpanded(category)"
+              :on-toggle="() => togglePermGroupExpanded(category)"
+              :item-count="permissions.length"
+              item-label="สิทธิ์"
+              class="mb-2"
             >
-              <span v-if="isSavingRoles">💾 กำลังบันทึก...</span>
-              <span v-else>💾 บันทึก</span>
-            </button>
-            <button
-              @click="openResetConfirm"
-              :disabled="dirtyRoles.length === 0"
-              class="px-4 py-2 rounded-lg transition font-medium text-sm"
-              :class="
-                dirtyRoles.length > 0
-                  ? 'bg-orange-600 hover:bg-orange-700 text-white'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              "
-            >
-              🔄 รีเซ็ต
-            </button>
-          </div>
-        </div>
-
-        <!-- Permissions Matrix -->
-        <div v-if="store.getAllRoles.length > 0" class="bg-white rounded-lg shadow overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="w-full">
-              <!-- Header with Role Names -->
-              <thead class="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase w-64">
-                    สิทธิ์
-                  </th>
-                  <th
-                    v-for="role in store.getAllRoles"
-                    :key="role.id"
-                    class="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase whitespace-nowrap"
-                  >
-                    {{ role.name }}
-                  </th>
-                </tr>
-              </thead>
-
-              <!-- Permission Rows -->
-              <tbody class="divide-y divide-gray-200">
-                <!-- For each category -->
-                <template v-for="(permissions, category) in groupedPermissions" :key="category">
-                  <!-- Category Header (Expandable) -->
-                  <tr
-                    v-if="permissions.length > 0"
-                    class="bg-blue-50 hover:bg-blue-100 cursor-pointer transition"
-                    @click="togglePermGroupExpanded(category)"
-                  >
-                    <td colspan="100" class="px-6 py-3">
-                      <div class="flex items-center gap-2">
-                        <span class="text-lg">
-                          {{ isPermGroupExpanded(category) ? '▼' : '▶' }}
-                        </span>
-                        <span class="font-semibold text-gray-900">
-                          {{ getCategoryLabel(category) }}
-                        </span>
-                        <span class="text-xs text-gray-500 ml-2">
-                          ({{ permissions.length }} สิทธิ์)
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-
-                  <!-- Individual Permissions (shown when category is expanded) -->
-                  <tr
-                    v-for="perm in permissions"
-                    v-show="isPermGroupExpanded(category)"
-                    :key="perm.id"
-                    class="hover:bg-gray-50 transition"
-                  >
-                    <td class="px-6 py-3 text-sm text-gray-900 font-medium w-64">
-                      <div>
-                        <p class="font-medium">{{ perm.name }}</p>
-                        <p class="text-xs text-gray-500 mt-1">{{ perm.description }}</p>
-                      </div>
-                    </td>
-                    <td
-                      v-for="role in store.getAllRoles"
-                      :key="`${role.id}-${perm.id}`"
-                      class="px-4 py-3 text-center"
+              <template #title>
+                {{ getCategoryLabel(category) }}
+              </template>
+              <template #content>
+                <table class="w-full">
+                  <!-- หัวตารางสิทธิ์ -->
+                  <thead class="bg-gray-100">
+                    <tr class="text-xs font-semibold text-gray-700 uppercase">
+                      <th class="px-4 py-3 text-center w-14">เลือก</th>
+                      <th class="px-4 py-3 text-left min-w-56">สิทธิ์</th>
+                      <th
+                        v-for="role in store.getAllRoles"
+                        :key="`header-${role.id}`"
+                        class="px-4 py-3 text-center min-w-32"
+                        :title="role.description"
+                      >
+                        {{ role.name }}
+                      </th>
+                    </tr>
+                  </thead>
+                  <!-- เนื้อหาตารางสิทธิ์ -->
+                  <tbody class="divide-y divide-gray-200">
+                    <tr
+                      v-for="perm in permissions"
+                      :key="perm.id"
+                      class="transition"
+                      :class="[
+                        isPermissionDirty(perm.id)
+                          ? 'bg-yellow-50 hover:bg-yellow-100'
+                          : 'bg-white hover:bg-gray-50',
+                      ]"
                     >
-                      <input
-                        type="checkbox"
-                        :checked="isPermissionGranted(role.id, perm.id)"
-                        @change="togglePermissionForRole(role.id, perm.id)"
-                        class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
-                      />
-                    </td>
-                  </tr>
-                </template>
-              </tbody>
-            </table>
-          </div>
-        </div>
+                      <!-- คอลัมน์เลือก (Auto-checks if dirty) -->
+                      <td class="px-4 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          :checked="isPermissionDirty(perm.id)"
+                          @change="(e) => {
+                            if ((e.target as any).checked) {
+                              selectedPermissions.add(perm.id)
+                            } else {
+                              selectedPermissions.delete(perm.id)
+                            }
+                          }"
+                          class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                        />
+                      </td>
 
-        <div v-else class="p-8 bg-white rounded-lg text-center">
-          <p class="text-gray-600">ไม่พบบทบาท</p>
+                      <!-- คอลัมน์ชื่อสิทธิ์ -->
+                      <td class="px-4 py-3">
+                        <p class="font-medium text-gray-900">{{ perm.name }}</p>
+                      </td>
+
+                      <!-- คอลัมน์ช่องทำเครื่องหมายบทบาท -->
+                      <td
+                        v-for="role in store.getAllRoles"
+                        :key="`${role.id}-${perm.id}`"
+                        class="px-4 py-3 text-center"
+                      >
+                        <input
+                          type="checkbox"
+                          :checked="isPermissionGranted(role.id, perm.id)"
+                          @change="togglePermissionForRole(role.id, perm.id)"
+                          class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                        />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </template>
+            </CollapsibleGroup>
+          </template>
+          </div>
+
+          <div v-else class="p-8 bg-white rounded-lg text-center">
+            <p class="text-gray-600">ไม่พบบทบาท</p>
+          </div>
         </div>
       </div>
 
@@ -366,112 +378,92 @@
               </button>
             </div>
           </div>
-          <div v-for="group in sidebarStore.sidebarMenu.filter(g => g.groupKey !== 'dashboard')" :key="group.groupKey" class="bg-white rounded-lg shadow">
-            <!-- Group Header with Collapse Toggle -->
-            <div class="px-6 py-4 border-b border-gray-200 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition" @click="toggleGroupExpanded(group.groupKey)">
-              <span class="text-xl transition-transform flex-shrink-0" :style="{ transform: isGroupExpanded(group.groupKey) ? 'rotate(0deg)' : 'rotate(-90deg)' }">
-                ▼
-              </span>
-              <h3 class="text-base font-bold text-gray-900">
-                {{ group.icon }} {{ group.groupName }} <span class="text-sm text-gray-500 font-normal">({{ group.pages.length }} หน้า)</span>
-              </h3>
-            </div>
-
-            <!-- Pages in Group (Expandable Table) -->
-            <div v-if="isGroupExpanded(group.groupKey)" class="border-t border-gray-200 overflow-x-auto">
+          <template v-for="group in sidebarStore.sidebarMenu.filter(g => g.groupKey !== 'dashboard')" :key="group.groupKey">
+            <CollapsibleGroup
+              :group-id="group.groupKey"
+              :is-expanded="isGroupExpanded(group.groupKey)"
+              :on-toggle="() => toggleGroupExpanded(group.groupKey)"
+              :item-count="group.pages.length"
+              item-label="หน้า"
+              class="mb-4"
+            >
+              <template #title>
+                {{ group.icon }} {{ group.groupName }}
+              </template>
+              <template #content>
                 <table class="w-full">
+                  <!-- หัวตารางเมนู -->
                   <thead class="bg-gray-100">
-                    <tr class="text-xs font-semibold text-gray-700">
-                      <th class="px-3 py-3 text-center w-14">เลือก</th>
+                    <tr class="text-xs font-semibold text-gray-700 uppercase">
+                      <th class="px-4 py-3 text-center w-14">เลือก</th>
                       <th class="px-4 py-3 text-left min-w-56">ชื่อเพจ</th>
-                      <th class="px-3 py-3 text-center w-20" title="เจ้าของ">เจ้าของ</th>
-                      <th class="px-3 py-3 text-center w-20" title="ผู้จัดการ">ผู้จัดการ</th>
-                      <th class="px-3 py-3 text-center w-20" title="ผู้ช่วยผู้จัดการ">ผู้ช่วย</th>
-                      <th class="px-3 py-3 text-center w-20" title="ผู้ตรวจสอบ">ออดิท</th>
-                      <th class="px-3 py-3 text-center w-20" title="แคชเชียร์">แคชเชียร์</th>
+                      <th
+                        v-for="role in store.getAllRoles"
+                        :key="`menu-header-${role.id}`"
+                        class="px-4 py-3 text-center min-w-32"
+                        :title="role.description"
+                      >
+                        {{ role.name }}
+                      </th>
                     </tr>
                   </thead>
+                  <!-- เนื้อหาตารางเมนู -->
                   <tbody class="divide-y divide-gray-200">
                     <tr
                       v-for="page in group.pages.filter(p => p.pageKey !== 'dashboard')"
                       :key="page.pageKey"
-                      class="hover:bg-gray-50 transition"
+                      class="transition"
                       :class="[
                         dirtyPages.includes(page.pageKey)
-                          ? 'bg-yellow-50'
-                          : 'bg-white',
+                          ? 'bg-yellow-50 hover:bg-yellow-100'
+                          : 'bg-white hover:bg-gray-50',
                       ]"
                     >
-                    <!-- Checkbox Column -->
-                    <td class="px-4 py-3 text-center">
-                      <input
-                        type="checkbox"
-                        :checked="dirtyPages.includes(page.pageKey)"
-                        @change="(e) => {
-                          if ((e.target as any).checked) {
-                            selectedPages.add(page.pageKey)
-                          } else {
-                            selectedPages.delete(page.pageKey)
-                          }
-                        }"
-                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
-                      />
-                    </td>
+                      <!-- คอลัมน์เลือก -->
+                      <td class="px-4 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          :checked="dirtyPages.includes(page.pageKey)"
+                          @change="(e) => {
+                            if ((e.target as any).checked) {
+                              selectedPages.add(page.pageKey)
+                            } else {
+                              selectedPages.delete(page.pageKey)
+                            }
+                          }"
+                          class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                        />
+                      </td>
 
-                    <!-- Page Name Column -->
-                    <td class="px-4 py-3">
-                      <div class="flex items-center gap-2">
-                        <span v-if="page.icon" class="text-lg">{{ page.icon }}</span>
-                        <span class="font-medium text-gray-900">{{ page.pageName }}</span>
-                      </div>
-                    </td>
+                      <!-- คอลัมน์ชื่อเพจและไอคอน -->
+                      <td class="px-4 py-3">
+                        <div class="flex items-center gap-2">
+                          <span v-if="page.icon" class="text-lg flex-shrink-0">{{ page.icon }}</span>
+                          <div class="flex-1">
+                            <p class="font-medium text-gray-900">{{ page.pageName }}</p>
+                          </div>
+                        </div>
+                      </td>
 
-                    <!-- Role Checkboxes (Owner, Manager, Assistant Manager, Auditor, Cashier) -->
-                    <td class="px-4 py-3 text-center">
-                      <input
-                        type="checkbox"
-                        :checked="isRoleIncluded(page.pageKey, 'owner')"
-                        @change="(e) => togglePageRole(page, 'owner', (e.target as any).checked)"
-                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
-                      />
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <input
-                        type="checkbox"
-                        :checked="isRoleIncluded(page.pageKey, 'manager')"
-                        @change="(e) => togglePageRole(page, 'manager', (e.target as any).checked)"
-                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
-                      />
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <input
-                        type="checkbox"
-                        :checked="isRoleIncluded(page.pageKey, 'assistant_manager')"
-                        @change="(e) => togglePageRole(page, 'assistant_manager', (e.target as any).checked)"
-                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
-                      />
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <input
-                        type="checkbox"
-                        :checked="isRoleIncluded(page.pageKey, 'auditor')"
-                        @change="(e) => togglePageRole(page, 'auditor', (e.target as any).checked)"
-                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
-                      />
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                      <input
-                        type="checkbox"
-                        :checked="isRoleIncluded(page.pageKey, 'cashier')"
-                        @change="(e) => togglePageRole(page, 'cashier', (e.target as any).checked)"
-                        class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
-                      />
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+                      <!-- คอลัมน์ช่องทำเครื่องหมายบทบาท -->
+                      <td
+                        v-for="role in store.getAllRoles"
+                        :key="`${role.id}-${page.pageKey}`"
+                        class="px-4 py-3 text-center"
+                      >
+                        <input
+                          type="checkbox"
+                          :checked="isRoleIncluded(page.pageKey, role.id as UserRole)"
+                          @change="(e) => togglePageRole(page, role.id as UserRole, (e.target as any).checked)"
+                          class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                        />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </template>
+            </CollapsibleGroup>
+          </template>
         </div>
       </div>
     </div>
@@ -721,8 +713,9 @@ const expandedGroups = ref<Set<string>>(new Set())
 // Roles & Permissions Management
 const originalRolePermissions = ref<Record<string, RolePermission>>({})
 const selectedRoles = ref<Set<string>>(new Set())
+const selectedPermissions = ref<Set<string>>(new Set())
 const isSavingRoles = ref(false)
-const expandedPermGroups = ref<Set<string>>(new Set(['dashboard', 'sales', 'finance', 'users']))
+const expandedPermGroups = ref<Set<string>>(new Set())
 
 /**
  * Track dirty pages (มีการเปลี่ยนแปลง)
@@ -778,6 +771,7 @@ const dirtyRoles = computed(() => {
       dirty.push(roleId)
     }
   }
+
   return dirty
 })
 
@@ -787,6 +781,43 @@ const dirtyRoles = computed(() => {
 const selectedDirtyRoles = computed(() => {
   return Array.from(selectedRoles.value).filter((roleId) => dirtyRoles.value.includes(roleId))
 })
+
+/**
+ * Get set of dirty permission IDs (computed property for proper reactivity)
+ * This ensures Vue tracks changes and properly re-renders checkboxes
+ */
+const dirtyPermissions = computed(() => {
+  const dirty = new Set<string>()
+
+  // For each dirty role, find which permissions changed
+  for (const roleId of dirtyRoles.value) {
+    const currentPerms = store.rolePermissions[roleId]?.permissions || {}
+    const originalPerms = originalRolePermissions.value[roleId]?.permissions || {}
+
+    // Check each permission
+    for (const permId in currentPerms) {
+      if (currentPerms[permId] !== originalPerms[permId]) {
+        dirty.add(permId)
+      }
+    }
+
+    // Also check permissions that were in original but not in current
+    for (const permId in originalPerms) {
+      if (currentPerms[permId] !== originalPerms[permId]) {
+        dirty.add(permId)
+      }
+    }
+  }
+
+  return dirty
+})
+
+/**
+ * Check if a permission has any dirty assignments (any role has changed for this permission)
+ */
+const isPermissionDirty = (permissionId: string): boolean => {
+  return dirtyPermissions.value.has(permissionId)
+}
 
 /**
  * Group permissions by category for matrix view
@@ -890,14 +921,17 @@ watch(
  * Load all data from store
  */
 const loadData = async () => {
-  console.log('[AccessControl Page] loadData called')
-  console.log('[AccessControl Page] store instance:', store)
-  console.log('[AccessControl Page] store.loadAllData type:', typeof store.loadAllData)
-
   try {
-    console.log('[AccessControl Page] Calling store.loadAllData()')
     await store.loadAllData()
-    console.log('[AccessControl Page] loadAllData completed successfully')
+
+    // Load role permissions for all roles
+    // Note: store.loadAllData() doesn't load role permissions, we need to fetch them separately
+    if (store.getAllRoles.length > 0) {
+      const fetchPromises = store.getAllRoles.map((role) =>
+        store.fetchRolePermissions(role.id)
+      )
+      await Promise.all(fetchPromises)
+    }
 
     // Initialize original role permissions for dirty tracking
     originalRolePermissions.value = JSON.parse(JSON.stringify(store.rolePermissions))
@@ -1215,7 +1249,7 @@ const isPermGroupExpanded = (categoryKey: string): boolean => {
  */
 const getCategoryLabel = (category: string): string => {
   const labels: Record<string, string> = {
-    dashboard: '📊 Dashboard',
+    dashboard: '📊 แดชบอร์ด',
     sales: '👁️ ขาย',
     finance: '💰 การเงิน',
     users: '👥 ผู้ใช้ & บทบาท',
