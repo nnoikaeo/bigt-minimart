@@ -243,8 +243,9 @@
               </template>
               <template #content>
                 <table class="w-full">
+                  <!-- Table Header (Consistent Styling) -->
                   <thead class="bg-gray-100">
-                    <tr class="text-xs font-semibold text-gray-700">
+                    <tr class="text-xs font-semibold text-gray-700 uppercase">
                       <th class="px-4 py-3 text-left min-w-56">สิทธิ์</th>
                       <th
                         v-for="role in store.getAllRoles"
@@ -256,13 +257,14 @@
                       </th>
                     </tr>
                   </thead>
+                  <!-- Table Body (Consistent Display) -->
                   <tbody class="divide-y divide-gray-200">
                     <tr
                       v-for="perm in permissions"
                       :key="perm.id"
-                      class="hover:bg-gray-50 transition"
+                      class="bg-white hover:bg-gray-50 transition"
                     >
-                      <!-- Permission Name Column -->
+                      <!-- Item Name Column (with Description) -->
                       <td class="px-4 py-3">
                         <div>
                           <p class="font-medium text-gray-900">{{ perm.name }}</p>
@@ -270,7 +272,7 @@
                         </div>
                       </td>
 
-                      <!-- Role Checkboxes -->
+                      <!-- Role Checkboxes (Consistent Width) -->
                       <td
                         v-for="role in store.getAllRoles"
                         :key="`${role.id}-${perm.id}`"
@@ -280,7 +282,7 @@
                           type="checkbox"
                           :checked="isPermissionGranted(role.id, perm.id)"
                           @change="togglePermissionForRole(role.id, perm.id)"
-                          class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                          class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                         />
                       </td>
                     </tr>
@@ -367,29 +369,31 @@
               </template>
               <template #content>
                 <table class="w-full">
+                  <!-- Table Header (Consistent Styling) -->
                   <thead class="bg-gray-100">
-                    <tr class="text-xs font-semibold text-gray-700">
-                      <th class="px-3 py-3 text-center w-14">เลือก</th>
+                    <tr class="text-xs font-semibold text-gray-700 uppercase">
+                      <th class="px-4 py-3 text-center w-14">เลือก</th>
                       <th class="px-4 py-3 text-left min-w-56">ชื่อเพจ</th>
-                      <th class="px-3 py-3 text-center w-20" title="เจ้าของ">เจ้าของ</th>
-                      <th class="px-3 py-3 text-center w-20" title="ผู้จัดการ">ผู้จัดการ</th>
-                      <th class="px-3 py-3 text-center w-20" title="ผู้ช่วยผู้จัดการ">ผู้ช่วย</th>
-                      <th class="px-3 py-3 text-center w-20" title="ผู้ตรวจสอบ">ออดิท</th>
-                      <th class="px-3 py-3 text-center w-20" title="แคชเชียร์">แคชเชียร์</th>
+                      <th class="px-4 py-3 text-center min-w-32" title="เจ้าของ">เจ้าของ</th>
+                      <th class="px-4 py-3 text-center min-w-32" title="ผู้จัดการ">ผู้จัดการ</th>
+                      <th class="px-4 py-3 text-center min-w-32" title="ผู้ช่วยผู้จัดการ">ผู้ช่วย</th>
+                      <th class="px-4 py-3 text-center min-w-32" title="ผู้ตรวจสอบ">ออดิท</th>
+                      <th class="px-4 py-3 text-center min-w-32" title="แคชเชียร์">แคชเชียร์</th>
                     </tr>
                   </thead>
+                  <!-- Table Body (Consistent Display) -->
                   <tbody class="divide-y divide-gray-200">
                     <tr
                       v-for="page in group.pages.filter(p => p.pageKey !== 'dashboard')"
                       :key="page.pageKey"
-                      class="hover:bg-gray-50 transition"
+                      class="transition"
                       :class="[
                         dirtyPages.includes(page.pageKey)
-                          ? 'bg-yellow-50'
-                          : 'bg-white',
+                          ? 'bg-yellow-50 hover:bg-yellow-100'
+                          : 'bg-white hover:bg-gray-50',
                       ]"
                     >
-                      <!-- Checkbox Column -->
+                      <!-- Selection Checkbox Column -->
                       <td class="px-4 py-3 text-center">
                         <input
                           type="checkbox"
@@ -401,25 +405,27 @@
                               selectedPages.delete(page.pageKey)
                             }
                           }"
-                          class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                          class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                         />
                       </td>
 
-                      <!-- Page Name Column -->
+                      <!-- Item Name Column (with Icon) -->
                       <td class="px-4 py-3">
                         <div class="flex items-center gap-2">
-                          <span v-if="page.icon" class="text-lg">{{ page.icon }}</span>
-                          <span class="font-medium text-gray-900">{{ page.pageName }}</span>
+                          <span v-if="page.icon" class="text-lg flex-shrink-0">{{ page.icon }}</span>
+                          <div class="flex-1">
+                            <p class="font-medium text-gray-900">{{ page.pageName }}</p>
+                          </div>
                         </div>
                       </td>
 
-                      <!-- Role Checkboxes (Owner, Manager, Assistant Manager, Auditor, Cashier) -->
+                      <!-- Role Checkboxes (Consistent Width) -->
                       <td class="px-4 py-3 text-center">
                         <input
                           type="checkbox"
                           :checked="isRoleIncluded(page.pageKey, 'owner')"
                           @change="(e) => togglePageRole(page, 'owner', (e.target as any).checked)"
-                          class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                          class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                         />
                       </td>
                       <td class="px-4 py-3 text-center">
@@ -427,7 +433,7 @@
                           type="checkbox"
                           :checked="isRoleIncluded(page.pageKey, 'manager')"
                           @change="(e) => togglePageRole(page, 'manager', (e.target as any).checked)"
-                          class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                          class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                         />
                       </td>
                       <td class="px-4 py-3 text-center">
@@ -435,7 +441,7 @@
                           type="checkbox"
                           :checked="isRoleIncluded(page.pageKey, 'assistant_manager')"
                           @change="(e) => togglePageRole(page, 'assistant_manager', (e.target as any).checked)"
-                          class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                          class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                         />
                       </td>
                       <td class="px-4 py-3 text-center">
@@ -443,7 +449,7 @@
                           type="checkbox"
                           :checked="isRoleIncluded(page.pageKey, 'auditor')"
                           @change="(e) => togglePageRole(page, 'auditor', (e.target as any).checked)"
-                          class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                          class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                         />
                       </td>
                       <td class="px-4 py-3 text-center">
@@ -451,7 +457,7 @@
                           type="checkbox"
                           :checked="isRoleIncluded(page.pageKey, 'cashier')"
                           @change="(e) => togglePageRole(page, 'cashier', (e.target as any).checked)"
-                          class="rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                          class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
                         />
                       </td>
                     </tr>

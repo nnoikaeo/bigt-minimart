@@ -26,10 +26,10 @@
       </div>
     </div>
 
-    <!-- Expandable Content -->
+    <!-- Expandable Content (with consistent spacing) -->
     <div
       v-if="isExpanded"
-      class="border-t border-gray-200 overflow-x-auto"
+      class="border-t border-gray-200 overflow-x-auto bg-white"
     >
       <slot name="content" />
     </div>
