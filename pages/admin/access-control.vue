@@ -24,20 +24,6 @@
           </span>
         </button>
         <button
-          @click="activeTab = 'roles'"
-          :class="[
-            'py-4 px-1 border-b-2 font-medium text-sm',
-            activeTab === 'roles'
-              ? 'border-green-500 text-green-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-          ]"
-        >
-          <span class="flex items-center gap-2">
-            🔐
-            บทบาท และ สิทธิ์
-          </span>
-        </button>
-        <button
           @click="activeTab = 'menu'"
           :class="[
             'py-4 px-1 border-b-2 font-medium text-sm',
@@ -49,6 +35,20 @@
           <span class="flex items-center gap-2">
             🗂️
             จัดการเมนู Sidebar
+          </span>
+        </button>
+        <button
+          @click="activeTab = 'roles'"
+          :class="[
+            'py-4 px-1 border-b-2 font-medium text-sm',
+            activeTab === 'roles'
+              ? 'border-green-500 text-green-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+          ]"
+        >
+          <span class="flex items-center gap-2">
+            🔐
+            บทบาท และ สิทธิ์
           </span>
         </button>
       </nav>
@@ -573,7 +573,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useAccessControlStore } from '~/stores/access-control'
 import { useSidebarStore } from '~/stores/sidebar'
-import type { User, Role, UserRole } from '~/types/access-control'
+import type { User, Role, UserRole, RolePermission } from '~/types/access-control'
 import type { SidebarPage } from '~/utils/sidebar-menu'
 
 // Stores
@@ -581,7 +581,7 @@ const store = useAccessControlStore()
 const sidebarStore = useSidebarStore()
 
 // Tabs
-const activeTab = ref<'users' | 'roles' | 'menu'>('users')
+const activeTab = ref<'users' | 'menu' | 'roles'>('users')
 
 // User Modal
 const showUserModal = ref(false)
@@ -614,6 +614,11 @@ const selectedPages = ref<Set<string>>(new Set())
 const isSavingBatch = ref(false)
 const expandedGroups = ref<Set<string>>(new Set())
 
+// Roles & Permissions Management
+const originalRolePermissions = ref<Record<string, RolePermission>>({})
+const selectedRoles = ref<Set<string>>(new Set())
+const isSavingRoles = ref(false)
+
 /**
  * Track dirty pages (มีการเปลี่ยนแปลง)
  */
@@ -643,6 +648,39 @@ const dirtyPages = computed(() => {
  */
 const selectedDirtyPages = computed(() => {
   return Array.from(selectedPages.value).filter((pageKey) => dirtyPages.value.includes(pageKey))
+})
+
+/**
+ * Track dirty roles (มีการเปลี่ยนแปลง permissions)
+ */
+const dirtyRoles = computed(() => {
+  const dirty: string[] = []
+  const current = store.rolePermissions
+  const original = originalRolePermissions.value
+
+  for (const roleId in current) {
+    if (!original[roleId]) continue
+
+    const currentPerms = current[roleId]?.permissions || {}
+    const originalPerms = original[roleId]?.permissions || {}
+
+    // เปรียบเทียบ permissions - deep equality
+    const currentSorted = JSON.stringify(currentPerms)
+    const originalSorted = JSON.stringify(originalPerms)
+    const permsChanged = currentSorted !== originalSorted
+
+    if (permsChanged) {
+      dirty.push(roleId)
+    }
+  }
+  return dirty
+})
+
+/**
+ * Get selected roles that are dirty
+ */
+const selectedDirtyRoles = computed(() => {
+  return Array.from(selectedRoles.value).filter((roleId) => dirtyRoles.value.includes(roleId))
 })
 
 /**
@@ -679,6 +717,44 @@ watch(
   }
 )
 
+/**
+ * Monitor sidebar menu tab dirty state
+ * Alert when Menu tab has changes
+ */
+watch(
+  () => dirtyPages.value,
+  (dirty) => {
+    if (dirty && dirty.length > 0) {
+      console.log(`[AccessControl] Menu Tab: ${dirty.length} pages changed`)
+      // Suggest checking Roles tab for consistency
+      if (dirtyRoles.value.length > 0) {
+        console.warn(
+          `⚠️ Both Menu (${dirty.length}) and Roles (${dirtyRoles.value.length}) tabs have changes. Consider reviewing for consistency.`
+        )
+      }
+    }
+  }
+)
+
+/**
+ * Monitor roles tab dirty state
+ * Alert when Roles tab has changes
+ */
+watch(
+  () => dirtyRoles.value,
+  (dirty) => {
+    if (dirty && dirty.length > 0) {
+      console.log(`[AccessControl] Roles Tab: ${dirty.length} roles changed`)
+      // Suggest checking Menu tab for consistency
+      if (dirtyPages.value.length > 0) {
+        console.warn(
+          `⚠️ Both Roles (${dirty.length}) and Menu (${dirtyPages.value.length}) tabs have changes. Consider reviewing for consistency.`
+        )
+      }
+    }
+  }
+)
+
 // =========================================================================
 // Methods
 // ===================================================================
@@ -690,11 +766,14 @@ const loadData = async () => {
   console.log('[AccessControl Page] loadData called')
   console.log('[AccessControl Page] store instance:', store)
   console.log('[AccessControl Page] store.loadAllData type:', typeof store.loadAllData)
-  
+
   try {
     console.log('[AccessControl Page] Calling store.loadAllData()')
     await store.loadAllData()
     console.log('[AccessControl Page] loadAllData completed successfully')
+
+    // Initialize original role permissions for dirty tracking
+    originalRolePermissions.value = JSON.parse(JSON.stringify(store.rolePermissions))
   } catch (error: any) {
     console.error('[AccessControl Page] loadData error:', error)
   }
@@ -813,6 +892,18 @@ const openPermissionsModal = async (role: Role) => {
   selectedRole.value = role
   await store.fetchRolePermissions(role.id)
   permissionsForm.value = { ...store.getRolePermissions(role.id) }
+
+  // Track original permissions for dirty detection
+  if (!originalRolePermissions.value[role.id]) {
+    originalRolePermissions.value[role.id] = {
+      roleId: role.id,
+      permissions: { ...permissionsForm.value },
+    }
+  }
+
+  // Mark role as selected for batch tracking
+  selectedRoles.value.add(role.id)
+
   showPermissionsModal.value = true
 }
 
@@ -822,6 +913,7 @@ const openPermissionsModal = async (role: Role) => {
 const closePermissionsModal = () => {
   showPermissionsModal.value = false
   selectedRole.value = null
+  // Note: Keep selectedRoles for batch tracking across saves
 }
 
 /**
