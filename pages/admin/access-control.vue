@@ -141,15 +141,15 @@
                     type="button"
                     @click="toggleUserStatus(user)"
                     :class="[
-                      'relative inline-flex w-12 h-7 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500',
+                      'relative inline-flex items-center w-12 h-7 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1',
                       user.isActive ? 'bg-green-500' : 'bg-gray-300',
                     ]"
                     :title="user.isActive ? 'ปิดใช้งาน' : 'เปิดใช้งาน'"
                   >
                     <span
                       :class="[
-                        'inline-block w-7 h-7 rounded-full bg-white transform transition-transform',
-                        user.isActive ? 'translate-x-6' : 'translate-x-0',
+                        'inline-block w-5 h-5 rounded-full bg-white shadow-md transform transition-transform duration-200',
+                        user.isActive ? 'translate-x-6' : 'translate-x-1',
                       ]"
                     />
                   </button>
@@ -666,15 +666,51 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, nextTick } from 'vue'
 import { useAccessControlStore } from '~/stores/access-control'
 import { useSidebarStore } from '~/stores/sidebar'
-import type { User, Role, UserRole, RolePermission } from '~/types/access-control'
-import type { SidebarPage } from '~/utils/sidebar-menu'
+import { useSidebarAccess } from '~/composables/useSidebarAccess'
+import { useRolePermissions } from '~/composables/useRolePermissions'
+import type { User, Role, UserRole } from '~/types/access-control'
 
 // Stores
 const store = useAccessControlStore()
 const sidebarStore = useSidebarStore()
+
+// Composables
+const {
+  selectedPages,
+  isSavingBatch,
+  dirtyPages,
+  selectedDirtyPages,
+  initializeEditingPages,
+  togglePageRole,
+  isRoleIncluded,
+  toggleGroupExpanded,
+  isGroupExpanded,
+  resetPages,
+  saveBatchPages,
+} = useSidebarAccess()
+
+const {
+  originalRolePermissions,
+  selectedRoles,
+  selectedPermissions,
+  isSavingRoles,
+  dirtyRoles,
+  selectedDirtyRoles,
+  dirtyPermissions,
+  groupedPermissions,
+  initializeOriginalPermissions,
+  isPermissionDirty,
+  isPermissionGranted,
+  togglePermissionForRole,
+  resetAllRoles,
+  togglePermGroupExpanded,
+  isPermGroupExpanded,
+  getCategoryLabel,
+  saveBatchRoles,
+} = useRolePermissions()
 
 // Tabs
 const activeTab = ref<'users' | 'menu' | 'roles'>('users')
@@ -682,6 +718,7 @@ const activeTab = ref<'users' | 'menu' | 'roles'>('users')
 // User Modal
 const showUserModal = ref(false)
 const userModalMode = ref<'create' | 'edit'>('create')
+const isUserFormInitializing = ref(false)
 const userForm = ref({
   displayName: '',
   email: '',
@@ -703,159 +740,7 @@ const userToDelete = ref<User | null>(null)
 // Reset Confirmation
 const showResetConfirm = ref(false)
 
-// Sidebar Menu Management
-const editingPages = ref<Record<string, SidebarPage>>({})
-const originalPages = ref<Record<string, SidebarPage>>({})
-const selectedPages = ref<Set<string>>(new Set())
-const isSavingBatch = ref(false)
-const expandedGroups = ref<Set<string>>(new Set())
 
-// Roles & Permissions Management
-const originalRolePermissions = ref<Record<string, RolePermission>>({})
-const selectedRoles = ref<Set<string>>(new Set())
-const selectedPermissions = ref<Set<string>>(new Set())
-const isSavingRoles = ref(false)
-const expandedPermGroups = ref<Set<string>>(new Set())
-
-/**
- * Track dirty pages (มีการเปลี่ยนแปลง)
- */
-const dirtyPages = computed(() => {
-  const dirty: string[] = []
-  for (const [pageKey, editedPage] of Object.entries(editingPages.value)) {
-    const original = originalPages.value[pageKey]
-    if (!original) continue
-
-    const editedRoles = editedPage.requiredRoles
-    const originalRoles = original.requiredRoles
-
-    // เปรียบเทียบ roles - สำหรับ deep equality
-    const editedSorted = JSON.stringify(editedRoles?.sort() || [])
-    const originalSorted = JSON.stringify(originalRoles?.sort() || [])
-    const rolesChanged = editedSorted !== originalSorted
-
-    if (rolesChanged) {
-      dirty.push(pageKey)
-    }
-  }
-  return dirty
-})
-
-/**
- * Get selected pages that are dirty
- */
-const selectedDirtyPages = computed(() => {
-  return Array.from(selectedPages.value).filter((pageKey) => dirtyPages.value.includes(pageKey))
-})
-
-/**
- * Track dirty roles (มีการเปลี่ยนแปลง permissions)
- */
-const dirtyRoles = computed(() => {
-  const dirty: string[] = []
-  const current = store.rolePermissions
-  const original = originalRolePermissions.value
-
-  for (const roleId in current) {
-    if (!original[roleId]) continue
-
-    const currentPerms = current[roleId]?.permissions || {}
-    const originalPerms = original[roleId]?.permissions || {}
-
-    // เปรียบเทียบ permissions - deep equality
-    const currentSorted = JSON.stringify(currentPerms)
-    const originalSorted = JSON.stringify(originalPerms)
-    const permsChanged = currentSorted !== originalSorted
-
-    if (permsChanged) {
-      dirty.push(roleId)
-    }
-  }
-
-  return dirty
-})
-
-/**
- * Get selected roles that are dirty
- */
-const selectedDirtyRoles = computed(() => {
-  return Array.from(selectedRoles.value).filter((roleId) => dirtyRoles.value.includes(roleId))
-})
-
-/**
- * Get set of dirty permission IDs (computed property for proper reactivity)
- * This ensures Vue tracks changes and properly re-renders checkboxes
- */
-const dirtyPermissions = computed(() => {
-  const dirty = new Set<string>()
-
-  // For each dirty role, find which permissions changed
-  for (const roleId of dirtyRoles.value) {
-    const currentPerms = store.rolePermissions[roleId]?.permissions || {}
-    const originalPerms = originalRolePermissions.value[roleId]?.permissions || {}
-
-    // Check each permission
-    for (const permId in currentPerms) {
-      if (currentPerms[permId] !== originalPerms[permId]) {
-        dirty.add(permId)
-      }
-    }
-
-    // Also check permissions that were in original but not in current
-    for (const permId in originalPerms) {
-      if (currentPerms[permId] !== originalPerms[permId]) {
-        dirty.add(permId)
-      }
-    }
-  }
-
-  return dirty
-})
-
-/**
- * Check if a permission has any dirty assignments (any role has changed for this permission)
- */
-const isPermissionDirty = (permissionId: string): boolean => {
-  return dirtyPermissions.value.has(permissionId)
-}
-
-/**
- * Group permissions by category for matrix view
- */
-const groupedPermissions = computed(() => {
-  const perms = store.getAllPermissions || []
-  const grouped: Record<string, any[]> = {
-    dashboard: [],
-    sales: [],
-    finance: [],
-    users: [],
-  }
-
-  for (const perm of perms) {
-    const category = perm.category as string
-    if (category && category in grouped) {
-      grouped[category as keyof typeof grouped]!.push(perm)
-    }
-  }
-
-  return grouped
-})
-
-/**
- * Initialize editing pages from sidebar menu on mount
- */
-const initializeEditingPages = async () => {
-  if (sidebarStore.sidebarMenu.length === 0) {
-    await sidebarStore.loadSidebarMenu()
-  }
-  // Copy menu data to editing state
-  for (const group of sidebarStore.sidebarMenu) {
-    for (const page of group.pages) {
-      editingPages.value[page.pageKey] = JSON.parse(JSON.stringify(page))
-      originalPages.value[page.pageKey] = JSON.parse(JSON.stringify(page))
-    }
-  }
-}
 
 // =========================================================================
 // Watchers
@@ -868,6 +753,8 @@ const initializeEditingPages = async () => {
 watch(
   () => userForm.value.primaryRole,
   (newPrimaryRole) => {
+    // ข้ามเมื่อกำลัง load ข้อมูล edit เพื่อไม่ให้ overwrite roles ที่มีอยู่
+    if (isUserFormInitializing.value) return
     // ถ้า primaryRole มีค่า ให้ set roles เป็น primaryRole เท่านั้น
     if (newPrimaryRole) {
       userForm.value.roles = [newPrimaryRole]
@@ -934,7 +821,7 @@ const loadData = async () => {
     }
 
     // Initialize original role permissions for dirty tracking
-    originalRolePermissions.value = JSON.parse(JSON.stringify(store.rolePermissions))
+    initializeOriginalPermissions()
   } catch (error: any) {
     console.error('[AccessControl Page] loadData error:', error)
   }
@@ -976,6 +863,7 @@ const openUserModal = (mode: 'create' | 'edit', user?: User) => {
     }
     currentUserId.value = null
   } else if (user) {
+    isUserFormInitializing.value = true
     userForm.value = {
       displayName: user.displayName,
       email: user.email,
@@ -984,6 +872,9 @@ const openUserModal = (mode: 'create' | 'edit', user?: User) => {
       isActive: user.isActive,
     }
     currentUserId.value = user.uid
+    nextTick(() => {
+      isUserFormInitializing.value = false
+    })
   }
   showUserModal.value = true
 }
@@ -1148,288 +1039,13 @@ const closeResetConfirm = () => {
  */
 const confirmReset = () => {
   if (activeTab.value === 'menu') {
-    // Reset Menu Tab
-    for (const [pageKey, originalPage] of Object.entries(originalPages.value)) {
-      editingPages.value[pageKey] = JSON.parse(JSON.stringify(originalPage))
-    }
-    selectedPages.value.clear()
+    resetPages()
   } else if (activeTab.value === 'roles') {
-    // Reset Roles Tab
-    for (const roleId of dirtyRoles.value) {
-      resetRolePermissions(roleId)
-    }
-    selectedRoles.value.clear()
+    resetAllRoles()
   }
-
   closeResetConfirm()
 }
 
-// =========================================================================
-// Lifecycle
-// =========================================================================
-
-/**
- * Toggle a specific role for a page
- */
-const togglePageRole = (page: SidebarPage, roleId: string, isChecked: boolean) => {
-  const pageKey = page.pageKey
-  const current = editingPages.value[pageKey]
-
-  if (!current) return
-
-  // Ensure requiredRoles is an array
-  if (!current.requiredRoles || current.requiredRoles === null) {
-    // All roles selected, start fresh with deselected roles
-    const allRoles = store.getAllRoles.map((r) => r.id) as any
-    current.requiredRoles = allRoles.filter((r: string) => r !== roleId)
-  } else {
-    // Toggle the role
-    if (isChecked) {
-      if (!(current.requiredRoles as any).includes(roleId)) {
-        (current.requiredRoles as any).push(roleId)
-      }
-    } else {
-      current.requiredRoles = (current.requiredRoles as any).filter((r: string) => r !== roleId)
-    }
-  }
-
-  // Auto-select the page when its roles are modified
-  if (!selectedPages.value.has(pageKey)) {
-    selectedPages.value.add(pageKey)
-  }
-}
-
-/**
- * Check if a role is included for a page
- */
-const isRoleIncluded = (pageKey: string, roleId: UserRole): boolean => {
-  const page = editingPages.value[pageKey]
-  if (!page) return false
-  return !page.requiredRoles || page.requiredRoles.includes(roleId)
-}
-
-/**
- * Toggle group expansion
- */
-const toggleGroupExpanded = (groupKey: string) => {
-  if (expandedGroups.value.has(groupKey)) {
-    expandedGroups.value.delete(groupKey)
-  } else {
-    expandedGroups.value.add(groupKey)
-  }
-}
-
-/**
- * Check if group is expanded
- */
-const isGroupExpanded = (groupKey: string): boolean => {
-  return expandedGroups.value.has(groupKey)
-}
-
-/**
- * Toggle permission group expansion (for Roles Tab matrix view)
- */
-const togglePermGroupExpanded = (categoryKey: string) => {
-  if (expandedPermGroups.value.has(categoryKey)) {
-    expandedPermGroups.value.delete(categoryKey)
-  } else {
-    expandedPermGroups.value.add(categoryKey)
-  }
-}
-
-/**
- * Check if permission group is expanded
- */
-const isPermGroupExpanded = (categoryKey: string): boolean => {
-  return expandedPermGroups.value.has(categoryKey)
-}
-
-/**
- * Get Thai label for permission category
- */
-const getCategoryLabel = (category: string): string => {
-  const labels: Record<string, string> = {
-    dashboard: '📊 แดชบอร์ด',
-    sales: '👁️ ขาย',
-    finance: '💰 การเงิน',
-    users: '👥 ผู้ใช้ & บทบาท',
-  }
-  return labels[category] || category
-}
-
-/**
- * Check if a role has a specific permission
- */
-const isPermissionGranted = (roleId: string, permissionId: string): boolean => {
-  const rolePerms = store.rolePermissions[roleId]
-  if (!rolePerms) return false
-  return rolePerms.permissions?.[permissionId] ?? false
-}
-
-/**
- * Toggle a permission for a role (inline in matrix view)
- */
-const togglePermissionForRole = (roleId: string, permissionId: string) => {
-  const rolePerms = store.rolePermissions[roleId]
-  if (!rolePerms) return
-
-  // Create a copy to ensure reactivity
-  const newPerms = { ...rolePerms.permissions }
-  newPerms[permissionId] = !newPerms[permissionId]
-
-  // Update the store
-  const rolePermsRef = store.rolePermissions[roleId]
-  if (rolePermsRef) {
-    rolePermsRef.permissions = newPerms
-  }
-
-  // Mark role as selected for batch tracking
-  if (!selectedRoles.value.has(roleId)) {
-    selectedRoles.value.add(roleId)
-  }
-}
-
-/**
- * Reset a role's permissions to original
- */
-const resetRolePermissions = (roleId: string) => {
-  const original = originalRolePermissions.value[roleId]
-  if (!original) return
-
-  // Reset to original
-  const rolePermsRef = store.rolePermissions[roleId]
-  if (rolePermsRef) {
-    rolePermsRef.permissions = JSON.parse(JSON.stringify(original.permissions))
-  }
-
-  // Remove from selected if now clean
-  if (!dirtyRoles.value.includes(roleId)) {
-    selectedRoles.value.delete(roleId)
-  }
-}
-
-/**
- * Save batch selected roles
- */
-const saveBatchRoles = async () => {
-  if (selectedDirtyRoles.value.length === 0) {
-    alert('❌ ไม่มี roles ที่มีการเปลี่ยนแปลง')
-    return
-  }
-
-  isSavingRoles.value = true
-  const rolesToSave = selectedDirtyRoles.value
-  const successCount = { value: 0 }
-  const failureCount = { value: 0 }
-
-  try {
-    // Save all selected roles concurrently
-    const savePromises = rolesToSave.map(async (roleId) => {
-      try {
-        const rolePerms = store.rolePermissions[roleId]
-        if (!rolePerms) return
-
-        const result = await store.updateRolePermissions(roleId, rolePerms.permissions)
-
-        if (result.success) {
-          originalRolePermissions.value[roleId] = {
-            roleId,
-            permissions: JSON.parse(JSON.stringify(rolePerms.permissions)),
-          }
-          successCount.value++
-        } else {
-          failureCount.value++
-          console.error(`Failed to save ${roleId}:`, result.error)
-        }
-      } catch (error: any) {
-        failureCount.value++
-        console.error(`Error saving ${roleId}:`, error.message)
-      }
-    })
-
-    await Promise.all(savePromises)
-
-    // Show result message
-    let message = ''
-    if (successCount.value > 0) {
-      message += `✅ บันทึก ${successCount.value} roles สำเร็จ`
-    }
-    if (failureCount.value > 0) {
-      message += `\n❌ ล้มเหลว ${failureCount.value} roles`
-    }
-
-    alert(message)
-
-    // Clear selection after successful save
-    if (failureCount.value === 0) {
-      selectedRoles.value.clear()
-    }
-  } catch (error: any) {
-    alert(`❌ เกิดข้อผิดพลาด: ${error.message}`)
-  } finally {
-    isSavingRoles.value = false
-  }
-}
-
-/**
- * Save batch selected pages
- */
-const saveBatchPages = async () => {
-  if (selectedDirtyPages.value.length === 0) {
-    alert('❌ ไม่มี pages ที่มีการเปลี่ยนแปลง')
-    return
-  }
-
-  isSavingBatch.value = true
-  const pagesToSave = selectedDirtyPages.value
-  const successCount = { value: 0 }
-  const failureCount = { value: 0 }
-
-  try {
-    // Save all selected pages concurrently
-    const savePromises = pagesToSave.map(async (pageKey) => {
-      try {
-        const editedPage = editingPages.value[pageKey]
-        if (!editedPage) return
-
-        const result = await sidebarStore.updatePageAccess(pageKey, editedPage.requiredRoles ?? null)
-
-        if (result.success) {
-          originalPages.value[pageKey] = JSON.parse(JSON.stringify(editedPage))
-          successCount.value++
-        } else {
-          failureCount.value++
-          console.error(`Failed to save ${pageKey}:`, result.error)
-        }
-      } catch (error: any) {
-        failureCount.value++
-        console.error(`Error saving ${pageKey}:`, error.message)
-      }
-    })
-
-    await Promise.all(savePromises)
-
-    // Show result message
-    let message = ''
-    if (successCount.value > 0) {
-      message += `✅ บันทึก ${successCount.value} pages สำเร็จ`
-    }
-    if (failureCount.value > 0) {
-      message += `\n❌ ล้มเหลว ${failureCount.value} pages`
-    }
-
-    alert(message)
-
-    // Clear selection after successful save
-    if (failureCount.value === 0) {
-      selectedPages.value.clear()
-    }
-  } catch (error: any) {
-    alert(`❌ เกิดข้อผิดพลาด: ${error.message}`)
-  } finally {
-    isSavingBatch.value = false
-  }
-}
 
 onMounted(async () => {
   await loadData()
