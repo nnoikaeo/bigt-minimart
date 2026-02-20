@@ -14,6 +14,7 @@
 
 import { promises as fs } from 'fs'
 import { join } from 'path'
+import { adminDb, adminAuth } from '~/server/utils/firebase-admin'
 import type {
   User,
   CreateUserInput,
@@ -120,6 +121,29 @@ export class AccessControlJsonRepository implements IAccessControlRepository {
 
     users[index] = updatedUser
     await this.writeFile(this.usersPath, users)
+
+    // Sync auth-relevant fields to Firestore so login can enforce isActive
+    try {
+      await adminDb.collection('users').doc(uid).update({
+        isActive: updatedUser.isActive,
+        displayName: updatedUser.displayName,
+        roles: updatedUser.roles,
+        primaryRole: updatedUser.primaryRole,
+        updatedAt: updatedUser.updatedAt,
+      })
+    } catch (error) {
+      console.error('[Repository] Failed to sync user to Firestore:', error)
+      // ไม่ throw — JSON บันทึกแล้ว Firestore sync เป็น best-effort
+    }
+
+    // Hard disable/enable in Firebase Auth to block login at authentication level
+    try {
+      await adminAuth.updateUser(uid, { disabled: !updatedUser.isActive })
+      console.log(`[Repository] Firebase Auth ${updatedUser.isActive ? 'enabled' : 'disabled'} for UID:`, uid)
+    } catch (error) {
+      console.error('[Repository] Failed to update Firebase Auth disabled state:', error)
+      // ไม่ throw — best-effort เช่นกัน
+    }
 
     return updatedUser
   }

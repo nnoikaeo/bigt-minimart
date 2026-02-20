@@ -81,6 +81,17 @@ export const useAuth = () => {
             userIsActive = firestoreData?.isActive ?? true
             userDisplayName = firestoreData?.displayName || user.displayName || 'User'
             console.log('[Auth] ✅ Fetched from Firestore:', { role: userRole, roles: userRoles, primaryRole: userPrimaryRole, isActive: userIsActive, displayName: userDisplayName })
+
+            // Block disabled users before setting auth state
+            if (!userIsActive) {
+              console.warn('[Auth] ⛔ User is disabled, signing out:', user.email)
+              await signOut($auth as any)
+              return {
+                success: false,
+                error: 'บัญชีนี้ถูกปิดใช้งาน กรุณาติดต่อผู้ดูแลระบบ',
+                code: 'account-disabled',
+              }
+            }
           } else {
             console.warn('[Auth] ⚠️ No user document in Firestore for UID:', user.uid)
             console.log('[Auth] Falling back to extractRoleFromDisplayName with displayName:', user.displayName)
@@ -179,6 +190,14 @@ export const useAuth = () => {
                 userRoles = firestoreData?.roles || []
                 userPrimaryRole = firestoreData?.primaryRole || 'unknown'
                 userIsActive = firestoreData?.isActive ?? true
+
+                // Force logout if user is disabled (handles page refresh after being disabled)
+                if (!userIsActive) {
+                  console.warn('[Auth:watchAuthState] ⛔ User is disabled, signing out:', user.email)
+                  await signOut($auth as any)
+                  authStore.clearUser()
+                  return
+                }
               } else {
                 console.warn('[Auth:watchAuthState] ⚠️ No user document in Firestore for UID:', user.uid)
                 console.log('[Auth:watchAuthState] Falling back to extractRoleFromDisplayName')

@@ -17,6 +17,11 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   try {
     // If user is already authenticated, allow access
     if (authStore.getIsAuthenticated && authStore.getCurrentUser) {
+      // Block disabled users
+      if (authStore.getCurrentUser.isActive === false) {
+        authStore.clearUser()
+        return navigateTo('/login')
+      }
       // Load access control data based on user role
       await loadAccessControlDataIfNeeded()
       return
@@ -25,7 +30,12 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     // Check if there's a session in localStorage (persistent login)
     const auth = useNuxtApp().$auth
     if (auth && typeof auth === 'object' && 'currentUser' in auth && auth.currentUser) {
-      // Firebase says we're authenticated
+      // Firebase says we're authenticated — check isActive if store has user
+      if (authStore.getCurrentUser?.isActive === false) {
+        authStore.clearUser()
+        return navigateTo('/login')
+      }
+      // Load access control data based on user role
       await loadAccessControlDataIfNeeded()
       return
     }
