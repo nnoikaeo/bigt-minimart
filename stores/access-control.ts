@@ -364,14 +364,20 @@ export const useAccessControlStore = defineStore('accessControl', () => {
   const loadAllData = async () => {
     console.log('[AccessControl Store] loadAllData called')
     console.log('[AccessControl Store] Starting parallel fetch: users, roles, permissions')
-    
+
     try {
-      const results = await Promise.all([
+      await Promise.all([
         fetchUsers(),
         fetchRoles(),
         fetchPermissions()
       ])
-      console.log('[AccessControl Store] All data loaded successfully:', results)
+
+      // Fetch role permissions for all roles (required for permission checks in all pages)
+      if (roles.value.length > 0) {
+        await Promise.all(roles.value.map((role) => fetchRolePermissions(role.id)))
+      }
+
+      console.log('[AccessControl Store] All data loaded successfully')
     } catch (err: any) {
       console.error('[AccessControl Store] loadAllData error:', err)
       throw err
