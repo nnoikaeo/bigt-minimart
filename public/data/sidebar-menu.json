@@ -82,6 +82,7 @@
           "requiredRoles": [
             "assistant_manager",
             "auditor",
+            "cashier",
             "manager",
             "owner"
           ]
