@@ -139,7 +139,7 @@
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                   <button
                     type="button"
-                    @click="toggleUserStatus(user)"
+                    @click="openToggleConfirm(user)"
                     :class="[
                       'relative inline-flex items-center w-12 h-7 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1',
                       user.isActive ? 'bg-green-500' : 'bg-gray-300',
@@ -605,6 +605,20 @@
       </div>
     </div>
 
+    <!-- Confirm Toggle Status Dialog -->
+    <ConfirmDialog
+      :open="showToggleConfirm"
+      :title="userToToggle?.isActive ? 'ปิดใช้งานผู้ใช้' : 'เปิดใช้งานผู้ใช้'"
+      :message="userToToggle?.isActive
+        ? `คุณต้องการปิดใช้งาน &quot;${userToToggle?.displayName}&quot; ใช่หรือไม่? ผู้ใช้จะไม่สามารถเข้าสู่ระบบได้`
+        : `คุณต้องการเปิดใช้งาน &quot;${userToToggle?.displayName}&quot; ใช่หรือไม่?`"
+      :confirm-text="userToToggle?.isActive ? 'ปิดใช้งาน' : 'เปิดใช้งาน'"
+      cancel-text="ยกเลิก"
+      :variant="userToToggle?.isActive ? 'warning' : 'success'"
+      @confirm="executeToggleUser"
+      @cancel="closeToggleConfirm"
+    />
+
     <!-- Confirm Delete Modal -->
     <div
       v-if="showDeleteConfirm"
@@ -736,6 +750,10 @@ const permissionsForm = ref<Record<string, boolean>>({})
 // Delete Confirmation
 const showDeleteConfirm = ref(false)
 const userToDelete = ref<User | null>(null)
+
+// Toggle Status Confirmation
+const showToggleConfirm = ref(false)
+const userToToggle = ref<User | null>(null)
 
 // Reset Confirmation
 const showResetConfirm = ref(false)
@@ -1000,6 +1018,31 @@ const confirmDeleteUser = (user: User) => {
 const closeDeleteConfirm = () => {
   showDeleteConfirm.value = false
   userToDelete.value = null
+}
+
+/**
+ * Open toggle status confirmation dialog
+ */
+const openToggleConfirm = (user: User) => {
+  userToToggle.value = user
+  showToggleConfirm.value = true
+}
+
+/**
+ * Close toggle status confirmation dialog
+ */
+const closeToggleConfirm = () => {
+  showToggleConfirm.value = false
+  userToToggle.value = null
+}
+
+/**
+ * Execute toggle after confirmation
+ */
+const executeToggleUser = async () => {
+  if (!userToToggle.value) return
+  await toggleUserStatus(userToToggle.value)
+  closeToggleConfirm()
 }
 
 /**
