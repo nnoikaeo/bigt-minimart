@@ -9,7 +9,13 @@
 **Route**: `/finance/money-transfer-service/step-1`
 **Role**: Manager/Assistant Manager
 
-### Layout: Main Transaction Recording Page
+### Layout: Main Transaction Recording Page (Updated)
+
+> **Design Decision**:
+> - ส่วนกรอกรายการย้ายเข้า **Modal** ทั้งหมด — หน้าหลักเป็น Dashboard สะอาด
+> - เพิ่ม **Quick Actions Bar** สำหรับรายการที่ทำบ่อย — ลด click ให้น้อยที่สุด
+> - **⭐ Favorite Transfer**: 3 clicks + กรอกจำนวนเงิน = เสร็จทันที
+> - Modal เปิดเมื่อ: กด Quick Action / [➕ New] / [✏️ Edit] เท่านั้น
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -28,89 +34,247 @@
 │                                                                 │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  📝 RECORD NEW TRANSACTION                                      │
+│  ⚡ QUICK ACTIONS                                               │
 │  ┌─────────────────────────────────────────────────────────┐   │
-│  │ Transaction Type:                                       │   │
-│  │ ◉ Transfer (โอนเงิน)  ○ Withdrawal (ถอนเงิน)           │   │
-│  │ ○ Owner Deposit (ฝากเงิน)                              │   │
 │  │                                                         │   │
-│  │ [If Transfer or Withdrawal selected]                    │   │
+│  │  [⭐ Favorite Transfer]  [💰 Owner Deposit]             │   │
+│  │  [📤 New Transfer]       [💵 New Withdrawal]            │   │
 │  │                                                         │   │
-│  │ Destination Account:                                    │   │
-│  │ Channel: ○ PromptPay  ○ Bank  ○ Other                 │   │
-│  │                                                         │   │
-│  │ [If Bank or Other selected]                             │   │
-│  │ Account Type:  ○ Savings  ○ Current  ○ Other          │   │
-│  │ Account No:    [_____________]                          │   │
-│  │ Account Name:  [_____________]                          │   │
-│  │                                                         │   │
-│  │ [If PromptPay selected]                                 │   │
-│  │ PromptPay Type: ○ Phone Number  ○ ID Card Number      │   │
-│  │                                                         │   │
-│  │ [If Phone Number selected]                              │   │
-│  │ Phone Number:  [_____________]  (e.g., 081-234-5678)   │   │
-│  │ Account Name:  [_____________]                          │   │
-│  │                                                         │   │
-│  │ [If ID Card Number selected]                            │   │
-│  │ ID Card No:    [_____________]  (e.g., 1-2345-67890-12-3)
-│  │ Account Name:  [_____________]                          │   │
-│  │                                                         │   │
-│  │ Date & Time:                                            │   │
-│  │ [2026-01-29]  [14:30]                                  │   │
-│  │                                                         │   │
-│  │ Amount:          [_____________] บาท                    │   │
-│  │ ⚠️ Current Bank Balance: 5,000 บาท                      │   │
-│  │ ✅ Sufficient / ❌ Insufficient funds                   │   │
-│  │                                                         │   │
-│  │ Commission:      [_____________] บาท                    │   │
-│  │ Commission Type: ○ Cash  ○ Transfer                    │   │
-│  │                                                         │   │
-│  │ Customer Name:   [_____________] (optional)            │   │
-│  │                                                         │   │
-│  │ Notes:           [_________________________]            │   │
-│  │                                                         │   │
-│  │ Save As Status:                                         │   │
-│  │ ◉ Save & Complete  ○ Save as Draft (for later)        │   │
-│  │ (Use Draft if insufficient balance)                    │   │
-│  │                                                         │   │
-│  │              [💾 Save]  [❌ Clear]                      │   │
+│  │  ⭐ Favorite Transfer → เปิด Modal แบบ Tabs (เร็วสุด)   │   │
+│  │  💰 Owner Deposit     → เปิด Modal pre-filled           │   │
+│  │  📤 New Transfer      → เปิด Modal ฟอร์มเปล่า           │   │
+│  │  💵 New Withdrawal    → เปิด Modal ฟอร์มเปล่า           │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                                                                 │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  📋 TODAY'S TRANSACTION HISTORY                                 │
+│  📋 TODAY'S TRANSACTIONS                    [➕ New Transaction] │
 │  ┌─────────────────────────────────────────────────────────┐   │
-│  │ Filter: ○ All ○ Completed ○ Draft ○ Failed           │   │
+│  │ Filter: [All ▼]  [Completed]  [Draft]  [Failed]        │   │
 │  │                                                         │   │
 │  │ #  │ Time   │ Type        │ Amount  │ Commission │ Status│   │
 │  ├────┼────────┼─────────────┼─────────┼────────────┼───────┤   │
 │  │ 1  │ 10:30  │ PromptPay   │ 2,000 ฿ │  20 ฿     │ ✅    │   │
 │  │ 2  │ 13:15  │ Withdrawal  │   500 ฿ │  10 ฿     │ ✅    │   │
-│  │ 3  │ 14:00  │ Bank Trf    │ 8,800 ฿ │   -       │ ⏸️DRAFT
-│  │    │        │ (Insufficient)        │           │ Waiting
-│  │    │        │             │         │           │ for funds  │
+│  │ 3  │ 14:00  │ Bank Trf    │ 8,800 ฿ │   -       │ ⏸️    │   │
+│  │    │        │ (Insufficient)        │           │ DRAFT  │   │
 │  │ 4  │ 14:30  │ Owner Dep   │10,000 ฿ │   -       │ ✅    │   │
 │  │ 5  │ 14:45  │ Bank Trf    │ 8,800 ฿ │  40 ฿     │ ✅    │   │
-│  │    │        │ (Retry)     │         │           │       │   │
 │  │ 6  │ 15:30  │ Withdrawal  │   500 ฿ │  10 ฿ T   │ ✅    │   │
-│  │    │        │             │         │           │       │   │
 │  └────┴────────┴─────────────┴─────────┴───────────┴───────┘   │
 │                                                                 │
-│  SUMMARY:                                                       │
-│  Total Transactions: 6 (4 Completed, 1 Draft, 1 Failed)        │
-│  Total Commission Collected: 70 บาท                            │
+│  SUMMARY: 6 Transactions │ Commission: 70 บาท                  │
 │                                                                 │
-│  ⏸️ DRAFT TRANSACTIONS PENDING:                                 │
-│  Transaction #3 (Bank Transfer 8,800 บาท) - Insufficient Funds │
-│  └─ Reason: Bank Account had only 5,000 บาท, needs 8,800 บาท  │
-│  └─ Action: Owner deposited 10,000 บาท (verified from bank app)│
-│  └─ Status:  [✅ Complete This Transaction]  [❌ Cancel]      │
-│                                                                 │
-│              [✏️ Edit Selected]  [🗑️ Delete]  [➕ Add New]    │
+│  ⏸️ DRAFT PENDING: Transaction #3 — Bank Transfer 8,800 บาท    │
+│  └─ Bank Balance was 5,000 บาท (ขาด 3,800 บาท)               │
+│  └─ [✅ Complete Transaction]  [❌ Cancel]                     │
 │                                                                 │
 │                           [Next: Step 2 ➜]                     │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Modal A: ⭐ Favorite Transfer (Quick — ลด Clicks สูงสุด)
+
+> **User Flow (3 clicks + กรอกตัวเลข)**
+> 1. กด [⭐ Favorite Transfer] บนหน้าหลัก → Modal เปิด
+> 2. คลิก Tab หรือ คลิกชื่อบัญชีที่ต้องการ → Amount input ปรากฏทันที
+> 3. กรอกจำนวนเงิน → ค่าบริการคำนวณอัตโนมัติ
+> 4. กด [💾 โอนเงิน] → เสร็จ ✅ Modal ปิด กลับทำงานได้ทันที
+
+### Step 1 — เลือกบัญชี (เปิด Modal)
+
+```
+┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
+│                                                                  │
+│  ⭐ Favorite Transfer                                      [✕]  │
+│  Bank Balance: 10,210 บาท ✅                                     │
+│                                                                  │
+├─[★1 สมชาย]──[★2 ABC]──[★3 นายแดง]──[★4 ...]──[★5 ...]──[ทั้งหมด]┤
+│                                                                  │
+│  ★1  สมชาย          PromptPay  │  081-234-5678                  │
+│  ★2  บ. ABC จำกัด   Bank KBank │  Acc: 123-4-56789-0 (Savings) │
+│  ★3  นายแดง         PromptPay  │  1-2345-67890-12-3 (ID Card)  │
+│  ★4  ห้างสรรพสินค้า  Bank SCB  │  Acc: 456-7-89012-3 (Current) │
+│  ★5  นายดำ          PromptPay  │  089-876-5432                  │
+│                                                                  │
+│  [จัดการ Favorites ⚙️]                                           │
+│                                                                  │
+└ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
+  * คลิกชื่อใดก็ได้ → ไปขั้นตอน 2 ทันที (ไม่ต้องกด "เลือก")
+```
+
+### Step 2 — กรอกจำนวนเงิน (หลังคลิกบัญชี)
+
+```
+┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
+│                                                                  │
+│  ⭐ Favorite Transfer                                      [✕]  │
+│  Bank Balance: 10,210 บาท ✅                                     │
+│                                                                  │
+├─[★1 สมชาย ✓]─[★2 ABC]──[★3 นายแดง]──[★4 ...]──[★5 ...]──[ทั้งหมด]┤
+│                                                                  │
+│  ┌────────────────────────────────────────────────────────┐     │
+│  │  ★ สมชาย  │  PromptPay  │  081-234-5678               │     │
+│  │  ─────────────────────────────────────────────────     │     │
+│  │                                                        │     │
+│  │  จำนวนเงิน:  [___________] บาท  ← focus อัตโนมัติ      │     │
+│  │                                                        │     │
+│  │  ค่าบริการ:  20 บาท  (อัตโนมัติ: 1% min 10 ฿)  [Cash] │     │
+│  │  เวลา:       14:30  (ปัจจุบัน — แก้ไขได้ [✏️])         │     │
+│  │                                                        │     │
+│  │  Balance หลังโอน: 10,210 - [Amount] = [___] บาท        │     │
+│  │                                                        │     │
+│  │            [← เลือกบัญชีอื่น]   [💾 โอนเงิน]           │     │
+│  └────────────────────────────────────────────────────────┘     │
+│                                                                  │
+└ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
+  * กด [💾 โอนเงิน] → บันทึกทันที → Modal ปิด → กลับหน้าหลัก ✅
+  * กด [← เลือกบัญชีอื่น] → กลับ Step 1 (บัญชีไม่ถูกเลือก)
+  * หากเงินไม่พอ: Balance แดง + ปุ่มเปลี่ยนเป็น [⏸️ บันทึกเป็น Draft]
+```
+
+### Inline Validation — เงินไม่พอ
+
+```
+┌────────────────────────────────────────────────────────┐
+│  ★ สมชาย  │  PromptPay  │  081-234-5678               │
+│  ─────────────────────────────────────────────────     │
+│                                                        │
+│  จำนวนเงิน:  [15,000] บาท                              │
+│                                                        │
+│  ค่าบริการ:  150 บาท  (อัตโนมัติ)  [Cash]              │
+│  เวลา:       14:30                                      │
+│                                                        │
+│  ❌ Balance: 10,210 บาท — ไม่เพียงพอ (ขาด 4,790 บาท)  │
+│                                                        │
+│  [← เลือกบัญชีอื่น]  [⏸️ บันทึกเป็น Draft]            │
+└────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Modal B: 💰 Owner Deposit (Quick — Pre-filled)
+
+> **User Flow (2 clicks + กรอกจำนวนเงิน)**
+> 1. กด [💰 Owner Deposit] บนหน้าหลัก → Modal เปิดพร้อม Type = Owner Deposit
+> 2. กรอกจำนวนเงิน (focus อัตโนมัติ)
+> 3. กด [💾 บันทึก] → เสร็จ ✅
+
+```
+┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
+│                                                                  │
+│  💰 Owner Deposit                                          [✕]  │
+│                                                                  │
+│  Type:     Owner Deposit  (fixed — ไม่เปลี่ยน)                  │
+│  เวลา:     [14:30]  (ปัจจุบัน — แก้ไขได้)                       │
+│                                                                  │
+│  จำนวนเงิน:  [___________] บาท  ← focus อัตโนมัติ               │
+│                                                                  │
+│  Bank Balance หลังฝาก: 10,210 + [Amount] = [___] บาท           │
+│                                                                  │
+│  หมายเหตุ: [___________________________________] (optional)      │
+│                                                                  │
+│                          [❌ Cancel]  [💾 บันทึก]               │
+│                                                                  │
+└ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
+```
+
+---
+
+## Modal C: 📋 New / Edit Transaction (Full Form)
+
+> ใช้สำหรับ: กด [➕ New Transaction], [📤 New Transfer], [💵 New Withdrawal],
+>            หรือ [✏️ Edit] บนรายการในตาราง
+> Edit mode: ไม่แสดง Quick Actions — แสดงข้อมูลเดิมพร้อมแก้ไข
+
+```
+┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
+│                                                                  │
+│  📝 New Transaction                 [หรือ: ✏️ Edit #3]    [✕]  │
+│                                                                  │
+├──────────────────────────────────────────────────────────────────┤
+│  TRANSACTION TYPE                                                │
+│  [◉ Transfer]  [○ Withdrawal]  [○ Owner Deposit]                │
+│                                                                  │
+├──────────────────────────────────────────────────────────────────┤
+│  DESTINATION ACCOUNT  (แสดงเมื่อ Transfer หรือ Withdrawal)      │
+│                                                                  │
+│  ⭐ Favorites:                                                    │
+│  ┌──────────────────────────────────────────────────────┐       │
+│  │ [★ สมชาย | PromptPay 081-234-5678]                   │       │
+│  │ [★ บ.ABC  | KBank 123-4-56789-0  ]                   │       │
+│  │ [★ นายแดง | PromptPay ID Card    ]                   │       │
+│  │ [ดูทั้งหมด ▾]                                        │       │
+│  └──────────────────────────────────────────────────────┘       │
+│  * คลิก Favorite → กรอกข้อมูลบัญชีอัตโนมัติ                    │
+│                                                                  │
+│  Channel: [○ PromptPay ✓]  [○ Bank]  [○ Other]                 │
+│                                                                  │
+│  PromptPay Type: [◉ Phone]  [○ ID Card]                         │
+│  Phone / ID:     [081-234-5678__________]                        │
+│  Account Name:   [สมชาย________________]  [☆ Save as Fav]       │
+│                                                                  │
+├──────────────────────────────────────────────────────────────────┤
+│  DETAILS                                                         │
+│                                                                  │
+│  Date & Time:  [2026-01-29]  [14:30]                            │
+│  Amount:       [___________] บาท                                 │
+│  Balance now:  10,210 บาท  ✅ Sufficient                         │
+│                                                                  │
+│  Commission:   [___] บาท  (คำนวณอัตโนมัติ — แก้ไขได้)           │
+│  Comm. Type:   [◉ Cash]  [○ Transfer]                           │
+│                                                                  │
+│  Customer:     [___________________] (optional)                  │
+│  Notes:        [___________________________]                     │
+│                                                                  │
+├──────────────────────────────────────────────────────────────────┤
+│  SAVE AS                                                         │
+│  [◉ Save & Complete]  [○ Save as Draft]                         │
+│  (Draft: เงินไม่พอ หรือต้องรอยืนยัน)                            │
+│                                                                  │
+│                      [❌ Cancel]  [💾 Save]                      │
+│                                                                  │
+└ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
+```
+
+---
+
+## Favorite Accounts: Management
+
+### เพิ่ม Favorite ระหว่างกรอกใน Modal C
+
+```
+กรอกข้อมูลบัญชีครบแล้ว → กด [☆ Save as Fav]
+  ↓
+┌────────────────────────────────────┐
+│  บันทึก Favorite                   │
+│  ชื่อที่แสดง: [สมชาย PromptPay____] │
+│  (ปรับชื่อก่อนบันทึกได้)             │
+│  [ยกเลิก]  [✅ บันทึก]              │
+└────────────────────────────────────┘
+  ↓ บันทึกแล้ว
+[★ สมชาย | PromptPay | 081-234-5678] ← ปรากฏใน Favorites list
+```
+
+### จัดการ Favorites (กด [จัดการ Favorites ⚙️] ใน Modal A)
+
+```
+┌────────────────────────────────────────────────────────────┐
+│  ⭐ จัดการ Favorites                                  [✕]  │
+├────────────────────────────────────────────────────────────┤
+│  [≡] ★1 สมชาย    PromptPay  081-234-5678      [✏️] [🗑️]  │
+│  [≡] ★2 บ.ABC    KBank      123-4-56789-0     [✏️] [🗑️]  │
+│  [≡] ★3 นายแดง   PromptPay  ID Card           [✏️] [🗑️]  │
+│  [≡] ★4 ห้างฯ    SCB        456-7-89012-3     [✏️] [🗑️]  │
+│  [≡] ★5 นายดำ    PromptPay  089-876-5432      [✏️] [🗑️]  │
+│  [≡] ← ลากเพื่อเรียงลำดับ (Tab ★1-★5)                     │
+│                                                            │
+│  [➕ เพิ่ม Favorite ใหม่]  (สูงสุด 10 รายการ)              │
+│                                          [✅ เสร็จสิ้น]    │
+└────────────────────────────────────────────────────────────┘
 ```
 
 ### Draft Transaction Management Flow
