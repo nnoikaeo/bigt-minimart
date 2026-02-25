@@ -1,1045 +1,652 @@
-<template>
-  <div class="auditor-review-container">
-    <!-- Header -->
-    <div class="page-header auditor">
-      <h1 class="page-title">🔍 Auditor Review - Workflow 2.2: Transaction Verification</h1>
-      <p class="page-description">
-        ตรวจสอบความถูกต้องของธุรกรรมและเปรียบเทียบกับสถานะบัญชี
-      </p>
-
-      <div class="date-selector">
-        <label>Select Date to Review:</label>
-        <input
-          v-model="selectedDate"
-          type="date"
-          class="form-control"
-          @change="handleDateChange"
-        />
-      </div>
-    </div>
-
-    <!-- Loading State -->
-    <div v-if="store.isLoading" class="loading-container">
-      <div class="spinner" />
-      <p>Loading audit data...</p>
-    </div>
-
-    <!-- Main Content -->
-    <template v-else>
-      <!-- Workflow Progress -->
-      <section class="workflow-progress">
-        <div class="progress-step completed">
-          <div class="step-marker">✅</div>
-          <div class="step-label">Step 1<br>Recording</div>
-        </div>
-        <div class="progress-line completed" />
-        <div class="progress-step completed">
-          <div class="step-marker">✅</div>
-          <div class="step-label">Step 2<br>Verification</div>
-        </div>
-        <div class="progress-line active" />
-        <div class="progress-step active">
-          <div class="step-marker">2.2</div>
-          <div class="step-label">Auditor<br>Review</div>
-        </div>
-        <div class="progress-line pending" />
-        <div class="progress-step pending">
-          <div class="step-marker">2.3</div>
-          <div class="step-label">Owner<br>Approval</div>
-        </div>
-      </section>
-
-      <!-- Manager Summary -->
-      <section class="manager-summary">
-        <h3>📋 Manager Summary (Step 1 & 2)</h3>
-        <div class="summary-grid">
-          <div class="summary-item">
-            <span class="label">Total Transactions:</span>
-            <span class="value">{{ store.currentSummary?.step1?.totalTransactions || 0 }}</span>
-          </div>
-          <div class="summary-item">
-            <span class="label">Total Amount:</span>
-            <span class="value">{{
-              formatCurrency(store.currentSummary?.step1?.totalAmount || 0)
-            }}</span>
-          </div>
-          <div class="summary-item">
-            <span class="label">Cash Discrepancy:</span>
-            <span
-              class="value"
-              :class="{
-                'no-discrepancy': !store.currentSummary?.step2?.hasDiscrepancies,
-              }"
-            >
-              {{
-                store.currentSummary?.step2?.hasDiscrepancies
-                  ? `⚠️ ${formatCurrency(store.currentSummary.step2.differences.total)}`
-                  : '✅ No Discrepancies'
-              }}
-            </span>
-          </div>
-        </div>
-      </section>
-
-      <!-- Audit Form -->
-      <section v-if="!store.isAudited" class="audit-form-section">
-        <h3>🔍 Auditor Verification Form</h3>
-
-        <div class="form-section">
-          <h4 class="subsection-title">Transaction Verification</h4>
-
-          <div class="input-group">
-            <label class="form-label">
-              Total Transactions Verified
-              <span class="required">*</span>
-            </label>
-            <input
-              v-model.number="auditData.transactionsVerified"
-              type="number"
-              class="form-control"
-              :max="store.currentSummary?.step1?.totalTransactions || 0"
-              required
-            />
-            <small>
-              Out of {{ store.currentSummary?.step1?.totalTransactions || 0 }} total transactions
-            </small>
-          </div>
-
-          <div class="input-group">
-            <label class="form-label">Transactions with Issues</label>
-            <input
-              v-model.number="auditData.transactionsWithIssues"
-              type="number"
-              class="form-control"
-              min="0"
-              :max="auditData.transactionsVerified"
-            />
-          </div>
-        </div>
-
-        <div class="form-section">
-          <h4 class="subsection-title">Bank Statement Verification</h4>
-
-          <div class="checkbox-group">
-            <div class="checkbox-item">
-              <input
-                id="bank-verified"
-                v-model="auditData.bankStatementVerified"
-                type="checkbox"
-              />
-              <label for="bank-verified">Bank statement has been reviewed</label>
-            </div>
-
-            <div class="checkbox-item">
-              <input id="balance-matches" v-model="auditData.bankBalanceMatches" type="checkbox" />
-              <label for="balance-matches">Actual bank balance matches system expected balance</label>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <h4 class="subsection-title">Audit Result & Notes</h4>
-
-          <div class="input-group">
-            <label class="form-label">
-              Audit Result
-              <span class="required">*</span>
-            </label>
-            <select v-model="auditData.auditResult" class="form-control" required>
-              <option value="">-- Select Result --</option>
-              <option value="no_issues">✅ No Issues</option>
-              <option value="minor_issues">⚠️ Minor Issues</option>
-              <option value="major_issues">🔴 Major Issues</option>
-            </select>
-          </div>
-
-          <div class="input-group">
-            <label class="form-label">
-              Audit Notes
-              <span class="required">*</span>
-            </label>
-            <textarea
-              v-model="auditData.auditNotes"
-              class="form-control"
-              placeholder="Detailed audit findings and observations..."
-              rows="4"
-              required
-            />
-          </div>
-
-          <div v-if="auditData.auditResult !== 'no_issues'" class="input-group">
-            <label class="form-label">Issues Found (List each issue)</label>
-            <textarea
-              v-model="auditData.issuesFoundText"
-              class="form-control"
-              placeholder="Enter each issue on a new line..."
-              rows="3"
-            />
-            <small>Issues will be extracted for follow-up</small>
-          </div>
-        </div>
-
-        <!-- Form Actions -->
-        <div class="form-actions">
-          <button
-            class="btn btn-primary btn-lg"
-            :disabled="isSubmitting || !isFormValid"
-            @click="handleSubmitAudit"
-          >
-            <span v-if="isSubmitting" class="spinner-small" />
-            {{ isSubmitting ? 'Submitting...' : '✅ Submit Audit Verification' }}
-          </button>
-
-          <button class="btn btn-secondary" @click="goBackToStep2">← Back to Step 2</button>
-        </div>
-      </section>
-
-      <!-- Audit Already Completed -->
-      <section v-else class="audit-completed">
-        <h3>✅ Audit Completed</h3>
-
-        <div class="audit-summary">
-          <div class="summary-row">
-            <span class="label">Auditor:</span>
-            <span class="value">{{ store.currentSummary?.auditorVerification?.completedByName }}</span>
-          </div>
-          <div class="summary-row">
-            <span class="label">Completed At:</span>
-            <span class="value">{{ formatDateTime(store.currentSummary?.auditorVerification?.completedAt) }}</span>
-          </div>
-          <div class="summary-row">
-            <span class="label">Transactions Verified:</span>
-            <span class="value">{{ store.currentSummary?.auditorVerification?.transactionsVerified }}</span>
-          </div>
-          <div class="summary-row">
-            <span class="label">Issues Found:</span>
-            <span class="value">{{ store.currentSummary?.auditorVerification?.transactionsWithIssues }}</span>
-          </div>
-          <div class="summary-row">
-            <span class="label">Bank Statement Verified:</span>
-            <span class="value">{{
-              store.currentSummary?.auditorVerification?.bankStatementVerified
-                ? '✅ Yes'
-                : '❌ No'
-            }}</span>
-          </div>
-          <div class="summary-row">
-            <span class="label">Balance Matches:</span>
-            <span class="value">{{
-              store.currentSummary?.auditorVerification?.bankBalanceMatches ? '✅ Yes' : '❌ No'
-            }}</span>
-          </div>
-          <div class="summary-row">
-            <span class="label">Audit Result:</span>
-            <span class="value result" :class="store.currentSummary?.auditorVerification?.auditResult">
-              {{
-                {
-                  no_issues: '✅ No Issues',
-                  minor_issues: '⚠️ Minor Issues',
-                  major_issues: '🔴 Major Issues',
-                }[(store.currentSummary?.auditorVerification?.auditResult as 'no_issues' | 'minor_issues' | 'major_issues') || ''] || '-'
-              }}
-            </span>
-          </div>
-          <div v-if="store.currentSummary?.auditorVerification?.auditNotes" class="summary-notes">
-            <strong>Audit Notes:</strong>
-            <p>{{ store.currentSummary.auditorVerification.auditNotes }}</p>
-          </div>
-          <div
-            v-if="store.currentSummary?.auditorVerification?.issuesFound?.length"
-            class="summary-issues"
-          >
-            <strong>Issues Found:</strong>
-            <ul>
-              <li v-for="(issue, idx) in store.currentSummary.auditorVerification.issuesFound"
-                :key="idx"
-              >
-                {{ issue }}
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <p class="next-step">Ready for owner approval (Workflow 2.3)</p>
-
-        <button class="btn btn-primary" @click="goToOwnerApproval">
-          → Go to Owner Approval
-        </button>
-      </section>
-
-      <!-- Transaction Details Reference -->
-      <section class="reference-section">
-        <h3>📖 Transaction Details (Reference)</h3>
-
-        <div class="transactions-reference">
-          <table>
-            <thead>
-              <tr>
-                <th>Time</th>
-                <th>Type</th>
-                <th>Amount</th>
-                <th>Commission</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="transaction in completedTransactions"
-                :key="transaction.id"
-              >
-                <td>{{ formatTime(transaction.datetime) }}</td>
-                <td>{{ formatTransactionType(transaction.transactionType) }}</td>
-                <td class="amount">{{ formatCurrency(transaction.amount) }}</td>
-                <td class="amount">{{ formatCurrency(transaction.commission || 0) }}</td>
-                <td>
-                  <span class="badge">{{ transaction.status.toUpperCase() }}</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- Error Message -->
-      <div v-if="store.error" class="alert alert-danger">
-        {{ store.error }}
-      </div>
-    </template>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { useMoneyTransferStore } from '~/stores/money-transfer'
+import { useLogger } from '~/composables/useLogger'
+import { usePermissions } from '~/composables/usePermissions'
+import { PERMISSIONS } from '~/types/permissions'
+import {
+  CheckCircleIcon,
+  XCircleIcon,
+  EyeIcon,
+  CheckIcon,
+  ExclamationTriangleIcon,
+} from '@heroicons/vue/24/outline'
 
 definePageMeta({
   middleware: 'auth',
-  title: 'Auditor Review - Workflow 2.2',
 })
 
+const logger = useLogger('AuditorReview')
 const store = useMoneyTransferStore()
 const router = useRouter()
+usePermissions()
 
-// State
-const selectedDate = ref(new Date().toISOString().split('T')[0])
+// ─── State ───────────────────────────────────────────────────────────────────
+const selectedDate = ref<string>(new Date().toISOString().split('T')[0] ?? '')
 const isSubmitting = ref(false)
+const successMessage = ref('')
+const errorMessage = ref('')
 
-const auditData = ref({
-  transactionsVerified: 0,
-  transactionsWithIssues: 0,
-  bankStatementVerified: false,
-  bankBalanceMatches: false,
-  auditNotes: '',
-  auditResult: '',
-  issuesFoundText: '',
-  issuesFound: [] as string[],
-})
+// Per-transaction verification status (txn.id → verified | issue)
+const txnVerifyStatus = ref<Record<string, 'verified' | 'issue'>>({})
 
-/**
- * Check if form is valid
- */
-const isFormValid = computed(() => {
-  return (
-    auditData.value.transactionsVerified > 0 &&
-    auditData.value.auditResult &&
-    auditData.value.auditNotes
-  )
-})
+// Bank balance verification
+const bankBalanceVerified = ref(false)
+const bankStatementAmount = ref<number>(0)
 
-/**
- * Get completed transactions
- */
-const completedTransactions = computed(() => {
-  if (!selectedDate.value) return []
-  const transactions = store.getTransactionsByDate(selectedDate.value)
-  return transactions.filter((t: any) => t.status === 'completed')
-})
+// Step 2 cash count verification
+const cashCountVerified = ref(false)
 
-/**
- * Format currency
- */
+// Audit findings
+const issuesFound = ref<'none' | 'minor' | 'major' | ''>('')
+const auditNotes = ref('')
+const issueDetails = ref('')
+
+// Transaction verify detail modal
+const showVerifyModal = ref(false)
+const verifyingTransaction = ref<any>(null)
+
+// Reject confirm
+const showRejectConfirm = ref(false)
+
+// ─── Computed ─────────────────────────────────────────────────────────────────
+const completedTransactions = computed(() =>
+  store.getTransactionsByDate(selectedDate.value)
+    .filter((t: any) => t.status === 'completed' || t.status === 'failed')
+)
+
+const allTxnsVerified = computed(() =>
+  completedTransactions.value.length > 0 &&
+  completedTransactions.value.every((t: any) => txnVerifyStatus.value[t.id])
+)
+
+const canSubmit = computed(() =>
+  allTxnsVerified.value &&
+  bankBalanceVerified.value &&
+  cashCountVerified.value &&
+  issuesFound.value !== ''
+)
+
+const managerStep1Data = computed(() => store.currentSummary?.step1)
+const step2Data = computed(() => store.currentSummary?.step2)
+
+const expectedBankBalance = computed(() =>
+  store.currentBalance?.bankAccount ?? 0
+)
+
+const bankBalanceDiff = computed(() =>
+  bankStatementAmount.value - expectedBankBalance.value
+)
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('th-TH', {
-    style: 'currency',
-    currency: 'THB',
     minimumFractionDigits: 0,
-  }).format(amount)
+    maximumFractionDigits: 0,
+  }).format(amount) + ' ฿'
 }
 
-/**
- * Format transaction type
- */
-function formatTransactionType(type: string): string {
-  const types: Record<string, string> = {
-    transfer: '📤 Transfer',
-    withdrawal: '💸 Withdrawal',
-    owner_deposit: '💰 Owner Deposit',
-  }
-  return types[type] || type
-}
-
-/**
- * Format time
- */
 function formatTime(datetime: string | Date): string {
-  const date = new Date(datetime)
-  return date.toLocaleTimeString('th-TH', {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  return new Date(datetime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
 }
 
-/**
- * Format date and time
- */
-function formatDateTime(dt?: string | Date): string {
-  if (!dt) return '-'
-  const date = new Date(dt)
-  return date.toLocaleString('th-TH')
+function getTransactionTypeLabel(type: string): string {
+  const map: Record<string, string> = {
+    transfer: 'โอนเงิน',
+    withdrawal: 'ถอนเงิน',
+    owner_deposit: 'เจ้าของฝากเงิน',
+  }
+  return map[type] || type
 }
 
-/**
- * Handle date change
- */
+function getChannelLabel(channel?: string): string {
+  if (!channel) return '-'
+  const map: Record<string, string> = { promptpay: 'PromptPay', bank: 'โอนธนาคาร', other: 'อื่นๆ' }
+  return map[channel] || channel
+}
+
+function getBankImpactLabel(txn: any): string {
+  if (txn.transactionType === 'transfer') return `-${formatCurrency(txn.amount)} (โอนออก)`
+  if (txn.transactionType === 'withdrawal') return `+${formatCurrency(txn.amount)} (ถอนออก)`
+  if (txn.transactionType === 'owner_deposit') return `+${formatCurrency(txn.amount)} (ฝากเข้า)`
+  return '-'
+}
+
+function markTxnVerified(txnId: string) {
+  txnVerifyStatus.value = { ...txnVerifyStatus.value, [txnId]: 'verified' }
+}
+
+function markTxnIssue(txnId: string) {
+  txnVerifyStatus.value = { ...txnVerifyStatus.value, [txnId]: 'issue' }
+}
+
+function openVerifyModal(txn: any) {
+  verifyingTransaction.value = txn
+  showVerifyModal.value = true
+}
+
+// ─── Actions ──────────────────────────────────────────────────────────────────
 async function handleDateChange() {
-  if (!selectedDate.value) return
-  await store.fetchTransactionsByDate(selectedDate.value)
-  await store.fetchDailySummary(selectedDate.value)
-
-  // Load existing audit data if available
-  if (store.currentSummary?.auditorVerification) {
-    const audit = store.currentSummary.auditorVerification
-    auditData.value.transactionsVerified = audit.transactionsVerified
-    auditData.value.transactionsWithIssues = audit.transactionsWithIssues
-    auditData.value.bankStatementVerified = audit.bankStatementVerified
-    auditData.value.bankBalanceMatches = audit.bankBalanceMatches ?? false
-    auditData.value.auditNotes = audit.auditNotes
-    auditData.value.auditResult = audit.auditResult
-    auditData.value.issuesFound = audit.issuesFound || []
+  try {
+    await store.fetchTransactionsByDate(selectedDate.value)
+    await store.fetchDailySummary(selectedDate.value)
+    // Reset verification state
+    txnVerifyStatus.value = {}
+    bankBalanceVerified.value = false
+    cashCountVerified.value = false
+  } catch (err: any) {
+    errorMessage.value = err.message || 'เกิดข้อผิดพลาด'
   }
 }
 
-/**
- * Handle submit audit
- */
-async function handleSubmitAudit() {
-  if (!isFormValid.value || !selectedDate.value) return
-
+async function handleApproveAudit() {
+  if (!canSubmit.value) return
   isSubmitting.value = true
-
   try {
-    // Parse issues from textarea
-    const issuesFound: string[] = auditData.value.issuesFoundText
-      .split('\n')
-      .map((line: string) => line.trim())
-      .filter((line: string) => line.length > 0)
-
     await store.submitAudit(selectedDate.value, {
-      status: 'completed',
-      completedAt: new Date().toISOString(),
-      completedBy: 'auditor-id',
-      completedByName: 'Auditor',
-      transactionsVerified: auditData.value.transactionsVerified,
-      transactionsWithIssues: auditData.value.transactionsWithIssues,
-      bankStatementVerified: auditData.value.bankStatementVerified,
-      bankBalanceMatches: auditData.value.bankBalanceMatches ?? false,
-      auditNotes: auditData.value.auditNotes,
-      issuesFound,
-      auditResult: auditData.value.auditResult as 'no_issues' | 'minor_issues' | 'major_issues',
+      auditNotes: auditNotes.value,
+      issuesFound: issuesFound.value,
+      issueDetails: issueDetails.value,
+      bankStatementAmount: bankStatementAmount.value,
+      result: issuesFound.value === 'none' ? 'no_issues' : 'issues_found',
     })
-
-    alert('Audit submitted! Ready for owner approval.')
-  } catch (error: any) {
-    console.error('Failed to submit audit:', error)
+    successMessage.value = 'Audit เสร็จสมบูรณ์ — ส่งให้ Owner อนุมัติได้เลย'
+    logger.log('Audit completed')
+  } catch (err: any) {
+    errorMessage.value = err.message || 'เกิดข้อผิดพลาด'
+    logger.error('Failed to complete audit', err)
   } finally {
     isSubmitting.value = false
   }
 }
 
-/**
- * Go back to Step 2
- */
-function goBackToStep2() {
-  router.push('/finance/money-transfer-service/step-2')
+async function handleRejectAudit() {
+  isSubmitting.value = true
+  try {
+    await store.submitAudit(selectedDate.value, {
+      auditNotes: auditNotes.value,
+      issueDetails: issueDetails.value || 'Rejected by Auditor',
+      result: 'rejected',
+    })
+    successMessage.value = 'ส่งคืน Manager เพื่อแก้ไขแล้ว'
+    showRejectConfirm.value = false
+    logger.log('Audit rejected')
+  } catch (err: any) {
+    errorMessage.value = err.message || 'เกิดข้อผิดพลาด'
+    logger.error('Failed to reject audit', err)
+  } finally {
+    isSubmitting.value = false
+  }
 }
 
-/**
- * Go to Owner Approval
- */
-function goToOwnerApproval() {
-  router.push('/finance/money-transfer-service/owner-approval')
-}
-
-/**
- * Initialize component
- */
+// ─── Init ─────────────────────────────────────────────────────────────────────
 onMounted(async () => {
-  await store.initializeStore()
-  if (selectedDate.value) {
+  try {
+    await store.initializeStore()
     await store.fetchTransactionsByDate(selectedDate.value)
     await store.fetchDailySummary(selectedDate.value)
+  } catch (err: any) {
+    errorMessage.value = err.message || 'เกิดข้อผิดพลาด'
   }
 })
 </script>
 
-<style scoped lang="scss">
-.auditor-review-container {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 20px;
-
-  .page-header {
-    background: linear-gradient(135deg, #17a2b8 0%, #0f6a7e 100%);
-    color: white;
-    padding: 30px;
-    border-radius: 8px;
-    margin-bottom: 30px;
-
-    &.auditor {
-      background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
-    }
-
-    .page-title {
-      margin: 0 0 10px 0;
-      font-size: 28px;
-      font-weight: 700;
-    }
-
-    .page-description {
-      margin: 0 0 20px 0;
-      font-size: 16px;
-      opacity: 0.9;
-    }
-
-    .date-selector {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-
-      label {
-        font-weight: 600;
-      }
-
-      .form-control {
-        padding: 8px 12px;
-        border: none;
-        border-radius: 4px;
-        font-size: 14px;
-      }
-    }
-  }
-
-  .loading-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 60px 20px;
-    gap: 20px;
-
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #ffc107;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-  }
-
-  .workflow-progress {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 30px;
-    padding: 20px;
-    background: white;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-
-    .progress-step {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      flex: 0 0 auto;
-
-      .step-marker {
-        width: 50px;
-        height: 50px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        font-weight: 700;
-        font-size: 18px;
-        background: #e9ecef;
-        color: #6c757d;
-      }
-
-      .step-label {
-        font-size: 12px;
-        font-weight: 600;
-        text-align: center;
-        color: #6c757d;
-      }
-
-      &.completed {
-        .step-marker {
-          background: #d1e7dd;
-          color: #0f5132;
-        }
-
-        .step-label {
-          color: #0f5132;
-        }
-      }
-
-      &.active {
-        .step-marker {
-          background: #fff3cd;
-          color: #664d03;
-        }
-
-        .step-label {
-          color: #664d03;
-          font-weight: 700;
-        }
-      }
-
-      &.pending {
-        .step-marker {
-          background: #e9ecef;
-          color: #6c757d;
-        }
-      }
-    }
-
-    .progress-line {
-      flex: 1;
-      height: 3px;
-      background: #e9ecef;
-      margin: 0 10px;
-
-      &.completed {
-        background: #28a745;
-      }
-
-      &.active {
-        background: #ffc107;
-      }
-    }
-  }
-
-  .manager-summary,
-  .audit-form-section,
-  .reference-section {
-    background: white;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 25px;
-    margin-bottom: 30px;
-
-    h3,
-    h4 {
-      margin: 0 0 15px 0;
-      font-weight: 600;
-    }
-
-    h3 {
-      font-size: 18px;
-    }
-
-    h4 {
-      font-size: 16px;
-      color: #495057;
-    }
-
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-
-      .summary-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px;
-        background: #f8f9fa;
-        border-radius: 4px;
-
-        .label {
-          font-weight: 600;
-          color: #495057;
-        }
-
-        .value {
-          font-weight: 700;
-          color: #212529;
-
-          &.no-discrepancy {
-            color: #28a745;
-          }
-        }
-      }
-    }
-  }
-
-  .audit-form-section {
-    .form-section {
-      margin-bottom: 25px;
-      padding-bottom: 25px;
-      border-bottom: 1px solid #e9ecef;
-
-      &:last-of-type {
-        border-bottom: none;
-        padding-bottom: 0;
-      }
-
-      .subsection-title {
-        margin: 0 0 15px 0;
-        color: #495057;
-      }
-
-      .input-group {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        margin-bottom: 15px;
-
-        &:last-child {
-          margin-bottom: 0;
-        }
-
-        .form-label {
-          font-weight: 600;
-          color: #212529;
-          font-size: 14px;
-
-          .required {
-            color: #dc3545;
-            margin-left: 2px;
-          }
-        }
-
-        .form-control,
-        textarea {
-          padding: 10px 12px;
-          border: 1px solid #dee2e6;
-          border-radius: 4px;
-          font-size: 14px;
-          font-family: inherit;
-
-          &:focus {
-            outline: none;
-            border-color: #0d6efd;
-            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-          }
-        }
-
-        textarea {
-          resize: vertical;
-        }
-
-        small {
-          font-size: 12px;
-          color: #6c757d;
-        }
-      }
-
-      .checkbox-group {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-
-        .checkbox-item {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-
-          input {
-            cursor: pointer;
-          }
-
-          label {
-            cursor: pointer;
-            font-size: 14px;
-            color: #212529;
-          }
-        }
-      }
-    }
-
-    .form-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 25px;
-
-      .btn {
-        padding: 12px 24px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: 600;
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-
-        &.btn-primary {
-          background: #0d6efd;
-          color: white;
-
-          &:hover:not(:disabled) {
-            background: #0b5ed7;
-          }
-
-          &:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-          }
-        }
-
-        &.btn-secondary {
-          background: #6c757d;
-          color: white;
-
-          &:hover {
-            background: #5c636a;
-          }
-        }
-
-        .spinner-small {
-          display: inline-block;
-          width: 12px;
-          height: 12px;
-          border: 2px solid rgba(255, 255, 255, 0.3);
-          border-top-color: white;
-          border-radius: 50%;
-          animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      }
-    }
-  }
-
-  .audit-completed {
-    background: #d1e7dd;
-    border: 1px solid #badbcc;
-    border-radius: 8px;
-    padding: 25px;
-
-    h3 {
-      margin: 0 0 20px 0;
-      color: #0f5132;
-    }
-
-    .audit-summary {
-      background: white;
-      padding: 20px;
-      border-radius: 6px;
-      margin-bottom: 20px;
-
-      .summary-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 12px 0;
-        border-bottom: 1px solid #e9ecef;
-        font-size: 14px;
-
-        &:last-child {
-          border-bottom: none;
-        }
-
-        .label {
-          color: #495057;
-          font-weight: 600;
-        }
-
-        .value {
-          color: #212529;
-          font-weight: 600;
-
-          &.result {
-            &.no_issues {
-              color: #28a745;
-            }
-
-            &.minor_issues {
-              color: #ffc107;
-            }
-
-            &.major_issues {
-              color: #dc3545;
-            }
-          }
-        }
-      }
-
-      .summary-notes,
-      .summary-issues {
-        background: #f8f9fa;
-        padding: 12px;
-        border-radius: 4px;
-        margin-top: 15px;
-
-        strong {
-          display: block;
-          margin-bottom: 8px;
-          color: #212529;
-        }
-
-        p {
-          margin: 0;
-          color: #6c757d;
-          font-size: 14px;
-        }
-
-        ul {
-          margin: 0;
-          padding-left: 20px;
-
-          li {
-            color: #6c757d;
-            font-size: 14px;
-            margin-bottom: 4px;
-          }
-        }
-      }
-    }
-
-    .next-step {
-      margin: 0 0 15px 0;
-      color: #0f5132;
-      font-weight: 600;
-    }
-
-    .btn {
-      padding: 12px 24px;
-      background: #0d6efd;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: 600;
-
-      &:hover {
-        background: #0b5ed7;
-      }
-    }
-  }
-
-  .reference-section {
-    .transactions-reference {
-      overflow-x: auto;
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-
-        thead {
-          tr {
-            background: #f8f9fa;
-            border-bottom: 2px solid #dee2e6;
-
-            th {
-              padding: 12px;
-              text-align: left;
-              font-weight: 600;
-              color: #495057;
-              font-size: 14px;
-            }
-          }
-        }
-
-        tbody {
-          tr {
-            border-bottom: 1px solid #dee2e6;
-
-            &:hover {
-              background: #f8f9fa;
-            }
-
-            td {
-              padding: 12px;
-              font-size: 14px;
-
-              &.amount {
-                text-align: right;
-                font-weight: 600;
-                color: #0d6efd;
-              }
-
-              .badge {
-                background: #e9ecef;
-                padding: 2px 6px;
-                border-radius: 3px;
-                font-size: 12px;
-                font-weight: 600;
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  .alert {
-    padding: 15px;
-    border-radius: 8px;
-    margin-top: 20px;
-
-    &.alert-danger {
-      background: #f8d7da;
-      color: #842029;
-      border: 1px solid #f5c2c7;
-    }
-  }
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .auditor-review-container {
-    padding: 12px;
-
-    .page-header {
-      padding: 20px;
-
-      .page-title {
-        font-size: 22px;
-      }
-
-      .date-selector {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-    }
-
-    .workflow-progress {
-      flex-wrap: wrap;
-
-      .progress-line {
-        display: none;
-      }
-    }
-
-    .manager-summary .summary-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .audit-form-section .form-section .input-group {
-      .form-control,
-      textarea {
-        font-size: 16px;
-      }
-    }
-  }
-}
-</style>
+<template>
+  <PageWrapper
+    title="ตรวจสอบ Auditor (WF 2.2)"
+    description="Cross-check รายการกับ Bank Statement และยืนยันความถูกต้อง"
+    icon="🔍"
+    :loading="store.isLoading"
+    :error="store.error"
+  >
+    <template #actions>
+      <div class="flex items-center gap-2">
+        <label class="text-sm font-medium text-gray-700">วันที่:</label>
+        <input
+          v-model="selectedDate"
+          type="date"
+          class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-500"
+          @change="handleDateChange"
+        />
+      </div>
+    </template>
+
+    <BaseAlert v-if="successMessage" variant="success" :message="successMessage" :auto-close="true" class="mb-4" @close="successMessage = ''" />
+    <BaseAlert v-if="errorMessage" variant="error" :message="errorMessage" class="mb-4" @close="errorMessage = ''" />
+
+    <!-- Prerequisite: Step 2 must be complete -->
+    <BaseAlert
+      v-if="!store.isStep2Complete"
+      variant="warning"
+      title="Step 2 ยังไม่เสร็จสมบูรณ์"
+      message="กรุณารอให้ Manager ดำเนินการ Step 2 ก่อน"
+      :dismissible="false"
+      class="mb-6"
+    />
+
+    <!-- Already Audited -->
+    <template v-if="store.isAudited">
+      <BaseAlert
+        variant="success"
+        title="Audit เสร็จสมบูรณ์"
+        message="ส่งให้ Owner อนุมัติแล้ว"
+        :dismissible="false"
+        class="mb-6"
+      />
+      <div class="flex justify-center">
+        <BaseButton variant="primary" size="lg" @click="router.push('/finance/money-transfer-service/owner-approval')">
+          ดูหน้า Owner Approval →
+        </BaseButton>
+      </div>
+    </template>
+
+    <template v-else-if="store.isStep2Complete">
+      <!-- ── Manager's Data Summary ────────────────────────────────────── -->
+      <section class="mb-6">
+        <h2 class="text-base font-semibold text-gray-700 mb-3">📊 ข้อมูลจาก Manager (Step 1 & 2)</h2>
+        <div class="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
+          <!-- Step 1 info -->
+          <div class="p-4">
+            <div class="text-sm font-semibold text-gray-700 mb-2">Step 1: รายการที่บันทึก</div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+              <div>
+                <div class="text-gray-500">รายการทั้งหมด</div>
+                <div class="font-bold text-gray-900">{{ managerStep1Data?.totalTransactions ?? completedTransactions.length }} รายการ</div>
+              </div>
+              <div>
+                <div class="text-gray-500">สำเร็จ</div>
+                <div class="font-bold text-green-700">{{ managerStep1Data?.completedTransactions ?? completedTransactions.filter((t: any) => t.status === 'completed').length }} รายการ</div>
+              </div>
+              <div>
+                <div class="text-gray-500">ยอดรวม</div>
+                <div class="font-bold text-gray-900">{{ formatCurrency(managerStep1Data?.totalAmount ?? 0) }}</div>
+              </div>
+              <div>
+                <div class="text-gray-500">ค่าบริการรวม</div>
+                <div class="font-bold text-green-700">{{ formatCurrency(managerStep1Data?.totalCommission ?? 0) }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2 cash verification -->
+          <div class="p-4">
+            <div class="text-sm font-semibold text-gray-700 mb-2">Step 2: ผลการตรวจนับ</div>
+            <div v-if="step2Data" class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+              <div class="flex items-center gap-2">
+                <CheckCircleIcon class="w-4 h-4 text-green-500 flex-shrink-0" />
+                <span class="text-gray-600">เงินสดโอน/ถอน: <strong>{{ formatCurrency(step2Data.actualCash?.transferWithdrawal ?? 0) }}</strong></span>
+              </div>
+              <div class="flex items-center gap-2">
+                <CheckCircleIcon class="w-4 h-4 text-green-500 flex-shrink-0" />
+                <span class="text-gray-600">ค่าบริการเงินสด: <strong>{{ formatCurrency(step2Data.actualCash?.serviceFee ?? 0) }}</strong></span>
+              </div>
+              <div class="flex items-center gap-2">
+                <component
+                  :is="step2Data.hasDiscrepancies ? ExclamationTriangleIcon : CheckCircleIcon"
+                  :class="step2Data.hasDiscrepancies ? 'w-4 h-4 text-amber-500 flex-shrink-0' : 'w-4 h-4 text-green-500 flex-shrink-0'"
+                />
+                <span class="text-gray-600">
+                  {{ step2Data.hasDiscrepancies ? '⚠️ พบผลต่าง' : '✅ ตรงกัน' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Verification Checklist ────────────────────────────────────── -->
+      <section class="mb-6">
+        <h2 class="text-base font-semibold text-gray-700 mb-3">🔐 Checklist การตรวจสอบ</h2>
+
+        <!-- 1. Verify each transaction -->
+        <div class="bg-white border border-gray-200 rounded-xl overflow-hidden mb-4">
+          <div class="px-4 py-3 bg-gray-50 border-b border-gray-100">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold text-gray-800">☐ ตรวจสอบรายการธุรกรรม ({{ completedTransactions.length }} รายการ)</span>
+              <BaseBadge
+                :variant="allTxnsVerified ? 'success' : 'default'"
+                size="sm"
+              >
+                {{ Object.keys(txnVerifyStatus).length }}/{{ completedTransactions.length }} ตรวจแล้ว
+              </BaseBadge>
+            </div>
+          </div>
+
+          <div class="divide-y divide-gray-100">
+            <div
+              v-for="(txn, idx) in completedTransactions"
+              :key="txn.id"
+              :class="[
+                'p-4 transition-colors',
+                txnVerifyStatus[txn.id] === 'verified' ? 'bg-green-50' : '',
+                txnVerifyStatus[txn.id] === 'issue' ? 'bg-red-50' : '',
+              ]"
+            >
+              <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                <!-- Transaction info -->
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="text-sm font-medium text-gray-500">#{{ Number(idx) + 1 }}</span>
+                    <span class="font-medium text-gray-900">{{ getTransactionTypeLabel(txn.transactionType) }}</span>
+                    <BaseBadge v-if="txn.status === 'failed'" variant="error" size="sm">ล้มเหลว</BaseBadge>
+                    <span class="text-gray-500 text-sm">{{ formatTime(txn.datetime) }}</span>
+                  </div>
+                  <div class="text-sm text-gray-600 space-y-0.5">
+                    <div>ช่องทาง: {{ getChannelLabel(txn.channel) }} · จำนวน: <strong>{{ formatCurrency(txn.amount) }}</strong></div>
+                    <div class="text-xs text-gray-400">Bank Impact: {{ getBankImpactLabel(txn) }}</div>
+                  </div>
+                </div>
+
+                <!-- Verify controls -->
+                <div class="flex items-center gap-2">
+                  <button
+                    class="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg transition-colors"
+                    aria-label="ดูรายละเอียดและ Bank Statement"
+                    @click="openVerifyModal(txn)"
+                  >
+                    <EyeIcon class="w-4 h-4" />
+                  </button>
+                  <button
+                    :class="[
+                      'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border',
+                      txnVerifyStatus[txn.id] === 'verified'
+                        ? 'bg-green-600 text-white border-green-600'
+                        : 'bg-white text-green-700 border-green-300 hover:bg-green-50',
+                    ]"
+                    @click="markTxnVerified(txn.id)"
+                  >
+                    <CheckIcon class="w-4 h-4 inline mr-1" />
+                    ถูกต้อง
+                  </button>
+                  <button
+                    :class="[
+                      'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border',
+                      txnVerifyStatus[txn.id] === 'issue'
+                        ? 'bg-red-600 text-white border-red-600'
+                        : 'bg-white text-red-700 border-red-300 hover:bg-red-50',
+                    ]"
+                    @click="markTxnIssue(txn.id)"
+                  >
+                    <ExclamationTriangleIcon class="w-4 h-4 inline mr-1" />
+                    มีปัญหา
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <EmptyState
+              v-if="completedTransactions.length === 0"
+              icon="📋"
+              title="ไม่มีรายการ"
+              description="ยังไม่มีรายการธุรกรรมสำหรับวันนี้"
+            />
+          </div>
+        </div>
+
+        <!-- 2. Bank Balance Verification -->
+        <div class="bg-white border border-gray-200 rounded-xl p-4 mb-4">
+          <div class="flex items-start gap-3 mb-3">
+            <input
+              v-model="bankBalanceVerified"
+              type="checkbox"
+              class="mt-0.5 w-4 h-4 accent-red-600"
+              id="bankBalanceCheck"
+            />
+            <div class="flex-1">
+              <label for="bankBalanceCheck" class="font-semibold text-gray-800 cursor-pointer">
+                ☐ ตรวจสอบยอดเงินในบัญชี Bank
+              </label>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm ml-7">
+            <div class="bg-blue-50 rounded-lg p-3">
+              <div class="text-blue-700 text-xs mb-1">Expected (จาก Step 1)</div>
+              <div class="font-bold text-blue-900 text-base">{{ formatCurrency(expectedBankBalance) }}</div>
+            </div>
+            <div>
+              <FormField label="Bank Statement แสดง">
+                <div class="relative">
+                  <BaseInput v-model="bankStatementAmount" type="number" placeholder="0" />
+                  <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">บาท</span>
+                </div>
+              </FormField>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-3 flex items-center">
+              <div>
+                <div class="text-xs text-gray-500 mb-1">ผลต่าง</div>
+                <div :class="['font-bold text-base', bankBalanceDiff === 0 ? 'text-green-700' : 'text-red-700']">
+                  {{ bankBalanceDiff === 0 ? '✅ ตรงกัน' : (bankBalanceDiff > 0 ? '+' : '') + formatCurrency(bankBalanceDiff) }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Cash Count Verification -->
+        <div class="bg-white border border-gray-200 rounded-xl p-4">
+          <div class="flex items-start gap-3 mb-3">
+            <input
+              v-model="cashCountVerified"
+              type="checkbox"
+              class="mt-0.5 w-4 h-4 accent-red-600"
+              id="cashCountCheck"
+            />
+            <div class="flex-1">
+              <label for="cashCountCheck" class="font-semibold text-gray-800 cursor-pointer">
+                ☐ ยืนยันผลการตรวจนับเงินสด Step 2
+              </label>
+            </div>
+          </div>
+          <div v-if="step2Data" class="ml-7 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+            <div class="bg-gray-50 rounded-lg p-3">
+              <div class="text-xs text-gray-500 mb-1">เงินสดโอน/ถอน</div>
+              <div class="font-bold text-gray-900">{{ formatCurrency(step2Data.actualCash?.transferWithdrawal ?? 0) }}</div>
+              <BaseBadge variant="success" size="sm" class="mt-1">Match</BaseBadge>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-3">
+              <div class="text-xs text-gray-500 mb-1">ค่าบริการเงินสด</div>
+              <div class="font-bold text-gray-900">{{ formatCurrency(step2Data.actualCash?.serviceFee ?? 0) }}</div>
+              <BaseBadge variant="success" size="sm" class="mt-1">Match</BaseBadge>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-3">
+              <div class="text-xs text-gray-500 mb-1">สถานะ</div>
+              <BaseBadge
+                :variant="step2Data.hasDiscrepancies ? 'warning' : 'success'"
+                size="md"
+              >
+                {{ step2Data.hasDiscrepancies ? '⚠️ พบผลต่าง' : '✅ ตรงกัน' }}
+              </BaseBadge>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Audit Notes & Findings ─────────────────────────────────────── -->
+      <section class="mb-6">
+        <h2 class="text-base font-semibold text-gray-700 mb-3">📝 ผลการ Audit</h2>
+        <div class="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
+          <FormField label="ผลการตรวจสอบ" required>
+            <div class="space-y-2">
+              <label
+                v-for="opt in [{ value: 'none', label: '✅ ไม่พบปัญหา', color: 'green' }, { value: 'minor', label: '⚠️ พบปัญหาเล็กน้อย', color: 'amber' }, { value: 'major', label: '❌ พบปัญหาสำคัญ', color: 'red' }]"
+                :key="opt.value"
+                :class="[
+                  'flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors',
+                  issuesFound === opt.value
+                    ? opt.color === 'green' ? 'border-green-500 bg-green-50' : opt.color === 'amber' ? 'border-amber-500 bg-amber-50' : 'border-red-500 bg-red-50'
+                    : 'border-gray-200 hover:bg-gray-50',
+                ]"
+              >
+                <input v-model="issuesFound" type="radio" :value="opt.value" class="accent-red-600" />
+                <span class="font-medium">{{ opt.label }}</span>
+              </label>
+            </div>
+          </FormField>
+
+          <FormField label="บันทึก Audit">
+            <BaseTextarea
+              v-model="auditNotes"
+              placeholder="สรุปผลการตรวจสอบ เช่น ตรวจสอบรายการทั้งหมดแล้ว ยอดเงินตรงกับ Bank Statement..."
+              :rows="3"
+            />
+          </FormField>
+
+          <FormField v-if="issuesFound !== 'none'" label="รายละเอียดปัญหาที่พบ" required>
+            <BaseTextarea
+              v-model="issueDetails"
+              placeholder="ระบุปัญหาที่พบ เช่น รายการที่ X ยอดเงินไม่ตรงกับ Bank Statement..."
+              :rows="3"
+            />
+          </FormField>
+        </div>
+      </section>
+
+      <!-- ── Actions ────────────────────────────────────────────────────── -->
+      <!-- Progress indicator -->
+      <div class="mb-4 p-3 bg-gray-50 rounded-xl text-sm text-gray-600 flex flex-wrap gap-3">
+        <span :class="allTxnsVerified ? 'text-green-700' : 'text-gray-400'">
+          {{ allTxnsVerified ? '✅' : '☐' }} ตรวจรายการธุรกรรม
+        </span>
+        <span :class="bankBalanceVerified ? 'text-green-700' : 'text-gray-400'">
+          {{ bankBalanceVerified ? '✅' : '☐' }} ยืนยัน Bank Balance
+        </span>
+        <span :class="cashCountVerified ? 'text-green-700' : 'text-gray-400'">
+          {{ cashCountVerified ? '✅' : '☐' }} ยืนยันการตรวจนับ
+        </span>
+        <span :class="issuesFound !== '' ? 'text-green-700' : 'text-gray-400'">
+          {{ issuesFound !== '' ? '✅' : '☐' }} ระบุผลการ Audit
+        </span>
+      </div>
+
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 py-4">
+        <BaseButton variant="danger" @click="showRejectConfirm = true">
+          <XCircleIcon class="w-4 h-4" />
+          ส่งคืนแก้ไข
+        </BaseButton>
+        <ActionButton
+          :permission="PERMISSIONS.VIEW_FINANCE"
+          variant="success"
+          size="lg"
+          :disabled="!canSubmit"
+          :loading="isSubmitting"
+          @click="handleApproveAudit"
+        >
+          <CheckCircleIcon class="w-5 h-5" />
+          ✅ Approve Audit
+        </ActionButton>
+      </div>
+    </template>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- Transaction Verify Detail Modal -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <BaseModal
+      :open="showVerifyModal"
+      size="md"
+      @close="showVerifyModal = false"
+    >
+      <template #header>
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <h2 class="text-lg font-bold text-gray-900">Bank Statement Verification</h2>
+          <button
+            aria-label="ปิด"
+            class="text-gray-400 hover:text-gray-600"
+            @click="showVerifyModal = false"
+          >
+            <XCircleIcon class="w-5 h-5" />
+          </button>
+        </div>
+      </template>
+
+      <div v-if="verifyingTransaction" class="space-y-4 text-sm">
+        <div class="bg-gray-50 rounded-lg p-4 space-y-2">
+          <div class="font-semibold text-gray-800 mb-2">ข้อมูลจาก Manager</div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <span class="text-gray-500">ประเภท: </span>
+              <span class="font-medium">{{ getTransactionTypeLabel(verifyingTransaction.transactionType) }}</span>
+            </div>
+            <div>
+              <span class="text-gray-500">ช่องทาง: </span>
+              <span class="font-medium">{{ getChannelLabel(verifyingTransaction.channel) }}</span>
+            </div>
+            <div>
+              <span class="text-gray-500">จำนวน: </span>
+              <span class="font-bold">{{ formatCurrency(verifyingTransaction.amount) }}</span>
+            </div>
+            <div v-if="verifyingTransaction.commission">
+              <span class="text-gray-500">ค่าบริการ: </span>
+              <span class="font-medium text-green-700">{{ formatCurrency(verifyingTransaction.commission) }}</span>
+            </div>
+            <div>
+              <span class="text-gray-500">เวลา: </span>
+              <span class="font-medium">{{ formatTime(verifyingTransaction.datetime) }}</span>
+            </div>
+            <div>
+              <span class="text-gray-500">Bank Impact: </span>
+              <span class="font-medium">{{ getBankImpactLabel(verifyingTransaction) }}</span>
+            </div>
+          </div>
+          <div v-if="verifyingTransaction.destinationName" class="mt-2">
+            <span class="text-gray-500">ปลายทาง: </span>
+            <span class="font-medium">{{ verifyingTransaction.destinationName }}</span>
+            <span v-if="verifyingTransaction.destinationIdentifier" class="text-gray-400 ml-1">({{ verifyingTransaction.destinationIdentifier }})</span>
+          </div>
+        </div>
+
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div class="font-semibold text-blue-800 mb-2">Bank Statement (2026-01-29)</div>
+          <div class="text-blue-700 space-y-1">
+            <div>{{ verifyingTransaction.transactionType === 'transfer' ? '📤 OUT' : '📥 IN' }}: {{ formatCurrency(verifyingTransaction.amount) }}</div>
+            <div class="text-xs text-blue-500">เวลา: {{ formatTime(verifyingTransaction.datetime) }}</div>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <div class="text-xs text-gray-500 font-medium uppercase tracking-wide">ผลการตรวจสอบ</div>
+          <div class="flex gap-2">
+            <button
+              :class="[
+                'flex-1 py-2 px-3 rounded-lg border font-medium text-sm transition-colors',
+                txnVerifyStatus[verifyingTransaction.id] === 'verified'
+                  ? 'bg-green-600 text-white border-green-600'
+                  : 'bg-white text-green-700 border-green-300 hover:bg-green-50',
+              ]"
+              @click="markTxnVerified(verifyingTransaction.id)"
+            >
+              ✅ ถูกต้อง
+            </button>
+            <button
+              :class="[
+                'flex-1 py-2 px-3 rounded-lg border font-medium text-sm transition-colors',
+                txnVerifyStatus[verifyingTransaction.id] === 'issue'
+                  ? 'bg-red-600 text-white border-red-600'
+                  : 'bg-white text-red-700 border-red-300 hover:bg-red-50',
+              ]"
+              @click="markTxnIssue(verifyingTransaction.id)"
+            >
+              ⚠️ มีปัญหา
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end">
+          <BaseButton variant="secondary" @click="showVerifyModal = false">ปิด</BaseButton>
+        </div>
+      </template>
+    </BaseModal>
+
+    <!-- Reject Confirm Dialog -->
+    <ConfirmDialog
+      :open="showRejectConfirm"
+      title="ส่งคืนให้ Manager แก้ไข"
+      message="ต้องการส่งคืนรายการนี้ให้ Manager แก้ไขหรือไม่? กรุณาระบุรายละเอียดปัญหาในช้อง Audit Notes ก่อน"
+      confirm-text="ส่งคืนแก้ไข"
+      cancel-text="ยกเลิก"
+      variant="warning"
+      @confirm="handleRejectAudit"
+      @cancel="showRejectConfirm = false"
+    />
+  </PageWrapper>
+</template>
