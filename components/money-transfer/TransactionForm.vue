@@ -359,8 +359,8 @@ function resetCommission() {
 const hasSufficientBalance = computed(() => {
   const { transactionType } = formData.value
   const amt = Number(formData.value.amount)
-  if (transactionType === 'transfer') return props.currentBalance.bankAccount >= amt
-  if (transactionType === 'withdrawal') return props.currentBalance.transferCash >= amt
+  if (transactionType === 'transfer') return Number(props.currentBalance.bankAccount) >= amt
+  if (transactionType === 'withdrawal') return Number(props.currentBalance.transferCash) >= amt
   return true // owner_deposit always completes
 })
 
@@ -368,7 +368,8 @@ const hasSufficientBalance = computed(() => {
 const bannerInfo = computed(() => {
   const { transactionType } = formData.value
   const amt = Number(formData.value.amount)
-  const { bankAccount, transferCash } = props.currentBalance
+  const bankAccount = Number(props.currentBalance.bankAccount)
+  const transferCash = Number(props.currentBalance.transferCash)
 
   if (transactionType === 'transfer') {
     return {
