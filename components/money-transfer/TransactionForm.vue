@@ -373,7 +373,7 @@ const bannerInfo = computed(() => {
 
   if (transactionType === 'transfer') {
     return {
-      balanceLabel: 'ยอดในบัญชี',
+      balanceLabel: 'ยอดเงินในบัญชี',
       current: bankAccount,
       after: bankAccount - amt,
       ok: hasSufficientBalance.value,
@@ -389,7 +389,7 @@ const bannerInfo = computed(() => {
   }
   // owner_deposit — เพิ่มยอดในบัญชีธนาคาร
   return {
-    balanceLabel: 'ยอดในบัญชี',
+    balanceLabel: 'ยอดเงินในบัญชี',
     current: bankAccount,
     after: bankAccount + amt,
     ok: true,
