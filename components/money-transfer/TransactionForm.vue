@@ -357,22 +357,24 @@ function resetCommission() {
  * ฝากเงิน  → เพิ่มยอดเงินสดเสมอ ถือว่าสำเร็จเสมอ
  */
 const hasSufficientBalance = computed(() => {
-  const { transactionType, amount } = formData.value
-  if (transactionType === 'transfer') return props.currentBalance.bankAccount >= amount
-  if (transactionType === 'withdrawal') return props.currentBalance.transferCash >= amount
+  const { transactionType } = formData.value
+  const amt = Number(formData.value.amount)
+  if (transactionType === 'transfer') return props.currentBalance.bankAccount >= amt
+  if (transactionType === 'withdrawal') return props.currentBalance.transferCash >= amt
   return true // owner_deposit always completes
 })
 
 /** ข้อความและยอดที่แสดงใน banner ตามประเภทรายการ */
 const bannerInfo = computed(() => {
-  const { transactionType, amount } = formData.value
+  const { transactionType } = formData.value
+  const amt = Number(formData.value.amount)
   const { bankAccount, transferCash } = props.currentBalance
 
   if (transactionType === 'transfer') {
     return {
       balanceLabel: 'ยอดในบัญชี',
       current: bankAccount,
-      after: bankAccount - amount,
+      after: bankAccount - amt,
       ok: hasSufficientBalance.value,
     }
   }
@@ -380,7 +382,7 @@ const bannerInfo = computed(() => {
     return {
       balanceLabel: 'ยอดเงินสด',
       current: transferCash,
-      after: transferCash - amount,
+      after: transferCash - amt,
       ok: hasSufficientBalance.value,
     }
   }
@@ -388,7 +390,7 @@ const bannerInfo = computed(() => {
   return {
     balanceLabel: 'ยอดในบัญชี',
     current: bankAccount,
-    after: bankAccount + amount,
+    after: bankAccount + amt,
     ok: true,
   }
 })
