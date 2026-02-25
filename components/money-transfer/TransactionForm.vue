@@ -218,13 +218,7 @@
           {{ formatCurrency(bannerInfo.after) }}
         </span>
       </div>
-      <!-- สถานะการบันทึก (ไม่แสดงสำหรับฝากเงิน เพราะสำเร็จเสมอ) -->
-      <span
-        v-if="formData.transactionType !== 'owner_deposit'"
-        class="text-xs font-medium whitespace-nowrap"
-      >
-        {{ bannerInfo.ok ? 'Completed' : 'Draft' }}
-      </span>
+      <!-- สถานะการบันทึก (ไม่แสดงอีกต่อไป) -->
     </div>
 
     <!-- ── Error ──────────────────────────────────────────────── -->
@@ -390,11 +384,11 @@ const bannerInfo = computed(() => {
       ok: hasSufficientBalance.value,
     }
   }
-  // owner_deposit — เพิ่มเงินสด
+  // owner_deposit — เพิ่มยอดในบัญชีธนาคาร
   return {
-    balanceLabel: 'ยอดเงินสด',
-    current: transferCash,
-    after: transferCash + amount,
+    balanceLabel: 'ยอดในบัญชี',
+    current: bankAccount,
+    after: bankAccount + amount,
     ok: true,
   }
 })
