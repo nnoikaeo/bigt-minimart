@@ -203,17 +203,28 @@
     <!-- ── สถานะยอดเงิน ─────────────────────────────────────────── -->
     <div
       v-if="formData.amount > 0"
-      class="rounded-lg px-4 py-2.5 text-sm font-medium flex items-center gap-2"
+      class="rounded-lg px-3 py-2.5 text-sm flex items-center justify-between gap-2"
       :class="bannerInfo.ok
         ? 'bg-green-50 border border-green-200 text-green-800'
         : 'bg-amber-50 border border-amber-200 text-amber-800'"
     >
-      <span>{{ bannerInfo.ok ? '✅' : '⚠️' }}</span>
-      <span>{{ bannerInfo.label }}</span>
-      <template v-if="formData.transactionType !== 'owner_deposit'">
-        <span class="text-gray-400">·</span>
-        <span>{{ bannerInfo.ok ? 'บันทึกเป็น Completed' : 'ไม่เพียงพอ → บันทึกเป็น Draft' }}</span>
-      </template>
+      <!-- ยอดปัจจุบัน → ยอดหลังรายการ -->
+      <div class="flex items-center gap-2 font-medium">
+        <span>{{ bannerInfo.ok ? '✅' : '⚠️' }}</span>
+        <span class="text-xs opacity-70">{{ bannerInfo.balanceLabel }}</span>
+        <span>{{ formatCurrency(bannerInfo.current) }}</span>
+        <span class="opacity-50">→</span>
+        <span :class="bannerInfo.ok ? 'text-green-700 font-semibold' : 'text-amber-700 font-semibold'">
+          {{ formatCurrency(bannerInfo.after) }}
+        </span>
+      </div>
+      <!-- สถานะการบันทึก (ไม่แสดงสำหรับฝากเงิน เพราะสำเร็จเสมอ) -->
+      <span
+        v-if="formData.transactionType !== 'owner_deposit'"
+        class="text-xs font-medium whitespace-nowrap"
+      >
+        {{ bannerInfo.ok ? 'Completed' : 'Draft' }}
+      </span>
     </div>
 
     <!-- ── Error ──────────────────────────────────────────────── -->
@@ -361,21 +372,29 @@ const hasSufficientBalance = computed(() => {
 /** ข้อความและยอดที่แสดงใน banner ตามประเภทรายการ */
 const bannerInfo = computed(() => {
   const { transactionType, amount } = formData.value
+  const { bankAccount, transferCash } = props.currentBalance
+
   if (transactionType === 'transfer') {
     return {
-      label: `ยอดในบัญชี ${formatCurrency(props.currentBalance.bankAccount)}`,
+      balanceLabel: 'ยอดในบัญชี',
+      current: bankAccount,
+      after: bankAccount - amount,
       ok: hasSufficientBalance.value,
     }
   }
   if (transactionType === 'withdrawal') {
     return {
-      label: `ยอดเงินสด ${formatCurrency(props.currentBalance.transferCash)}`,
+      balanceLabel: 'ยอดเงินสด',
+      current: transferCash,
+      after: transferCash - amount,
       ok: hasSufficientBalance.value,
     }
   }
-  // owner_deposit — แสดงยอดหลังฝาก
+  // owner_deposit — เพิ่มเงินสด
   return {
-    label: `ยอดเงินสดหลังฝาก ${formatCurrency(props.currentBalance.transferCash + amount)}`,
+    balanceLabel: 'ยอดเงินสด',
+    current: transferCash,
+    after: transferCash + amount,
     ok: true,
   }
 })
