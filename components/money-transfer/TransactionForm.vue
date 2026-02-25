@@ -162,16 +162,28 @@
             :class="isCommissionManual ? 'border-amber-400' : 'border-gray-300'"
           >฿</span>
         </div>
-        <!-- Commission type radios -->
-        <div v-if="effectiveCommission > 0" class="flex gap-4 mt-1.5">
-          <label class="flex items-center gap-1.5 cursor-pointer">
-            <input v-model="formData.commissionType" type="radio" value="cash" class="accent-blue-600" />
-            <span class="text-xs text-gray-600">สด</span>
-          </label>
-          <label class="flex items-center gap-1.5 cursor-pointer">
-            <input v-model="formData.commissionType" type="radio" value="transfer" class="accent-blue-600" />
-            <span class="text-xs text-gray-600">โอน</span>
-          </label>
+        <!-- Commission type button group -->
+        <div v-if="effectiveCommission > 0" class="flex rounded-lg border border-gray-200 overflow-hidden mt-1.5">
+          <button
+            type="button"
+            class="flex-1 py-1.5 text-xs font-medium transition-colors"
+            :class="formData.commissionType === 'cash'
+              ? 'bg-blue-600 text-white'
+              : 'bg-white text-gray-600 hover:bg-gray-50'"
+            @click="formData.commissionType = 'cash'"
+          >
+            สด
+          </button>
+          <button
+            type="button"
+            class="flex-1 py-1.5 text-xs font-medium transition-colors border-l border-gray-200"
+            :class="formData.commissionType === 'transfer'
+              ? 'bg-blue-600 text-white'
+              : 'bg-white text-gray-600 hover:bg-gray-50'"
+            @click="formData.commissionType = 'transfer'"
+          >
+            โอน
+          </button>
         </div>
       </div>
     </div>
