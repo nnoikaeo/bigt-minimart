@@ -158,32 +158,38 @@
             @input="isCommissionManual = true"
           />
           <span
-            class="bg-gray-100 px-3 py-2 text-sm text-gray-600 border-l font-medium"
+            class="bg-gray-100 px-2 py-2 text-sm text-gray-600 border-l font-medium flex items-center"
             :class="isCommissionManual ? 'border-amber-400' : 'border-gray-300'"
           >฿</span>
-        </div>
-        <!-- Commission type button group -->
-        <div v-if="effectiveCommission > 0" class="flex rounded-lg border border-gray-200 overflow-hidden mt-1.5">
-          <button
-            type="button"
-            class="flex-1 py-1.5 text-xs font-medium transition-colors"
-            :class="formData.commissionType === 'cash'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-gray-600 hover:bg-gray-50'"
-            @click="formData.commissionType = 'cash'"
-          >
-            สด
-          </button>
-          <button
-            type="button"
-            class="flex-1 py-1.5 text-xs font-medium transition-colors border-l border-gray-200"
-            :class="formData.commissionType === 'transfer'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-gray-600 hover:bg-gray-50'"
-            @click="formData.commissionType = 'transfer'"
-          >
-            โอน
-          </button>
+          <!-- Commission type inline buttons — แสดงเมื่อมีค่าบริการ -->
+          <template v-if="effectiveCommission > 0">
+            <button
+              type="button"
+              class="px-3 py-2 text-xs font-medium transition-colors border-l"
+              :class="[
+                isCommissionManual ? 'border-amber-400' : 'border-gray-300',
+                formData.commissionType === 'cash'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-600 hover:bg-gray-50'
+              ]"
+              @click="formData.commissionType = 'cash'"
+            >
+              สด
+            </button>
+            <button
+              type="button"
+              class="px-3 py-2 text-xs font-medium transition-colors border-l"
+              :class="[
+                isCommissionManual ? 'border-amber-400' : 'border-gray-300',
+                formData.commissionType === 'transfer'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-600 hover:bg-gray-50'
+              ]"
+              @click="formData.commissionType = 'transfer'"
+            >
+              โอน
+            </button>
+          </template>
         </div>
       </div>
     </div>
