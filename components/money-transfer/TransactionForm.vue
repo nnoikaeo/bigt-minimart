@@ -204,14 +204,16 @@
     <div
       v-if="formData.amount > 0"
       class="rounded-lg px-4 py-2.5 text-sm font-medium flex items-center gap-2"
-      :class="hasSufficientBalance
+      :class="bannerInfo.ok
         ? 'bg-green-50 border border-green-200 text-green-800'
         : 'bg-amber-50 border border-amber-200 text-amber-800'"
     >
-      <span>{{ hasSufficientBalance ? '✅' : '⚠️' }}</span>
-      <span>ยอดเงินสด {{ formatCurrency(props.currentBalance.transferCash) }}</span>
-      <span class="text-gray-400">·</span>
-      <span>{{ hasSufficientBalance ? 'บันทึกเป็น Completed' : 'ไม่เพียงพอ → บันทึกเป็น Draft' }}</span>
+      <span>{{ bannerInfo.ok ? '✅' : '⚠️' }}</span>
+      <span>{{ bannerInfo.label }}</span>
+      <template v-if="formData.transactionType !== 'owner_deposit'">
+        <span class="text-gray-400">·</span>
+        <span>{{ bannerInfo.ok ? 'บันทึกเป็น Completed' : 'ไม่เพียงพอ → บันทึกเป็น Draft' }}</span>
+      </template>
     </div>
 
     <!-- ── Error ──────────────────────────────────────────────── -->
@@ -344,9 +346,39 @@ function resetCommission() {
 }
 
 // ── Balance check ─────────────────────────────────────────────
-const hasSufficientBalance = computed(() =>
-  props.currentBalance.transferCash >= formData.value.amount
-)
+/**
+ * โอนเงิน  → ต้องมียอดในบัญชีธนาคาร (bankAccount) เพียงพอ
+ * ถอนเงิน  → ต้องมียอดเงินสด (transferCash) เพียงพอ
+ * ฝากเงิน  → เพิ่มยอดเงินสดเสมอ ถือว่าสำเร็จเสมอ
+ */
+const hasSufficientBalance = computed(() => {
+  const { transactionType, amount } = formData.value
+  if (transactionType === 'transfer') return props.currentBalance.bankAccount >= amount
+  if (transactionType === 'withdrawal') return props.currentBalance.transferCash >= amount
+  return true // owner_deposit always completes
+})
+
+/** ข้อความและยอดที่แสดงใน banner ตามประเภทรายการ */
+const bannerInfo = computed(() => {
+  const { transactionType, amount } = formData.value
+  if (transactionType === 'transfer') {
+    return {
+      label: `ยอดในบัญชี ${formatCurrency(props.currentBalance.bankAccount)}`,
+      ok: hasSufficientBalance.value,
+    }
+  }
+  if (transactionType === 'withdrawal') {
+    return {
+      label: `ยอดเงินสด ${formatCurrency(props.currentBalance.transferCash)}`,
+      ok: hasSufficientBalance.value,
+    }
+  }
+  // owner_deposit — แสดงยอดหลังฝาก
+  return {
+    label: `ยอดเงินสดหลังฝาก ${formatCurrency(props.currentBalance.transferCash + amount)}`,
+    ok: true,
+  }
+})
 
 // ── Helpers ───────────────────────────────────────────────────
 function formatCurrency(val: number): string {
