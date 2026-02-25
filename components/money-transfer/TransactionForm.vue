@@ -1,210 +1,248 @@
-<template>
-  <div class="transaction-form card">
-    <h3 class="form-title">📝 Record New Transaction (บันทึกธุรกรรมใหม่)</h3>
+﻿<template>
+  <div class="space-y-4 px-1">
 
-    <form @submit.prevent="handleSubmit">
-      <!-- Date & Time Section -->
-      <div class="form-section">
-        <h4 class="section-title">Date & Time</h4>
+    <!-- ── ประเภทรายการ ─────────────────────────────────────── -->
+    <div class="flex rounded-lg border border-gray-200 overflow-hidden">
+      <button
+        v-for="t in transactionTypes"
+        :key="t.value"
+        type="button"
+        class="flex-1 py-2.5 text-sm font-medium transition-colors"
+        :class="formData.transactionType === t.value
+          ? 'bg-blue-600 text-white'
+          : 'bg-white text-gray-600 hover:bg-gray-50'"
+        @click="formData.transactionType = t.value"
+      >
+        {{ t.label }}
+      </button>
+    </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">
-              Date (วันที่)
-              <span class="required">*</span>
+    <!-- ── ช่องทาง (ซ่อนถ้าฝากเงิน) ──────────────────────────── -->
+    <div v-if="formData.transactionType !== 'owner_deposit'" class="flex rounded-lg border border-gray-200 overflow-hidden">
+      <button
+        v-for="c in channels"
+        :key="c.value"
+        type="button"
+        class="flex-1 py-2 text-sm font-medium transition-colors"
+        :class="formData.channel === c.value
+          ? 'bg-indigo-500 text-white'
+          : 'bg-white text-gray-600 hover:bg-gray-50'"
+        @click="formData.channel = c.value"
+      >
+        {{ c.label }}
+      </button>
+    </div>
+
+    <!-- ── ปลายทาง ────────────────────────────────────────────── -->
+    <div v-if="formData.transactionType !== 'owner_deposit'" class="space-y-3">
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">ปลายทาง</p>
+
+      <!-- ธนาคาร -->
+      <template v-if="formData.channel === 'bank'">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">ธนาคาร <span class="text-red-500">*</span></label>
+          <select
+            v-model="formData.bankName"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">-- เลือกธนาคาร --</option>
+            <option v-for="bank in bankList" :key="bank" :value="bank">{{ bank }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">เลขบัญชี <span class="text-red-500">*</span></label>
+          <input
+            v-model="formData.accountNumber"
+            type="text"
+            inputmode="numeric"
+            placeholder="xxx-x-xxxxx-x"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อบัญชี</label>
+          <input
+            v-model="formData.accountName"
+            type="text"
+            placeholder="ชื่อเจ้าของบัญชี"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </template>
+
+      <!-- พร้อมเพย์ -->
+      <template v-if="formData.channel === 'promptpay'">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">ประเภท</label>
+          <div class="flex gap-4">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input v-model="formData.promptpayIdentifierType" type="radio" value="phone" class="accent-blue-600" />
+              <span class="text-sm text-gray-700">หมายเลขโทรศัพท์</span>
             </label>
-            <input v-model="formData.date" type="date" class="form-control" required />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">
-              Time (เวลา)
-              <span class="required">*</span>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input v-model="formData.promptpayIdentifierType" type="radio" value="id_card" class="accent-blue-600" />
+              <span class="text-sm text-gray-700">หมายเลขบัตรประชาชน</span>
             </label>
-            <input v-model="formData.time" type="time" class="form-control" required />
           </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            {{ formData.promptpayIdentifierType === 'phone' ? 'หมายเลขโทรศัพท์' : 'หมายเลขบัตรประชาชน' }}
+            <span class="text-red-500">*</span>
+          </label>
+          <input
+            v-model="formData.promptpayIdentifier"
+            type="text"
+            inputmode="numeric"
+            :placeholder="formData.promptpayIdentifierType === 'phone' ? '0812345678' : '1234567890123'"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อบัญชี</label>
+          <input
+            v-model="formData.accountName"
+            type="text"
+            placeholder="ชื่อเจ้าของบัญชี"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </template>
+    </div>
+
+    <!-- ── จำนวนเงิน + ค่าบริการ ─────────────────────────────── -->
+    <div class="grid grid-cols-2 gap-3">
+      <!-- จำนวนเงิน -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">จำนวนเงิน <span class="text-red-500">*</span></label>
+        <div class="flex rounded-lg border border-gray-300 overflow-hidden focus-within:ring-2 focus-within:ring-blue-500">
+          <input
+            v-model.number="formData.amount"
+            type="number"
+            inputmode="numeric"
+            placeholder="0"
+            min="0"
+            step="1"
+            class="flex-1 px-3 py-2 text-sm outline-none min-w-0"
+          />
+          <span class="bg-gray-100 px-3 py-2 text-sm text-gray-600 border-l border-gray-300 font-medium">฿</span>
         </div>
       </div>
 
-      <!-- Transaction Type & Channel Section -->
-      <div class="form-section">
-        <TransactionTypeSelector v-model="formData.transactionType" />
-
-        <!-- Channel - Only for Transfer/Withdrawal -->
-        <ChannelSelector
-          v-if="formData.transactionType !== 'owner_deposit'"
-          v-model="formData.channel"
-        />
-      </div>
-
-      <!-- Conditional Channel Fields -->
-      <div v-if="formData.transactionType !== 'owner_deposit'" class="form-section">
-        <PromptPayFields
-          v-if="formData.channel === 'promptpay'"
-          v-model="promptpayData"
-        />
-
-        <BankAccountFields
-          v-if="formData.channel === 'bank' || formData.channel === 'other'"
-          v-model="bankData"
-        />
-      </div>
-
-      <!-- Amount & Commission Section -->
-      <div class="form-section">
-        <h4 class="section-title">Financial Information (ข้อมูลการเงิน)</h4>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">
-              Amount (จำนวนเงิน)
-              <span class="required">*</span>
-            </label>
-            <div class="input-group">
-              <input
-                v-model.number="formData.amount"
-                type="number"
-                class="form-control"
-                placeholder="0"
-                min="0"
-                step="0.01"
-                required
-              />
-              <span class="input-addon">฿</span>
-            </div>
-          </div>
-
-          <!-- Commission - Only for Transfer/Withdrawal -->
-          <div v-if="formData.transactionType !== 'owner_deposit'" class="form-group">
-            <label class="form-label">Commission (ค่าธรรมเนียม)</label>
-            <div class="input-group">
-              <input
-                v-model.number="formData.commission"
-                type="number"
-                class="form-control"
-                placeholder="0"
-                min="0"
-                step="0.01"
-              />
-              <span class="input-addon">฿</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Commission Type - Only if commission entered -->
+      <!-- ค่าบริการ (ซ่อนถ้าฝากเงิน) -->
+      <div v-if="formData.transactionType !== 'owner_deposit'">
+        <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+          ค่าบริการ
+          <button
+            type="button"
+            :title="isCommissionManual ? 'รีเซ็ตเป็นอัตโนมัติ' : 'คำนวณอัตโนมัติ'"
+            class="transition-colors leading-none"
+            :class="isCommissionManual ? 'text-gray-400 hover:text-blue-500' : 'text-blue-500'"
+            @click="resetCommission"
+          >
+            🔄
+          </button>
+        </label>
         <div
-          v-if="formData.transactionType !== 'owner_deposit' && formData.commission > 0"
-          class="form-group"
+          class="flex rounded-lg border overflow-hidden focus-within:ring-2 focus-within:ring-blue-500"
+          :class="isCommissionManual ? 'border-amber-400' : 'border-gray-300'"
         >
-          <label class="form-label">How was commission received? (ได้รับค่าธรรมเนียมอย่างไร)</label>
-          <div class="radio-group">
-            <div class="radio-item">
-              <input
-                id="commission-cash"
-                v-model="formData.commissionType"
-                type="radio"
-                value="cash"
-                class="radio-input"
-              />
-              <label for="commission-cash" class="radio-label">💵 Cash (เงินสด)</label>
-            </div>
-
-            <div class="radio-item">
-              <input
-                id="commission-transfer"
-                v-model="formData.commissionType"
-                type="radio"
-                value="transfer"
-                class="radio-input"
-              />
-              <label for="commission-transfer" class="radio-label">📱 Transfer (โอนเงิน)</label>
-            </div>
-          </div>
+          <input
+            v-model.number="commissionInput"
+            type="number"
+            inputmode="numeric"
+            placeholder="0"
+            min="0"
+            step="1"
+            class="flex-1 px-3 py-2 text-sm outline-none min-w-0"
+            @input="isCommissionManual = true"
+          />
+          <span
+            class="bg-gray-100 px-3 py-2 text-sm text-gray-600 border-l font-medium"
+            :class="isCommissionManual ? 'border-amber-400' : 'border-gray-300'"
+          >฿</span>
+        </div>
+        <!-- Commission type radios -->
+        <div v-if="effectiveCommission > 0" class="flex gap-4 mt-1.5">
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input v-model="formData.commissionType" type="radio" value="cash" class="accent-blue-600" />
+            <span class="text-xs text-gray-600">สด</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input v-model="formData.commissionType" type="radio" value="transfer" class="accent-blue-600" />
+            <span class="text-xs text-gray-600">โอน</span>
+          </label>
         </div>
       </div>
+    </div>
 
-      <!-- Customer Info Section -->
-      <div class="form-section">
-        <h4 class="section-title">Customer Information (ข้อมูลลูกค้า)</h4>
+    <!-- ── หมายเหตุ ────────────────────────────────────────────── -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">หมายเหตุ</label>
+      <textarea
+        v-model="formData.notes"
+        rows="2"
+        placeholder="บันทึกเพิ่มเติม..."
+        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+      />
+    </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Customer Name (ชื่อลูกค้า - ไม่บังคับ)</label>
-            <input
-              v-model="formData.customerName"
-              type="text"
-              class="form-control"
-              placeholder="Customer name (optional)"
-            />
-          </div>
+    <!-- ── สถานะยอดเงิน ─────────────────────────────────────────── -->
+    <div
+      v-if="formData.amount > 0"
+      class="rounded-lg px-4 py-2.5 text-sm font-medium flex items-center gap-2"
+      :class="hasSufficientBalance
+        ? 'bg-green-50 border border-green-200 text-green-800'
+        : 'bg-amber-50 border border-amber-200 text-amber-800'"
+    >
+      <span>{{ hasSufficientBalance ? '✅' : '⚠️' }}</span>
+      <span>ยอดเงินสด {{ formatCurrency(props.currentBalance.transferCash) }}</span>
+      <span class="text-gray-400">·</span>
+      <span>{{ hasSufficientBalance ? 'บันทึกเป็น Completed' : 'ไม่เพียงพอ → บันทึกเป็น Draft' }}</span>
+    </div>
 
-          <div class="form-group">
-            <label class="form-label">Notes (หมายเหตุ - ไม่บังคับ)</label>
-            <textarea
-              v-model="formData.notes"
-              class="form-control"
-              placeholder="Additional notes..."
-              rows="2"
-            />
-          </div>
-        </div>
-      </div>
+    <!-- ── Error ──────────────────────────────────────────────── -->
+    <div v-if="errorMessage" class="rounded-lg bg-red-50 border border-red-200 px-4 py-2.5 text-sm text-red-700">
+      {{ errorMessage }}
+    </div>
 
-      <!-- Balance Check Section -->
-      <div class="form-section balance-section">
-        <BalanceDisplay
-          :balances="currentBalance"
-          :required-amount="formData.amount"
-        />
+    <!-- ── Buttons ────────────────────────────────────────────── -->
+    <div class="flex gap-3 pt-1">
+      <button
+        type="button"
+        class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+        @click="emit('cancel')"
+      >
+        ยกเลิก
+      </button>
+      <button
+        type="button"
+        class="flex-1 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        :class="isSubmitting ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'"
+        :disabled="isSubmitting || formData.amount <= 0"
+        @click="handleSubmit"
+      >
+        <svg v-if="isSubmitting" class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+        </svg>
+        <span>💾 บันทึก</span>
+      </button>
+    </div>
 
-        <div
-          v-if="formData.amount > 0"
-          class="status-message"
-          :class="{ sufficient: hasSufficientBalance, insufficient: !hasSufficientBalance }"
-        >
-          <div class="status-icon">
-            {{ hasSufficientBalance ? '✅' : '⚠️' }}
-          </div>
-          <div class="status-text">
-            {{
-              hasSufficientBalance
-                ? 'Sufficient balance - Transaction will be saved as COMPLETED'
-                : 'Insufficient balance - Transaction will be saved as DRAFT'
-            }}
-          </div>
-        </div>
-      </div>
-
-      <!-- Form Actions -->
-      <div class="form-actions">
-        <button
-          type="submit"
-          class="btn btn-primary"
-          :disabled="isSubmitting || formData.amount <= 0"
-        >
-          <span v-if="isSubmitting" class="spinner" />
-          {{ buttonLabel }}
-        </button>
-
-        <button type="button" class="btn btn-secondary" @click="handleCancel">Cancel</button>
-      </div>
-
-      <!-- Error Message -->
-      <div v-if="errorMessage" class="alert alert-danger">
-        {{ errorMessage }}
-      </div>
-    </form>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { MoneyTransferBalance } from '~/types/repositories'
 
+// ── Props & Emits ─────────────────────────────────────────────
 interface Props {
-  editingTransaction?: any
   currentBalance: MoneyTransferBalance
   recordedBy: string
   recordedByName: string
+  editingData?: any
+  presetType?: 'transfer' | 'withdrawal' | 'owner_deposit'
 }
 
 interface Emits {
@@ -215,433 +253,187 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
+// ── Static data ───────────────────────────────────────────────
+const transactionTypes = [
+  { value: 'transfer', label: 'โอนเงิน' },
+  { value: 'withdrawal', label: 'ถอนเงิน' },
+  { value: 'owner_deposit', label: 'ฝากเงิน' },
+]
+
+const channels = [
+  { value: 'bank', label: 'ธนาคาร' },
+  { value: 'promptpay', label: 'พร้อมเพย์' },
+]
+
+const bankList = [
+  'ธนาคารกสิกรไทย (KBank)',
+  'ธนาคารกรุงไทย (KTB)',
+  'ธนาคารกรุงเทพ (BBL)',
+  'ธนาคารไทยพาณิชย์ (SCB)',
+  'ธนาคารกรุงศรีอยุธยา (BAY)',
+  'ธนาคารออมสิน (GSB)',
+  'ธนาคารอาคารสงเคราะห์ (GHB)',
+  'ธนาคารทหารไทยธนชาต (TTB)',
+  'ธนาคาร UOB',
+  'ธนาคาร CIMB',
+  'ธนาคาร LH Bank',
+  'ธนาคารทิสโก้ (TISCO)',
+  'ธนาคารเกียรตินาคินภัทร (KKP)',
+]
+
+// ── Form state ────────────────────────────────────────────────
+const formData = ref({
+  transactionType: (props.presetType ?? props.editingData?.transactionType ?? 'transfer') as 'transfer' | 'withdrawal' | 'owner_deposit',
+  channel: (props.editingData?.channel ?? 'bank') as 'bank' | 'promptpay',
+  bankName: props.editingData?.bankName ?? '',
+  accountNumber: props.editingData?.accountNumber ?? '',
+  accountName: props.editingData?.accountName ?? '',
+  promptpayIdentifierType: (props.editingData?.promptpayIdentifierType ?? 'phone') as 'phone' | 'id_card',
+  promptpayIdentifier: props.editingData?.promptpayIdentifier ?? '',
+  amount: props.editingData?.amount ?? 0,
+  commissionType: (props.editingData?.commissionType ?? 'cash') as 'cash' | 'transfer',
+  notes: props.editingData?.notes ?? '',
+})
+
+// ── Commission auto-calc ──────────────────────────────────────
+const isCommissionManual = ref(false)
+const manualCommission = ref<number>(props.editingData?.commission ?? 0)
+
+/**
+ * Calculate fee automatically based on amount.
+ * ปรับ tier ตามราคาจริงของธุรกิจ
+ */
+function calcAutoCommission(amount: number): number {
+  if (amount <= 0) return 0
+  if (amount <= 2500) return 25
+  if (amount <= 10000) return 30
+  if (amount <= 50000) return 50
+  return 100
+}
+
+const autoCommission = computed(() => calcAutoCommission(formData.value.amount))
+
+const effectiveCommission = computed(() =>
+  isCommissionManual.value ? manualCommission.value : autoCommission.value
+)
+
+const commissionInput = computed({
+  get: () => effectiveCommission.value,
+  set: (val: number) => {
+    manualCommission.value = val
+    isCommissionManual.value = true
+  },
+})
+
+function resetCommission() {
+  isCommissionManual.value = false
+}
+
+// ── Balance check ─────────────────────────────────────────────
+const hasSufficientBalance = computed(() =>
+  props.currentBalance.transferCash >= formData.value.amount
+)
+
+// ── Helpers ───────────────────────────────────────────────────
+function formatCurrency(val: number): string {
+  return new Intl.NumberFormat('th-TH', {
+    style: 'currency',
+    currency: 'THB',
+    minimumFractionDigits: 0,
+  }).format(val)
+}
+
+// ── Validation & Submit ───────────────────────────────────────
 const isSubmitting = ref(false)
 const errorMessage = ref('')
 
-// Form data
-const formData = ref({
-  date: new Date().toISOString().split('T')[0],
-  time: new Date().toTimeString().slice(0, 5),
-  transactionType: 'transfer' as 'transfer' | 'withdrawal' | 'owner_deposit',
-  channel: 'promptpay' as 'promptpay' | 'bank' | 'other',
-  amount: 0,
-  commission: 0,
-  commissionType: 'cash' as 'cash' | 'transfer',
-  customerName: '',
-  notes: '',
-})
-
-const promptpayData = ref({
-  promptpayIdentifierType: 'phone' as 'phone' | 'id_card',
-  promptpayIdentifier: '',
-  promptpayAccountName: '',
-})
-
-const bankData = ref({
-  accountType: undefined as 'savings' | 'current' | 'other' | undefined,
-  accountNumber: '',
-  accountName: '',
-})
-
-/**
- * Check if balance is sufficient
- */
-const hasSufficientBalance = computed(() => {
-  return props.currentBalance.bankAccount >= formData.value.amount
-})
-
-/**
- * Determine button label based on balance
- */
-const buttonLabel = computed(() => {
-  if (!formData.value.amount || formData.value.amount <= 0) {
-    return 'Enter Amount'
-  }
-
-  if (hasSufficientBalance.value) {
-    return '💾 Save & Complete Transaction'
-  } else {
-    return '📌 Save as Draft (Insufficient Balance)'
-  }
-})
-
-/**
- * Handle form submission
- */
-async function handleSubmit() {
+function handleSubmit() {
   errorMessage.value = ''
 
-  // Validate required fields
-  if (!formData.value.date) {
-    errorMessage.value = 'Date is required'
-    return
-  }
-
-  if (!formData.value.time) {
-    errorMessage.value = 'Time is required'
-    return
-  }
-
   if (formData.value.amount <= 0) {
-    errorMessage.value = 'Amount must be greater than 0'
+    errorMessage.value = 'กรุณากรอกจำนวนเงิน'
     return
   }
 
   if (formData.value.transactionType !== 'owner_deposit') {
-    if (!formData.value.channel) {
-      errorMessage.value = 'Channel is required'
-      return
+    if (formData.value.channel === 'bank') {
+      if (!formData.value.bankName) {
+        errorMessage.value = 'กรุณาเลือกธนาคาร'
+        return
+      }
+      if (!formData.value.accountNumber) {
+        errorMessage.value = 'กรุณากรอกเลขบัญชี'
+        return
+      }
     }
-
     if (formData.value.channel === 'promptpay') {
-      if (!promptpayData.value.promptpayIdentifierType) {
-        errorMessage.value = 'PromptPay identifier type is required'
-        return
-      }
-
-      if (!promptpayData.value.promptpayIdentifier) {
-        errorMessage.value = 'PromptPay identifier is required'
-        return
-      }
-    } else if (formData.value.channel === 'bank' || formData.value.channel === 'other') {
-      if (!bankData.value.accountType) {
-        errorMessage.value = 'Account type is required'
-        return
-      }
-
-      if (!bankData.value.accountNumber) {
-        errorMessage.value = 'Account number is required'
-        return
-      }
-
-      if (!bankData.value.accountName) {
-        errorMessage.value = 'Account name is required'
+      if (!formData.value.promptpayIdentifier) {
+        errorMessage.value = 'กรุณากรอกหมายเลขพร้อมเพย์'
         return
       }
     }
   }
 
-  // Prepare transaction data
-  const transactionData = {
-    date: formData.value.date,
-    datetime: new Date(
-      `${formData.value.date}T${formData.value.time}`
-    ).toISOString(),
+  // Capture datetime at submit time; keep original if editing a draft
+  const datetime = props.editingData?.datetime ?? new Date().toISOString()
+
+  const transactionData: Record<string, any> = {
+    datetime,
     transactionType: formData.value.transactionType,
-    channel: formData.value.channel,
-    ...(formData.value.channel === 'promptpay' && {
-      promptpayIdentifierType: promptpayData.value.promptpayIdentifierType,
-      promptpayIdentifier: promptpayData.value.promptpayIdentifier,
-      promptpayAccountName: promptpayData.value.promptpayAccountName,
-    }),
-    ...(
-      (formData.value.channel === 'bank' || formData.value.channel === 'other') && {
-        accountType: bankData.value.accountType,
-        accountNumber: bankData.value.accountNumber,
-        accountName: bankData.value.accountName,
-      }
-    ),
+    channel: formData.value.transactionType !== 'owner_deposit' ? formData.value.channel : null,
     amount: formData.value.amount,
-    commission: formData.value.commission || 0,
+    commission: effectiveCommission.value,
     commissionType: formData.value.commissionType,
-    customerName: formData.value.customerName,
     notes: formData.value.notes,
     recordedBy: props.recordedBy,
     recordedByName: props.recordedByName,
     status: hasSufficientBalance.value ? 'completed' : 'draft',
   }
 
-  isSubmitting.value = true
+  if (formData.value.transactionType !== 'owner_deposit') {
+    if (formData.value.channel === 'bank') {
+      transactionData.bankName = formData.value.bankName
+      transactionData.accountNumber = formData.value.accountNumber
+      transactionData.accountName = formData.value.accountName
+      transactionData.destinationName = formData.value.accountName
+      transactionData.destinationIdentifier = formData.value.accountNumber
+    } else if (formData.value.channel === 'promptpay') {
+      transactionData.promptpayIdentifierType = formData.value.promptpayIdentifierType
+      transactionData.promptpayIdentifier = formData.value.promptpayIdentifier
+      transactionData.accountName = formData.value.accountName
+      transactionData.destinationName = formData.value.accountName
+      transactionData.destinationIdentifier = formData.value.promptpayIdentifier
+    }
+  }
 
+  isSubmitting.value = true
   try {
     emit('submit', transactionData)
-  } catch (error: any) {
-    errorMessage.value = error.message || 'Failed to submit transaction'
   } finally {
     isSubmitting.value = false
   }
 }
 
-/**
- * Handle cancel button
- */
-function handleCancel() {
-  emit('cancel')
-}
+// ── Sync editing data when prop changes ───────────────────────
+watch(
+  () => props.editingData,
+  (val) => {
+    if (!val) return
+    formData.value.transactionType = val.transactionType ?? 'transfer'
+    formData.value.channel = val.channel ?? 'bank'
+    formData.value.bankName = val.bankName ?? ''
+    formData.value.accountNumber = val.accountNumber ?? ''
+    formData.value.accountName = val.accountName ?? ''
+    formData.value.promptpayIdentifierType = val.promptpayIdentifierType ?? 'phone'
+    formData.value.promptpayIdentifier = val.promptpayIdentifier ?? ''
+    formData.value.amount = val.amount ?? 0
+    formData.value.commissionType = val.commissionType ?? 'cash'
+    formData.value.notes = val.notes ?? ''
+    if (val.commission != null) {
+      manualCommission.value = val.commission
+      isCommissionManual.value = true
+    }
+  },
+  { immediate: false }
+)
 </script>
-
-<style scoped lang="scss">
-.transaction-form {
-  background: white;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
-  padding: 25px;
-
-  .form-title {
-    margin: 0 0 25px 0;
-    font-size: 20px;
-    font-weight: 700;
-    color: #212529;
-    border-bottom: 3px solid #007bff;
-    padding-bottom: 12px;
-  }
-
-  .form-section {
-    margin-bottom: 25px;
-    padding-bottom: 25px;
-    border-bottom: 1px solid #e9ecef;
-
-    &:last-of-type {
-      border-bottom: none;
-      padding-bottom: 0;
-    }
-
-    .section-title {
-      margin: 0 0 15px 0;
-      font-size: 16px;
-      font-weight: 600;
-      color: #495057;
-    }
-  }
-
-  .balance-section {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
-    padding: 15px;
-    margin-bottom: 25px;
-
-    .status-message {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 15px;
-      border-radius: 6px;
-      margin-top: 15px;
-      font-weight: 600;
-      font-size: 15px;
-
-      &.sufficient {
-        background: #d1e7dd;
-        color: #0f5132;
-        border: 1px solid #badbcc;
-      }
-
-      &.insufficient {
-        background: #fff3cd;
-        color: #664d03;
-        border: 1px solid #ffecb5;
-      }
-
-      .status-icon {
-        font-size: 24px;
-      }
-
-      .status-text {
-        flex: 1;
-      }
-    }
-  }
-
-  .form-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 15px;
-    margin-bottom: 15px;
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-
-    .form-label {
-      font-weight: 600;
-      color: #212529;
-      font-size: 14px;
-
-      .required {
-        color: #dc3545;
-        margin-left: 2px;
-      }
-    }
-
-    .form-control {
-      padding: 10px 12px;
-      border: 1px solid #dee2e6;
-      border-radius: 4px;
-      font-size: 14px;
-      transition: border-color 0.15s ease-in-out;
-
-      &:focus {
-        outline: none;
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-      }
-    }
-
-    textarea.form-control {
-      resize: vertical;
-      font-family: inherit;
-    }
-
-    .input-group {
-      display: flex;
-      gap: 0;
-
-      .form-control {
-        flex: 1;
-        border-radius: 4px 0 0 4px;
-      }
-
-      .input-addon {
-        background: #e9ecef;
-        border: 1px solid #dee2e6;
-        border-left: none;
-        border-radius: 0 4px 4px 0;
-        padding: 10px 12px;
-        color: #495057;
-        font-weight: 600;
-      }
-    }
-
-    .radio-group {
-      display: flex;
-      gap: 12px;
-
-      .radio-item {
-        position: relative;
-
-        .radio-input {
-          position: absolute;
-          opacity: 0;
-          cursor: pointer;
-
-          &:checked + .radio-label {
-            background: #e7f1ff;
-            border-color: #0d6efd;
-            color: #0d6efd;
-          }
-        }
-
-        .radio-label {
-          display: inline-block;
-          padding: 8px 12px;
-          background: white;
-          border: 1px solid #dee2e6;
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 13px;
-          transition: all 0.2s ease;
-
-          &:hover {
-            border-color: #0d6efd;
-          }
-        }
-      }
-    }
-  }
-
-  .form-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 25px;
-
-    .btn {
-      padding: 12px 20px;
-      border: none;
-      border-radius: 4px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-
-      &:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-      }
-
-      .spinner {
-        display: inline-block;
-        width: 14px;
-        height: 14px;
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        border-top-color: white;
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-      }
-
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-    }
-
-    .btn-primary {
-      background: #0d6efd;
-      color: white;
-
-      &:hover:not(:disabled) {
-        background: #0b5ed7;
-      }
-    }
-
-    .btn-secondary {
-      background: #6c757d;
-      color: white;
-
-      &:hover:not(:disabled) {
-        background: #5c636a;
-      }
-    }
-  }
-
-  .alert {
-    padding: 12px 15px;
-    border-radius: 4px;
-    margin-top: 15px;
-    font-size: 14px;
-
-    &.alert-danger {
-      background: #f8d7da;
-      color: #842029;
-      border: 1px solid #f5c2c7;
-    }
-  }
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .transaction-form {
-    padding: 15px;
-
-    .form-title {
-      font-size: 18px;
-      margin-bottom: 15px;
-    }
-
-    .form-section {
-      margin-bottom: 15px;
-      padding-bottom: 15px;
-    }
-
-    .form-row {
-      grid-template-columns: 1fr;
-      gap: 12px;
-    }
-
-    .form-actions {
-      flex-direction: column;
-
-      .btn {
-        width: 100%;
-        justify-content: center;
-      }
-    }
-  }
-}
-</style>

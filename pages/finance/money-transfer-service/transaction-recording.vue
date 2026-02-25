@@ -651,19 +651,6 @@ onMounted(async () => {
           :class="[
             'flex flex-col items-center gap-2 p-4 border rounded-xl font-medium text-sm transition-colors',
             isOpeningSet
-              ? 'bg-green-50 border-green-200 hover:bg-green-100 text-green-800 cursor-pointer'
-              : 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-50',
-          ]"
-          @click="isOpeningSet && openOwnerDepositModal()"
-        >
-          <BanknotesIcon class="w-6 h-6" />
-          Owner Deposit
-        </button>
-        <button
-          :disabled="!isOpeningSet"
-          :class="[
-            'flex flex-col items-center gap-2 p-4 border rounded-xl font-medium text-sm transition-colors',
-            isOpeningSet
               ? 'bg-blue-50 border-blue-200 hover:bg-blue-100 text-blue-800 cursor-pointer'
               : 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-50',
           ]"
@@ -684,6 +671,19 @@ onMounted(async () => {
         >
           <ArrowDownTrayIcon class="w-6 h-6" />
           New Withdrawal
+        </button>
+        <button
+          :disabled="!isOpeningSet"
+          :class="[
+            'flex flex-col items-center gap-2 p-4 border rounded-xl font-medium text-sm transition-colors',
+            isOpeningSet
+              ? 'bg-green-50 border-green-200 hover:bg-green-100 text-green-800 cursor-pointer'
+              : 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-50',
+          ]"
+          @click="isOpeningSet && openOwnerDepositModal()"
+        >
+          <BanknotesIcon class="w-6 h-6" />
+          Owner Deposit
         </button>
       </div>
     </section>
