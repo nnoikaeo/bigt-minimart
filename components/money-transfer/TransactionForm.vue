@@ -9,7 +9,7 @@
         type="button"
         class="flex-1 py-2.5 text-sm font-medium transition-colors"
         :class="formData.transactionType === t.value
-          ? 'bg-blue-600 text-white'
+          ? 'bg-primary text-white'
           : 'bg-white text-gray-600 hover:bg-gray-50'"
         @click="formData.transactionType = t.value"
       >
@@ -25,7 +25,7 @@
         type="button"
         class="flex-1 py-2 text-sm font-medium transition-colors"
         :class="formData.channel === c.value
-          ? 'bg-indigo-500 text-white'
+          ? 'bg-primary text-white'
           : 'bg-white text-gray-600 hover:bg-gray-50'"
         @click="formData.channel = c.value"
       >
@@ -43,7 +43,7 @@
           <label class="block text-sm font-medium text-gray-700 mb-1">ธนาคาร <span class="text-red-500">*</span></label>
           <select
             v-model="formData.bankName"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="">-- เลือกธนาคาร --</option>
             <option v-for="bank in bankList" :key="bank" :value="bank">{{ bank }}</option>
@@ -56,7 +56,7 @@
             type="text"
             inputmode="numeric"
             placeholder="xxx-x-xxxxx-x"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
         <div>
@@ -65,7 +65,7 @@
             v-model="formData.accountName"
             type="text"
             placeholder="ชื่อเจ้าของบัญชี"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
       </template>
@@ -95,7 +95,7 @@
             type="text"
             inputmode="numeric"
             :placeholder="formData.promptpayIdentifierType === 'phone' ? '0812345678' : '1234567890123'"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
         <div>
@@ -104,7 +104,7 @@
             v-model="formData.accountName"
             type="text"
             placeholder="ชื่อเจ้าของบัญชี"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
       </template>
@@ -115,7 +115,7 @@
       <!-- จำนวนเงิน -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">จำนวนเงิน (บาท) <span class="text-red-500">*</span></label>
-        <div class="flex rounded-lg border border-gray-300 overflow-hidden focus-within:ring-2 focus-within:ring-blue-500">
+        <div class="flex rounded-lg border border-gray-300 overflow-hidden focus-within:ring-2 focus-within:ring-primary">
           <input
             v-model.number="formData.amount"
             type="number"
@@ -143,7 +143,7 @@
           </button>
         </label>
         <div
-          class="flex rounded-lg border overflow-hidden focus-within:ring-2 focus-within:ring-blue-500"
+          class="flex rounded-lg border overflow-hidden focus-within:ring-2 focus-within:ring-primary"
           :class="isCommissionManual ? 'border-amber-400' : 'border-gray-300'"
         >
           <input
@@ -164,7 +164,7 @@
               :class="[
                 isCommissionManual ? 'border-amber-400' : 'border-gray-300',
                 formData.commissionType === 'cash'
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-primary text-white'
                   : 'bg-white text-gray-600 hover:bg-gray-50'
               ]"
               @click="formData.commissionType = 'cash'"
@@ -177,7 +177,7 @@
               :class="[
                 isCommissionManual ? 'border-amber-400' : 'border-gray-300',
                 formData.commissionType === 'transfer'
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-primary text-white'
                   : 'bg-white text-gray-600 hover:bg-gray-50'
               ]"
               @click="formData.commissionType = 'transfer'"
@@ -196,7 +196,7 @@
         v-model="formData.notes"
         rows="2"
         placeholder="บันทึกเพิ่มเติม..."
-        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
       />
     </div>
 
@@ -231,7 +231,7 @@
       <button
         type="button"
         class="flex-1 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        :class="isSubmitting ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'"
+        :class="isSubmitting ? 'bg-primary/60' : 'bg-primary hover:bg-primary-dark'"
         :disabled="isSubmitting || formData.amount <= 0"
         @click="handleSubmit"
       >
