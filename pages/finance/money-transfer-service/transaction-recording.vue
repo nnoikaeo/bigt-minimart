@@ -680,7 +680,7 @@ onMounted(async () => {
               ? 'bg-green-50 border-green-200 hover:bg-green-100 text-green-800 cursor-pointer'
               : 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-50',
           ]"
-          @click="isOpeningSet && openOwnerDepositModal()"
+          @click="isOpeningSet && openNewTransactionModal('owner_deposit')"
         >
           <BanknotesIcon class="w-6 h-6" />
           Owner Deposit
@@ -1350,53 +1350,7 @@ onMounted(async () => {
     </BaseModal>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <!-- Modal B: Owner Deposit -->
-    <!-- ══════════════════════════════════════════════════════════════════ -->
-    <BaseModal
-      :open="showOwnerDepositModal"
-      title="💰 Owner Deposit (เจ้าของฝากเงิน)"
-      size="md"
-      @close="showOwnerDepositModal = false"
-    >
-      <div class="space-y-4">
-        <FormField label="เวลา">
-          <BaseInput v-model="ownerDepositTime" type="time" />
-        </FormField>
-
-        <FormField label="จำนวนเงิน" required>
-          <div class="relative">
-            <BaseInput v-model="ownerDepositAmount" type="number" placeholder="0" />
-            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">บาท</span>
-          </div>
-        </FormField>
-
-        <div class="bg-gray-50 rounded-lg p-3 text-sm text-gray-600">
-          ยอดเงินในบัญชีหลังฝาก:
-          <strong class="text-green-700">{{ formatCurrency(ownerDepositBalanceAfter) }}</strong>
-        </div>
-
-        <FormField label="หมายเหตุ (ไม่บังคับ)">
-          <BaseTextarea v-model="ownerDepositNotes" placeholder="บันทึกเพิ่มเติม..." :rows="2" />
-        </FormField>
-      </div>
-
-      <template #footer>
-        <div class="flex gap-2 justify-end">
-          <BaseButton variant="secondary" @click="showOwnerDepositModal = false">ยกเลิก</BaseButton>
-          <BaseButton
-            variant="success"
-            :disabled="ownerDepositAmount <= 0"
-            :loading="isOwnerDepositSubmitting"
-            @click="handleSubmitOwnerDeposit"
-          >
-            💾 บันทึก
-          </BaseButton>
-        </div>
-      </template>
-    </BaseModal>
-
-    <!-- ══════════════════════════════════════════════════════════════════ -->
-    <!-- Modal C: New / Edit Transaction -->
+    <!-- Modal B: New / Edit Transaction -->
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <BaseModal
       :open="showTransactionModal"
