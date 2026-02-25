@@ -17,8 +17,8 @@
       </button>
     </div>
 
-    <!-- ── ช่องทาง (ซ่อนถ้าฝากเงิน) ──────────────────────────── -->
-    <div v-if="formData.transactionType !== 'owner_deposit'" class="flex rounded-lg border border-gray-200 overflow-hidden">
+    <!-- ── ช่องทาง (แสดงเฉพาะโอนเงิน) ──────────────────────────── -->
+    <div v-if="formData.transactionType === 'transfer'" class="flex rounded-lg border border-gray-200 overflow-hidden">
       <button
         v-for="c in channels"
         :key="c.value"
@@ -33,8 +33,8 @@
       </button>
     </div>
 
-    <!-- ── ปลายทาง ────────────────────────────────────────────── -->
-    <div v-if="formData.transactionType !== 'owner_deposit'" class="space-y-3">
+    <!-- ── ปลายทาง (แสดงเฉพาะโอนเงิน) ─────────────────────────── -->
+    <div v-if="formData.transactionType === 'transfer'" class="space-y-3">
       <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">ปลายทาง</p>
 
       <!-- ธนาคาร -->
@@ -279,6 +279,7 @@ const bankList = [
   'ธนาคาร LH Bank',
   'ธนาคารทิสโก้ (TISCO)',
   'ธนาคารเกียรตินาคินภัทร (KKP)',
+  'ธนาคารอื่นๆ',
 ]
 
 // ── Form state ────────────────────────────────────────────────
@@ -355,7 +356,7 @@ function handleSubmit() {
     return
   }
 
-  if (formData.value.transactionType !== 'owner_deposit') {
+  if (formData.value.transactionType === 'transfer') {
     if (formData.value.channel === 'bank') {
       if (!formData.value.bankName) {
         errorMessage.value = 'กรุณาเลือกธนาคาร'
@@ -380,7 +381,7 @@ function handleSubmit() {
   const transactionData: Record<string, any> = {
     datetime,
     transactionType: formData.value.transactionType,
-    channel: formData.value.transactionType !== 'owner_deposit' ? formData.value.channel : null,
+    channel: formData.value.transactionType === 'transfer' ? formData.value.channel : null,
     amount: formData.value.amount,
     commission: effectiveCommission.value,
     commissionType: formData.value.commissionType,
@@ -390,7 +391,7 @@ function handleSubmit() {
     status: hasSufficientBalance.value ? 'completed' : 'draft',
   }
 
-  if (formData.value.transactionType !== 'owner_deposit') {
+  if (formData.value.transactionType === 'transfer') {
     if (formData.value.channel === 'bank') {
       transactionData.bankName = formData.value.bankName
       transactionData.accountNumber = formData.value.accountNumber
