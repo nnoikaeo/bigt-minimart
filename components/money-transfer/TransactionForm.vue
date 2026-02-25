@@ -114,7 +114,7 @@
     <div class="grid grid-cols-2 gap-3">
       <!-- จำนวนเงิน -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">จำนวนเงิน <span class="text-red-500">*</span></label>
+        <label class="block text-sm font-medium text-gray-700 mb-1">จำนวนเงิน (บาท) <span class="text-red-500">*</span></label>
         <div class="flex rounded-lg border border-gray-300 overflow-hidden focus-within:ring-2 focus-within:ring-blue-500">
           <input
             v-model.number="formData.amount"
@@ -125,14 +125,13 @@
             step="1"
             class="flex-1 px-3 py-2 text-sm outline-none min-w-0"
           />
-          <span class="bg-gray-100 px-3 py-2 text-sm text-gray-600 border-l border-gray-300 font-medium">฿</span>
         </div>
       </div>
 
       <!-- ค่าบริการ (ซ่อนถ้าฝากเงิน) -->
       <div v-if="formData.transactionType !== 'owner_deposit'">
         <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
-          ค่าบริการ
+          ค่าบริการ (บาท)
           <button
             type="button"
             :title="isCommissionManual ? 'รีเซ็ตเป็นอัตโนมัติ' : 'คำนวณอัตโนมัติ'"
@@ -157,10 +156,6 @@
             class="flex-1 px-3 py-2 text-sm outline-none min-w-0"
             @input="isCommissionManual = true"
           />
-          <span
-            class="bg-gray-100 px-2 py-2 text-sm text-gray-600 border-l font-medium flex items-center"
-            :class="isCommissionManual ? 'border-amber-400' : 'border-gray-300'"
-          >฿</span>
           <!-- Commission type inline buttons — แสดงเมื่อมีค่าบริการ -->
           <template v-if="effectiveCommission > 0">
             <button
