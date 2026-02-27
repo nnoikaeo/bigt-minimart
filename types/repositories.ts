@@ -206,7 +206,7 @@ export interface MoneyTransferTransaction {
   promptpayAccountName?: string
 
   // Bank/Other specific fields (when channel === 'bank' or 'other')
-  accountType?: 'savings' | 'current' | 'other'
+  bankName?: string // Bank name (e.g., 'ธนาคารกสิกรไทย (KBank)')
   accountNumber?: string
   accountName?: string
 

@@ -71,6 +71,7 @@ const labelMap: Record<string, string> = {
   // Settings pages
   settings: 'ตั้งค่า',
   'system-settings': 'ตั้งค่าระบบ',
+  'daily-record-settings': 'ตั้งค่าการบันทึกรายวัน',
   others: 'เพิ่มเติม',
   // Admin pages
   admin: 'ผู้ดูแลระบบ',
