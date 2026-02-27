@@ -255,6 +255,7 @@
 
 <script setup lang="ts">
 import type { MoneyTransferBalance } from '~/types/repositories'
+import { useDailyRecordSettingsStore } from '~/stores/daily-record-settings'
 
 // ── Props & Emits ─────────────────────────────────────────────
 interface Props {
@@ -316,23 +317,28 @@ const formData = ref({
   notes: props.editingData?.notes ?? '',
 })
 
+// ── Fee settings store ────────────────────────────────────────
+const settingsStore = useDailyRecordSettingsStore()
+
+onMounted(async () => {
+  // Load fee tiers from server (fast local JSON read).
+  // Falls back to built-in defaults if the file doesn't exist yet.
+  await settingsStore.fetchMoneyTransferFees()
+})
+
 // ── Commission auto-calc ──────────────────────────────────────
 const isCommissionManual = ref(false)
 const manualCommission = ref<number>(props.editingData?.commission ?? 0)
 
 /**
- * Calculate fee automatically based on amount.
- * ปรับ tier ตามราคาจริงของธุรกิจ
+ * Calculate commission from the configured fee tiers.
+ * Uses progressive 10,000-block algorithm from useDailyRecordSettingsStore.
  */
-function calcAutoCommission(amount: number): number {
+const autoCommission = computed(() => {
+  const amount = formData.value.amount
   if (amount <= 0) return 0
-  if (amount <= 2500) return 25
-  if (amount <= 10000) return 30
-  if (amount <= 50000) return 50
-  return 100
-}
-
-const autoCommission = computed(() => calcAutoCommission(formData.value.amount))
+  return settingsStore.calculateFee(amount).totalFee
+})
 
 const effectiveCommission = computed(() =>
   isCommissionManual.value ? manualCommission.value : autoCommission.value
@@ -442,7 +448,7 @@ function handleSubmit() {
   const transactionData: Record<string, any> = {
     datetime,
     transactionType: formData.value.transactionType,
-    channel: formData.value.transactionType === 'transfer' ? formData.value.channel : null,
+    channel: formData.value.transactionType === 'transfer' ? formData.value.channel : undefined,
     amount: formData.value.amount,
     commission: effectiveCommission.value,
     commissionType: formData.value.commissionType,

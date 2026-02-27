@@ -1,1 +1,17 @@
-[]
+[
+  {
+    "id": "mtsum-2026-02-27",
+    "date": "2026-02-27",
+    "step1": {
+      "status": "in_progress",
+      "totalTransactions": 5,
+      "completedTransactions": 5,
+      "draftTransactions": 0,
+      "totalAmount": 22900,
+      "totalCommission": 140
+    },
+    "workflowStatus": "step1_in_progress",
+    "createdAt": "2026-02-27T13:43:45.925Z",
+    "updatedAt": "2026-02-27T15:11:06.050Z"
+  }
+]

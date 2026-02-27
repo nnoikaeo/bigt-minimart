@@ -147,6 +147,13 @@ export const sidebarMenu: SidebarGroup[] = [
         requiredRoles: ['owner'],
       },
       {
+        pageKey: 'daily-record-settings',
+        icon: '📋',
+        pageName: 'ตั้งค่าการบันทึกรายวัน',
+        route: '/settings/daily-record-settings',
+        requiredRoles: ['owner'],
+      },
+      {
         pageKey: 'profile-settings',
         pageName: 'เพิ่มเติม',
         route: '/settings/others',
