@@ -368,6 +368,12 @@ export interface MoneyTransferBalance {
     }
   }>
 
+  // Opening balance (set manually at start of day)
+  openingBalance?: number                          // bankAccount amount at start of day
+  openingBalanceSetAt?: string                     // ISO timestamp when set
+  openingBalanceSource?: 'carryover' | 'manual'   // How it was set
+  openingBalanceSetBy?: string                     // User who set it
+
   // Last update tracking
   updatedAt?: string | Date
   updatedBy?: string
@@ -403,6 +409,8 @@ export interface IMoneyTransferRepository {
   getCurrentBalance(date: string): Promise<MoneyTransferBalance>
   initializeBalance(date: string): Promise<MoneyTransferBalance>
   updateBalance(date: string, updates: Partial<MoneyTransferBalance>): Promise<MoneyTransferBalance>
+  setOpeningBalance(date: string, amount: number, source: 'carryover' | 'manual', userId?: string): Promise<MoneyTransferBalance>
+  getPreviousDayBalance(date: string): Promise<MoneyTransferBalance | null>
 
   // Workflow operations
   completeStep1(date: string, userId: string, userName: string): Promise<MoneyTransferDailySummary>
@@ -410,7 +418,30 @@ export interface IMoneyTransferRepository {
   completeAudit(date: string, auditData: MoneyTransferDailySummary['auditorVerification']): Promise<MoneyTransferDailySummary>
   approveByOwner(date: string, approvalData: MoneyTransferDailySummary['ownerApproval']): Promise<MoneyTransferDailySummary>
 
+  // Favorites CRUD
+  getFavorites(): Promise<FavoriteTransfer[]>
+  getFavoritesByTab(tab: 1 | 2 | 3 | 4 | 5): Promise<FavoriteTransfer[]>
+  addFavorite(data: Omit<FavoriteTransfer, 'id' | 'createdAt'>): Promise<FavoriteTransfer>
+  updateFavorite(id: string, updates: Partial<Omit<FavoriteTransfer, 'id' | 'createdAt'>>): Promise<FavoriteTransfer>
+  deleteFavorite(id: string): Promise<void>
+
   // Statistics
   getTransactionCount(date: string): Promise<number>
   getTransactionCountByStatus(date: string, status: string): Promise<number>
+}
+
+/**
+ * Favorite Transfer destination
+ * Stored per tab (1–5), up to 10 per tab
+ */
+export interface FavoriteTransfer {
+  id: string
+  tab: 1 | 2 | 3 | 4 | 5
+  order: number                              // 1–10 within the tab
+  name: string                               // Display name
+  channel: 'promptpay' | 'bank'
+  identifier: string                         // Phone / ID / account number
+  identifierType?: 'phone' | 'idcard' | 'promptpay' | 'account'
+  bankName?: string                          // Bank name (when channel = 'bank')
+  createdAt: string                          // ISO timestamp
 }

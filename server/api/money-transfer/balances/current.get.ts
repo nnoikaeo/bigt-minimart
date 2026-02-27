@@ -1,5 +1,4 @@
-import { moneyTransferJsonRepository } from '~/server/repositories/money-transfer-json.repository'
-
+﻿import { moneyTransferJsonRepository } from '~/server/repositories/money-transfer-json.repository'
 /**
  * GET /api/money-transfer/balances/current
  *
@@ -22,6 +21,7 @@ export default defineEventHandler(async (event) => {
         message: 'Failed to get current date',
       })
     }
+
     console.log('[GET /api/money-transfer/balances/current] Fetching balance for', today)
 
     // Get or initialize balance

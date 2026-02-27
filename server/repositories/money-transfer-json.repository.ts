@@ -11,6 +11,7 @@ import type {
   MoneyTransferTransaction,
   MoneyTransferDailySummary,
   MoneyTransferBalance,
+  FavoriteTransfer,
   IMoneyTransferRepository,
 } from '~/types/repositories'
 
@@ -24,10 +25,12 @@ export class MoneyTransferJsonRepository implements IMoneyTransferRepository {
   private transactions: MoneyTransferTransaction[] = []
   private summaries: MoneyTransferDailySummary[] = []
   private balances: MoneyTransferBalance[] = []
+  private favorites: FavoriteTransfer[] = []
 
   private transactionsFile: string
   private summariesFile: string
   private balancesFile: string
+  private favoritesFile: string
 
   constructor() {
     // Store data in public directory for easy access during development
@@ -39,6 +42,7 @@ export class MoneyTransferJsonRepository implements IMoneyTransferRepository {
     )
     this.summariesFile = join(process.cwd(), 'public', 'data', 'money-transfer-summaries.json')
     this.balancesFile = join(process.cwd(), 'public', 'data', 'money-transfer-balances.json')
+    this.favoritesFile = join(process.cwd(), 'public', 'data', 'money-transfer-favorites.json')
   }
 
   /**
@@ -71,9 +75,18 @@ export class MoneyTransferJsonRepository implements IMoneyTransferRepository {
         this.balances = []
       }
 
+      // Load favorites
+      try {
+        const favContent = await fs.readFile(this.favoritesFile, 'utf-8')
+        this.favorites = JSON.parse(favContent) as FavoriteTransfer[]
+      } catch {
+        this.favorites = []
+      }
+
       console.log(`✅ Loaded ${this.transactions.length} transactions from JSON`)
       console.log(`✅ Loaded ${this.summaries.length} summaries from JSON`)
       console.log(`✅ Loaded ${this.balances.length} balance records from JSON`)
+      console.log(`✅ Loaded ${this.favorites.length} favorites from JSON`)
     } catch (error) {
       console.log('📝 No data files found, starting with empty data')
       this.transactions = []
@@ -114,6 +127,10 @@ export class MoneyTransferJsonRepository implements IMoneyTransferRepository {
       // Save balances
       const balJson = JSON.stringify(this.balances, null, 2)
       await fs.writeFile(this.balancesFile, balJson, 'utf-8')
+
+      // Save favorites
+      const favJson = JSON.stringify(this.favorites, null, 2)
+      await fs.writeFile(this.favoritesFile, favJson, 'utf-8')
 
       console.log(`✅ Saved ${this.transactions.length} transactions to JSON`)
     } catch (error) {
@@ -407,6 +424,39 @@ export class MoneyTransferJsonRepository implements IMoneyTransferRepository {
   }
 
   /**
+   * WRITE: Set opening balance for a date
+   * Only bankAccount is set; other fields stay at 0
+   */
+  async setOpeningBalance(
+    date: string,
+    amount: number,
+    source: 'carryover' | 'manual',
+    userId?: string
+  ): Promise<MoneyTransferBalance> {
+    let balance = this.balances.find(b => b.date === date)
+    if (!balance) {
+      balance = await this.initializeBalance(date)
+    }
+    return this.updateBalance(date, {
+      bankAccount: amount,
+      openingBalance: amount,
+      openingBalanceSetAt: new Date().toISOString(),
+      openingBalanceSource: source,
+      openingBalanceSetBy: userId,
+    })
+  }
+
+  /**
+   * READ: Get balance record for the day before a given date
+   */
+  async getPreviousDayBalance(date: string): Promise<MoneyTransferBalance | null> {
+    const prev = new Date(date + 'T00:00:00')
+    prev.setDate(prev.getDate() - 1)
+    const prevDate = prev.toISOString().split('T')[0]
+    return this.balances.find(b => b.date === prevDate) || null
+  }
+
+  /**
    * WRITE: Complete Step 1 (Manager transaction recording)
    */
   async completeStep1(
@@ -548,6 +598,69 @@ export class MoneyTransferJsonRepository implements IMoneyTransferRepository {
   async getTransactionCountByStatus(date: string, status: string): Promise<number> {
     return this.transactions.filter(t => t.date === date && t.status === status).length
   }
+
+  // ─── Favorites ───────────────────────────────────────────────────────────────
+
+  /**
+   * READ: Get all favorites
+   */
+  async getFavorites(): Promise<FavoriteTransfer[]> {
+    return [...this.favorites].sort((a, b) => a.tab - b.tab || a.order - b.order)
+  }
+
+  /**
+   * READ: Get favorites for a specific tab
+   */
+  async getFavoritesByTab(tab: 1 | 2 | 3 | 4 | 5): Promise<FavoriteTransfer[]> {
+    return this.favorites
+      .filter(f => f.tab === tab)
+      .sort((a, b) => a.order - b.order)
+  }
+
+  /**
+   * WRITE: Add new favorite
+   */
+  async addFavorite(
+    data: Omit<FavoriteTransfer, 'id' | 'createdAt'>
+  ): Promise<FavoriteTransfer> {
+    const tabItems = this.favorites.filter(f => f.tab === data.tab)
+    if (tabItems.length >= 10) {
+      throw new Error(`Tab #${data.tab} is full (max 10 favorites)`)
+    }
+
+    const newFav: FavoriteTransfer = {
+      ...data,
+      id: `fav-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      createdAt: new Date().toISOString(),
+    }
+    this.favorites.push(newFav)
+    await this.save()
+    return newFav
+  }
+
+  /**
+   * WRITE: Update existing favorite
+   */
+  async updateFavorite(id: string, data: Partial<Omit<FavoriteTransfer, 'id' | 'createdAt'>>): Promise<FavoriteTransfer> {
+    const idx = this.favorites.findIndex(f => f.id === id)
+    if (idx === -1) throw new Error(`Favorite ${id} not found`)
+    const existing = this.favorites[idx]!
+    this.favorites[idx] = { ...existing, ...data }
+    await this.save()
+    return this.favorites[idx]!
+  }
+
+  /**
+   * WRITE: Delete a favorite
+   */
+  async deleteFavorite(id: string): Promise<void> {
+    const idx = this.favorites.findIndex(f => f.id === id)
+    if (idx === -1) throw new Error(`Favorite ${id} not found`)
+    this.favorites.splice(idx, 1)
+    await this.save()
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
 
   /**
    * Validate transaction data

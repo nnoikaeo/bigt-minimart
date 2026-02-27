@@ -12,6 +12,7 @@ import type {
   MoneyTransferTransaction,
   MoneyTransferDailySummary,
   MoneyTransferBalance,
+  FavoriteTransfer,
 } from '~/types/repositories'
 
 /**
@@ -51,6 +52,11 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
     currentBalance: null as MoneyTransferBalance | null,
 
     /**
+     * Previous day balance (used for carry-over opening balance)
+     */
+    previousDayBalance: null as MoneyTransferBalance | null,
+
+    /**
      * Filter state
      */
     filters: {
@@ -72,6 +78,11 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
      */
     hasDrafts: false,
     draftCount: 0,
+
+    /**
+     * Favorite transfers (5 tabs × up to 10 items each)
+     */
+    favorites: [] as FavoriteTransfer[],
   }),
 
   getters: {
@@ -214,6 +225,20 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
      * Get current summary
      */
     getCurrentSummary: (state: any) => state.currentSummary,
+
+    /**
+     * Check if opening balance has been set for today
+     */
+    isOpeningBalanceSet: (state: any) => state.currentBalance?.openingBalanceSource != null,
+
+    /**
+     * Get favorites filtered by tab, sorted by order
+     */
+    getFavoritesByTab: (state: any) => (tab: 1 | 2 | 3 | 4 | 5) => {
+      return (state.favorites as FavoriteTransfer[])
+        .filter(f => f.tab === tab)
+        .sort((a, b) => a.order - b.order)
+    },
   },
 
   actions: {
@@ -229,6 +254,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
         await this.fetchTransactionsByDate(today)
         await this.fetchCurrentBalanceAction()
         await this.fetchDailySummary(today)
+        await this.loadFavorites()
       } catch (error: any) {
         this.error = `Failed to initialize store: ${error.message}`
         console.error('[initializeStore]', error)
@@ -430,6 +456,45 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
     },
 
     /**
+     * Fetch previous day balance (for carry-over display in modal)
+     */
+    async fetchPreviousDayBalance(date: string): Promise<void> {
+      try {
+        const response = await $fetch('/api/money-transfer/balances/previous', {
+          params: { date },
+        })
+        this.previousDayBalance = response.data
+        console.log('[fetchPreviousDayBalance] Previous day balance:', this.previousDayBalance?.bankAccount ?? 'none')
+      } catch {
+        this.previousDayBalance = null
+      }
+    },
+
+    /**
+     * Set opening balance for a date
+     * Only bankAccount is set; other fields stay at 0
+     */
+    async setOpeningBalance(
+      date: string,
+      amount: number,
+      source: 'carryover' | 'manual',
+      userId?: string
+    ): Promise<void> {
+      try {
+        const response = await $fetch('/api/money-transfer/balances/opening', {
+          method: 'POST',
+          body: { date, amount, source, userId },
+        })
+        this.currentBalance = response.data
+        console.log('[setOpeningBalance] Opening balance set to:', amount, '(', source, ')')
+      } catch (error: any) {
+        this.error = `Failed to set opening balance: ${error.message}`
+        console.error('[setOpeningBalance]', error)
+        throw error
+      }
+    },
+
+    /**
      * Complete Step 1 (Manager transaction recording)
      */
     async completeStep1(date: string): Promise<MoneyTransferDailySummary> {
@@ -540,6 +605,57 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
     clearError(): void {
       this.error = null
     },
+
+    // ─── Favorites ─────────────────────────────────────────────────────────────
+
+    /**
+     * Load all favorites from API
+     */
+    async loadFavorites(): Promise<void> {
+      try {
+        const response = await $fetch<{ success: boolean; data: FavoriteTransfer[] }>(
+          '/api/money-transfer/favorites'
+        )
+        this.favorites = response.data
+      } catch (error: any) {
+        console.error('[loadFavorites]', error)
+      }
+    },
+
+    /**
+     * Add a new favorite
+     */
+    async addFavorite(data: Omit<FavoriteTransfer, 'id' | 'createdAt'>): Promise<FavoriteTransfer> {
+      const response = await $fetch<{ success: boolean; data: FavoriteTransfer }>(
+        '/api/money-transfer/favorites',
+        { method: 'POST', body: data }
+      )
+      this.favorites.push(response.data)
+      return response.data
+    },
+
+    /**
+     * Update an existing favorite
+     */
+    async updateFavorite(id: string, data: Partial<Omit<FavoriteTransfer, 'id' | 'createdAt'>>): Promise<FavoriteTransfer> {
+      const response = await $fetch<{ success: boolean; data: FavoriteTransfer }>(
+        `/api/money-transfer/favorites/${id}`,
+        { method: 'PUT', body: data }
+      )
+      const idx = this.favorites.findIndex((f: any) => f.id === id)
+      if (idx !== -1) this.favorites[idx] = response.data
+      return response.data
+    },
+
+    /**
+     * Delete a favorite
+     */
+    async deleteFavorite(id: string): Promise<void> {
+      await $fetch(`/api/money-transfer/favorites/${id}`, { method: 'DELETE' })
+      this.favorites = this.favorites.filter((f: any) => f.id !== id)
+    },
+
+    // ───────────────────────────────────────────────────────────────────────────
 
     /**
      * Reset filters

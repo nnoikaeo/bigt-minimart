@@ -264,8 +264,7 @@ watch(
     console.log('[Sidebar] Route changed to:', newPath)
     uiStore.updateActivePageFromRoute(newPath, sidebarStore.sidebarMenu)
     console.log('[Sidebar] Active page now:', uiStore.activePage)
-  },
-  { immediate: true }
+  }
 )
 
 /**
