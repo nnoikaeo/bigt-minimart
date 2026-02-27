@@ -28,7 +28,7 @@ const createTransactionSchema = z.object({
   promptpayAccountName: z.string().optional(),
 
   // Bank/Other fields
-  accountType: z.enum(['savings', 'current', 'other']).optional(),
+  bankName: z.string().optional(),
   accountNumber: z.string().optional(),
   accountName: z.string().optional(),
 
@@ -69,7 +69,13 @@ export default defineEventHandler(async (event) => {
     )
 
     // Check balance sufficiency
-    const hasSufficientBalance = currentBalance.bankAccount >= validatedData.amount
+    // owner_deposit = เพิ่มเงินเข้าบัญชี ไม่มีเงื่อนไขยอดคงเหลือ ให้ผ่านเสมอ
+    const hasSufficientBalance =
+      validatedData.transactionType === 'owner_deposit'
+        ? true
+        : validatedData.transactionType === 'withdrawal'
+          ? currentBalance.transferCash >= validatedData.amount
+          : currentBalance.bankAccount >= validatedData.amount
 
     // Determine final status
     let finalStatus: 'draft' | 'completed' = validatedData.status
@@ -77,7 +83,7 @@ export default defineEventHandler(async (event) => {
 
     if (!hasSufficientBalance && validatedData.status === 'completed') {
       console.log(
-        `[POST /api/money-transfer/transactions] Insufficient balance: ${currentBalance.bankAccount} < ${validatedData.amount}`
+        `[POST /api/money-transfer/transactions] Insufficient balance for ${validatedData.transactionType}: available=${currentBalance.bankAccount}, required=${validatedData.amount}`
       )
       finalStatus = 'draft'
       draftReason = 'Insufficient bank account balance'
@@ -90,15 +96,28 @@ export default defineEventHandler(async (event) => {
     let balanceAfterServiceFeeTransfer = currentBalance.serviceFeeTransfer
 
     if (finalStatus === 'completed') {
-      // Deduct from bank account
-      balanceAfterBankAccount = currentBalance.bankAccount - validatedData.amount
-
-      // Add to appropriate cash account based on transaction type and channel
       if (validatedData.transactionType === 'owner_deposit') {
-        // Owner deposits go to bank account
+        // Owner deposits — owner adds money to bank account
         balanceAfterBankAccount = currentBalance.bankAccount + validatedData.amount
+      } else if (validatedData.transactionType === 'withdrawal') {
+        // Withdrawal — customer sends to owner's bank, owner pays out cash
+        balanceAfterBankAccount = currentBalance.bankAccount + validatedData.amount
+        balanceAfterTransferCash = currentBalance.transferCash - validatedData.amount
+
+        // Commission handling
+        // transfer commission = customer also transfers commission via bank → add to bankAccount
+        if (validatedData.commission && validatedData.commission > 0) {
+          if (validatedData.commissionType === 'cash') {
+            balanceAfterServiceFeeCash = currentBalance.serviceFeeCash + validatedData.commission
+          } else if (validatedData.commissionType === 'transfer') {
+            balanceAfterBankAccount += validatedData.commission
+            balanceAfterServiceFeeTransfer =
+              currentBalance.serviceFeeTransfer + validatedData.commission
+          }
+        }
       } else {
-        // Transfers/Withdrawals go to transfer cash
+        // Transfer — customer gives cash, owner transfers from bank
+        balanceAfterBankAccount = currentBalance.bankAccount - validatedData.amount
         balanceAfterTransferCash = currentBalance.transferCash + validatedData.amount
 
         // Commission handling
@@ -122,7 +141,7 @@ export default defineEventHandler(async (event) => {
       promptpayIdentifierType: validatedData.promptpayIdentifierType,
       promptpayIdentifier: validatedData.promptpayIdentifier,
       promptpayAccountName: validatedData.promptpayAccountName,
-      accountType: validatedData.accountType,
+      bankName: validatedData.bankName,
       accountNumber: validatedData.accountNumber,
       accountName: validatedData.accountName,
       amount: validatedData.amount,

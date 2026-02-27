@@ -66,10 +66,25 @@ export default defineEventHandler(async (event) => {
     let balanceAfterServiceFeeTransfer = currentBalance.serviceFeeTransfer
 
     if (transaction.transactionType === 'owner_deposit') {
-      // Owner deposits go to bank account
+      // Owner deposits — owner adds money to bank account
       balanceAfterBankAccount = currentBalance.bankAccount + transaction.amount
+    } else if (transaction.transactionType === 'withdrawal') {
+      // Withdrawal — customer sends to owner's bank, owner pays out cash
+      balanceAfterBankAccount = currentBalance.bankAccount + transaction.amount
+      balanceAfterTransferCash = currentBalance.transferCash - transaction.amount
+
+      // Commission handling
+      // transfer commission = customer also transfers commission via bank → add to bankAccount
+      if (transaction.commission && transaction.commission > 0) {
+        if (transaction.commissionType === 'cash') {
+          balanceAfterServiceFeeCash = currentBalance.serviceFeeCash + transaction.commission
+        } else if (transaction.commissionType === 'transfer') {
+          balanceAfterBankAccount += transaction.commission
+          balanceAfterServiceFeeTransfer = currentBalance.serviceFeeTransfer + transaction.commission
+        }
+      }
     } else {
-      // Transfers/Withdrawals deduct from bank account and add to transfer cash
+      // Transfer — customer gives cash, owner transfers from bank
       balanceAfterBankAccount = currentBalance.bankAccount - transaction.amount
       balanceAfterTransferCash = currentBalance.transferCash + transaction.amount
 
@@ -88,13 +103,13 @@ export default defineEventHandler(async (event) => {
       status: 'completed',
       completedAt: new Date().toISOString(),
       balanceImpact: {
-        bankAccountBefore: transaction.balanceImpact.bankAccountBefore,
+        bankAccountBefore: currentBalance.bankAccount,
         bankAccountAfter: balanceAfterBankAccount,
-        transferCashBefore: transaction.balanceImpact.transferCashBefore,
+        transferCashBefore: currentBalance.transferCash,
         transferCashAfter: balanceAfterTransferCash,
-        serviceFeeBeforeCash: transaction.balanceImpact.serviceFeeBeforeCash,
+        serviceFeeBeforeCash: currentBalance.serviceFeeCash,
         serviceFeeAfterCash: balanceAfterServiceFeeCash,
-        serviceFeeBeforeTransfer: transaction.balanceImpact.serviceFeeBeforeTransfer,
+        serviceFeeBeforeTransfer: currentBalance.serviceFeeTransfer,
         serviceFeeAfterTransfer: balanceAfterServiceFeeTransfer,
       },
     })
