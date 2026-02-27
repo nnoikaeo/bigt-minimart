@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useMoneyTransferStore } from '~/stores/money-transfer'
+import { useDailyRecordSettingsStore } from '~/stores/daily-record-settings'
 import { useLogger } from '~/composables/useLogger'
 import { usePermissions } from '~/composables/usePermissions'
 import { PERMISSIONS } from '~/types/permissions'
@@ -22,9 +23,13 @@ definePageMeta({
 
 const logger = useLogger('MoneyTransferStep1')
 const store = useMoneyTransferStore()
+const settingsStore = useDailyRecordSettingsStore()
 const router = useRouter()
 const route = useRoute()
 const { can } = usePermissions()
+
+// true = ยังไม่เคยตั้งค่าค่าบริการ (ใช้ค่าเริ่มต้น)
+const usingDefaultFees = computed(() => settingsStore.moneyTransferFees.updatedAt === null)
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 const authStore = useAuthStore()
@@ -127,7 +132,7 @@ const todayStats = computed(() => {
     completed: txns.filter((t: any) => t.status === 'completed').length,
     drafts: txns.filter((t: any) => t.status === 'draft').length,
     totalCommission: txns
-      .filter((t: any) => t.status === 'completed')
+      .filter((t: any) => t.status === 'completed' && t.transactionType !== 'owner_deposit')
       .reduce((sum: number, t: any) => sum + (t.commission || 0), 0),
   }
 })
@@ -174,11 +179,18 @@ function formatTime(datetime: string | Date): string {
   return new Date(datetime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
 }
 
+function formatDatetime(datetime: string | Date): string {
+  const d = new Date(datetime)
+  const date = d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  const time = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+  return `${date} ${time}`
+}
+
 function getTransactionTypeLabel(type: string): string {
   const map: Record<string, string> = {
     transfer: 'โอนเงิน',
     withdrawal: 'ถอนเงิน',
-    owner_deposit: 'เจ้าของฝากเงิน',
+    owner_deposit: 'ฝากเงิน',
   }
   return map[type] || type
 }
@@ -518,6 +530,7 @@ onMounted(async () => {
     if (selectedDate.value) {
       await store.fetchTransactionsByDate(selectedDate.value)
     }
+    await settingsStore.fetchMoneyTransferFees()
     // Show notice when redirected from cash-counting guard
     if (route.query.notice === 'step1_required') {
       showStep1RequiredNotice.value = true
@@ -628,6 +641,20 @@ onMounted(async () => {
         </BaseCard>
       </div>
     </section>
+
+    <!-- ── Default Fee Banner ──────────────────────────────────────────── -->
+    <div v-if="usingDefaultFees" class="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm">
+      <span class="shrink-0 text-base">⚙️</span>
+      <div class="flex-1 text-amber-800">
+        ยังใช้<strong>อัตราค่าบริการเริ่มต้น</strong> (10 / 20 / 30 / 40 บาท) —
+        <NuxtLink
+          to="/settings/daily-record-settings"
+          class="underline font-semibold hover:text-amber-900"
+        >
+          ตั้งค่าได้ที่ ตั้งค่า › ตั้งค่าการบันทึกรายวัน
+        </NuxtLink>
+      </div>
+    </div>
 
     <!-- ── Quick Actions ───────────────────────────────────────────────── -->
     <section v-if="canEdit" class="mb-6">
@@ -802,7 +829,6 @@ onMounted(async () => {
                 <th class="text-left px-4 py-3 font-medium text-gray-600">#</th>
                 <th class="text-left px-4 py-3 font-medium text-gray-600">เวลา</th>
                 <th class="text-left px-4 py-3 font-medium text-gray-600">ประเภท</th>
-                <th class="text-left px-4 py-3 font-medium text-gray-600">ช่องทาง</th>
                 <th class="text-right px-4 py-3 font-medium text-gray-600">จำนวนเงิน</th>
                 <th class="text-right px-4 py-3 font-medium text-gray-600">ค่าบริการ</th>
                 <th class="text-center px-4 py-3 font-medium text-gray-600">สถานะ</th>
@@ -822,7 +848,6 @@ onMounted(async () => {
                 <td class="px-4 py-3 text-gray-500">{{ (idx as number) + 1 }}</td>
                 <td class="px-4 py-3 text-gray-700">{{ formatTime(txn.datetime) }}</td>
                 <td class="px-4 py-3 text-gray-900 font-medium">{{ getTransactionTypeLabel(txn.transactionType) }}</td>
-                <td class="px-4 py-3 text-gray-600">{{ getChannelLabel(txn.channel) }}</td>
                 <td class="px-4 py-3 text-right font-semibold text-gray-900">{{ formatCurrency(txn.amount) }}</td>
                 <td class="px-4 py-3 text-right text-gray-600">
                   {{ txn.commission ? formatCurrency(txn.commission) : '-' }}
@@ -885,7 +910,7 @@ onMounted(async () => {
           <span>รวม {{ todayStats.total }} รายการ</span>
           <span>สำเร็จ {{ todayStats.completed }} รายการ</span>
           <span v-if="hasDrafts" class="text-amber-700">Draft {{ todayStats.drafts }} รายการ</span>
-          <span class="font-medium text-green-700">ค่าบริการ: {{ formatCurrency(todayStats.totalCommission) }}</span>
+          <span class="font-medium text-green-700">รวมค่าบริการทั้งหมด: {{ formatCurrency(todayStats.totalCommission) }}</span>
         </div>
       </div>
     </section>
@@ -929,7 +954,7 @@ onMounted(async () => {
           </li>
           <li class="flex items-center gap-2" :class="!hasDrafts ? 'text-green-700' : 'text-red-600'">
             <span class="text-base">{{ !hasDrafts ? '✅' : '❌' }}</span>
-            ไม่มี Draft ค้างอยู่
+            {{ hasDrafts ? 'มีดราฟต์ค้างอยู่' : 'ไม่มีดราฟต์ค้างอยู่' }}
             <span v-if="hasDrafts" class="font-medium text-red-600">({{ todayStats.drafts }} รายการ)</span>
           </li>
         </ul>
@@ -1398,6 +1423,18 @@ onMounted(async () => {
         </div>
 
         <div class="grid grid-cols-2 gap-x-4 gap-y-3">
+          <div v-if="viewingTransaction.bankName" class="col-span-2">
+            <div class="text-gray-500">ธนาคาร</div>
+            <div class="font-medium text-gray-900">{{ viewingTransaction.bankName }}</div>
+          </div>
+          <div v-if="viewingTransaction.accountNumber">
+            <div class="text-gray-500">เลขบัญชี</div>
+            <div class="font-medium text-gray-900">{{ viewingTransaction.accountNumber }}</div>
+          </div>
+          <div v-if="viewingTransaction.accountName">
+            <div class="text-gray-500">ชื่อบัญชี</div>
+            <div class="font-medium text-gray-900">{{ viewingTransaction.accountName }}</div>
+          </div>
           <div>
             <div class="text-gray-500">ประเภท</div>
             <div class="font-medium text-gray-900">{{ getTransactionTypeLabel(viewingTransaction.transactionType) }}</div>
@@ -1408,13 +1445,13 @@ onMounted(async () => {
           </div>
           <div>
             <div class="text-gray-500">วันที่/เวลา</div>
-            <div class="font-medium text-gray-900">{{ formatTime(viewingTransaction.datetime) }}</div>
+            <div class="font-medium text-gray-900">{{ formatDatetime(viewingTransaction.datetime) }}</div>
           </div>
           <div>
             <div class="text-gray-500">จำนวนเงิน</div>
             <div class="font-bold text-gray-900 text-base">{{ formatCurrency(viewingTransaction.amount) }}</div>
           </div>
-          <div v-if="viewingTransaction.commission">
+          <div v-if="viewingTransaction.commission && viewingTransaction.transactionType !== 'owner_deposit'">
             <div class="text-gray-500">ค่าบริการ</div>
             <div class="font-medium text-green-700">{{ formatCurrency(viewingTransaction.commission) }}
               <span class="text-xs text-gray-400">({{ viewingTransaction.commissionType === 'cash' ? 'เงินสด' : 'โอน' }})</span>
@@ -1437,6 +1474,42 @@ onMounted(async () => {
         <div v-if="viewingTransaction.notes" class="bg-gray-50 rounded-lg p-3">
           <div class="text-gray-500 mb-1">หมายเหตุ</div>
           <div class="text-gray-900">{{ viewingTransaction.notes }}</div>
+        </div>
+
+        <!-- Balance Impact -->
+        <div v-if="viewingTransaction.balanceImpact && viewingTransaction.status === 'completed'" class="border-t border-gray-100 pt-3">
+          <div class="text-gray-500 text-xs font-medium mb-2 uppercase tracking-wide">ผลกระทบต่อยอดเงิน</div>
+          <div class="bg-gray-50 rounded-lg p-3 space-y-2 text-sm">
+            <div class="grid grid-cols-3 gap-2 text-xs text-gray-400 font-medium pb-1 border-b border-gray-200">
+              <span>บัญชี</span>
+              <span class="text-right">ก่อน</span>
+              <span class="text-right">หลัง</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <span class="text-gray-600">เงินในบัญชี</span>
+              <span class="text-right text-gray-700">{{ formatCurrency(viewingTransaction.balanceImpact.bankAccountBefore) }}</span>
+              <span class="text-right font-semibold" :class="viewingTransaction.balanceImpact.bankAccountAfter === viewingTransaction.balanceImpact.bankAccountBefore ? 'text-gray-900' : viewingTransaction.balanceImpact.bankAccountAfter > viewingTransaction.balanceImpact.bankAccountBefore ? 'text-green-700' : 'text-red-600'">
+                {{ formatCurrency(viewingTransaction.balanceImpact.bankAccountAfter) }}
+              </span>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <span class="text-gray-600">เงินสด (โอน/ถอน)</span>
+              <span class="text-right text-gray-700">{{ formatCurrency(viewingTransaction.balanceImpact.transferCashBefore) }}</span>
+              <span class="text-right font-semibold" :class="viewingTransaction.balanceImpact.transferCashAfter === viewingTransaction.balanceImpact.transferCashBefore ? 'text-gray-900' : viewingTransaction.balanceImpact.transferCashAfter > viewingTransaction.balanceImpact.transferCashBefore ? 'text-green-700' : 'text-red-600'">
+                {{ formatCurrency(viewingTransaction.balanceImpact.transferCashAfter) }}
+              </span>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <span class="text-gray-600">ค่าบริการ (เงินสด)</span>
+              <span class="text-right text-gray-700">{{ formatCurrency(viewingTransaction.balanceImpact.serviceFeeBeforeCash) }}</span>
+              <span class="text-right font-semibold" :class="viewingTransaction.balanceImpact.serviceFeeAfterCash === viewingTransaction.balanceImpact.serviceFeeBeforeCash ? 'text-gray-900' : 'text-green-700'">{{ formatCurrency(viewingTransaction.balanceImpact.serviceFeeAfterCash) }}</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <span class="text-gray-600">ค่าบริการ (โอน)</span>
+              <span class="text-right text-gray-700">{{ formatCurrency(viewingTransaction.balanceImpact.serviceFeeBeforeTransfer) }}</span>
+              <span class="text-right font-semibold" :class="viewingTransaction.balanceImpact.serviceFeeAfterTransfer === viewingTransaction.balanceImpact.serviceFeeBeforeTransfer ? 'text-gray-900' : 'text-green-700'">{{ formatCurrency(viewingTransaction.balanceImpact.serviceFeeAfterTransfer) }}</span>
+            </div>
+          </div>
         </div>
 
         <div v-if="viewingTransaction.status === 'draft'" class="border-t border-gray-100 pt-3 flex gap-2 justify-end">
