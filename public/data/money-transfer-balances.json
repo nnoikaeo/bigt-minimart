@@ -12,5 +12,19 @@
     "openingBalanceSetAt": "2026-02-25T13:15:36.126Z",
     "openingBalanceSource": "manual",
     "openingBalanceSetBy": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2"
+  },
+  {
+    "id": "mtbal-2026-02-27",
+    "date": "2026-02-27",
+    "bankAccount": "10000",
+    "transferCash": 0,
+    "serviceFeeTransfer": 0,
+    "serviceFeeCash": 0,
+    "history": [],
+    "updatedAt": "2026-02-27T06:17:40.866Z",
+    "openingBalance": "10000",
+    "openingBalanceSetAt": "2026-02-27T06:17:40.866Z",
+    "openingBalanceSource": "carryover",
+    "openingBalanceSetBy": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2"
   }
 ]
