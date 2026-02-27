@@ -166,13 +166,15 @@ import { computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '~/stores/auth'
 import { useUIStore } from '~/stores/ui'
-import { sidebarMenu, filterMenuByRole, findPageByRoute } from '~/utils/sidebar-menu'
+import { useSidebarStore } from '~/stores/sidebar'
+import { findPageByRoute } from '~/utils/sidebar-menu'
 
 // Get stores and router
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const uiStore = useUIStore()
+const sidebarStore = useSidebarStore()
 
 // ============================================================
 // COMPUTED PROPERTIES
@@ -193,10 +195,11 @@ const userRole = computed(() => {
 
 /**
  * Filter sidebar menu based on user role
+ * Uses Pinia store for dynamic menu management
  * Only shows groups and pages the user has access to
  */
 const visibleMenu = computed(() => {
-  return filterMenuByRole(sidebarMenu, userRole.value)
+  return sidebarStore.getVisibleMenu(userRole.value)
 })
 
 /**
@@ -259,17 +262,19 @@ watch(
   () => route.path,
   (newPath) => {
     console.log('[Sidebar] Route changed to:', newPath)
-    uiStore.updateActivePageFromRoute(newPath, sidebarMenu)
+    uiStore.updateActivePageFromRoute(newPath, sidebarStore.sidebarMenu)
     console.log('[Sidebar] Active page now:', uiStore.activePage)
-  },
-  { immediate: true }
+  }
 )
 
 /**
- * Initialize active page on component mount
+ * Initialize sidebar on component mount
+ * Loads sidebar menu from API via Pinia store
  */
-onMounted(() => {
-  uiStore.updateActivePageFromRoute(route.path, sidebarMenu)
+onMounted(async () => {
+  console.log('[Sidebar] Mounting - loading sidebar menu...')
+  await sidebarStore.loadSidebarMenu()
+  uiStore.updateActivePageFromRoute(route.path, sidebarStore.sidebarMenu)
 })
 </script>
 

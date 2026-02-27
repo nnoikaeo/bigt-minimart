@@ -151,8 +151,7 @@ const roleLabel = computed(() => {
     manager: 'ผู้จัดการ',
     assistant_manager: 'ผู้ช่วยผู้จัดการ',
     auditor: 'ผู้ตรวจสอบ',
-    cashier: 'แคชเชียร์',
-    staff: 'พนักงาน',
+    cashier: 'แคชเชียร์', 
     unknown: 'ผู้ใช้',
   }
   return roleMap[role] || 'ผู้ใช้'

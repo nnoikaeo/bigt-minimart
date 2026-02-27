@@ -314,85 +314,148 @@ Recommendation: Follow up on QR and Government transfers in next round"
 
 # � FLOW 2: Daily Money Transfer Service Income (นับและตรวจสอบเงินจากบริการโอนเงิน)
 
-## Workflow 2.1: นับเงินจากบริการโอนเงิน (Manager - Count Money Transfer Service Income)
+## 🗂️ Workflow Structure Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ WORKFLOW 2.1: Manager/Assistant Manager บันทึก & ตรวจสอบ      │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│ Step 1: Record Transfer & Withdrawal Transactions              │
+│   ├─ Manager บันทึกรายการโอน/ถอนเงิน throughout the day        │
+│   ├─ System auto-calculates all 4 balance accounts             │
+│   └─ ไม่ต้องมีการบันทึกเพิ่มเติมแล้ว                             │
+│                                                                 │
+│ Step 2: Verify Recorded Transactions & Count Actual Cash       │
+│   ├─ Manager นับเงินสดจริง ณ วันท้ายวัน                         │
+│   ├─ System แสดง expected amounts จาก Step 1                   │
+│   ├─ Manager verify match or note discrepancies                │
+│   └─ ยืนยันข้อมูล (ไม่ใช่บันทึกใหม่)                           │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│ WORKFLOW 2.2: Auditor ตรวจสอบเงินจากบริการโอนเงิน              │
+│   └─ Cross-check กับ bank statement                            │
+│   └─ Verify all transactions & amounts                         │
+│                                                                 │
+│ WORKFLOW 2.3: Owner อนุมัติการตรวจสอบ                          │
+│   └─ Final approval ของ Manager & Auditor records              │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Workflow 2.1: บันทึก & ตรวจสอบเงินจากบริการโอนเงิน (Manager - Record Transfer & Verification)
 
 ### Real-World Example
 
-**Scenario**: Manager counts daily money transfer service income and records in app
+**Scenario**: Manager/Assistant Manager records daily money transfer service transactions in app (replacing paper-based records)
 
-**Step 1: Record Transfer Records (บันทึก transaction)**
+**Step 1: Record Transfer & Withdrawal Transactions (Manager/Assistant Manager บันทึกรายการโอน/ถอนเงิน)**
+
+**บริบท**: ก่อนหน้านี้บันทึกลงกระดาษ ตอนนี้จะบันทึกผ่านแอพเพื่อให้ระบบคำนวณ balance อัตโนมัติ
+
 ```
-Recorded in /finance/money-transfer-service:
+Manager/Assistant Manager บันทึกใน /finance/money-transfer-service:
 
 DATE: 2026-01-29
 
-INITIAL BALANCES:
+INITIAL BALANCES (วันเริ่มต้น):
 1) เงินในบัญชี (Bank Account Balance): 10,000 บาท
 2) เงินสดจากการโอนเงิน/ถอนเงิน (Cash from Transfer/Withdrawal): 0 บาท
 3) เงินสดค่าบริการโอนเงิน/ถอนเงิน (Service Fee Cash): 0 บาท
 4) เงินโอนค่าบริการถอนเงิน (Service Fee Transfer): 0 บาท
 
-TRANSACTION RECORDS (รายการตรวจสอบการโอนเงิน):
+═════════════════════════════════════════════════════════════
+Manager/Assistant Manager บันทึกลงแอพ (ระบบคำนวณ Balance อัตโนมัติ)
+═════════════════════════════════════════════════════════════
+
+MANAGER RECORDED TRANSACTION RECORDS (รายการที่ Manager บันทึก):
 
 Transaction 1: PromptPay Transfer from Customer A
+   📝 Manager บันทึก:
    - Date: 2026-01-29 10:30 AM
+   - Type: PromptPay Transfer (เงินเข้าจากโอนผ่าน PromptPay)
    - Amount: 2,000 บาท
    - Commission: 20 บาท (paid in cash)
-   - Result:
-     1) 10,000 - 2,000 = 8,000 บาท (transfer out)
-     2) 0 + 2,000 = 2,000 บาท (cash in)
-     3) 0 + 20 = 20 บาท (service fee cash)
-     4) 0 บาท (no change)
+
+   🤖 System auto-calculates Balance Changes:
+     1) Bank Account: 10,000 - 2,000 = 8,000 บาท (transfer out)
+     2) Cash from Transfers: 0 + 2,000 = 2,000 บาท (cash in)
+     3) Service Fee Cash: 0 + 20 = 20 บาท (service fee cash)
+     4) Service Fee Transfer: 0 บาท (no change)
 
 Transaction 2: Cash Withdrawal from Customer B
+   📝 Manager บันทึก:
    - Date: 2026-01-29 01:15 PM
+   - Type: Cash Withdrawal (ลูกค้าถอนเงิน)
    - Amount: 500 บาท (customer withdraws)
    - Commission: 10 บาท (paid in cash)
-   - Result:
-     1) 8,000 + 500 = 8,500 บาท (withdrawal = deposit)
-     2) 2,000 - 500 = 1,500 บาท (cash out)
-     3) 20 + 10 = 30 บาท (service fee cash)
-     4) 0 บาท (no change)
+
+   🤖 System auto-calculates Balance Changes:
+     1) Bank Account: 8,000 + 500 = 8,500 บาท (withdrawal = deposit)
+     2) Cash from Transfers: 2,000 - 500 = 1,500 บาท (cash out)
+     3) Service Fee Cash: 20 + 10 = 30 บาท (service fee cash)
+     4) Service Fee Transfer: 0 บาท (no change)
 
 Transaction 3: Bank Transfer from Customer C (FAILED)
+   📝 Manager บันทึก:
    - Date: 2026-01-29 02:00 PM
+   - Type: Bank Transfer (โอนผ่านธนาคาร)
    - Amount: 8,800 บาท (requested)
    - Status: ❌ FAILED - Insufficient funds in account (8,500 < 8,800)
-   - Result: No change to any balance (transaction rejected)
-     1) 8,500 บาท (no change)
-     2) 1,500 บาท (no change)
-     3) 30 บาท (no change)
-     4) 0 บาท (no change)
+   - Notes: Transaction was rejected
 
-Transaction 4: Owner Deposit (ฝากเงิน)
+   🤖 System auto-calculates Balance Changes:
+     ✗ No balance changes (transaction rejected)
+     1) Bank Account: 8,500 บาท (no change)
+     2) Cash from Transfers: 1,500 บาท (no change)
+     3) Service Fee Cash: 30 บาท (no change)
+     4) Service Fee Transfer: 0 บาท (no change)
+
+Transaction 4: Owner Deposit (เจ้าของร้านฝากเงิน)
+   📝 Manager บันทึก:
    - Date: 2026-01-29 02:30 PM
+   - Type: Owner Deposit (เจ้าของฝากเงิน)
    - Amount: 10,000 บาท (Owner deposits to business account)
    - Commission: 0 บาท (no fee for owner deposit)
-   - Result:
-     1) 8,500 + 10,000 = 18,500 บาท (deposit in)
-     2) 1,500 บาท (no change)
-     3) 30 บาท (no change)
-     4) 0 บาท (no change)
+
+   🤖 System auto-calculates Balance Changes:
+     1) Bank Account: 8,500 + 10,000 = 18,500 บาท (deposit in)
+     2) Cash from Transfers: 1,500 บาท (no change)
+     3) Service Fee Cash: 30 บาท (no change)
+     4) Service Fee Transfer: 0 บาท (no change)
 
 Transaction 5: Bank Transfer from Customer C (RETRY - SUCCESS)
+   📝 Manager บันทึก:
    - Date: 2026-01-29 02:45 PM
-   - Amount: 8,800 บาท (now succeeds)
+   - Type: Bank Transfer (โอนผ่านธนาคาร)
+   - Amount: 8,800 บาท (retry succeeds)
    - Commission: 40 บาท (paid in cash)
-   - Result:
-     1) 18,500 - 8,800 = 9,700 บาท (transfer out)
-     2) 1,500 + 8,800 = 10,300 บาท (cash in)
-     3) 30 + 40 = 70 บาท (service fee cash)
-     4) 0 บาท (no change)
+   - Status: ✅ SUCCESS
+
+   🤖 System auto-calculates Balance Changes:
+     1) Bank Account: 18,500 - 8,800 = 9,700 บาท (transfer out)
+     2) Cash from Transfers: 1,500 + 8,800 = 10,300 บาท (cash in)
+     3) Service Fee Cash: 30 + 40 = 70 บาท (service fee cash)
+     4) Service Fee Transfer: 0 บาท (no change)
 
 Transaction 6: Cash Withdrawal from Customer D
+   📝 Manager บันทึก:
    - Date: 2026-01-29 03:30 PM
+   - Type: Cash Withdrawal (ลูกค้าถอนเงิน)
    - Amount: 500 บาท (customer withdraws)
    - Commission: 10 บาท (paid via transfer)
-   - Result:
-     1) 9,700 + 500 + 10 = 10,210 บาท (withdrawal + commission transfer)
-     2) 10,300 - 500 = 9,800 บาท (cash out)
-     3) 70 บาท (no change)
-     4) 0 + 10 = 10 บาท (service fee transfer)
+
+   🤖 System auto-calculates Balance Changes:
+     1) Bank Account: 9,700 + 500 + 10 = 10,210 บาท (withdrawal + commission transfer)
+     2) Cash from Transfers: 10,300 - 500 = 9,800 บาท (cash out)
+     3) Service Fee Cash: 70 บาท (no change)
+     4) Service Fee Transfer: 0 + 10 = 10 บาท (service fee transfer)
+
+═════════════════════════════════════════════════════════════
+🤖 SYSTEM AUTO-CALCULATED FINAL BALANCES (after all transactions)
+═════════════════════════════════════════════════════════════
 
 FINAL BALANCES SUMMARY:
 1) เงินในบัญชี (Bank Account): 10,210 บาท
@@ -419,251 +482,463 @@ TOTAL SERVICE FEES: 70 + 10 = 80 บาท (all commissions)
 TOTAL BANK BALANCE: 10,210 บาท
 ```
 
-**Step 2: Count All Cash & Record in App (นับเงินสด)**
+---
+
+### Process Flow - Step 1: Record Transfer & Withdrawal Transactions
 ```
-Manager counts cash from money transfer service:
-
-A. CASH TRANSFER SECTION (เงินสดจากการโอนเงิน):
-   Cash from PromptPay transfers: 2,500 บาท
-   - Record in app: ✓ Deposit amount 2,500 บาท
-   
-   Cash from Bank Account transfers: 1,800 บาท
-   - Record in app: ✓ Deposit amount 1,800 บาท
-
-B. SERVICE FEE SECTION (เงินสดจากค่าบริการโอนเงิน):
-   Service fees from PromptPay: 250 บาท
-   - Record in app: ✓ Service fee 250 บาท
-   
-   Service fees from Bank Account: 180 บาท
-   - Record in app: ✓ Service fee 180 บาท
-
-TOTAL CASH COUNTED: 2,500 + 1,800 + 250 + 180 = 4,730 บาท
+[Start Manager/Assistant Manager Shift]
+        ↓
+[Throughout the day - each transfer/withdrawal happens]
+        ↓
+Manager/Assistant Manager บันทึกลงแอพ:
+     Go to /finance/money-transfer-service → "รายการใหม่"
+        ↓
+     Fill in transaction details:
+     - Date & Time of transaction
+     - Type: โอนเงิน (Transfer) / ถอนเงิน (Withdrawal)
+     - Channel: PromptPay / Bank / Government Program
+     - Amount: เงินที่โอนหรือถอน
+     - Commission: ค่าบริการ (if any)
+     - Commission method: Cash / Transfer
+     - Customer name (optional, for reference)
+        ↓
+     [Save] → System auto-calculates all balance changes
+        ↓
+     ✅ Transaction recorded
+     ✅ All 4 balances updated automatically:
+        1) Bank Account Balance
+        2) Cash from Transfers/Withdrawals
+        3) Service Fee Cash
+        4) Service Fee Transfer
+        ↓
+[End of day - proceed to Step 2]
 ```
 
-**Step 3: Record in System**
+### Details - Step 1
+- **Role**: ผู้จัดการหรือผู้ช่วยผู้จัดการ (Manager/Assistant Manager)
+- **Page**: /finance/money-transfer-service (Transaction Recording)
+- **Timing**: Throughout the day, as each transaction occurs
+- **Time Required**: ~2-3 minutes per transaction
+- **Success Criteria**:
+  - ✅ Each transaction recorded immediately
+  - ✅ All details filled correctly
+  - ✅ System calculates balances automatically
+  - ✅ No manual balance calculations needed
+- **Data Recorded Per Transaction**:
+  - transactionType: "transfer" or "withdrawal"
+  - channel: "promptpay" / "bank" / "government"
+  - amount: เงินที่โอนหรือถอน
+  - commission: ค่าบริการ
+  - commissionMethod: "cash" or "transfer"
+  - timestamp: เวลาที่บันทึก
+  - recordedBy: Manager/Assistant Manager ID
+- **Auto-calculated by System**:
+  - bankAccountBalance: updated
+  - transferWithdrawalCash: updated
+  - serviceFeeCash: updated
+  - serviceFeeTransfer: updated
+- **Next Step**: Step 2 (Count actual cash at end of day)
+
+---
+
+**Step 2: Verify Recorded Transactions & Count Actual Cash (ตรวจสอบรายการบันทึก และนับเงินสดจริง)**
+
+**บริบท**: Manager ตรวจสอบว่าการบันทึก Step 1 ตรงกับเงินสดจริงหรือไม่
+
 ```
-/finance/money-transfer-service → New Record:
-- date: 2026-01-29
-- managerId: manager-001
-- managerName: วีระ
+═════════════════════════════════════════════════════════════
+SYSTEM DATA FROM STEP 1 (ระบบสะสมจากการบันทึก)
+═════════════════════════════════════════════════════════════
 
-ACCOUNT BALANCE TRACKING:
-- initialBankBalance: 10,000 บาท
-- finalBankBalance: 8,210 บาท
-- bankBalanceChange: -1,790 บาท (net outflow)
+EXPECTED BALANCES (from Step 1 recorded transactions):
+1) Bank Account Balance: 10,210 บาท
+2) Cash from Transfers/Withdrawals: 9,800 บาท
+3) Service Fee Cash: 70 บาท
+4) Service Fee Transfer: 10 บาท
 
-TRANSFER/WITHDRAWAL DATA:
-- totalTransfersOut: 2,000 + 800 = 2,800 บาท
-- totalWithdrawalsIn: 500 + 500 = 1,000 บาท
-- netBankChange: 1,000 - 2,800 + 10 (commission transfer) = -1,790 บาท
+TOTAL TRANSACTIONS RECORDED: 6 (5 successful, 1 failed)
+EXPECTED TOTAL CASH ON HAND: 9,800 + 70 = 9,870 บาท
 
-CASH ACCOUNTS:
-- transferWithdrawalCash: 1,800 บาท
-  * Transfers received: 2,000 + 800 = 2,800 บาท
-  * Withdrawals paid: 500 + 500 = 1,000 บาท
-  
-- serviceFeesCash: 40 บาท
-  * Commission from all cash transactions: 20 + 10 + 10 = 40 บาท
-  
-- serviceFeesTransfer: 10 บาท
-  * Commission from transfer transactions: 10 บาท
+═════════════════════════════════════════════════════════════
+MANAGER VERIFICATION (ผู้จัดการตรวจสอบเงินสดจริง)
+═════════════════════════════════════════════════════════════
 
-TRANSACTION RECORDS:
-- numberOfTransactions: 4
-  * Transfers (incoming): 2
-  * Withdrawals (outgoing): 2
-- totalCommissionCollected: 50 บาท (40 cash + 10 transfer)
+A. PHYSICAL CASH COUNT (นับเงินสดจริง):
 
-SUMMARY:
-- totalCashOnHand: 1,800 + 40 = 1,840 บาท
-- accountBalance: 8,210 บาท
-- totalMoneyManaged: 1,840 + 8,210 = 10,050 บาท
-  (includes all cash and bank balance)
+   Cash from Transfers/Withdrawals Section:
+   📝 Manager counts: 9,800 บาท
+   📊 System expected: 9,800 บาท
+   ✅ MATCH: 0 บาท discrepancy
 
-managerNotes: "4 transfer/withdrawal transactions processed. Bank balance 8,210 บาท. Cash on hand 1,840 บาท."
-status: "submitted" (auto-set)
-submittedAt: 2026-01-29 16:00:00
-submittedBy: manager-001
+   Service Fee Cash Section:
+   📝 Manager counts: 70 บาท
+   📊 System expected: 70 บาท
+   ✅ MATCH: 0 บาท discrepancy
 
-[Send notification to Auditor]
-Auditor → Verify & Check (Workflow 2.2)
+   TOTAL CASH COUNTED: 9,800 + 70 = 9,870 บาท
+   TOTAL EXPECTED: 9,870 บาท
+   ✅ MATCH: Cash count accurate
+
+B. VERIFICATION NOTES:
+   ✅ All 6 transactions from Step 1 verified
+   ✅ Cash count matches system records
+   ✅ No discrepancies found
+
+   managerVerificationNotes: "All transactions recorded in Step 1 verified. Cash count matches system expected amounts. Ready for Auditor review."
+
+═════════════════════════════════════════════════════════════
+STEP 2 CONFIRMATION (ยืนยันข้อมูล)
+═════════════════════════════════════════════════════════════
+
+Status: "verified" (auto-set after manager confirms)
+verifiedAt: 2026-01-29 17:00:00
+verifiedBy: manager-001
+
+✅ Step 1 records confirmed
+✅ Physical cash verified
+✅ All balances accurate
+✅ Ready for Auditor approval (Workflow 2.2)
 ```
 
 ---
 
-### Process Flow
+### Process Flow - Step 2: Verify & Count Actual Cash
 ```
-[Start] → Count all cash from money transfer service
+[End of Day - Manager performs Step 2]
         ↓
-     COUNT CASH & RECORD IN APP:
-     1. Count cash from transfer section (เงินสดจากการโอนเงิน):
-        - PromptPay cash in: 2,500 บาท
-          * Record in app: Transfer amount
-        - Bank account cash in: 1,800 บาท
-          * Record in app: Transfer amount
+[Go to /finance/money-transfer-service → View "pending verification"]
         ↓
-     2. Count cash from service fee section (เงินสดจากค่าบริการ):
-        - PromptPay service fees: 250 บาท
-          * Record in app: Service fee amount
-        - Bank service fees: 180 บาท
-          * Record in app: Service fee amount
+Review System Data from Step 1:
+     - System shows all recorded transactions
+     - System shows expected balances
+     - System shows expected cash amounts
         ↓
-     TOTAL CASH COUNTED: 4,730 บาท
+     PHYSICAL CASH VERIFICATION:
+     Manager counts actual cash:
         ↓
-     RECORD DEPOSIT/WITHDRAWAL/SERVICE RECORDS:
-     1. List all transfer records (ฝากเงิน/ถอนเงิน):
-        - PromptPay Transfer 1: 2,000 บาท (commission 40)
-        - PromptPay Transfer 2: 500 บาท (commission 10)
-        - Bank Transfer 1: 1,800 บาท (commission 180)
-        - Total: 3 transactions
+     1. Count Cash from Transfers/Withdrawals:
+        - Count all cash received from customers' transfers
+        - Count all cash paid out for withdrawals
+        - Compare with system expected amount
+        - Note any discrepancies
         ↓
-     2. Record all data in system:
-        - Go to /finance/money-transfer-service
-        - Click "บันทึกใหม่"
-        - Enter transfer cash: 4,300 บาท
-        - Enter service fees: 430 บาท
-        - Enter transfer records: 3 transactions
-        - Add manager notes
-        - Status = "submitted"
+     2. Count Service Fee Cash:
+        - Count all commission received in cash
+        - Compare with system expected amount
+        - Note any discrepancies
         ↓
-     [Submit] → Data recorded in system
+     RECONCILIATION CHECK:
+     Actual Cash Count vs System Expected:
+        - Transfer/Withdrawal Cash: Actual ↔ System Expected
+        - Service Fee Cash: Actual ↔ System Expected
+        - Total Cash: Actual ↔ System Expected
         ↓
-     Send summary to Auditor:
-     - Total transfer cash: 4,300 บาท
-     - Total service fees: 430 บาท
-     - Transfer records: 3
-     - Manager notes
+     [Status]
+        ├─ If MATCH ✅: [Confirm Verification]
+        │   ↓
+        │   Click [ยืนยันข้อมูล]
+        │   → Status = "verified"
+        │   → verifiedBy: Manager
+        │   → verifiedAt: timestamp
+        │
+        └─ If DISCREPANCY ⚠️: [Add Verification Notes]
+            ↓
+            Fill in discrepancy details:
+            - Amount difference
+            - Possible cause
+            - Follow-up action
+            ↓
+            Click [ยืนยันพร้อมหมายเหตุ]
+            → Status = "verified_with_notes"
+            → verificationNotes: detailed notes
         ↓
-     [Complete]
+     [Complete] → Ready for Auditor (Workflow 2.2)
 ```
 
-### Details
+### Details - Step 2
 - **Role**: ผู้จัดการหรือผู้ช่วยผู้จัดการ (Manager/Assistant Manager)
-- **Page**: /finance/money-transfer-service (Money Transfer Service Income Recording)
-- **Time Required**: ~10-15 minutes
+- **Page**: /finance/money-transfer-service (Transaction Verification)
+- **Timing**: End of day, after all transactions in Step 1 are recorded
+- **Time Required**: ~5-10 minutes
 - **Success Criteria**:
-  - ✅ All transfer transactions reviewed and counted
-  - ✅ Cash from transfers recorded (separated by type)
-  - ✅ Service fees recorded
-  - ✅ All deposit/withdrawal records documented
-  - ✅ Data recorded with clear breakdown
-  - ✅ Manager notes added
-- **Data Recorded**:
-  - Date: วันที่นับ (e.g., 2026-01-29)
-  - Manager: ชื่อผู้จัดการ
-  - **transferCashData** (เงินสดจากการโอนเงิน):
-    - promptPayCashIn: เงินสดจากโอน PromptPay (e.g., 2,500 บาท)
-    - bankTransferCashIn: เงินสดจากโอนธนาคาร (e.g., 1,800 บาท)
-    - totalTransferCashIn: รวมเงินสดจากโอน (e.g., 4,300 บาท)
-  - **serviceFeeData** (ค่าบริการโอนเงิน):
-    - promptPayCommission: ค่าบริการ PromptPay (e.g., 250 บาท)
-    - bankTransferCommission: ค่าบริการธนาคาร (e.g., 180 บาท)
-    - totalServiceCommission: รวมค่าบริการ (e.g., 430 บาท)
-  - **transferRecords** (รายการฝากเงิน/ถอนเงิน/ค่าบริการ):
-    - numberOfPromptPayTransfers: จำนวนโอน PromptPay (e.g., 2)
-    - numberOfBankTransfers: จำนวนโอนธนาคาร (e.g., 1)
-    - totalTransactionsProcessed: รวมรายการทั้งหมด (e.g., 3)
-    - transferDetails: รายละเอียดแต่ละรายการ (date, amount, commission)
-  - **summary**:
-    - transferCashTotal: 4,300 บาท
-    - serviceFeeTotal: 430 บาท
-    - grandTotal: รวมทั้งสิ้น (e.g., 4,730 บาท)
-  - managerNotes: (หมายเหตุ เช่น "All transfer records counted and recorded")
-  - status: "submitted" (ระบบตั้งอัตโนมัติ)
-  - submittedAt: timestamp ปัจจุบัน
-  - submittedBy: Manager ID
-- **Next Step**: Auditor verify and approve
+  - ✅ All Step 1 transactions reviewed
+  - ✅ Physical cash counted
+  - ✅ Cash amount compared with system expected
+  - ✅ Verification completed (match or discrepancies noted)
+  - ✅ Data marked as "verified"
+- **Data Verified (NOT Recorded - Already in Step 1)**:
+  - Compare System Expected vs Actual Count:
+    - transferWithdrawalCash: expected vs actual
+    - serviceFeeCash: expected vs actual
+    - bankAccountBalance: expected vs actual
+    - serviceFeeTransfer: expected vs actual
+- **Verification Outcome**:
+  - **If Match**: ✅ Status = "verified"
+  - **If Discrepancy**: ⚠️ Status = "verified_with_notes"
+    - discrepancyAmount: difference found
+    - discrepancyReason: possible cause
+    - verificationNotes: detailed explanation
+- **Data Fields Updated**:
+  - status: "verified" or "verified_with_notes"
+  - verifiedAt: timestamp
+  - verifiedBy: Manager ID
+  - verificationNotes: (if needed)
+- **Next Step**: Auditor final review & approval (Workflow 2.2)
 
 ---
 
 ## Workflow 2.2: ตรวจสอบเงินจากบริการโอนเงิน (Auditor - Verify Money Transfer Service Income)
 
-### Process Flow
+**บริบท**: Auditor ตรวจสอบข้อมูลจาก Step 1 & Step 2 ของ Manager โดยเทียบกับ bank statement และสูตรคำนวณ
+
+### Real-World Example
+
+**Scenario**: Auditor reviews Manager's Step 1 records & Step 2 verification against bank statement
+
 ```
-[Start] → Receive Manager's submitted record
-        ↓
-     Go to /finance/money-transfer-service
-        ↓
-     Verify transfer amounts:
-     - Cross-check with bank statement
-     - Verify each type of transfer
-     - Check for missing transactions
-        ↓
-     Verify actual amount:
-     - Amount should match bank balance
-     - No discrepancies? ✓
-        ↓
-     If everything correct:
-     - Add verification notes
-     - Change status: submitted → "audited"
-        ↓
-     If discrepancy found:
-     - Add notes explaining issues
-     - Return to Manager for correction
-        ↓
-     [Update] → Status = "audited"
-        ↓
-     Send report to Owner
-        ↓
-     [Complete]
+═════════════════════════════════════════════════════════════
+INPUT FROM MANAGER (Step 1 & Step 2)
+═════════════════════════════════════════════════════════════
+
+STATUS: "verified" (from Manager's Step 2)
+
+MANAGER'S RECORDED TRANSACTIONS (Step 1):
+✓ 6 total transactions recorded
+  - 5 successful transactions
+  - 1 failed transaction
+
+MANAGER'S VERIFICATION (Step 2):
+✓ Physical cash count matches system expected
+  - Transfer/Withdrawal Cash: 9,800 บาท ✓
+  - Service Fee Cash: 70 บาท ✓
+  - Total: 9,870 บาท ✓
+
+═════════════════════════════════════════════════════════════
+AUDITOR VERIFICATION (Cross-check with Bank Statement)
+═════════════════════════════════════════════════════════════
+
+STEP 1: Verify All Transaction Records
+  ✓ Transaction 1: PromptPay Transfer 2,000 บาท + commission 20 บาท
+    - Bank statement: -2,000 บาท ✓ Match
+
+  ✓ Transaction 2: Cash Withdrawal 500 บาท + commission 10 บาท
+    - Bank statement: +500 บาท ✓ Match
+
+  ✓ Transaction 3: Bank Transfer 8,800 บาท (FAILED)
+    - Bank statement: No change ✓ Match
+
+  ✓ Transaction 4: Owner Deposit 10,000 บาท
+    - Bank statement: +10,000 บาท ✓ Match
+
+  ✓ Transaction 5: Bank Transfer 8,800 บาท (SUCCESS) + commission 40 บาท
+    - Bank statement: -8,800 บาท ✓ Match
+
+  ✓ Transaction 6: Cash Withdrawal 500 บาท + commission 10 บาท (transfer)
+    - Bank statement: +500, +10 (commission) ✓ Match
+
+STEP 2: Verify Cash Count Results
+  ✓ Manager's Step 2 verification: All amounts match system expected
+  ✓ No discrepancies noted
+  ✓ Ready for approval
+
+STEP 3: Cross-check Bank Statement Summary
+  Expected (from Step 1): Bank Account = 10,210 บาท
+  Bank Statement shows: Bank Account = 10,210 บาท
+  ✅ MATCH - All transactions verified
+
+═════════════════════════════════════════════════════════════
+AUDITOR VERIFICATION RESULT
+═════════════════════════════════════════════════════════════
+
+✅ All Step 1 transactions verified against bank statement
+✅ All Step 2 cash count verified
+✅ No discrepancies or missing transactions
+✅ Balance matches expected amount
+
+auditNotes: "All 6 transactions from Manager's Step 1 verified against bank statement. Manager's Step 2 cash verification confirmed. Bank balance 10,210 บาท matches expected. No issues found. Ready for Owner approval."
+
+status: "audited" (updated by Auditor)
+auditedAt: 2026-01-29 17:30:00
+auditedBy: auditor-001
 ```
 
-### Details
+### Process Flow - Step 2 Verification
+```
+[Auditor Reviews Manager's "verified" Record]
+        ↓
+Go to /finance/money-transfer-service → "verified" status
+        ↓
+     VERIFY MANAGER'S STEP 1 RECORDS:
+     - Review all recorded transactions (6 total)
+     - Check transaction types, amounts, dates
+     - Verify commission amounts & methods
+        ↓
+     VERIFY AGAINST BANK STATEMENT:
+     1. Cross-check each transaction:
+        - PromptPay Transfer: -2,000 บาท ✓
+        - Cash Withdrawal: +500 บาท ✓
+        - Bank Transfer FAILED: No change ✓
+        - Owner Deposit: +10,000 บาท ✓
+        - Bank Transfer SUCCESS: -8,800 บาท ✓
+        - Cash Withdrawal: +500 บาท ✓
+        ↓
+     2. Verify final balance:
+        - System expected: 10,210 บาท
+        - Bank statement: 10,210 บาท
+        - Match? ✅ YES
+        ↓
+     VERIFY MANAGER'S STEP 2 RESULTS:
+     - Physical cash verification: All amounts match ✓
+     - No discrepancies noted ✓
+     - Cash count accurate ✓
+        ↓
+     [Status]
+        ├─ If ALL CORRECT ✅: [Confirm Audit]
+        │   ↓
+        │   Add verification notes
+        │   Click [ยืนยันการตรวจสอบ]
+        │   → Status = "audited"
+        │   → auditedBy: Auditor
+        │   → auditedAt: timestamp
+        │
+        └─ If DISCREPANCY ⚠️: [Add Audit Notes]
+            ↓
+            Fill in discrepancy details:
+            - Which transaction is wrong?
+            - What's the actual amount?
+            - What should be corrected?
+            ↓
+            Click [ยืนยันพร้อมหมายเหตุ]
+            → Status = "audited_with_issues"
+            → auditNotes: detailed issues
+            → Flag for Manager to fix Step 1/2
+        ↓
+     [Complete] → Ready for Owner approval (Workflow 2.3)
+```
+
+### Details - Step 2 Auditor Verification
 - **Role**: ผู้ตรวจสอบ (Auditor)
-- **Page**: /finance/money-transfer-service (Money Transfer Service Review)
-- **Time Required**: ~10 minutes
+- **Page**: /finance/money-transfer-service (Auditor Review)
+- **Timing**: After Manager completes Step 1 & 2 (Status: "verified")
+- **Time Required**: ~10-15 minutes
 - **Success Criteria**:
-  - ✅ All transfers verified with bank statement
-  - ✅ Total amount matches
-  - ✅ No missing transactions
-  - ✅ Clear verification notes
-- **Data Updated**:
-  - status: "audited"
+  - ✅ All Step 1 transactions verified with bank statement
+  - ✅ All Step 2 cash verification confirmed
+  - ✅ Bank balance matches expected amount
+  - ✅ No missing or duplicate transactions
+  - ✅ Clear audit notes (if needed)
+- **Data Verified**:
+  - **Step 1 Records**:
+    - Each transaction type, amount, commission
+    - Transaction status (success/failed)
+    - Balance changes correctness
+  - **Step 2 Results**:
+    - Cash count accuracy
+    - Discrepancies (if any)
+    - Verification status
+  - **Bank Statement Match**:
+    - Each transaction against bank records
+    - Final balance accuracy
+    - No missing transactions
+- **Audit Outcome**:
+  - **If OK**: ✅ Status = "audited"
+  - **If Issues**: ⚠️ Status = "audited_with_issues"
+    - auditNotes: detailed explanation
+    - Identify which Step 1 or Step 2 needs fixing
+- **Data Fields Updated**:
+  - status: "audited" or "audited_with_issues"
   - auditedAt: timestamp
   - auditedBy: Auditor ID
   - auditNotes: verification details
-- **Next Step**: Owner final approval
+- **Next Step**: Owner final approval (Workflow 2.3)
 
 ---
 
 ## Workflow 2.3: อนุมัติการตรวจสอบเงินจากบริการโอนเงิน (Owner - Approve Money Transfer Service Income)
 
+**บริบท**: Owner อนุมัติข้อมูลที่ Auditor ได้ตรวจสอบแล้ว (Step 1, Step 2, และ Audit)
+
 ### Process Flow
 ```
-[Start] → Review Auditor's report
+[Owner Reviews Auditor's "audited" Record]
         ↓
-     Check /finance/money-transfer-service → "audited" entries
+Go to /finance/money-transfer-service → "audited" or "audited_with_issues"
         ↓
-     Review:
-     - Transfer amounts breakdown
-     - Total transfer service income
-     - Audit verification notes
+     REVIEW ALL RECORDS:
+
+     Step 1: Manager's Recorded Transactions
+     - All 6 transactions (types, amounts, commissions)
+     - Balance changes calculation
+
+     Step 2: Manager's Verification
+     - Physical cash count results
+     - Any discrepancies noted
+
+     Step 3 (Workflow 2.2): Auditor's Verification
+     - Bank statement cross-check
+     - Transaction verification
+     - Audit notes
         ↓
-     Verify everything correct?
+     [Status Check]
+        ├─ If "audited" (No Issues) ✅:
+        │   ↓
+        │   Everything OK - Ready to approve
+        │   ↓
+        │   Click [อนุมัติ]
+        │   → Status = "approved"
+        │   → approvedAt: timestamp
+        │   → approvedBy: Owner ID
+        │   ↓
+        │   [Complete] ✅
+        │
+        └─ If "audited_with_issues" ⚠️:
+            ↓
+            Review Auditor's notes about issues
+            ↓
+            [Decision]
+            ├─ Approve anyway:
+            │   → Click [อนุมัติแม้มีปัญหา]
+            │   → Status = "approved_with_notes"
+            │   → approvalNotes: "Approved despite issues: ..."
+            │
+            └─ Request correction:
+                → Click [ส่งกลับให้ Manager ปรับแก้]
+                → Status = "needs_correction"
+                → Notes: specific issues to fix
+                → Manager revises Step 1/2
         ↓
-     Click [✏️ Edit]
-        ↓
-     Change status: audited → "approved"
-        ↓
-     Click [อัปเดต]
-        ↓
-     [Complete] → Status = "approved"
+     [Complete]
         ↓
      Money transfer service income recorded ✓
 ```
 
-### Details
+### Details - Owner Final Approval
 - **Role**: เจ้าของร้าน (Owner)
-- **Page**: /finance/money-transfer-service (Money Transfer Service Review)
-- **Time Required**: ~5 minutes
+- **Page**: /finance/money-transfer-service (Owner Approval)
+- **Timing**: After Auditor completes verification (Status: "audited" or "audited_with_issues")
+- **Time Required**: ~5-10 minutes
 - **Success Criteria**:
-  - ✅ All data reviewed and verified by Auditor
-  - ✅ Final decision documented
-- **Data Updated**:
-  - status: "approved"
+  - ✅ All records reviewed (Step 1, Step 2, Audit)
+  - ✅ Final approval decision made
+  - ✅ Clear documentation of approval status
+- **Data Reviewed**:
+  - **Step 1 Records**: All 6 transactions with amounts and commissions
+  - **Step 2 Results**: Manager's cash verification (match or discrepancies)
+  - **Audit Notes**: Auditor's verification against bank statement
+  - **Status**: "audited" ✅ or "audited_with_issues" ⚠️
+- **Approval Decision**:
+  - **If "audited"** (No issues): ✅ Approve directly
+    - status: "approved"
+  - **If "audited_with_issues"**: Owner decides:
+    - **Approve anyway**: status = "approved_with_notes"
+    - **Request correction**: status = "needs_correction"
+- **Data Fields Updated**:
+  - status: "approved" / "approved_with_notes" / "needs_correction"
   - approvedAt: timestamp
   - approvedBy: Owner ID
-- **Result**: ✅ Money transfer service income recorded
+  - approvalNotes: (if needed)
+- **Result**: ✅ Money transfer service income finalized
+  - Ready for accounting/financial reporting
 
 ---
 

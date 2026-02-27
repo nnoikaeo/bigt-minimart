@@ -2,6 +2,8 @@
 // The tests are kept for documentation and can be run when the testing framework is set up.
 // To run these tests, install: npm install -D vitest @vue/test-utils
 
+/* eslint-disable */
+// @ts-nocheck
 // @ts-ignore - vitest not installed, tests are for reference
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 // @ts-ignore - @vue/test-utils not installed

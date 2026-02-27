@@ -8,11 +8,13 @@ import type { DailySalesEntry } from '~/types/repositories'
 interface Props {
   open: boolean
   editingEntry?: DailySalesEntry | null
+  viewOnly?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   open: false,
   editingEntry: null,
+  viewOnly: false,
 })
 
 const emit = defineEmits<{
@@ -26,16 +28,8 @@ const accessControlStore = useAccessControlStore()
 const authStore = useAuthStore()
 
 // Check if user is owner
-const isOwner = computed(() => {
-  return authStore.getCurrentUser?.primaryRole === 'owner'
-})
-
-const canApprove = computed(() => {
-  return isOwner.value && props.editingEntry?.status === 'pending'
-})
-
 const isFormDisabled = computed(() => {
-  return props.editingEntry?.status === 'approved'
+  return props.viewOnly || props.editingEntry?.status === 'approved'
 })
 
 // Problem type categories for difference analysis
@@ -58,62 +52,14 @@ const formatCurrency = (amount: number): string => {
   }).format(amount)
 }
 
-const formatStatus = (status: string): string => {
-  const statusMap: Record<string, string> = {
-    pending: 'รออนุมัติ',
-    approved: 'อนุมัติแล้ว',
-  }
-  return statusMap[status] || status
-}
-
-const formatDate = (dateStr: string): string => {
-  const date = new Date(dateStr)
-  const formatter = new Intl.DateTimeFormat('th-TH', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-  const formatted = formatter.format(date)
-  return formatted.replace(/\d{4}(?=\s|$)/, (year) => String(parseInt(year) - 543))
-}
-
-const formatApprovedDate = (approvedAt: string | Date | undefined): string => {
-  if (!approvedAt) return ''
-  const dateStr = typeof approvedAt === 'string' ? approvedAt : (approvedAt as Date).toISOString()
-  const datePart = dateStr.split('T')[0] || ''
-  return formatDate(datePart)
-}
-
 const calculateTotal = (posData: any): number => {
   return (posData.cash || 0) + (posData.qr || 0) + (posData.bank || 0) + (posData.government || 0)
-}
-
-// Helper to get approver display name
-const getApproverName = (approvedById: string | undefined): string => {
-  if (!approvedById) {
-    logger.warn('[getApproverName] No approvedById provided')
-    return 'Unknown'
-  }
-
-  const user = accessControlStore.getUserById(approvedById)
-  logger.log('[getApproverName] Looking up user:', {
-    approvedById,
-    userFound: !!user,
-    displayName: user?.displayName,
-    allUsers: accessControlStore.getAllUsers.length,
-  })
-
-  if (!user) {
-    logger.warn('[getApproverName] User not found in access control store:', approvedById)
-  }
-
-  return user?.displayName || approvedById
 }
 
 // Get cashiers from access control store
 // This getter filters users who have 'cashier' role and are active
 const cashiers = computed(() => {
-  const cashierList = accessControlStore.getCashiers.map((user) => ({
+  const cashierList = accessControlStore.getCashiers.map((user: any) => ({
     id: user.uid,
     name: user.displayName,
   }))
@@ -140,7 +86,6 @@ interface FormDataType {
     qrAuditNotes: string
     bankAuditNotes: string
     governmentAuditNotes: string
-    recommendation: string
   }
   status: 'pending' | 'approved'
 }
@@ -170,7 +115,6 @@ const formData = reactive<FormDataType>({
     qrAuditNotes: '',
     bankAuditNotes: '',
     governmentAuditNotes: '',
-    recommendation: '',
   },
   status: 'pending',
 })
@@ -234,7 +178,7 @@ const handleCashierChange = (event: Event) => {
     return
   }
   
-  const selected = cashiers.value.find(c => c.id === selectedId)
+  const selected = cashiers.value.find((c: any) => c.id === selectedId)
   logger.log('[handleCashierChange] Found cashier:', selected)
   
   if (selected) {
@@ -270,7 +214,6 @@ watch(
         qrAuditNotes: '',
         bankAuditNotes: '',
         governmentAuditNotes: '',
-        recommendation: '',
       }
       formData.status = entry.status
     } else {
@@ -301,7 +244,6 @@ const resetForm = () => {
     qrAuditNotes: '',
     bankAuditNotes: '',
     governmentAuditNotes: '',
-    recommendation: '',
   }
   formData.status = 'pending'
   validationErrors.value = {}
@@ -361,7 +303,13 @@ const handleSubmit = async () => {
 
   submitting.value = true
   try {
+    const currentUserId = authStore.getCurrentUser?.uid
+    if (!currentUserId) {
+      logger.error('No authenticated user, cannot submit')
+      throw new Error('User authentication required to submit daily sales entry')
+    }
     logger.log('Submitting daily sales entry', formData)
+    logger.log('Current user ID:', currentUserId)
     emit('submit', {
       date: formData.date,
       cashierId: formData.cashierId,
@@ -388,10 +336,9 @@ const handleSubmit = async () => {
         qrAuditNotes: formData.auditDetails.qrAuditNotes,
         bankAuditNotes: formData.auditDetails.bankAuditNotes,
         governmentAuditNotes: formData.auditDetails.governmentAuditNotes,
-        recommendation: formData.auditDetails.recommendation,
       },
       status: formData.status,
-      submittedBy: 'current-user-id',
+      submittedBy: currentUserId,
     })
     successMessage.value = 'บันทึกข้อมูลสำเร็จ'
     setTimeout(() => {
@@ -400,22 +347,6 @@ const handleSubmit = async () => {
     }, 500)
   } catch (error) {
     logger.error('Failed to submit', error)
-  } finally {
-    submitting.value = false
-  }
-}
-
-// Handle approve
-const handleApprove = async () => {
-  if (!props.editingEntry?.id) return
-
-  submitting.value = true
-  try {
-    emit('approve', props.editingEntry.id)
-    successMessage.value = 'อนุมัติรายงานเรียบร้อย'
-    setTimeout(() => {
-      emit('close')
-    }, 500)
   } finally {
     submitting.value = false
   }
@@ -437,7 +368,7 @@ const handleClose = () => {
         <!-- Header -->
         <div class="sticky top-0 bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex justify-between items-center border-b border-red-800">
           <h2 class="text-xl font-bold text-white">
-            {{ editingEntry ? 'แก้ไข' : 'เพิ่ม' }}
+            {{ viewOnly ? 'ดูรายละเอียด' : editingEntry ? 'แก้ไข' : 'เพิ่ม' }}
           </h2>
           <button
             @click="handleClose"
@@ -472,7 +403,8 @@ const handleClose = () => {
               <input
                 v-model="formData.date"
                 type="date"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                :disabled="isFormDisabled"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
               />
               <p v-if="validationErrors.date" class="text-red-500 text-sm mt-1">
                 {{ validationErrors.date }}
@@ -491,7 +423,8 @@ const handleClose = () => {
                 v-else
                 v-model="formData.cashierId"
                 @change="handleCashierChange"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                :disabled="isFormDisabled"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
               >
                 <option value="">-- เลือกแคชเชียร์ --</option>
                 <option v-for="cashier in cashiers" :key="cashier.id" :value="cashier.id">
@@ -526,7 +459,8 @@ const handleClose = () => {
                     type="number"
                     min="0"
                     step="0.01"
-                    class="flex-1 px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    :disabled="isFormDisabled"
+                    class="flex-1 px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -543,7 +477,8 @@ const handleClose = () => {
                     type="number"
                     min="0"
                     step="0.01"
-                    class="flex-1 px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:border-purple-500"
+                    :disabled="isFormDisabled"
+                    class="flex-1 px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:border-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -560,7 +495,8 @@ const handleClose = () => {
                     type="number"
                     min="0"
                     step="0.01"
-                    class="flex-1 px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:border-green-500"
+                    :disabled="isFormDisabled"
+                    class="flex-1 px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:border-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -577,7 +513,8 @@ const handleClose = () => {
                     type="number"
                     min="0"
                     step="0.01"
-                    class="flex-1 px-3 py-2 border border-amber-300 rounded-lg focus:outline-none focus:border-amber-500"
+                    :disabled="isFormDisabled"
+                    class="flex-1 px-3 py-2 border border-amber-300 rounded-lg focus:outline-none focus:border-amber-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -622,7 +559,8 @@ const handleClose = () => {
                     type="number"
                     min="0"
                     step="0.01"
-                    class="flex-1 px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    :disabled="isFormDisabled"
+                    class="flex-1 px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -639,7 +577,8 @@ const handleClose = () => {
                     type="number"
                     min="0"
                     step="0.01"
-                    class="flex-1 px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:border-purple-500"
+                    :disabled="isFormDisabled"
+                    class="flex-1 px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:border-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -656,7 +595,8 @@ const handleClose = () => {
                     type="number"
                     min="0"
                     step="0.01"
-                    class="flex-1 px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:border-green-500"
+                    :disabled="isFormDisabled"
+                    class="flex-1 px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:border-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -673,7 +613,8 @@ const handleClose = () => {
                     type="number"
                     min="0"
                     step="0.01"
-                    class="flex-1 px-3 py-2 border border-amber-300 rounded-lg focus:outline-none focus:border-amber-500"
+                    :disabled="isFormDisabled"
+                    class="flex-1 px-3 py-2 border border-amber-300 rounded-lg focus:outline-none focus:border-amber-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -706,7 +647,7 @@ const handleClose = () => {
                   <div :class="['text-sm font-semibold px-2 py-1 rounded', cashDiff > 0 ? 'bg-green-100 text-green-800' : cashDiff < 0 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800']">
                     ผลต่าง: {{ formatCurrency(cashDiff) }}
                   </div>
-                  <select v-if="cashDiff !== 0" v-model="formData.auditDetails.cashAuditNotes" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500">
+                  <select v-if="cashDiff !== 0" v-model="formData.auditDetails.cashAuditNotes" :disabled="isFormDisabled" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
                     <option value="">-- เลือกประเภทปัญหา --</option>
                     <option v-for="problem in PROBLEM_TYPES" :key="problem.id" :value="problem.id">
                       {{ problem.label }}
@@ -725,7 +666,7 @@ const handleClose = () => {
                   <div :class="['text-sm font-semibold px-2 py-1 rounded', qrDiff > 0 ? 'bg-green-100 text-green-800' : qrDiff < 0 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800']">
                     ผลต่าง: {{ formatCurrency(qrDiff) }}
                   </div>
-                  <select v-if="qrDiff !== 0" v-model="formData.auditDetails.qrAuditNotes" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-purple-500">
+                  <select v-if="qrDiff !== 0" v-model="formData.auditDetails.qrAuditNotes" :disabled="isFormDisabled" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-purple-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
                     <option value="">-- เลือกประเภทปัญหา --</option>
                     <option v-for="problem in PROBLEM_TYPES" :key="problem.id" :value="problem.id">
                       {{ problem.label }}
@@ -744,7 +685,7 @@ const handleClose = () => {
                   <div :class="['text-sm font-semibold px-2 py-1 rounded', bankDiff > 0 ? 'bg-green-100 text-green-800' : bankDiff < 0 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800']">
                     ผลต่าง: {{ formatCurrency(bankDiff) }}
                   </div>
-                  <select v-if="bankDiff !== 0" v-model="formData.auditDetails.bankAuditNotes" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-green-500">
+                  <select v-if="bankDiff !== 0" v-model="formData.auditDetails.bankAuditNotes" :disabled="isFormDisabled" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
                     <option value="">-- เลือกประเภทปัญหา --</option>
                     <option v-for="problem in PROBLEM_TYPES" :key="problem.id" :value="problem.id">
                       {{ problem.label }}
@@ -763,7 +704,7 @@ const handleClose = () => {
                   <div :class="['text-sm font-semibold px-2 py-1 rounded', governmentDiff > 0 ? 'bg-green-100 text-green-800' : governmentDiff < 0 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800']">
                     ผลต่าง: {{ formatCurrency(governmentDiff) }}
                   </div>
-                  <select v-if="governmentDiff !== 0" v-model="formData.auditDetails.governmentAuditNotes" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-amber-500">
+                  <select v-if="governmentDiff !== 0" v-model="formData.auditDetails.governmentAuditNotes" :disabled="isFormDisabled" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-amber-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
                     <option value="">-- เลือกประเภทปัญหา --</option>
                     <option v-for="problem in PROBLEM_TYPES" :key="problem.id" :value="problem.id">
                       {{ problem.label }}
@@ -781,16 +722,10 @@ const handleClose = () => {
               <div class="text-2xl">{{ formatCurrency(difference) }}</div>
             </div>
 
-            <!-- Recommendation (full-width) -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">ข้อแนะนำการปรับปรุง</label>
-              <textarea v-model="formData.auditDetails.recommendation" placeholder="เช่น ควรเพิ่มความระมัดระวัง..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 resize-none h-20" />
-            </div>
-
             <!-- Notes (full-width) -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">หมายเหตุเพิ่มเติม</label>
-              <textarea v-model="formData.cashReconciliation.notes" placeholder="ข้อมูลสรุปเพิ่มเติม..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 resize-none h-16" />
+              <textarea v-model="formData.cashReconciliation.notes" placeholder="ข้อมูลสรุปเพิ่มเติม..." :disabled="isFormDisabled" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 resize-none h-16 disabled:bg-gray-100 disabled:cursor-not-allowed" />
             </div>
           </div>
 
@@ -871,53 +806,6 @@ const handleClose = () => {
           </div>
         </div>
 
-        <!-- Approval Section (Owner Only) -->
-        <div v-if="editingEntry && isOwner" class="space-y-4 bg-green-50 p-6 border-b border-green-200">
-          <h3 class="text-lg font-semibold text-green-800 border-b border-green-300 pb-2">
-            การอนุมัติ (Owner)
-          </h3>
-
-          <!-- Current Status -->
-          <div class="flex items-center justify-between">
-            <span class="text-sm font-medium text-gray-700">สถานะปัจจุบัน:</span>
-            <span :class="[
-              'px-3 py-1 rounded-full text-xs font-semibold',
-              formData.status === 'pending'
-                ? 'bg-orange-100 text-orange-800'
-                : 'bg-green-100 text-green-800'
-            ]">
-              {{ formatStatus(formData.status) }}
-            </span>
-          </div>
-
-          <!-- Approval Info (if already approved) -->
-          <div v-if="editingEntry.approvedAt" class="text-sm text-green-700">
-            <div class="flex items-center gap-2">
-              <span>✓</span>
-              <span>อนุมัติแล้วเมื่อ: {{ formatApprovedDate(editingEntry.approvedAt) }}</span>
-            </div>
-            <div v-if="editingEntry.approvedBy" class="ml-6 text-xs text-gray-600">
-              โดย: {{ getApproverName(editingEntry.approvedBy) }}
-            </div>
-          </div>
-
-          <!-- Approve Button (if not yet approved) -->
-          <button
-            v-if="canApprove"
-            @click="handleApprove"
-            :disabled="submitting"
-            class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-semibold hover:from-green-700 hover:to-green-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            <span>✓</span>
-            <span v-if="submitting">กำลังอนุมัติ...</span>
-            <span v-else>อนุมัติรายงาน</span>
-          </button>
-
-          <!-- Note: Editing disabled after approval -->
-          <p v-if="editingEntry.status === 'approved'" class="text-xs text-gray-500 italic">
-            หมายเหตุ: รายการที่อนุมัติแล้วไม่สามารถแก้ไขได้
-          </p>
-        </div>
 
         <!-- Footer -->
         <div class="sticky bottom-0 bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t">
@@ -926,9 +814,10 @@ const handleClose = () => {
             type="button"
             class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 transition-colors"
           >
-            ยกเลิก
+            {{ viewOnly ? 'ปิด' : 'ยกเลิก' }}
           </button>
           <button
+            v-if="!viewOnly"
             @click="handleSubmit"
             type="button"
             :disabled="submitting || isFormDisabled"

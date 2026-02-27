@@ -36,7 +36,8 @@ export default defineEventHandler(async (event) => {
 
     // For development, use fallback if no auth context
     // In production, this would require real authentication
-    const userId = user?.uid || 'dev-user-owner'
+    // Using Ve1ykzh3vFNKiPsUhw5HgK13H6r2 (owner) as fallback
+    const userId = user?.uid || 'Ve1ykzh3vFNKiPsUhw5HgK13H6r2'
     const userRole = user?.primaryRole || user?.role || 'owner'
 
     console.log('[POST /api/daily-sales/[id]/approve] Using user ID:', userId)

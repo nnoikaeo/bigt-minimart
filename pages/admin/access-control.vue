@@ -24,6 +24,20 @@
           </span>
         </button>
         <button
+          @click="activeTab = 'menu'"
+          :class="[
+            'py-4 px-1 border-b-2 font-medium text-sm',
+            activeTab === 'menu'
+              ? 'border-green-500 text-green-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+          ]"
+        >
+          <span class="flex items-center gap-2">
+            🗂️
+            จัดการเมนู Sidebar
+          </span>
+        </button>
+        <button
           @click="activeTab = 'roles'"
           :class="[
             'py-4 px-1 border-b-2 font-medium text-sm',
@@ -34,7 +48,7 @@
         >
           <span class="flex items-center gap-2">
             🔐
-            บทบาท และ สิทธิ์
+            บทบาทและสิทธิ์
           </span>
         </button>
       </nav>
@@ -50,7 +64,7 @@
             @click="openUserModal('create')"
             class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition"
           >
-            เพิ่มผู้ใช้
+            ✚ เพิ่ม
           </button>
         </div>
 
@@ -125,17 +139,17 @@
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                   <button
                     type="button"
-                    @click="toggleUserStatus(user)"
+                    @click="openToggleConfirm(user)"
                     :class="[
-                      'relative inline-flex w-12 h-7 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500',
+                      'relative inline-flex items-center w-12 h-7 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1',
                       user.isActive ? 'bg-green-500' : 'bg-gray-300',
                     ]"
                     :title="user.isActive ? 'ปิดใช้งาน' : 'เปิดใช้งาน'"
                   >
                     <span
                       :class="[
-                        'inline-block w-7 h-7 rounded-full bg-white transform transition-transform',
-                        user.isActive ? 'translate-x-6' : 'translate-x-0',
+                        'inline-block w-5 h-5 rounded-full bg-white shadow-md transform transition-transform duration-200',
+                        user.isActive ? 'translate-x-6' : 'translate-x-1',
                       ]"
                     />
                   </button>
@@ -166,28 +180,290 @@
         </div>
       </div>
 
-      <!-- Roles Tab -->
+      <!-- Roles Tab - Matrix View -->
       <div v-show="activeTab === 'roles'" class="space-y-6">
-        <!-- Roles Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <!-- Roles Content with Status Bar -->
+        <div class="space-y-2">
+          <!-- Status Bar -->
           <div
-            v-for="role in store.getAllRoles"
-            :key="role.id"
-            class="bg-white rounded-lg shadow p-4 hover:shadow-md transition"
+            :class="[
+              'rounded-lg p-4 flex items-center justify-between transition',
+              dirtyRoles.length > 0
+                ? 'bg-yellow-50 border border-yellow-300'
+                : 'bg-gray-50 border border-gray-200'
+            ]"
           >
-            <h3 class="font-semibold text-gray-900">{{ role.name }}</h3>
-            <p class="text-sm text-gray-600 mt-1">{{ role.description }}</p>
-            <button
-              @click="openPermissionsModal(role)"
-              class="mt-3 text-sm text-green-600 hover:text-green-700 font-medium"
+            <div class="text-sm" :class="dirtyRoles.length > 0 ? 'text-yellow-800' : 'text-gray-600'">
+              <span class="font-medium">
+                <span v-if="dirtyRoles.length > 0">⚠️ มี {{ dirtyRoles.length }} บทบาท ที่เปลี่ยนแปลง</span>
+                <span v-else>✅ ไม่มีการเปลี่ยนแปลง</span>
+              </span>
+              <span v-if="dirtyRoles.length > 0 && selectedDirtyRoles.length > 0" class="ml-2">(เลือก {{ selectedDirtyRoles.length }})</span>
+            </div>
+            <div class="flex gap-2">
+              <button
+                @click="saveBatchRoles"
+                :disabled="dirtyRoles.length === 0 || selectedDirtyRoles.length === 0 || isSavingRoles"
+                class="px-4 py-2 rounded-lg transition font-medium text-sm"
+                :class="
+                  dirtyRoles.length > 0 && selectedDirtyRoles.length > 0 && !isSavingRoles
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'border border-gray-300 text-gray-600 cursor-not-allowed'
+                "
+              >
+                <span v-if="isSavingRoles" class="inline-block animate-spin">🔄</span>
+                <span v-else>💾 บันทึกที่เลือก ({{ selectedDirtyRoles.length }})</span>
+              </button>
+              <button
+                @click="openResetConfirm"
+                :disabled="dirtyRoles.length === 0"
+                class="px-4 py-2 rounded-lg transition font-medium text-sm"
+                :class="
+                  dirtyRoles.length > 0
+                    ? 'bg-orange-600 hover:bg-orange-700 text-white'
+                    : 'border border-gray-300 text-gray-600 cursor-not-allowed'
+                "
+              >
+                🔄 รีเซ็ต
+              </button>
+            </div>
+          </div>
+
+          <!-- Permission Categories with Collapse Toggle (using CollapsibleGroup component) -->
+          <div v-if="store.getAllRoles.length > 0">
+            <template v-for="(permissions, category) in groupedPermissions" :key="category">
+            <CollapsibleGroup
+              v-if="permissions.length > 0"
+              :group-id="`perm-${category}`"
+              :is-expanded="isPermGroupExpanded(category)"
+              :on-toggle="() => togglePermGroupExpanded(category)"
+              :item-count="permissions.length"
+              item-label="สิทธิ์"
+              class="mb-2"
             >
-              ตั้งค่าสิทธิ์ →
-            </button>
+              <template #title>
+                {{ getCategoryLabel(category) }}
+              </template>
+              <template #content>
+                <table class="w-full">
+                  <!-- หัวตารางสิทธิ์ -->
+                  <thead class="bg-gray-100">
+                    <tr class="text-xs font-semibold text-gray-700 uppercase">
+                      <th class="px-4 py-3 text-center w-14">เลือก</th>
+                      <th class="px-4 py-3 text-left min-w-56">สิทธิ์</th>
+                      <th
+                        v-for="role in store.getAllRoles"
+                        :key="`header-${role.id}`"
+                        class="px-4 py-3 text-center min-w-32"
+                        :title="role.description"
+                      >
+                        {{ role.name }}
+                      </th>
+                    </tr>
+                  </thead>
+                  <!-- เนื้อหาตารางสิทธิ์ -->
+                  <tbody class="divide-y divide-gray-200">
+                    <tr
+                      v-for="perm in permissions"
+                      :key="perm.id"
+                      class="transition"
+                      :class="[
+                        isPermissionDirty(perm.id)
+                          ? 'bg-yellow-50 hover:bg-yellow-100'
+                          : 'bg-white hover:bg-gray-50',
+                      ]"
+                    >
+                      <!-- คอลัมน์เลือก (Auto-checks if dirty) -->
+                      <td class="px-4 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          :checked="isPermissionDirty(perm.id)"
+                          @change="(e) => {
+                            if ((e.target as any).checked) {
+                              selectedPermissions.add(perm.id)
+                            } else {
+                              selectedPermissions.delete(perm.id)
+                            }
+                          }"
+                          class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                        />
+                      </td>
+
+                      <!-- คอลัมน์ชื่อสิทธิ์ -->
+                      <td class="px-4 py-3">
+                        <p class="font-medium text-gray-900">{{ perm.name }}</p>
+                      </td>
+
+                      <!-- คอลัมน์ช่องทำเครื่องหมายบทบาท -->
+                      <td
+                        v-for="role in store.getAllRoles"
+                        :key="`${role.id}-${perm.id}`"
+                        class="px-4 py-3 text-center"
+                      >
+                        <input
+                          type="checkbox"
+                          :checked="isPermissionGranted(role.id, perm.id)"
+                          @change="togglePermissionForRole(role.id, perm.id)"
+                          class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                        />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </template>
+            </CollapsibleGroup>
+          </template>
+          </div>
+
+          <div v-else class="p-8 bg-white rounded-lg text-center">
+            <p class="text-gray-600">ไม่พบบทบาท</p>
           </div>
         </div>
+      </div>
 
-        <div v-if="store.getAllRoles.length === 0" class="p-8 bg-white rounded-lg text-center">
-          <p class="text-gray-600">ไม่พบบทบาท</p>
+      <!-- Menu Tab -->
+      <div v-show="activeTab === 'menu'" class="space-y-6">
+        <!-- Loading State -->
+        <div v-if="sidebarStore.loading" class="p-8 bg-white rounded-lg text-center">
+          <div class="inline-block animate-spin">🔄</div>
+          <p class="mt-2 text-gray-600">กำลังโหลดเมนู...</p>
+        </div>
+
+        <!-- Error State -->
+        <div v-else-if="sidebarStore.error" class="p-8 bg-white rounded-lg text-center">
+          <div class="text-red-600 text-sm">{{ sidebarStore.error }}</div>
+          <button
+            @click="sidebarStore.loadSidebarMenu"
+            class="mt-4 text-green-600 hover:text-green-700 font-medium"
+          >
+            ลองใหม่
+          </button>
+        </div>
+
+        <!-- Menu Content with Status Bar -->
+        <div v-else class="space-y-2">
+          <!-- Status Bar -->
+          <div
+            :class="[
+              'rounded-lg p-4 flex items-center justify-between transition',
+              dirtyPages.length > 0
+                ? 'bg-yellow-50 border border-yellow-300'
+                : 'bg-gray-50 border border-gray-200'
+            ]"
+          >
+            <div class="text-sm" :class="dirtyPages.length > 0 ? 'text-yellow-800' : 'text-gray-600'">
+              <span class="font-medium">
+                <span v-if="dirtyPages.length > 0">⚠️ มี {{ dirtyPages.length }} pages ที่เปลี่ยนแปลง</span>
+                <span v-else>✅ ไม่มีการเปลี่ยนแปลง</span>
+              </span>
+              <span v-if="dirtyPages.length > 0 && selectedDirtyPages.length > 0" class="ml-2">(เลือก {{ selectedDirtyPages.length }})</span>
+            </div>
+            <div class="flex gap-2">
+              <button
+                @click="saveBatchPages"
+                :disabled="dirtyPages.length === 0 || selectedDirtyPages.length === 0 || isSavingBatch"
+                class="px-4 py-2 rounded-lg transition font-medium text-sm"
+                :class="dirtyPages.length === 0 ? 'border border-gray-300 text-gray-600 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 text-white'"
+              >
+                <span v-if="isSavingBatch" class="inline-block animate-spin">🔄</span>
+                <span v-else>💾 บันทึกที่เลือก ({{ selectedDirtyPages.length }})</span>
+              </button>
+              <button
+                @click="openResetConfirm"
+                :disabled="dirtyPages.length === 0 || isSavingBatch"
+                class="px-4 py-2 rounded-lg transition font-medium text-sm"
+                :class="dirtyPages.length === 0 ? 'border border-gray-300 text-gray-600 cursor-not-allowed' : 'border border-gray-300 hover:bg-gray-50 text-gray-700'"
+              >
+                🔄 รีเซ็ต
+              </button>
+            </div>
+          </div>
+          <template v-for="group in sidebarStore.sidebarMenu.filter(g => g.groupKey !== 'dashboard')" :key="group.groupKey">
+            <CollapsibleGroup
+              :group-id="group.groupKey"
+              :is-expanded="isGroupExpanded(group.groupKey)"
+              :on-toggle="() => toggleGroupExpanded(group.groupKey)"
+              :item-count="group.pages.length"
+              item-label="หน้า"
+              class="mb-4"
+            >
+              <template #title>
+                {{ group.icon }} {{ group.groupName }}
+              </template>
+              <template #content>
+                <table class="w-full">
+                  <!-- หัวตารางเมนู -->
+                  <thead class="bg-gray-100">
+                    <tr class="text-xs font-semibold text-gray-700 uppercase">
+                      <th class="px-4 py-3 text-center w-14">เลือก</th>
+                      <th class="px-4 py-3 text-left min-w-56">ชื่อเพจ</th>
+                      <th
+                        v-for="role in store.getAllRoles"
+                        :key="`menu-header-${role.id}`"
+                        class="px-4 py-3 text-center min-w-32"
+                        :title="role.description"
+                      >
+                        {{ role.name }}
+                      </th>
+                    </tr>
+                  </thead>
+                  <!-- เนื้อหาตารางเมนู -->
+                  <tbody class="divide-y divide-gray-200">
+                    <tr
+                      v-for="page in group.pages.filter(p => p.pageKey !== 'dashboard')"
+                      :key="page.pageKey"
+                      class="transition"
+                      :class="[
+                        dirtyPages.includes(page.pageKey)
+                          ? 'bg-yellow-50 hover:bg-yellow-100'
+                          : 'bg-white hover:bg-gray-50',
+                      ]"
+                    >
+                      <!-- คอลัมน์เลือก -->
+                      <td class="px-4 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          :checked="dirtyPages.includes(page.pageKey)"
+                          @change="(e) => {
+                            if ((e.target as any).checked) {
+                              selectedPages.add(page.pageKey)
+                            } else {
+                              selectedPages.delete(page.pageKey)
+                            }
+                          }"
+                          class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                        />
+                      </td>
+
+                      <!-- คอลัมน์ชื่อเพจและไอคอน -->
+                      <td class="px-4 py-3">
+                        <div class="flex items-center gap-2">
+                          <span v-if="page.icon" class="text-lg flex-shrink-0">{{ page.icon }}</span>
+                          <div class="flex-1">
+                            <p class="font-medium text-gray-900">{{ page.pageName }}</p>
+                          </div>
+                        </div>
+                      </td>
+
+                      <!-- คอลัมน์ช่องทำเครื่องหมายบทบาท -->
+                      <td
+                        v-for="role in store.getAllRoles"
+                        :key="`${role.id}-${page.pageKey}`"
+                        class="px-4 py-3 text-center"
+                      >
+                        <input
+                          type="checkbox"
+                          :checked="isRoleIncluded(page.pageKey, role.id as UserRole)"
+                          @change="(e) => togglePageRole(page, role.id as UserRole, (e.target as any).checked)"
+                          class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                        />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </template>
+            </CollapsibleGroup>
+          </template>
         </div>
       </div>
     </div>
@@ -329,6 +605,20 @@
       </div>
     </div>
 
+    <!-- Confirm Toggle Status Dialog -->
+    <ConfirmDialog
+      :open="showToggleConfirm"
+      :title="userToToggle?.isActive ? 'ปิดใช้งานผู้ใช้' : 'เปิดใช้งานผู้ใช้'"
+      :message="userToToggle?.isActive
+        ? `คุณต้องการปิดใช้งาน &quot;${userToToggle?.displayName}&quot; ใช่หรือไม่? ผู้ใช้จะไม่สามารถเข้าสู่ระบบได้`
+        : `คุณต้องการเปิดใช้งาน &quot;${userToToggle?.displayName}&quot; ใช่หรือไม่?`"
+      :confirm-text="userToToggle?.isActive ? 'ปิดใช้งาน' : 'เปิดใช้งาน'"
+      cancel-text="ยกเลิก"
+      :variant="userToToggle?.isActive ? 'warning' : 'success'"
+      @confirm="executeToggleUser"
+      @cancel="closeToggleConfirm"
+    />
+
     <!-- Confirm Delete Modal -->
     <div
       v-if="showDeleteConfirm"
@@ -357,23 +647,92 @@
         </div>
       </div>
     </div>
+
+    <!-- Confirm Reset Modal -->
+    <div
+      v-if="showResetConfirm"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+      style="z-index: 51"
+      @click.self="closeResetConfirm"
+    >
+      <div class="bg-white rounded-lg shadow-lg max-w-sm w-full p-6">
+        <h2 class="text-lg font-bold mb-4 text-gray-900">ยืนยันการรีเซ็ต</h2>
+        <p class="text-gray-600 mb-6">
+          คุณแน่ใจหรือว่าต้องการรีเซ็ตการเปลี่ยนแปลงทั้งหมด? การเปลี่ยนแปลงที่ยังไม่ได้บันทึกจะหายไป
+        </p>
+        <div class="flex gap-3">
+          <button
+            @click="closeResetConfirm"
+            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+          >
+            ไม่
+          </button>
+          <button
+            @click="confirmReset"
+            class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition"
+          >
+            ใช่
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, nextTick } from 'vue'
 import { useAccessControlStore } from '~/stores/access-control'
-import type { User, Role } from '~/types/access-control'
+import { useSidebarStore } from '~/stores/sidebar'
+import { useSidebarAccess } from '~/composables/useSidebarAccess'
+import { useRolePermissions } from '~/composables/useRolePermissions'
+import type { User, Role, UserRole } from '~/types/access-control'
 
-// Store
+// Stores
 const store = useAccessControlStore()
+const sidebarStore = useSidebarStore()
+
+// Composables
+const {
+  selectedPages,
+  isSavingBatch,
+  dirtyPages,
+  selectedDirtyPages,
+  initializeEditingPages,
+  togglePageRole,
+  isRoleIncluded,
+  toggleGroupExpanded,
+  isGroupExpanded,
+  resetPages,
+  saveBatchPages,
+} = useSidebarAccess()
+
+const {
+  originalRolePermissions,
+  selectedRoles,
+  selectedPermissions,
+  isSavingRoles,
+  dirtyRoles,
+  selectedDirtyRoles,
+  dirtyPermissions,
+  groupedPermissions,
+  initializeOriginalPermissions,
+  isPermissionDirty,
+  isPermissionGranted,
+  togglePermissionForRole,
+  resetAllRoles,
+  togglePermGroupExpanded,
+  isPermGroupExpanded,
+  getCategoryLabel,
+  saveBatchRoles,
+} = useRolePermissions()
 
 // Tabs
-const activeTab = ref<'users' | 'roles'>('users')
+const activeTab = ref<'users' | 'menu' | 'roles'>('users')
 
 // User Modal
 const showUserModal = ref(false)
 const userModalMode = ref<'create' | 'edit'>('create')
+const isUserFormInitializing = ref(false)
 const userForm = ref({
   displayName: '',
   email: '',
@@ -392,6 +751,15 @@ const permissionsForm = ref<Record<string, boolean>>({})
 const showDeleteConfirm = ref(false)
 const userToDelete = ref<User | null>(null)
 
+// Toggle Status Confirmation
+const showToggleConfirm = ref(false)
+const userToToggle = ref<User | null>(null)
+
+// Reset Confirmation
+const showResetConfirm = ref(false)
+
+
+
 // =========================================================================
 // Watchers
 // =========================================================================
@@ -403,9 +771,49 @@ const userToDelete = ref<User | null>(null)
 watch(
   () => userForm.value.primaryRole,
   (newPrimaryRole) => {
+    // ข้ามเมื่อกำลัง load ข้อมูล edit เพื่อไม่ให้ overwrite roles ที่มีอยู่
+    if (isUserFormInitializing.value) return
     // ถ้า primaryRole มีค่า ให้ set roles เป็น primaryRole เท่านั้น
     if (newPrimaryRole) {
       userForm.value.roles = [newPrimaryRole]
+    }
+  }
+)
+
+/**
+ * Monitor sidebar menu tab dirty state
+ * Alert when Menu tab has changes
+ */
+watch(
+  () => dirtyPages.value,
+  (dirty) => {
+    if (dirty && dirty.length > 0) {
+      console.log(`[AccessControl] Menu Tab: ${dirty.length} pages changed`)
+      // Suggest checking Roles tab for consistency
+      if (dirtyRoles.value.length > 0) {
+        console.warn(
+          `⚠️ Both Menu (${dirty.length}) and Roles (${dirtyRoles.value.length}) tabs have changes. Consider reviewing for consistency.`
+        )
+      }
+    }
+  }
+)
+
+/**
+ * Monitor roles tab dirty state
+ * Alert when Roles tab has changes
+ */
+watch(
+  () => dirtyRoles.value,
+  (dirty) => {
+    if (dirty && dirty.length > 0) {
+      console.log(`[AccessControl] Roles Tab: ${dirty.length} roles changed`)
+      // Suggest checking Menu tab for consistency
+      if (dirtyPages.value.length > 0) {
+        console.warn(
+          `⚠️ Both Roles (${dirty.length}) and Menu (${dirtyPages.value.length}) tabs have changes. Consider reviewing for consistency.`
+        )
+      }
     }
   }
 )
@@ -418,14 +826,20 @@ watch(
  * Load all data from store
  */
 const loadData = async () => {
-  console.log('[AccessControl Page] loadData called')
-  console.log('[AccessControl Page] store instance:', store)
-  console.log('[AccessControl Page] store.loadAllData type:', typeof store.loadAllData)
-  
   try {
-    console.log('[AccessControl Page] Calling store.loadAllData()')
     await store.loadAllData()
-    console.log('[AccessControl Page] loadAllData completed successfully')
+
+    // Load role permissions for all roles
+    // Note: store.loadAllData() doesn't load role permissions, we need to fetch them separately
+    if (store.getAllRoles.length > 0) {
+      const fetchPromises = store.getAllRoles.map((role) =>
+        store.fetchRolePermissions(role.id)
+      )
+      await Promise.all(fetchPromises)
+    }
+
+    // Initialize original role permissions for dirty tracking
+    initializeOriginalPermissions()
   } catch (error: any) {
     console.error('[AccessControl Page] loadData error:', error)
   }
@@ -467,6 +881,7 @@ const openUserModal = (mode: 'create' | 'edit', user?: User) => {
     }
     currentUserId.value = null
   } else if (user) {
+    isUserFormInitializing.value = true
     userForm.value = {
       displayName: user.displayName,
       email: user.email,
@@ -475,6 +890,9 @@ const openUserModal = (mode: 'create' | 'edit', user?: User) => {
       isActive: user.isActive,
     }
     currentUserId.value = user.uid
+    nextTick(() => {
+      isUserFormInitializing.value = false
+    })
   }
   showUserModal.value = true
 }
@@ -544,6 +962,18 @@ const openPermissionsModal = async (role: Role) => {
   selectedRole.value = role
   await store.fetchRolePermissions(role.id)
   permissionsForm.value = { ...store.getRolePermissions(role.id) }
+
+  // Track original permissions for dirty detection
+  if (!originalRolePermissions.value[role.id]) {
+    originalRolePermissions.value[role.id] = {
+      roleId: role.id,
+      permissions: { ...permissionsForm.value },
+    }
+  }
+
+  // Mark role as selected for batch tracking
+  selectedRoles.value.add(role.id)
+
   showPermissionsModal.value = true
 }
 
@@ -553,6 +983,7 @@ const openPermissionsModal = async (role: Role) => {
 const closePermissionsModal = () => {
   showPermissionsModal.value = false
   selectedRole.value = null
+  // Note: Keep selectedRoles for batch tracking across saves
 }
 
 /**
@@ -590,6 +1021,31 @@ const closeDeleteConfirm = () => {
 }
 
 /**
+ * Open toggle status confirmation dialog
+ */
+const openToggleConfirm = (user: User) => {
+  userToToggle.value = user
+  showToggleConfirm.value = true
+}
+
+/**
+ * Close toggle status confirmation dialog
+ */
+const closeToggleConfirm = () => {
+  showToggleConfirm.value = false
+  userToToggle.value = null
+}
+
+/**
+ * Execute toggle after confirmation
+ */
+const executeToggleUser = async () => {
+  if (!userToToggle.value) return
+  await toggleUserStatus(userToToggle.value)
+  closeToggleConfirm()
+}
+
+/**
  * Delete user
  */
 const deleteUser = async () => {
@@ -607,11 +1063,35 @@ const deleteUser = async () => {
   }
 }
 
-// =========================================================================
-// Lifecycle
-// =========================================================================
+/**
+ * Open reset confirmation dialog
+ */
+const openResetConfirm = () => {
+  showResetConfirm.value = true
+}
+
+/**
+ * Close reset confirmation dialog
+ */
+const closeResetConfirm = () => {
+  showResetConfirm.value = false
+}
+
+/**
+ * Confirm and execute reset
+ */
+const confirmReset = () => {
+  if (activeTab.value === 'menu') {
+    resetPages()
+  } else if (activeTab.value === 'roles') {
+    resetAllRoles()
+  }
+  closeResetConfirm()
+}
+
 
 onMounted(async () => {
   await loadData()
+  await initializeEditingPages()
 })
 </script>

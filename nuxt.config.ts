@@ -9,6 +9,45 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
   ],
 
+  // Component Auto-Import Configuration
+  components: [
+    {
+      path: '~/components/ui/button',
+      prefix: '',
+      pathPrefix: false,
+    },
+    {
+      path: '~/components/ui/form',
+      prefix: '',
+      pathPrefix: false,
+    },
+    {
+      path: '~/components/ui/feedback',
+      prefix: '',
+      pathPrefix: false,
+    },
+    {
+      path: '~/components/ui/display',
+      prefix: '',
+      pathPrefix: false,
+    },
+    {
+      path: '~/components/ui/table',
+      prefix: '',
+      pathPrefix: false,
+    },
+    {
+      path: '~/components/layout',
+      prefix: '',
+      pathPrefix: false,
+    },
+    {
+      path: '~/components',
+      prefix: '',
+      pathPrefix: false,
+    },
+  ],
+
   // TypeScript
   typescript: {
     strict: true,

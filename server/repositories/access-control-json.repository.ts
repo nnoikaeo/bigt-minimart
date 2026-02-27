@@ -14,6 +14,7 @@
 
 import { promises as fs } from 'fs'
 import { join } from 'path'
+import { adminDb, adminAuth } from '~/server/utils/firebase-admin'
 import type {
   User,
   CreateUserInput,
@@ -24,6 +25,9 @@ import type {
 } from '~/types/access-control'
 import type { IAccessControlRepository } from './access-control.repository'
 
+// Global file lock to prevent concurrent writes to sidebar-menu.json
+let sidebarMenuWriteLock: Promise<void> = Promise.resolve()
+
 export class AccessControlJsonRepository implements IAccessControlRepository {
   private basePath = join(process.cwd(), 'public/data')
 
@@ -31,6 +35,7 @@ export class AccessControlJsonRepository implements IAccessControlRepository {
   private rolesPath = join(this.basePath, 'roles.json')
   private permissionsPath = join(this.basePath, 'permissions.json')
   private rolePermissionsPath = join(this.basePath, 'role-permissions.json')
+  private sidebarMenuPath = join(this.basePath, 'sidebar-menu.json')
 
   // =========================================================================
   // Helper Methods
@@ -117,6 +122,29 @@ export class AccessControlJsonRepository implements IAccessControlRepository {
     users[index] = updatedUser
     await this.writeFile(this.usersPath, users)
 
+    // Sync auth-relevant fields to Firestore so login can enforce isActive
+    try {
+      await adminDb.collection('users').doc(uid).update({
+        isActive: updatedUser.isActive,
+        displayName: updatedUser.displayName,
+        roles: updatedUser.roles,
+        primaryRole: updatedUser.primaryRole,
+        updatedAt: updatedUser.updatedAt,
+      })
+    } catch (error) {
+      console.error('[Repository] Failed to sync user to Firestore:', error)
+      // ไม่ throw — JSON บันทึกแล้ว Firestore sync เป็น best-effort
+    }
+
+    // Hard disable/enable in Firebase Auth to block login at authentication level
+    try {
+      await adminAuth.updateUser(uid, { disabled: !updatedUser.isActive })
+      console.log(`[Repository] Firebase Auth ${updatedUser.isActive ? 'enabled' : 'disabled'} for UID:`, uid)
+    } catch (error) {
+      console.error('[Repository] Failed to update Firebase Auth disabled state:', error)
+      // ไม่ throw — best-effort เช่นกัน
+    }
+
     return updatedUser
   }
 
@@ -185,5 +213,66 @@ export class AccessControlJsonRepository implements IAccessControlRepository {
 
     await this.writeFile(this.rolePermissionsPath, rolePermissions)
     return updated
+  }
+
+  // =========================================================================
+  // Sidebar Menu Operations
+  // =========================================================================
+
+  async getSidebarMenu(): Promise<any> {
+    try {
+      const content = await fs.readFile(this.sidebarMenuPath, 'utf-8')
+      const data = JSON.parse(content)
+      return data.menu || []
+    } catch (error) {
+      console.error(`Failed to read ${this.sidebarMenuPath}:`, error)
+      return []
+    }
+  }
+
+  async updatePageRequiredRoles(
+    pageKey: string,
+    requiredRoles: string[] | null,
+  ): Promise<void> {
+    // Queue this write operation to prevent concurrent file writes
+    const writeOperation = async () => {
+      try {
+        const content = await fs.readFile(this.sidebarMenuPath, 'utf-8')
+        const data = JSON.parse(content)
+        const menu = data.menu || []
+
+        // Find and update the page
+        let found = false
+
+        for (const group of menu) {
+          const page = group.pages.find((p: any) => p.pageKey === pageKey)
+          if (page) {
+            page.requiredRoles = requiredRoles
+            found = true
+            break
+          }
+        }
+
+        if (!found) {
+          throw new Error(`Page ${pageKey} not found in sidebar menu`)
+        }
+
+        // Write updated data back to file
+        const updatedContent = JSON.stringify(data, null, 2)
+        await fs.writeFile(this.sidebarMenuPath, updatedContent, 'utf-8')
+      } catch (error) {
+        console.error(`Failed to update page ${pageKey}:`, error)
+        throw new Error(`Failed to update sidebar menu: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      }
+    }
+
+    // Chain this operation to the lock to ensure sequential writes
+    sidebarMenuWriteLock = sidebarMenuWriteLock.then(
+      () => writeOperation(),
+      () => writeOperation()
+    )
+
+    // Wait for this operation to complete
+    await sidebarMenuWriteLock
   }
 }

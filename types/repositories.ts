@@ -55,7 +55,6 @@ export interface DailySalesEntry {
     qrAuditNotes: string // วิเคราะห์สาเหตุ (QR Code)
     bankAuditNotes: string // วิเคราะห์สาเหตุ (ธนาคาร)
     governmentAuditNotes: string // วิเคราะห์สาเหตุ (โครงการรัฐ)
-    recommendation: string // ข้อแนะนำการปรับปรุง
   }
   
   // Calculated fields
@@ -181,4 +180,268 @@ export interface IUserRepository {
   update(uid: string, updates: Partial<UserEntry>): Promise<void>
   delete(uid: string): Promise<void>
   getByRole(role: string): Promise<UserEntry[]>
+}
+
+/**
+ * Money Transfer Transaction Interface
+ * Main transaction ledger for Money Transfer Service
+ * Supports 3 transaction types: Transfer, Withdrawal, Owner Deposit
+ * Supports 3 channels: PromptPay (with 2 identifier types), Bank, Other
+ */
+export interface MoneyTransferTransaction {
+  // Identity
+  id: string // Format: "mts-{timestamp}-{random}"
+  date: string // ISO format: "YYYY-MM-DD"
+  datetime: string | Date // ISO format with time
+
+  // Classification
+  transactionType: 'transfer' | 'withdrawal' | 'owner_deposit'
+
+  // Channel (conditional - only for transfer/withdrawal)
+  channel?: 'promptpay' | 'bank' | 'other'
+
+  // PromptPay specific fields (when channel === 'promptpay')
+  promptpayIdentifierType?: 'phone' | 'id_card'
+  promptpayIdentifier?: string // Phone: xxx-xxx-xxxx, ID Card: x-xxxx-xxxxx-xx-x
+  promptpayAccountName?: string
+
+  // Bank/Other specific fields (when channel === 'bank' or 'other')
+  accountType?: 'savings' | 'current' | 'other'
+  accountNumber?: string
+  accountName?: string
+
+  // Financial data
+  amount: number // Transaction amount in บาท
+  commission?: number // Service fee collected
+  commissionType?: 'cash' | 'transfer' // How commission was received
+  customerName?: string // Optional customer identifier
+
+  // Balance snapshots (critical for audit trail)
+  balanceImpact: {
+    bankAccountBefore: number
+    bankAccountAfter: number
+    transferCashBefore: number
+    transferCashAfter: number
+    serviceFeeBeforeCash: number
+    serviceFeeAfterCash: number
+    serviceFeeBeforeTransfer: number
+    serviceFeeAfterTransfer: number
+  }
+
+  // Status & workflow
+  status: 'draft' | 'completed' | 'failed' | 'cancelled'
+  draftReason?: string // Reason why transaction is draft (e.g., insufficient balance)
+  verificationStatus?: 'pending' | 'verified' | 'audited' | 'approved'
+
+  // Notes and metadata
+  notes?: string
+
+  // User tracking (denormalized for performance)
+  recordedBy: string // Firebase UID
+  recordedByName: string // Display name (denormalized)
+
+  // Timestamps
+  createdAt: string | Date
+  updatedAt: string | Date
+  completedAt?: string | Date // When draft became completed
+}
+
+/**
+ * Money Transfer Daily Summary Interface
+ * Aggregates per-day data for 3-step workflow
+ * Tracks: Step 1 (Manager recording), Step 2 (Manager verification)
+ *         Workflow 2.2 (Auditor review), Workflow 2.3 (Owner approval)
+ */
+export interface MoneyTransferDailySummary {
+  // Identity
+  id: string // Format: "mtsum-{date}" (e.g., "mtsum-2026-01-29")
+  date: string // ISO format: "YYYY-MM-DD"
+
+  // Step 1: Manager transaction recording
+  step1: {
+    status: 'in_progress' | 'completed'
+    completedAt?: string | Date
+    completedBy?: string // User ID
+    completedByName?: string // Denormalized user name
+    totalTransactions: number
+    completedTransactions: number
+    draftTransactions: number
+    failedTransactions?: number
+    totalAmount: number
+    totalCommission: number
+    finalBalances?: {
+      bankAccount: number
+      transferCash: number
+      serviceFeeTransfer: number
+      serviceFeeCash: number
+    }
+  }
+
+  // Step 2: Manager cash verification
+  step2?: {
+    status: 'pending' | 'completed'
+    completedAt?: string | Date
+    completedBy?: string
+    completedByName?: string
+    expectedCash: {
+      transferWithdrawal: number
+      serviceFee: number
+      total: number
+    }
+    actualCash: {
+      transferWithdrawal: number
+      serviceFee: number
+      total: number
+    }
+    differences: {
+      transferWithdrawal: number
+      serviceFee: number
+      total: number
+    }
+    verificationNotes?: string
+    hasDiscrepancies: boolean
+  }
+
+  // Workflow 2.2: Auditor verification
+  auditorVerification?: {
+    status: 'pending' | 'completed' | 'issues_found'
+    completedAt?: string | Date
+    completedBy?: string // Auditor UID
+    completedByName?: string
+    transactionsVerified: number
+    transactionsWithIssues: number
+    bankStatementVerified: boolean
+    bankBalanceMatches: boolean
+    auditNotes: string
+    issuesFound?: string[]
+    auditResult: 'no_issues' | 'minor_issues' | 'major_issues'
+  }
+
+  // Workflow 2.3: Owner approval
+  ownerApproval?: {
+    status: 'pending' | 'approved' | 'approved_with_notes' | 'correction_requested'
+    completedAt?: string | Date
+    completedBy?: string // Owner UID
+    completedByName?: string
+    decision: 'approve' | 'approve_with_notes' | 'request_correction'
+    ownerNotes?: string
+  }
+
+  // Overall workflow status
+  workflowStatus: 'step1_in_progress' | 'step1_completed' | 'step2_completed' | 'audited' | 'approved' | 'needs_correction'
+
+  // System timestamps
+  createdAt?: string | Date
+  updatedAt?: string | Date
+}
+
+/**
+ * Money Transfer Balance Interface
+ * Real-time balance tracking (updated atomically with each transaction)
+ */
+export interface MoneyTransferBalance {
+  id: string // Format: "mtbal-{date}" (e.g., "mtbal-2026-01-29")
+  date: string // ISO format: "YYYY-MM-DD"
+
+  // Current balances (updated in real-time)
+  bankAccount: number
+  transferCash: number // Cash held for transfers/withdrawals
+  serviceFeeTransfer: number // Commission received via transfer
+  serviceFeeCash: number // Commission received in cash
+
+  // Audit trail - history of all balance changes
+  history?: Array<{
+    transactionId: string
+    timestamp: string | Date
+    type: 'transfer' | 'withdrawal' | 'owner_deposit'
+    balancesBefore: {
+      bankAccount: number
+      transferCash: number
+      serviceFeeTransfer: number
+      serviceFeeCash: number
+    }
+    balancesAfter: {
+      bankAccount: number
+      transferCash: number
+      serviceFeeTransfer: number
+      serviceFeeCash: number
+    }
+  }>
+
+  // Opening balance (set manually at start of day)
+  openingBalance?: number                          // bankAccount amount at start of day
+  openingBalanceSetAt?: string                     // ISO timestamp when set
+  openingBalanceSource?: 'carryover' | 'manual'   // How it was set
+  openingBalanceSetBy?: string                     // User who set it
+
+  // Last update tracking
+  updatedAt?: string | Date
+  updatedBy?: string
+}
+
+/**
+ * Money Transfer Repository Interface
+ * Defines contract for Money Transfer Service data access layer
+ */
+export interface IMoneyTransferRepository {
+  // Initialization
+  init(): Promise<void>
+
+  // Transaction CRUD
+  getTransaction(id: string): Promise<MoneyTransferTransaction>
+  getTransactionsByDate(date: string): Promise<MoneyTransferTransaction[]>
+  getTransactionsByDateRange(startDate: string, endDate: string): Promise<MoneyTransferTransaction[]>
+  getTransactionsByStatus(status: MoneyTransferTransaction['status']): Promise<MoneyTransferTransaction[]>
+  getDraftTransactions(date: string): Promise<MoneyTransferTransaction[]>
+  addTransaction(transaction: Omit<MoneyTransferTransaction, 'id' | 'createdAt' | 'updatedAt'>): Promise<MoneyTransferTransaction>
+  updateTransaction(id: string, updates: Partial<MoneyTransferTransaction>): Promise<MoneyTransferTransaction>
+  deleteTransaction(id: string): Promise<void>
+
+  // Complete draft transaction
+  completeDraftTransaction(id: string, updates: Partial<MoneyTransferTransaction>): Promise<MoneyTransferTransaction>
+
+  // Daily summary CRUD
+  getDailySummary(date: string): Promise<MoneyTransferDailySummary | null>
+  createDailySummary(date: string): Promise<MoneyTransferDailySummary>
+  updateDailySummary(date: string, updates: Partial<MoneyTransferDailySummary>): Promise<MoneyTransferDailySummary>
+
+  // Balance operations
+  getCurrentBalance(date: string): Promise<MoneyTransferBalance>
+  initializeBalance(date: string): Promise<MoneyTransferBalance>
+  updateBalance(date: string, updates: Partial<MoneyTransferBalance>): Promise<MoneyTransferBalance>
+  setOpeningBalance(date: string, amount: number, source: 'carryover' | 'manual', userId?: string): Promise<MoneyTransferBalance>
+  getPreviousDayBalance(date: string): Promise<MoneyTransferBalance | null>
+
+  // Workflow operations
+  completeStep1(date: string, userId: string, userName: string): Promise<MoneyTransferDailySummary>
+  completeStep2(date: string, step2Data: MoneyTransferDailySummary['step2']): Promise<MoneyTransferDailySummary>
+  completeAudit(date: string, auditData: MoneyTransferDailySummary['auditorVerification']): Promise<MoneyTransferDailySummary>
+  approveByOwner(date: string, approvalData: MoneyTransferDailySummary['ownerApproval']): Promise<MoneyTransferDailySummary>
+
+  // Favorites CRUD
+  getFavorites(): Promise<FavoriteTransfer[]>
+  getFavoritesByTab(tab: 1 | 2 | 3 | 4 | 5): Promise<FavoriteTransfer[]>
+  addFavorite(data: Omit<FavoriteTransfer, 'id' | 'createdAt'>): Promise<FavoriteTransfer>
+  updateFavorite(id: string, updates: Partial<Omit<FavoriteTransfer, 'id' | 'createdAt'>>): Promise<FavoriteTransfer>
+  deleteFavorite(id: string): Promise<void>
+
+  // Statistics
+  getTransactionCount(date: string): Promise<number>
+  getTransactionCountByStatus(date: string, status: string): Promise<number>
+}
+
+/**
+ * Favorite Transfer destination
+ * Stored per tab (1–5), up to 10 per tab
+ */
+export interface FavoriteTransfer {
+  id: string
+  tab: 1 | 2 | 3 | 4 | 5
+  order: number                              // 1–10 within the tab
+  name: string                               // Display name
+  channel: 'promptpay' | 'bank'
+  identifier: string                         // Phone / ID / account number
+  identifierType?: 'phone' | 'idcard' | 'promptpay' | 'account'
+  bankName?: string                          // Bank name (when channel = 'bank')
+  createdAt: string                          // ISO timestamp
 }

@@ -4,6 +4,7 @@ import { useLogger } from '~/composables/useLogger'
 import { useAuthStore } from '~/stores/auth'
 import { useAccessControlStore } from '~/stores/access-control'
 import type { DailySalesEntry } from '~/types/repositories'
+import DailySalesDetailsModal from './DailySalesDetailsModal.vue'
 
 interface Props {
   entries: DailySalesEntry[]
@@ -228,19 +229,18 @@ const getSortIndicator = (field: string): string => {
   return sortOrder.value === 'asc' ? '↑' : '↓'
 }
 
-// Expand/Collapse Details Row
-const expandedRows = ref<Set<string>>(new Set())
+// Modal State for Details Display
+const showDetailsModal = ref(false)
+const selectedEntry = ref<DailySalesEntry | null>(null)
 
-const toggleDetailsRow = (entryId: string) => {
-  if (expandedRows.value.has(entryId)) {
-    expandedRows.value.delete(entryId)
-  } else {
-    expandedRows.value.add(entryId)
-  }
+const openDetailsModal = (entry: DailySalesEntry) => {
+  selectedEntry.value = entry
+  showDetailsModal.value = true
 }
 
-const isRowExpanded = (entryId: string): boolean => {
-  return expandedRows.value.has(entryId)
+const closeDetailsModal = () => {
+  showDetailsModal.value = false
+  selectedEntry.value = null
 }
 </script>
 
@@ -377,17 +377,13 @@ const isRowExpanded = (entryId: string): boolean => {
 
                 <!-- Actions -->
                 <td class="px-6 py-4 text-center text-sm space-x-2">
-                  <!-- Toggle Details Button -->
+                  <!-- View Details Button -->
                   <button
-                    @click="toggleDetailsRow(entry.id!)"
-                    :class="[
-                      'inline-block px-3 py-1 rounded font-medium transition-colors',
-                      isRowExpanded(entry.id!)
-                        ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    ]"
+                    @click="openDetailsModal(entry)"
+                    class="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 font-medium transition-colors"
+                    title="ดูรายละเอียด"
                   >
-                    {{ isRowExpanded(entry.id!) ? '▼' : '▶' }}
+                    👁
                   </button>
 
                   <!-- Edit Button -->
@@ -441,95 +437,6 @@ const isRowExpanded = (entryId: string): boolean => {
                   </button>
                 </td>
               </tr>
-
-              <!-- Details Row - Expected/Actual/Diff per-channel (Collapsible) -->
-              <tr v-if="isRowExpanded(entry.id!)" class="bg-gray-50 border-b border-gray-200">
-                <td colspan="6" class="px-6 py-3 text-xs">
-                  <div class="space-y-1">
-                    <!-- Section Header: Expected/Actual/Difference -->
-                    <div class="font-semibold text-gray-800 mb-2">ค่าที่คาดหวัง/ค่าจริง/ผลต่าง:</div>
-
-                    <!-- Expected Row -->
-                    <div v-if="entry.expectedCash !== undefined" class="flex flex-wrap gap-4">
-                      <span class="font-medium text-gray-700">ค่าที่คาดหวัง:</span>
-                      <span>💵 {{ formatCurrency(entry.expectedCash || 0) }}</span>
-                      <span>📱 {{ formatCurrency(entry.expectedQR || 0) }}</span>
-                      <span>🏦 {{ formatCurrency(entry.expectedBank || 0) }}</span>
-                      <span>🏛️ {{ formatCurrency(entry.expectedGovernment || 0) }}</span>
-                    </div>
-
-                    <!-- Actual Row -->
-                    <div class="flex flex-wrap gap-4">
-                      <span class="font-medium text-gray-700">ค่าจริง:</span>
-                      <span>💵 {{ formatCurrency(entry.posData.cash) }}</span>
-                      <span>📱 {{ formatCurrency(entry.posData.qr) }}</span>
-                      <span>🏦 {{ formatCurrency(entry.posData.bank) }}</span>
-                      <span>🏛️ {{ formatCurrency(entry.posData.government) }}</span>
-                    </div>
-
-                    <!-- Difference Row -->
-                    <div v-if="entry.differences" class="flex flex-wrap gap-4">
-                      <span class="font-medium text-gray-700">ผลต่าง:</span>
-                      <span :class="[entry.differences.cashDiff > 0 ? 'text-green-600' : entry.differences.cashDiff < 0 ? 'text-red-600' : 'text-gray-600']">
-                        💵 {{ formatCurrency(entry.differences.cashDiff) }}
-                      </span>
-                      <span :class="[entry.differences.qrDiff > 0 ? 'text-green-600' : entry.differences.qrDiff < 0 ? 'text-red-600' : 'text-gray-600']">
-                        📱 {{ formatCurrency(entry.differences.qrDiff) }}
-                      </span>
-                      <span :class="[entry.differences.bankDiff > 0 ? 'text-green-600' : entry.differences.bankDiff < 0 ? 'text-red-600' : 'text-gray-600']">
-                        🏦 {{ formatCurrency(entry.differences.bankDiff) }}
-                      </span>
-                      <span :class="[entry.differences.governmentDiff > 0 ? 'text-green-600' : entry.differences.governmentDiff < 0 ? 'text-red-600' : 'text-gray-600']">
-                        🏛️ {{ formatCurrency(entry.differences.governmentDiff) }}
-                      </span>
-                    </div>
-
-                    <!-- Problem Types Row (Audit Details) -->
-                    <div v-if="entry.auditDetails" class="flex flex-wrap gap-2 border-t border-gray-300 pt-2 mt-2">
-                      <span class="font-semibold text-gray-800 w-full">ประเภทปัญหาที่พบ:</span>
-                      <div class="w-full flex flex-wrap gap-2">
-                        <!-- Cash Problem -->
-                        <div v-if="entry.auditDetails.cashAuditNotes" class="flex items-center gap-1 bg-blue-50 px-3 py-1 rounded-full border border-blue-200 text-xs">
-                          <span class="font-semibold">💵</span>
-                          <span class="text-blue-900">{{ getProblemTypeLabel(entry.auditDetails.cashAuditNotes) }}</span>
-                        </div>
-
-                        <!-- QR Problem -->
-                        <div v-if="entry.auditDetails.qrAuditNotes" class="flex items-center gap-1 bg-purple-50 px-3 py-1 rounded-full border border-purple-200 text-xs">
-                          <span class="font-semibold">📱</span>
-                          <span class="text-purple-900">{{ getProblemTypeLabel(entry.auditDetails.qrAuditNotes) }}</span>
-                        </div>
-
-                        <!-- Bank Problem -->
-                        <div v-if="entry.auditDetails.bankAuditNotes" class="flex items-center gap-1 bg-green-50 px-3 py-1 rounded-full border border-green-200 text-xs">
-                          <span class="font-semibold">🏦</span>
-                          <span class="text-green-900">{{ getProblemTypeLabel(entry.auditDetails.bankAuditNotes) }}</span>
-                        </div>
-
-                        <!-- Government Problem -->
-                        <div v-if="entry.auditDetails.governmentAuditNotes" class="flex items-center gap-1 bg-amber-50 px-3 py-1 rounded-full border border-amber-200 text-xs">
-                          <span class="font-semibold">🏛️</span>
-                          <span class="text-amber-900">{{ getProblemTypeLabel(entry.auditDetails.governmentAuditNotes) }}</span>
-                        </div>
-
-                        <!-- No Problems Found -->
-                        <div v-if="!entry.auditDetails.cashAuditNotes && !entry.auditDetails.qrAuditNotes && !entry.auditDetails.bankAuditNotes && !entry.auditDetails.governmentAuditNotes" class="text-xs text-gray-500">
-                          ✓ ไม่พบปัญหา
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Approval Info -->
-                    <div v-if="entry.approvedAt && entry.approvedBy" class="border-t border-gray-300 pt-2 mt-2">
-                      <span class="font-semibold text-gray-800">ข้อมูลการอนุมัติ:</span>
-                      <div class="text-xs text-green-700 mt-1">
-                        ✓ อนุมัติเมื่อ: {{ formatApprovedDate(entry.approvedAt) }}
-                        <span> โดย: {{ getApproverName(entry.approvedBy) }}</span>
-                      </div>
-                    </div>
-                  </div>
-                </td>
-              </tr>
             </template>
           </tbody>
         </table>
@@ -545,7 +452,7 @@ const isRowExpanded = (entryId: string): boolean => {
           <select
             v-model.number="itemsPerPage"
             @change="currentPage = 1"
-            class="px-3 py-2 pr-8 min-w-fit border border-gray-300 rounded-lg text-sm text-gray-700 hover:border-gray-400 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-colors"
+            class="px-3 py-1 pr-8 min-w-fit border border-gray-300 rounded-lg text-sm text-gray-700 hover:border-gray-400 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-colors"
           >
             <option :value="10">10</option>
             <option :value="25">25</option>
@@ -592,5 +499,12 @@ const isRowExpanded = (entryId: string): boolean => {
         </div>
       </div>
     </div>
+
+    <!-- Details Modal -->
+    <DailySalesDetailsModal
+      :open="showDetailsModal"
+      :entry="selectedEntry"
+      @close="closeDetailsModal"
+    />
   </div>
 </template>

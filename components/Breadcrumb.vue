@@ -56,10 +56,14 @@ const labelMap: Record<string, string> = {
   'daily-sales': 'ยอดขาย',
   'sales-report': 'รายงานการขาย',
   // Finance pages
-  finance: 'บัญชีการเงิน',
+  finance: 'บันทึกรายวัน',
   'daily-expenses': 'รายรับ-รายจ่าย',
   'cash-flow': 'กระแสเงินสด',
   'monthly-report': 'รายงานประจำเดือน',
+  'money-transfer-service': 'บริการโอนเงิน',
+  'bill-payment-service': 'บริการรับชำระบิล',
+  'transaction-recording': 'บันทึกรายการ',
+  'cash-counting': 'ตรวจนับเงินสด',
   // HR pages
   hr: 'บุคคล',
   attendance: 'เวลาเข้าออก',

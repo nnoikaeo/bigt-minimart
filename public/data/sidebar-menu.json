@@ -1,0 +1,202 @@
+{
+  "menu": [
+    {
+      "groupKey": "dashboard",
+      "groupName": "หน้าหลัก",
+      "icon": "📊",
+      "pages": [
+        {
+          "pageKey": "dashboard",
+          "pageName": "หน้าหลัก",
+          "route": "/",
+          "requiredRoles": null
+        }
+      ]
+    },
+    {
+      "groupKey": "daily-records",
+      "groupName": "บันทึกรายวัน",
+      "icon": "🔄",
+      "pages": [
+        {
+          "pageKey": "daily-sales",
+          "icon": "⏹️",
+          "pageName": "ยอดขาย",
+          "route": "/sales/daily-sales",
+          "requiredRoles": [
+            "owner",
+            "manager",
+            "cashier",
+            "auditor",
+            "assistant_manager"
+          ]
+        },
+        {
+          "pageKey": "money-transfer-service",
+          "icon": "🏦",
+          "pageName": "บริการโอนเงิน",
+          "route": "/finance/money-transfer-service",
+          "requiredRoles": [
+            "owner",
+            "manager",
+            "auditor",
+            "assistant_manager"
+          ]
+        },
+        {
+          "pageKey": "bill-payment-service",
+          "icon": "💳",
+          "pageName": "บริการรับชำระบิล",
+          "route": "/finance/bill-payment-service",
+          "requiredRoles": [
+            "owner",
+            "manager",
+            "auditor",
+            "assistant_manager"
+          ]
+        },
+        {
+          "pageKey": "daily-expenses",
+          "icon": "💹",
+          "pageName": "รายรับ-รายจ่าย",
+          "route": "/finance/daily-expenses",
+          "requiredRoles": [
+            "manager",
+            "owner",
+            "auditor",
+            "assistant_manager"
+          ]
+        }
+      ]
+    },
+    {
+      "groupKey": "reports",
+      "groupName": "รายงาน",
+      "icon": "📊",
+      "pages": [
+        {
+          "pageKey": "sales-report",
+          "icon": "💰",
+          "pageName": "รายงานการขาย",
+          "route": "/sales/sales-report",
+          "requiredRoles": [
+            "assistant_manager",
+            "auditor",
+            "cashier",
+            "manager",
+            "owner"
+          ]
+        },
+        {
+          "pageKey": "cash-flow",
+          "icon": "💧",
+          "pageName": "กระแสเงินสด",
+          "route": "/finance/cash-flow",
+          "requiredRoles": [
+            "assistant_manager",
+            "auditor",
+            "manager",
+            "owner"
+          ]
+        },
+        {
+          "pageKey": "monthly-report",
+          "icon": "📑",
+          "pageName": "รายงานประจำเดือน",
+          "route": "/finance/monthly-report",
+          "requiredRoles": [
+            "assistant_manager",
+            "auditor",
+            "manager",
+            "owner"
+          ]
+        }
+      ]
+    },
+    {
+      "groupKey": "personnel",
+      "groupName": "บุคคล",
+      "icon": "👥",
+      "pages": [
+        {
+          "pageKey": "attendance",
+          "pageName": "เวลาเข้าออก",
+          "route": "/hr/attendance",
+          "requiredRoles": [
+            "assistant_manager",
+            "auditor",
+            "cashier",
+            "manager",
+            "owner"
+          ]
+        },
+        {
+          "pageKey": "overtime",
+          "pageName": "โอที",
+          "route": "/hr/overtime",
+          "requiredRoles": [
+            "assistant_manager",
+            "auditor",
+            "cashier",
+            "manager",
+            "owner"
+          ]
+        }
+      ]
+    },
+    {
+      "groupKey": "settings",
+      "groupName": "ตั้งค่า",
+      "icon": "⚙️",
+      "pages": [
+        {
+          "pageKey": "system-settings",
+          "pageName": "ตั้งค่าระบบ",
+          "route": "/settings/system-settings",
+          "requiredRoles": [
+            "owner"
+          ]
+        },
+        {
+          "pageKey": "profile-settings",
+          "pageName": "เพิ่มเติม",
+          "route": "/settings/others",
+          "requiredRoles": [
+            "owner"
+          ]
+        }
+      ]
+    },
+    {
+      "groupKey": "admin",
+      "groupName": "ผู้ดูแลระบบ",
+      "icon": "🔐",
+      "pages": [
+        {
+          "pageKey": "access-control",
+          "pageName": "จัดการสิทธิ์การเข้าถึง",
+          "route": "/admin/access-control",
+          "requiredRoles": [
+            "owner"
+          ]
+        },
+        {
+          "pageKey": "audit-log",
+          "pageName": "บันทึกการกระทำ",
+          "route": "/admin/audit-log",
+          "requiredRoles": [
+            "owner"
+          ]
+        },
+        {
+          "pageKey": "system-logs",
+          "pageName": "บันทึกระบบ",
+          "route": "/admin/system-logs",
+          "requiredRoles": [
+            "owner"
+          ]
+        }
+      ]
+    }
+  ]
+}
