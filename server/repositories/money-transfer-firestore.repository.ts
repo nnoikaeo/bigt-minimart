@@ -28,6 +28,7 @@ import type {
   MoneyTransferDailySummary,
   MoneyTransferBalance,
   IMoneyTransferRepository,
+  FavoriteTransfer,
 } from '~/types/repositories'
 
 /**
@@ -590,6 +591,86 @@ export class MoneyTransferFirestoreRepository implements IMoneyTransferRepositor
       },
       workflowStatus,
     })
+  }
+
+  // ============================================================================
+  // BALANCE EXTENDED OPERATIONS
+  // ============================================================================
+
+  /**
+   * WRITE: Set opening balance for a date
+   */
+  async setOpeningBalance(date: string, amount: number, source: 'carryover' | 'manual', userId?: string): Promise<MoneyTransferBalance> {
+    return this.updateBalance(date, {
+      openingBalance: amount,
+      openingBalanceSetAt: new Date().toISOString(),
+      openingBalanceSource: source,
+      openingBalanceSetBy: userId,
+    })
+  }
+
+  /**
+   * READ: Get previous day's balance
+   */
+  async getPreviousDayBalance(date: string): Promise<MoneyTransferBalance | null> {
+    const prevDate = new Date(date)
+    prevDate.setDate(prevDate.getDate() - 1)
+    const prevDateStr = prevDate.toISOString().split('T')[0] as string
+    return this.getBalance(prevDateStr)
+  }
+
+  // ============================================================================
+  // FAVORITES OPERATIONS
+  // ============================================================================
+
+  private favoritesCollection = 'money_transfer_favorites'
+
+  /**
+   * READ: Get all favorites
+   */
+  async getFavorites(): Promise<FavoriteTransfer[]> {
+    const col = collection(this.db, this.favoritesCollection)
+    const snap = await getDocs(col)
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as FavoriteTransfer))
+  }
+
+  /**
+   * READ: Get favorites by tab
+   */
+  async getFavoritesByTab(tab: 1 | 2 | 3 | 4 | 5): Promise<FavoriteTransfer[]> {
+    const col = collection(this.db, this.favoritesCollection)
+    const q = query(col, where('tab', '==', tab))
+    const snap = await getDocs(q)
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as FavoriteTransfer))
+  }
+
+  /**
+   * WRITE: Add a new favorite
+   */
+  async addFavorite(data: Omit<FavoriteTransfer, 'id' | 'createdAt'>): Promise<FavoriteTransfer> {
+    const col = collection(this.db, this.favoritesCollection)
+    const newData = { ...data, createdAt: new Date().toISOString() }
+    const docRef = await addDoc(col, newData)
+    return { id: docRef.id, ...newData } as FavoriteTransfer
+  }
+
+  /**
+   * WRITE: Update existing favorite
+   */
+  async updateFavorite(id: string, updates: Partial<Omit<FavoriteTransfer, 'id' | 'createdAt'>>): Promise<FavoriteTransfer> {
+    const docRef = doc(this.db, this.favoritesCollection, id)
+    await updateDoc(docRef, updates as Record<string, unknown>)
+    const snap = await getDoc(docRef)
+    if (!snap.exists()) throw new Error(`Favorite ${id} not found`)
+    return { id: snap.id, ...snap.data() } as FavoriteTransfer
+  }
+
+  /**
+   * WRITE: Delete a favorite
+   */
+  async deleteFavorite(id: string): Promise<void> {
+    const docRef = doc(this.db, this.favoritesCollection, id)
+    await deleteDoc(docRef)
   }
 
   // ============================================================================

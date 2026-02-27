@@ -9,7 +9,7 @@ export default defineNuxtRouteMiddleware(async () => {
   if (process.server) return
 
   const store = useMoneyTransferStore()
-  const today = new Date().toISOString().split('T')[0]
+  const today = new Date().toISOString().split('T')[0] as string
 
   // Fetch summary if not yet loaded (e.g. direct URL access / bookmark)
   if (!store.currentSummary) {

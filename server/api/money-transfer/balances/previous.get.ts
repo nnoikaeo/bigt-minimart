@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
     await moneyTransferJsonRepository.init()
 
     const query = getQuery(event)
-    const date = (query.date as string) || new Date().toISOString().split('T')[0]
+    const date = (query.date as string) || (new Date().toISOString().split('T')[0] as string)
 
     console.log(`[GET /api/money-transfer/balances/previous] Fetching previous day balance for ${date}`)
 

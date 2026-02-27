@@ -232,7 +232,7 @@ async function handleDateChange() {
   }
 }
 
-function openNewTransactionModal(preset: 'transfer' | 'withdrawal' | '' = '') {
+function openNewTransactionModal(preset: 'transfer' | 'withdrawal' | 'owner_deposit' | '' = '') {
   editingTransaction.value = null
   presetType.value = preset
   showTransactionModal.value = true

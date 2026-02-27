@@ -52,10 +52,10 @@ const step2Data = computed(() => store.currentSummary?.step2)
 const auditData = computed(() => store.currentSummary?.auditorVerification)
 
 const auditResultLabel = computed(() => {
-  const result = auditData.value?.result
+  const result = auditData.value?.auditResult
   if (result === 'no_issues') return { text: 'ไม่พบปัญหา', colorClass: 'text-green-700', containerClass: 'bg-green-50 border-green-200 text-green-700' }
-  if (result === 'issues_found') return { text: 'พบปัญหาเล็กน้อย', colorClass: 'text-yellow-700', containerClass: 'bg-yellow-50 border-yellow-200 text-yellow-700' }
-  if (result === 'rejected') return { text: 'ส่งคืนแก้ไข', colorClass: 'text-red-700', containerClass: 'bg-red-50 border-red-200 text-red-700' }
+  if (result === 'minor_issues') return { text: 'พบปัญหาเล็กน้อย', colorClass: 'text-yellow-700', containerClass: 'bg-yellow-50 border-yellow-200 text-yellow-700' }
+  if (result === 'major_issues') return { text: 'พบปัญหาสำคัญ', colorClass: 'text-red-700', containerClass: 'bg-red-50 border-red-200 text-red-700' }
   return { text: 'ตรวจสอบแล้ว', colorClass: 'text-blue-700', containerClass: 'bg-blue-50 border-blue-200 text-blue-700' }
 })
 
@@ -82,9 +82,10 @@ function formatCurrency(value: number): string {
   return new Intl.NumberFormat('th-TH', { minimumFractionDigits: 0 }).format(value)
 }
 
-function formatDateTime(dt: string | undefined): string {
+function formatDateTime(dt: string | Date | undefined): string {
   if (!dt) return '-'
-  return new Date(dt).toLocaleString('th-TH', {
+  const str = typeof dt === 'string' ? dt : dt.toISOString()
+  return new Date(str).toLocaleString('th-TH', {
     year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit',
   })
@@ -207,8 +208,8 @@ onMounted(async () => {
         <p class="text-sm text-green-700 mt-1">
           วันที่ {{ selectedDate }} — ได้รับการอนุมัติจาก Owner เรียบร้อยแล้ว
         </p>
-        <p v-if="store.currentSummary?.ownerApproval?.notes" class="text-sm text-green-700 mt-1">
-          หมายเหตุ: {{ store.currentSummary?.ownerApproval?.notes }}
+        <p v-if="store.currentSummary?.ownerApproval?.ownerNotes" class="text-sm text-green-700 mt-1">
+          หมายเหตุ: {{ store.currentSummary?.ownerApproval?.ownerNotes }}
         </p>
       </div>
     </div>
@@ -244,7 +245,7 @@ onMounted(async () => {
               </div>
               <div class="bg-green-50 rounded-lg p-3 text-center">
                 <p class="text-xs text-green-600 mb-1">เงินสดจากโอน</p>
-                <p class="font-semibold text-green-900">{{ formatCurrency(store.currentBalance?.cashFromTransfers ?? 0) }} ฿</p>
+                <p class="font-semibold text-green-900">{{ formatCurrency(store.currentBalance?.transferCash ?? 0) }} ฿</p>
               </div>
               <div class="bg-yellow-50 rounded-lg p-3 text-center">
                 <p class="text-xs text-yellow-600 mb-1">ค่าบริการ (เงินสด)</p>
@@ -273,24 +274,24 @@ onMounted(async () => {
             <div v-if="step2Data" class="space-y-2 text-sm">
               <div class="flex items-center justify-between py-1.5 px-3 rounded-lg bg-gray-50">
                 <span class="text-gray-600">เงินสดโอน/ถอน (นับจริง A)</span>
-                <span class="font-medium">{{ formatCurrency(step2Data.actualCashA ?? 0) }} ฿</span>
+                <span class="font-medium">{{ formatCurrency(step2Data.actualCash?.transferWithdrawal ?? 0) }} ฿</span>
               </div>
               <div class="flex items-center justify-between py-1.5 px-3 rounded-lg bg-gray-50">
                 <span class="text-gray-600">ค่าบริการเงินสด (นับจริง B)</span>
-                <span class="font-medium">{{ formatCurrency(step2Data.actualCashB ?? 0) }} ฿</span>
+                <span class="font-medium">{{ formatCurrency(step2Data.actualCash?.serviceFee ?? 0) }} ฿</span>
               </div>
               <div
                 class="flex items-center justify-between py-1.5 px-3 rounded-lg"
-                :class="step2Data.verificationStatus === 'match' ? 'bg-green-50' : 'bg-yellow-50'"
+                :class="step2Data.hasDiscrepancies ? 'bg-yellow-50' : 'bg-green-50'"
               >
                 <span class="text-gray-600">ผลการตรวจนับ</span>
-                <BaseBadge :variant="step2Data.verificationStatus === 'match' ? 'success' : 'warning'" size="sm">
-                  {{ step2Data.verificationStatus === 'match' ? 'ตรงกัน ✅' : 'มีส่วนต่าง ⚠️' }}
+                <BaseBadge :variant="step2Data.hasDiscrepancies ? 'warning' : 'success'" size="sm">
+                  {{ step2Data.hasDiscrepancies ? 'มีส่วนต่าง ⚠️' : 'ตรงกัน ✅' }}
                 </BaseBadge>
               </div>
-              <div v-if="step2Data.notes" class="py-1.5 px-3 rounded-lg bg-gray-50">
+              <div v-if="step2Data.verificationNotes" class="py-1.5 px-3 rounded-lg bg-gray-50">
                 <span class="text-gray-500 text-xs">หมายเหตุ Step 2:</span>
-                <p class="text-gray-700 mt-0.5">{{ step2Data.notes }}</p>
+                <p class="text-gray-700 mt-0.5">{{ step2Data.verificationNotes }}</p>
               </div>
             </div>
             <p v-else class="text-sm text-gray-500 italic">ไม่มีข้อมูล Step 2</p>
@@ -319,9 +320,9 @@ onMounted(async () => {
                 <span class="text-gray-500 text-xs">Audit Notes:</span>
                 <p class="text-gray-700 mt-0.5 whitespace-pre-wrap">{{ auditData.auditNotes }}</p>
               </div>
-              <div v-if="auditData.bankStatementAmount" class="flex items-center justify-between py-1.5 px-3 rounded-lg bg-gray-50">
-                <span class="text-gray-600">Bank Statement Amount</span>
-                <span class="font-medium">{{ formatCurrency(auditData.bankStatementAmount) }} ฿</span>
+              <div class="flex items-center justify-between py-1.5 px-3 rounded-lg bg-gray-50">
+                <span class="text-gray-600">Bank Statement Verified</span>
+                <span class="font-medium">{{ auditData.bankStatementVerified ? 'ใช่ ✅' : 'ไม่ใช่' }}</span>
               </div>
             </div>
             <p v-else class="text-sm text-gray-500 italic">ไม่มีข้อมูล Audit</p>
@@ -410,24 +411,24 @@ onMounted(async () => {
               <div class="grid grid-cols-2 gap-3">
                 <div class="bg-gray-50 rounded-lg p-3">
                   <p class="text-xs text-gray-500 mb-1">ยอดที่ควรจะมี (A)</p>
-                  <p class="font-medium">{{ formatCurrency(step2Data.expectedCashA ?? 0) }} ฿</p>
+                  <p class="font-medium">{{ formatCurrency(step2Data.expectedCash?.transferWithdrawal ?? 0) }} ฿</p>
                 </div>
                 <div class="bg-gray-50 rounded-lg p-3">
                   <p class="text-xs text-gray-500 mb-1">นับจริง (A)</p>
-                  <p class="font-medium">{{ formatCurrency(step2Data.actualCashA ?? 0) }} ฿</p>
+                  <p class="font-medium">{{ formatCurrency(step2Data.actualCash?.transferWithdrawal ?? 0) }} ฿</p>
                 </div>
                 <div class="bg-gray-50 rounded-lg p-3">
                   <p class="text-xs text-gray-500 mb-1">ยอดที่ควรจะมี (B)</p>
-                  <p class="font-medium">{{ formatCurrency(step2Data.expectedCashB ?? 0) }} ฿</p>
+                  <p class="font-medium">{{ formatCurrency(step2Data.expectedCash?.serviceFee ?? 0) }} ฿</p>
                 </div>
                 <div class="bg-gray-50 rounded-lg p-3">
                   <p class="text-xs text-gray-500 mb-1">นับจริง (B)</p>
-                  <p class="font-medium">{{ formatCurrency(step2Data.actualCashB ?? 0) }} ฿</p>
+                  <p class="font-medium">{{ formatCurrency(step2Data.actualCash?.serviceFee ?? 0) }} ฿</p>
                 </div>
               </div>
-              <div v-if="step2Data.notes" class="bg-gray-50 rounded-lg p-3">
+              <div v-if="step2Data.verificationNotes" class="bg-gray-50 rounded-lg p-3">
                 <p class="text-xs text-gray-500 mb-1">หมายเหตุ</p>
-                <p class="text-gray-700">{{ step2Data.notes }}</p>
+                <p class="text-gray-700">{{ step2Data.verificationNotes }}</p>
               </div>
             </div>
             <p v-else class="text-sm text-gray-500 italic">ไม่มีข้อมูล</p>
@@ -454,9 +455,9 @@ onMounted(async () => {
                   <span class="text-gray-500">ผล Audit</span>
                   <span class="font-medium" :class="auditResultLabel.colorClass">{{ auditResultLabel.text }}</span>
                 </div>
-                <div v-if="auditData.bankStatementAmount" class="flex justify-between">
-                  <span class="text-gray-500">Bank Statement</span>
-                  <span class="font-medium">{{ formatCurrency(auditData.bankStatementAmount) }} ฿</span>
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Bank Statement Verified</span>
+                  <span class="font-medium">{{ auditData.bankStatementVerified ? 'ใช่ ✅' : 'ไม่ใช่' }}</span>
                 </div>
                 <div v-if="auditData.completedAt" class="flex justify-between">
                   <span class="text-gray-500">เวลา Audit</span>
@@ -467,9 +468,9 @@ onMounted(async () => {
                 <p class="text-xs text-gray-500 mb-1">Audit Notes</p>
                 <p class="text-gray-700 whitespace-pre-wrap">{{ auditData.auditNotes }}</p>
               </div>
-              <div v-if="auditData.issueDetails" class="bg-yellow-50 rounded-lg p-3">
+              <div v-if="auditData.issuesFound?.length" class="bg-yellow-50 rounded-lg p-3">
                 <p class="text-xs text-yellow-600 mb-1">รายละเอียดปัญหา</p>
-                <p class="text-yellow-800">{{ auditData.issueDetails }}</p>
+                <p class="text-yellow-800">{{ auditData.issuesFound?.join(', ') }}</p>
               </div>
             </div>
             <p v-else class="text-sm text-gray-500 italic">ไม่มีข้อมูล</p>
@@ -581,7 +582,7 @@ onMounted(async () => {
       <!-- ─── Action Buttons ──────────────────────────────────────── -->
       <div v-if="!store.isApproved" class="flex flex-col sm:flex-row items-center justify-between gap-3 py-4">
         <BaseButton
-          variant="outline"
+          variant="secondary"
           @click="router.push('/finance/money-transfer-service/auditor-review')"
         >
           ⬅️ กลับหน้า Auditor
@@ -613,7 +614,7 @@ onMounted(async () => {
       <!-- Approved state back button -->
       <div v-else class="flex justify-start py-4">
         <BaseButton
-          variant="outline"
+          variant="secondary"
           @click="router.push('/finance/money-transfer-service/transaction-recording')"
         >
           ⬅️ กลับหน้าหลัก

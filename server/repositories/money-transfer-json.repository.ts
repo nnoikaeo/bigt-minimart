@@ -644,9 +644,10 @@ export class MoneyTransferJsonRepository implements IMoneyTransferRepository {
   async updateFavorite(id: string, data: Partial<Omit<FavoriteTransfer, 'id' | 'createdAt'>>): Promise<FavoriteTransfer> {
     const idx = this.favorites.findIndex(f => f.id === id)
     if (idx === -1) throw new Error(`Favorite ${id} not found`)
-    this.favorites[idx] = { ...this.favorites[idx], ...data }
+    const existing = this.favorites[idx]!
+    this.favorites[idx] = { ...existing, ...data }
     await this.save()
-    return this.favorites[idx]
+    return this.favorites[idx]!
   }
 
   /**

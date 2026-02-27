@@ -275,14 +275,14 @@ const emit = defineEmits<Emits>()
 
 // ── Static data ───────────────────────────────────────────────
 const transactionTypes = [
-  { value: 'transfer', label: 'โอนเงิน' },
-  { value: 'withdrawal', label: 'ถอนเงิน' },
-  { value: 'owner_deposit', label: 'ฝากเงิน' },
+  { value: 'transfer' as const, label: 'โอนเงิน' },
+  { value: 'withdrawal' as const, label: 'ถอนเงิน' },
+  { value: 'owner_deposit' as const, label: 'ฝากเงิน' },
 ]
 
 const channels = [
-  { value: 'bank', label: 'ธนาคาร' },
-  { value: 'promptpay', label: 'พร้อมเพย์' },
+  { value: 'bank' as const, label: 'ธนาคาร' },
+  { value: 'promptpay' as const, label: 'พร้อมเพย์' },
 ]
 
 const bankList = [
