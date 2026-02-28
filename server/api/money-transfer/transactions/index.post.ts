@@ -145,8 +145,8 @@ export default defineEventHandler(async (event) => {
       accountNumber: validatedData.accountNumber,
       accountName: validatedData.accountName,
       amount: validatedData.amount,
-      commission: validatedData.commission || 0,
-      commissionType: validatedData.commissionType,
+      commission: validatedData.transactionType === 'owner_deposit' ? 0 : (validatedData.commission || 0),
+      commissionType: validatedData.transactionType === 'owner_deposit' ? undefined : validatedData.commissionType,
       customerName: validatedData.customerName,
       status: finalStatus,
       draftReason,
@@ -196,7 +196,9 @@ export default defineEventHandler(async (event) => {
         completedTransactions: completed.length,
         draftTransactions: transactions.filter(t => t.status === 'draft').length,
         totalAmount: completed.reduce((sum, t) => sum + t.amount, 0),
-        totalCommission: completed.reduce((sum, t) => sum + (t.commission || 0), 0),
+        totalCommission: completed
+          .filter(t => t.transactionType !== 'owner_deposit')
+          .reduce((sum, t) => sum + (t.commission || 0), 0),
       },
     })
 
