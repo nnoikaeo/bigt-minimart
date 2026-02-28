@@ -117,8 +117,7 @@
     "datetime": "2026-02-27T14:54:05.318Z",
     "transactionType": "owner_deposit",
     "amount": 10000,
-    "commission": 40,
-    "commissionType": "cash",
+    "commission": 0,
     "status": "completed",
     "recordedBy": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2",
     "recordedByName": "นพพล น้อยแก้ว",
@@ -136,5 +135,33 @@
     "id": "mts-1772204045332-uuwfdbcu7",
     "createdAt": "2026-02-27T14:54:05.332Z",
     "updatedAt": "2026-02-27T14:54:05.332Z"
+  },
+  {
+    "date": "2026-02-27",
+    "datetime": "2026-02-27T20:02:16.368Z",
+    "transactionType": "transfer",
+    "channel": "bank",
+    "bankName": "ธนาคารออมสิน (GSB)",
+    "accountNumber": "020469430241",
+    "accountName": "ธงชัย เปรมปรีดา",
+    "amount": 500,
+    "commission": 10,
+    "commissionType": "cash",
+    "status": "completed",
+    "recordedBy": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2",
+    "recordedByName": "นพพล น้อยแก้ว",
+    "balanceImpact": {
+      "bankAccountBefore": 7710,
+      "bankAccountAfter": 7210,
+      "transferCashBefore": 12300,
+      "transferCashAfter": 12800,
+      "serviceFeeBeforeCash": 90,
+      "serviceFeeAfterCash": 100,
+      "serviceFeeBeforeTransfer": 10,
+      "serviceFeeAfterTransfer": 10
+    },
+    "id": "mts-1772222536380-83qqg4tex",
+    "createdAt": "2026-02-27T20:02:16.380Z",
+    "updatedAt": "2026-02-27T20:02:16.380Z"
   }
 ]

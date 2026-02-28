@@ -79,31 +79,8 @@ const isFormValid = computed(() =>
 )
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('th-TH', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount) + ' ฿'
-}
-
-function formatTime(datetime: string | Date): string {
-  return new Date(datetime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
-}
-
-function getTransactionTypeLabel(type: string): string {
-  const map: Record<string, string> = {
-    transfer: 'โอนเงิน',
-    withdrawal: 'ถอนเงิน',
-    owner_deposit: 'เจ้าของฝากเงิน',
-  }
-  return map[type] || type
-}
-
-function getChannelLabel(channel?: string): string {
-  if (!channel) return '-'
-  const map: Record<string, string> = { promptpay: 'PromptPay', bank: 'โอนธนาคาร', other: 'อื่นๆ' }
-  return map[channel] || channel
-}
+const { formatCurrency, formatTime, getTransactionTypeLabel, getChannelLabel } =
+  useMoneyTransferHelpers()
 
 function diffClass(diff: number): string {
   if (diff === 0) return 'text-green-700'
