@@ -1,1 +1,67 @@
-[]
+[
+  {
+    "tab": 1,
+    "order": 1,
+    "name": "ธงชัย เปรมปรีดา",
+    "channel": "bank",
+    "identifier": "020469430241",
+    "identifierType": "phone",
+    "bankName": "ธนาคารออมสิน (GSB)",
+    "id": "fav-1772220413517-v3gapty5c",
+    "createdAt": "2026-02-27T19:26:53.517Z"
+  },
+  {
+    "tab": 1,
+    "order": 2,
+    "name": "ภูมิทัศน์ (บอย)",
+    "channel": "bank",
+    "identifier": "6782410739",
+    "identifierType": "phone",
+    "bankName": "ธนาคารไทยพาณิชย์ (SCB)",
+    "id": "fav-1772221299011-9ckpp9mrp",
+    "createdAt": "2026-02-27T19:41:39.011Z"
+  },
+  {
+    "tab": 1,
+    "order": 3,
+    "name": "น้ำอ้อย",
+    "channel": "bank",
+    "identifier": "7300278264",
+    "identifierType": "phone",
+    "bankName": "ธนาคารกรุงไทย (KTB)",
+    "id": "fav-1772221352163-di6tzd00m",
+    "createdAt": "2026-02-27T19:42:32.163Z"
+  },
+  {
+    "tab": 1,
+    "order": 4,
+    "name": "สรายุทธ (บอย)",
+    "channel": "bank",
+    "identifier": "0683530433",
+    "identifierType": "phone",
+    "bankName": "ธนาคารกสิกรไทย (KBank)",
+    "id": "fav-1772221707284-rtl1misyf",
+    "createdAt": "2026-02-27T19:48:27.284Z"
+  },
+  {
+    "tab": 1,
+    "order": 5,
+    "name": "ดวงใจ",
+    "channel": "bank",
+    "identifier": "7832051416",
+    "identifierType": "phone",
+    "bankName": "ธนาคารกสิกรไทย (KBank)",
+    "id": "fav-1772221934994-o22m9q1mp",
+    "createdAt": "2026-02-27T19:52:14.994Z"
+  },
+  {
+    "tab": 2,
+    "order": 1,
+    "name": "ชณิภรณ์ (โบว์)",
+    "channel": "promptpay",
+    "identifier": "1729900314648",
+    "identifierType": "idcard",
+    "id": "fav-1772222110505-1y1aoullu",
+    "createdAt": "2026-02-27T19:55:10.505Z"
+  }
+]

@@ -255,7 +255,7 @@
 
 <script setup lang="ts">
 import type { MoneyTransferBalance } from '~/types/repositories'
-import { useDailyRecordSettingsStore } from '~/stores/daily-record-settings'
+import { BANK_LIST } from '~/constants/banks'
 
 // ── Props & Emits ─────────────────────────────────────────────
 interface Props {
@@ -286,22 +286,7 @@ const channels = [
   { value: 'promptpay' as const, label: 'พร้อมเพย์' },
 ]
 
-const bankList = [
-  'ธนาคารกสิกรไทย (KBank)',
-  'ธนาคารกรุงไทย (KTB)',
-  'ธนาคารกรุงเทพ (BBL)',
-  'ธนาคารไทยพาณิชย์ (SCB)',
-  'ธนาคารกรุงศรีอยุธยา (BAY)',
-  'ธนาคารออมสิน (GSB)',
-  'ธนาคารอาคารสงเคราะห์ (GHB)',
-  'ธนาคารทหารไทยธนชาต (TTB)',
-  'ธนาคาร UOB',
-  'ธนาคาร CIMB',
-  'ธนาคาร LH Bank',
-  'ธนาคารทิสโก้ (TISCO)',
-  'ธนาคารเกียรตินาคินภัทร (KKP)',
-  'ธนาคารอื่นๆ',
-]
+const bankList = BANK_LIST
 
 // ── Form state ────────────────────────────────────────────────
 const formData = ref({
@@ -317,32 +302,20 @@ const formData = ref({
   notes: props.editingData?.notes ?? '',
 })
 
-// ── Fee settings store ────────────────────────────────────────
-const settingsStore = useDailyRecordSettingsStore()
-
-onMounted(async () => {
-  // Load fee tiers from server (fast local JSON read).
-  // Falls back to built-in defaults if the file doesn't exist yet.
-  await settingsStore.fetchMoneyTransferFees()
-})
-
 // ── Commission auto-calc ──────────────────────────────────────
-const isCommissionManual = ref(false)
-const manualCommission = ref<number>(props.editingData?.commission ?? 0)
+const commissionAmount = computed(() => Number(formData.value.amount))
+const {
+  isManual: isCommissionManual,
+  manualValue: manualCommission,
+  effectiveCommission,
+  reset: resetCommission,
+} = useCommission(commissionAmount)
 
-/**
- * Calculate commission from the configured fee tiers.
- * Uses progressive 10,000-block algorithm from useDailyRecordSettingsStore.
- */
-const autoCommission = computed(() => {
-  const amount = formData.value.amount
-  if (amount <= 0) return 0
-  return settingsStore.calculateFee(amount).totalFee
-})
-
-const effectiveCommission = computed(() =>
-  isCommissionManual.value ? manualCommission.value : autoCommission.value
-)
+// Pre-fill commission when editing an existing transaction
+if (props.editingData?.commission != null && props.editingData.commission > 0) {
+  manualCommission.value = props.editingData.commission
+  isCommissionManual.value = true
+}
 
 const commissionInput = computed({
   get: () => effectiveCommission.value,
@@ -351,10 +324,6 @@ const commissionInput = computed({
     isCommissionManual.value = true
   },
 })
-
-function resetCommission() {
-  isCommissionManual.value = false
-}
 
 // ── Balance check ─────────────────────────────────────────────
 /**
@@ -403,13 +372,7 @@ const bannerInfo = computed(() => {
 })
 
 // ── Helpers ───────────────────────────────────────────────────
-function formatCurrency(val: number): string {
-  return new Intl.NumberFormat('th-TH', {
-    style: 'currency',
-    currency: 'THB',
-    minimumFractionDigits: 0,
-  }).format(val)
-}
+const { formatCurrency } = useMoneyTransferHelpers()
 
 // ── Validation & Submit ───────────────────────────────────────
 const isSubmitting = ref(false)

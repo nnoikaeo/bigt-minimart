@@ -4,6 +4,7 @@ import { useDailyRecordSettingsStore } from '~/stores/daily-record-settings'
 import { useLogger } from '~/composables/useLogger'
 import { usePermissions } from '~/composables/usePermissions'
 import { PERMISSIONS } from '~/types/permissions'
+import { BANK_LIST } from '~/constants/banks'
 import {
   PlusIcon,
   StarIcon,
@@ -32,11 +33,7 @@ const { can } = usePermissions()
 const usingDefaultFees = computed(() => settingsStore.moneyTransferFees.updatedAt === null)
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
-const authStore = useAuthStore()
-const currentUser = computed(() => ({
-  uid: authStore.user?.uid ?? '',
-  displayName: authStore.user?.displayName ?? 'Unknown',
-}))
+const { currentUser } = useCurrentUser()
 
 // ─── State ───────────────────────────────────────────────────────────────────
 const selectedDate = ref<string>(new Date().toISOString().split('T')[0] ?? '')
@@ -63,7 +60,13 @@ const presetType = ref<'transfer' | 'withdrawal' | 'owner_deposit' | ''>('')
 const favStep = ref<1 | 2>(1)
 const selectedFavorite = ref<any>(null)
 const favAmount = ref<number>(0)
-const favCommission = ref<number>(0)
+const favCommissionType = ref<'cash' | 'transfer'>('cash')
+const {
+  isManual: favIsCommissionManual,
+  manualValue: favManualCommission,
+  effectiveCommission: favEffectiveCommission,
+  reset: resetFavCommission,
+} = useCommission(favAmount)
 
 // Owner Deposit modal state
 const ownerDepositAmount = ref<number>(0)
@@ -152,15 +155,20 @@ const favTabItems = computed(() =>
 /** True when the current tab already has 10 favorites */
 const favTabFull = computed(() => favTabItems.value.length >= 10)
 
-const favBalanceAfter = computed(() => {
+
+/** Banner info สำหรับ Favorite Transfer — mirror pattern เดียวกับ bannerInfo ใน TransactionForm */
+const favBannerInfo = computed(() => {
   const balance = store.currentBalance?.bankAccount ?? 0
-  return balance - favAmount.value
+  const amount = Number(favAmount.value)
+  return {
+    balanceLabel: 'ยอดเงินในบัญชี',
+    current: balance,
+    after: balance - amount,
+    ok: balance >= amount,
+  }
 })
 
-const isInsufficientFunds = computed(() => {
-  const balance = store.currentBalance?.bankAccount ?? 0
-  return favAmount.value > 0 && favAmount.value > balance
-})
+const isInsufficientFunds = computed(() => Number(favAmount.value) > 0 && !favBannerInfo.value.ok)
 
 const ownerDepositBalanceAfter = computed(() => {
   const balance = store.currentBalance?.bankAccount ?? 0
@@ -168,62 +176,15 @@ const ownerDepositBalanceAfter = computed(() => {
 })
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('th-TH', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount) + ' ฿'
-}
-
-function formatTime(datetime: string | Date): string {
-  return new Date(datetime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
-}
-
-function formatDatetime(datetime: string | Date): string {
-  const d = new Date(datetime)
-  const date = d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' })
-  const time = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
-  return `${date} ${time}`
-}
-
-function getTransactionTypeLabel(type: string): string {
-  const map: Record<string, string> = {
-    transfer: 'โอนเงิน',
-    withdrawal: 'ถอนเงิน',
-    owner_deposit: 'ฝากเงิน',
-  }
-  return map[type] || type
-}
-
-function getChannelLabel(channel?: string): string {
-  if (!channel) return '-'
-  const map: Record<string, string> = {
-    promptpay: 'PromptPay',
-    bank: 'โอนธนาคาร',
-    other: 'อื่นๆ',
-  }
-  return map[channel] || channel
-}
-
-function getStatusBadgeVariant(status: string): 'success' | 'warning' | 'error' | 'default' {
-  const map: Record<string, 'success' | 'warning' | 'error' | 'default'> = {
-    completed: 'success',
-    draft: 'warning',
-    failed: 'error',
-    cancelled: 'default',
-  }
-  return map[status] ?? 'default'
-}
-
-function getStatusLabel(status: string): string {
-  const map: Record<string, string> = {
-    completed: 'สำเร็จ',
-    draft: 'รอดำเนินการ',
-    failed: 'ล้มเหลว',
-    cancelled: 'ยกเลิก',
-  }
-  return map[status] || status
-}
+const {
+  formatCurrency,
+  formatTime,
+  formatDatetime,
+  getTransactionTypeLabel,
+  getChannelLabel,
+  getStatusBadgeVariant,
+  getStatusLabel,
+} = useMoneyTransferHelpers()
 
 function canCompleteDraft(draft: any): boolean {
   return (store.currentBalance?.bankAccount ?? 0) >= draft.amount
@@ -265,7 +226,8 @@ async function openFavoriteModal() {
   favStep.value = 1
   selectedFavorite.value = null
   favAmount.value = 0
-  favCommission.value = 0
+  resetFavCommission()
+  favCommissionType.value = 'cash'
   favTab.value = 1
   favMode.value = 'select'
   deletingFavoriteId.value = ''
@@ -307,7 +269,8 @@ function selectFavorite(fav: any) {
   selectedFavorite.value = fav
   favStep.value = 2
   favAmount.value = 0
-  favCommission.value = 0
+  resetFavCommission()
+  favCommissionType.value = 'cash'
 }
 
 function openAddFavoriteForm() {
@@ -375,32 +338,32 @@ async function confirmDeleteFavorite() {
   }
 }
 
-function calcFavCommission() {
-  // Auto-calculate: 1% min 10 ฿
-  if (favAmount.value > 0) {
-    favCommission.value = Math.max(10, Math.floor(favAmount.value * 0.01))
-  } else {
-    favCommission.value = 0
-  }
-}
-
 async function handleSubmitFavorite() {
   if (!selectedFavorite.value || favAmount.value <= 0) return
   try {
-    const data = {
+    const fav = selectedFavorite.value
+    const data: Record<string, any> = {
       date: selectedDate.value,
       datetime: new Date().toISOString(),
       transactionType: 'transfer',
-      channel: selectedFavorite.value.channel,
-      amount: favAmount.value,
-      commission: favCommission.value,
-      commissionType: 'cash',
-      destinationName: selectedFavorite.value.name,
-      destinationIdentifier: selectedFavorite.value.identifier,
+      channel: fav.channel,
+      amount: Number(favAmount.value),
+      commission: favEffectiveCommission.value,
+      commissionType: favCommissionType.value,
+      destinationName: fav.name,
+      destinationIdentifier: fav.identifier,
+      accountName: fav.name,
       recordedBy: currentUser.value.uid,
       recordedByName: currentUser.value.displayName,
       status: isInsufficientFunds.value ? 'draft' : 'completed',
       draftReason: isInsufficientFunds.value ? 'insufficient_funds' : undefined,
+    }
+    if (fav.channel === 'bank') {
+      data.bankName = fav.bankName ?? ''
+      data.accountNumber = fav.identifier
+    } else if (fav.channel === 'promptpay') {
+      data.promptpayIdentifier = fav.identifier
+      data.promptpayIdentifierType = fav.identifierType ?? 'phone'
     }
     await store.createTransaction(data)
     successMessage.value = isInsufficientFunds.value
@@ -530,7 +493,6 @@ onMounted(async () => {
     if (selectedDate.value) {
       await store.fetchTransactionsByDate(selectedDate.value)
     }
-    await settingsStore.fetchMoneyTransferFees()
     // Show notice when redirected from cash-counting guard
     if (route.query.notice === 'step1_required') {
       showStep1RequiredNotice.value = true
@@ -658,7 +620,7 @@ onMounted(async () => {
 
     <!-- ── Quick Actions ───────────────────────────────────────────────── -->
     <section v-if="canEdit" class="mb-6">
-      <h2 class="text-base font-semibold text-gray-700 mb-3">⚡ Quick Actions</h2>
+      <h2 class="text-base font-semibold text-gray-700 mb-3">⚡ รายการด่วน</h2>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <button
           :disabled="!isOpeningSet"
@@ -671,7 +633,7 @@ onMounted(async () => {
           @click="isOpeningSet && openFavoriteModal()"
         >
           <StarIcon class="w-6 h-6" />
-          Favorite Transfer
+          รายการโปรด
         </button>
         <button
           :disabled="!isOpeningSet"
@@ -684,7 +646,7 @@ onMounted(async () => {
           @click="isOpeningSet && openNewTransactionModal('transfer')"
         >
           <ArrowUpTrayIcon class="w-6 h-6" />
-          New Transfer
+          โอนเงิน
         </button>
         <button
           :disabled="!isOpeningSet"
@@ -697,7 +659,7 @@ onMounted(async () => {
           @click="isOpeningSet && openNewTransactionModal('withdrawal')"
         >
           <ArrowDownTrayIcon class="w-6 h-6" />
-          New Withdrawal
+          ถอนเงิน
         </button>
         <button
           :disabled="!isOpeningSet"
@@ -710,7 +672,7 @@ onMounted(async () => {
           @click="isOpeningSet && openNewTransactionModal('owner_deposit')"
         >
           <BanknotesIcon class="w-6 h-6" />
-          Owner Deposit
+          ฝากเงิน
         </button>
       </div>
     </section>
@@ -850,10 +812,13 @@ onMounted(async () => {
                 <td class="px-4 py-3 text-gray-900 font-medium">{{ getTransactionTypeLabel(txn.transactionType) }}</td>
                 <td class="px-4 py-3 text-right font-semibold text-gray-900">{{ formatCurrency(txn.amount) }}</td>
                 <td class="px-4 py-3 text-right text-gray-600">
-                  {{ txn.commission ? formatCurrency(txn.commission) : '-' }}
-                  <span v-if="txn.commissionType" class="text-xs text-gray-400 ml-1">
-                    {{ txn.commissionType === 'cash' ? 'C' : 'T' }}
-                  </span>
+                  <template v-if="txn.transactionType !== 'owner_deposit'">
+                    {{ txn.commission ? formatCurrency(txn.commission) : '-' }}
+                    <span v-if="txn.commissionType" class="text-xs text-gray-400 ml-1">
+                      {{ txn.commissionType === 'cash' ? 'C' : 'T' }}
+                    </span>
+                  </template>
+                  <template v-else>-</template>
                 </td>
                 <td class="px-4 py-3 text-center" @click.stop>
                   <BaseBadge :variant="getStatusBadgeVariant(txn.status)" size="sm" dot>
@@ -1090,7 +1055,7 @@ onMounted(async () => {
           <div class="flex items-center gap-2">
             <StarIcon class="w-5 h-5 text-yellow-500" />
             <h2 class="text-lg font-bold text-gray-900">
-              <span v-if="favStep === 1 && favMode === 'select'">Favorite Transfer</span>
+              <span v-if="favStep === 1 && favMode === 'select'">รายการโปรด</span>
               <span v-else-if="favStep === 1 && favMode === 'manage'">⚙️ จัดการบัญชีโปรด</span>
               <span v-else-if="favStep === 1 && favMode === 'add'">➕ เพิ่มบัญชีโปรด</span>
               <span v-else-if="favStep === 1 && favMode === 'edit'">✏️ แก้ไขบัญชีโปรด</span>
@@ -1146,7 +1111,7 @@ onMounted(async () => {
                   <div>
                     <div class="font-medium text-gray-900">{{ fav.name }}</div>
                     <div class="text-sm text-gray-500">
-                      {{ fav.channel === 'promptpay' ? 'PromptPay' : 'Bank' }} · {{ fav.identifier }}
+                      {{ fav.channel === 'promptpay' ? `พร้อมเพย์ · ${fav.identifierType === 'phone' ? 'เบอร์โทร' : 'บัตรประชาชน'}` : fav.bankName }} · {{ fav.identifier }}
                     </div>
                   </div>
                 </div>
@@ -1176,7 +1141,7 @@ onMounted(async () => {
                     <div>
                       <div class="font-medium text-gray-900 text-sm">{{ fav.name }}</div>
                       <div class="text-xs text-gray-500">
-                        {{ fav.channel === 'promptpay' ? 'PromptPay' : 'Bank' }} · {{ fav.identifier }}
+                        {{ fav.channel === 'promptpay' ? `พร้อมเพย์ · ${fav.identifierType === 'phone' ? 'เบอร์โทร' : 'บัตรประชาชน'}` : fav.bankName }} · {{ fav.identifier }}
                       </div>
                     </div>
                   </div>
@@ -1244,19 +1209,7 @@ onMounted(async () => {
             <FormField label="ชื่อธนาคาร" required>
               <select v-model="favFormData.bankName" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300">
                 <option value="" disabled>-- เลือกธนาคาร --</option>
-                <option value="กสิกรไทย">ธนาคารกสิกรไทย (KBank)</option>
-                <option value="ไทยพาณิชย์">ธนาคารไทยพาณิชย์ (SCB)</option>
-                <option value="กรุงไทย">ธนาคารกรุงไทย (KTB)</option>
-                <option value="กรุงเทพ">ธนาคารกรุงเทพ (BBL)</option>
-                <option value="กรุงศรีอยุธยา">ธนาคารกรุงศรีอยุธยา (BAY)</option>
-                <option value="ทีทีบี">ธนาคารทีทีบี (TTB)</option>
-                <option value="ออมสิน">ธนาคารออมสิน (GSB)</option>
-                <option value="เพื่อการเกษตรและสหกรณ์">ธนาคารเพื่อการเกษตรและสหกรณ์ (BAAC)</option>
-                <option value="อาคารสงเคราะห์">ธนาคารอาคารสงเคราะห์ (GHB)</option>
-                <option value="ยูโอบี">ธนาคารยูโอบี (UOB)</option>
-                <option value="ซีไอเอ็มบี ไทย">ธนาคารซีไอเอ็มบี ไทย (CIMB)</option>
-                <option value="เกียรตินาคิน">ธนาคารเกียรตินาคิน (KKP)</option>
-                <option value="อื่นๆ">อื่นๆ</option>
+                <option v-for="bank in BANK_LIST" :key="bank" :value="bank">{{ bank }}</option>
               </select>
             </FormField>
             <FormField label="เลขบัญชีธนาคาร" required>
@@ -1264,7 +1217,7 @@ onMounted(async () => {
             </FormField>
           </template>
 
-          <!-- PromptPay: ประเภท radio + หมายเลข -->
+          <!-- พร้อมเพย์: ประเภท radio + หมายเลข -->
           <template v-else-if="favFormData.channel === 'promptpay'">
             <FormField label="ประเภทพร้อมเพย์" required>
               <div class="flex gap-6">
@@ -1293,7 +1246,7 @@ onMounted(async () => {
         <div class="bg-gray-50 rounded-xl p-4 mb-4">
           <div class="font-semibold text-gray-900">★ {{ selectedFavorite.name }}</div>
           <div class="text-sm text-gray-500 mt-0.5">
-            {{ selectedFavorite.channel === 'promptpay' ? 'PromptPay' : 'Bank' }} · {{ selectedFavorite.identifier }}
+            {{ selectedFavorite.channel === 'promptpay' ? `พร้อมเพย์ · ${selectedFavorite.identifierType === 'phone' ? 'เบอร์โทร' : 'บัตรประชาชน'}` : selectedFavorite.bankName }} · {{ selectedFavorite.identifier }}
           </div>
         </div>
 
@@ -1305,7 +1258,6 @@ onMounted(async () => {
                 type="number"
                 placeholder="0"
                 :error="isInsufficientFunds"
-                @update:model-value="calcFavCommission"
               />
               <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">บาท</span>
             </div>
@@ -1314,18 +1266,72 @@ onMounted(async () => {
             </div>
           </FormField>
 
-          <FormField label="ค่าบริการ (คำนวณอัตโนมัติ 1%, ขั้นต่ำ 10 ฿)">
-            <div class="relative">
-              <BaseInput v-model="favCommission" type="number" placeholder="0" />
-              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">บาท</span>
+          <FormField label="ค่าบริการ (บาท)">
+            <template #label>
+              <span class="flex items-center gap-1 text-sm font-medium text-gray-700">
+                ค่าบริการ (บาท)
+                <button
+                  type="button"
+                  :title="favIsCommissionManual ? 'รีเซ็ตเป็นอัตโนมัติ' : 'คำนวณอัตโนมัติ'"
+                  class="transition-colors leading-none"
+                  :class="favIsCommissionManual ? 'text-gray-400 hover:text-blue-500' : 'text-blue-500'"
+                  @click="favIsCommissionManual = false"
+                >🔄</button>
+              </span>
+            </template>
+            <div
+              class="flex rounded-lg border overflow-hidden focus-within:ring-2 focus-within:ring-primary"
+              :class="favIsCommissionManual ? 'border-amber-400' : 'border-gray-300'"
+            >
+              <input
+                :value="favEffectiveCommission"
+                type="number"
+                inputmode="numeric"
+                placeholder="0"
+                min="0"
+                step="1"
+                class="flex-1 px-3 py-2 text-sm outline-none min-w-0"
+                @input="favManualCommission = Number(($event.target as HTMLInputElement).value); favIsCommissionManual = true"
+              />
+              <template v-if="favEffectiveCommission > 0">
+                <button
+                  type="button"
+                  class="px-3 py-2 text-xs font-medium transition-colors border-l"
+                  :class="[
+                    favIsCommissionManual ? 'border-amber-400' : 'border-gray-300',
+                    favCommissionType === 'cash' ? 'bg-primary text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+                  ]"
+                  @click="favCommissionType = 'cash'"
+                >สด</button>
+                <button
+                  type="button"
+                  class="px-3 py-2 text-xs font-medium transition-colors border-l"
+                  :class="[
+                    favIsCommissionManual ? 'border-amber-400' : 'border-gray-300',
+                    favCommissionType === 'transfer' ? 'bg-primary text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+                  ]"
+                  @click="favCommissionType = 'transfer'"
+                >โอน</button>
+              </template>
             </div>
           </FormField>
 
-          <div class="bg-gray-50 rounded-lg p-3 text-sm text-gray-600">
-            ยอดเงินหลังโอน:
-            <strong :class="favBalanceAfter < 0 ? 'text-red-600' : 'text-gray-900'">
-              {{ formatCurrency(favBalanceAfter) }}
-            </strong>
+          <div
+            v-if="Number(favAmount) > 0"
+            class="rounded-lg px-3 py-2.5 text-sm flex items-center justify-between gap-2"
+            :class="favBannerInfo.ok
+              ? 'bg-green-50 border border-green-200 text-green-800'
+              : 'bg-amber-50 border border-amber-200 text-amber-800'"
+          >
+            <div class="flex items-center gap-2 font-medium">
+              <span>{{ favBannerInfo.ok ? '✅' : '⚠️' }}</span>
+              <span class="text-xs opacity-70">{{ favBannerInfo.balanceLabel }}</span>
+              <span>{{ formatCurrency(favBannerInfo.current) }}</span>
+              <span class="opacity-50">→</span>
+              <span :class="favBannerInfo.ok ? 'text-green-700 font-semibold' : 'text-amber-700 font-semibold'">
+                {{ formatCurrency(favBannerInfo.after) }}
+              </span>
+            </div>
           </div>
         </div>
       </div>
