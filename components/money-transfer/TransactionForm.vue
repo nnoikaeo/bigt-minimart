@@ -302,6 +302,15 @@ const formData = ref({
   notes: props.editingData?.notes ?? '',
 })
 
+// ── Fee settings store ────────────────────────────────────────
+const settingsStore = useDailyRecordSettingsStore()
+
+onMounted(async () => {
+  // Load fee tiers from server (fast local JSON read).
+  // Falls back to built-in defaults if the file doesn't exist yet.
+  await settingsStore.fetchMoneyTransferFees()
+})
+
 // ── Commission auto-calc ──────────────────────────────────────
 const commissionAmount = computed(() => Number(formData.value.amount))
 const {

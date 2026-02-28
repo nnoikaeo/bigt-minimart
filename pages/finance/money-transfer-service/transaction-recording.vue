@@ -493,6 +493,7 @@ onMounted(async () => {
     if (selectedDate.value) {
       await store.fetchTransactionsByDate(selectedDate.value)
     }
+    await settingsStore.fetchMoneyTransferFees()
     // Show notice when redirected from cash-counting guard
     if (route.query.notice === 'step1_required') {
       showStep1RequiredNotice.value = true
