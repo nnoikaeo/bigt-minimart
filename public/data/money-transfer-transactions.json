@@ -15,7 +15,7 @@
     "recordedByName": "นพพล น้อยแก้ว",
     "notes": "",
     "balanceImpact": {
-      "bankAccountBefore": "10000",
+      "bankAccountBefore": 10000,
       "bankAccountAfter": 5400,
       "transferCashBefore": 0,
       "transferCashAfter": 4600,
@@ -163,5 +163,62 @@
     "id": "mts-1772222536380-83qqg4tex",
     "createdAt": "2026-02-27T20:02:16.380Z",
     "updatedAt": "2026-02-27T20:02:16.380Z"
+  },
+  {
+    "date": "2026-03-04",
+    "datetime": "2026-03-04T12:17:31.639Z",
+    "transactionType": "transfer",
+    "channel": "promptpay",
+    "promptpayIdentifierType": "phone",
+    "promptpayIdentifier": "0612014880",
+    "accountName": "ชโลธร",
+    "amount": 3700,
+    "commission": 20,
+    "commissionType": "cash",
+    "status": "completed",
+    "recordedBy": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2",
+    "recordedByName": "นพพล น้อยแก้ว",
+    "notes": "",
+    "balanceImpact": {
+      "bankAccountBefore": 7710,
+      "bankAccountAfter": 4010,
+      "transferCashBefore": 0,
+      "transferCashAfter": 3700,
+      "serviceFeeBeforeCash": 0,
+      "serviceFeeAfterCash": 20,
+      "serviceFeeBeforeTransfer": 0,
+      "serviceFeeAfterTransfer": 0
+    },
+    "id": "mts-1772626651657-wj9he1ygl",
+    "createdAt": "2026-03-04T12:17:31.657Z",
+    "updatedAt": "2026-03-04T12:17:31.657Z"
+  },
+  {
+    "date": "2026-03-04",
+    "datetime": "2026-03-04T12:18:18.894Z",
+    "transactionType": "transfer",
+    "channel": "bank",
+    "bankName": "ธนาคารกสิกรไทย (KBank)",
+    "accountNumber": "7832051416",
+    "accountName": "ดวงใจ",
+    "amount": 250,
+    "commission": 10,
+    "commissionType": "cash",
+    "status": "completed",
+    "recordedBy": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2",
+    "recordedByName": "นพพล น้อยแก้ว",
+    "balanceImpact": {
+      "bankAccountBefore": 4010,
+      "bankAccountAfter": 3760,
+      "transferCashBefore": 3700,
+      "transferCashAfter": 3950,
+      "serviceFeeBeforeCash": 20,
+      "serviceFeeAfterCash": 30,
+      "serviceFeeBeforeTransfer": 0,
+      "serviceFeeAfterTransfer": 0
+    },
+    "id": "mts-1772626698902-5p86mxd2j",
+    "createdAt": "2026-03-04T12:18:18.902Z",
+    "updatedAt": "2026-03-04T12:18:18.902Z"
   }
 ]
