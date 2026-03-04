@@ -184,6 +184,8 @@ const {
   getChannelLabel,
   getStatusBadgeVariant,
   getStatusLabel,
+  getAccountName,
+  getChannelSubtitle,
 } = useMoneyTransferHelpers()
 
 function canCompleteDraft(draft: any): boolean {
@@ -242,8 +244,9 @@ function openOpeningBalanceModal() {
 }
 
 async function handleSetOpeningBalance() {
-  const amount =
+  const amount = Number(
     openingSource.value === 'carryover' ? carryoverAmount.value : manualOpeningAmount.value
+  )
   isSettingOpeningBalance.value = true
   try {
     await store.setOpeningBalance(selectedDate.value, amount, openingSource.value, currentUser.value.uid)
@@ -792,6 +795,7 @@ onMounted(async () => {
                 <th class="text-left px-4 py-3 font-medium text-gray-600">#</th>
                 <th class="text-left px-4 py-3 font-medium text-gray-600">เวลา</th>
                 <th class="text-left px-4 py-3 font-medium text-gray-600">ประเภท</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-600 hidden md:table-cell">ชื่อบัญชี</th>
                 <th class="text-right px-4 py-3 font-medium text-gray-600">จำนวนเงิน</th>
                 <th class="text-right px-4 py-3 font-medium text-gray-600">ค่าบริการ</th>
                 <th class="text-center px-4 py-3 font-medium text-gray-600">สถานะ</th>
@@ -811,6 +815,10 @@ onMounted(async () => {
                 <td class="px-4 py-3 text-gray-500">{{ (idx as number) + 1 }}</td>
                 <td class="px-4 py-3 text-gray-700">{{ formatTime(txn.datetime) }}</td>
                 <td class="px-4 py-3 text-gray-900 font-medium">{{ getTransactionTypeLabel(txn.transactionType) }}</td>
+                <td class="px-4 py-3 hidden md:table-cell">
+                  <div class="text-gray-900 text-sm">{{ getAccountName(txn) }}</div>
+                  <div v-if="getChannelSubtitle(txn)" class="text-xs text-gray-400 mt-0.5">{{ getChannelSubtitle(txn) }}</div>
+                </td>
                 <td class="px-4 py-3 text-right font-semibold text-gray-900">{{ formatCurrency(txn.amount) }}</td>
                 <td class="px-4 py-3 text-right text-gray-600">
                   <template v-if="txn.transactionType !== 'owner_deposit'">
@@ -1430,23 +1438,43 @@ onMounted(async () => {
         </div>
 
         <div class="grid grid-cols-2 gap-x-4 gap-y-3">
-          <div v-if="viewingTransaction.bankName" class="col-span-2">
-            <div class="text-gray-500">ธนาคาร</div>
-            <div class="font-medium text-gray-900">{{ viewingTransaction.bankName }}</div>
-          </div>
-          <div v-if="viewingTransaction.accountNumber">
-            <div class="text-gray-500">เลขบัญชี</div>
-            <div class="font-medium text-gray-900">{{ viewingTransaction.accountNumber }}</div>
-          </div>
-          <div v-if="viewingTransaction.accountName">
-            <div class="text-gray-500">ชื่อบัญชี</div>
-            <div class="font-medium text-gray-900">{{ viewingTransaction.accountName }}</div>
-          </div>
+          <!-- Bank channel -->
+          <template v-if="viewingTransaction.channel === 'bank' || viewingTransaction.channel === 'other'">
+            <div class="col-span-2">
+              <div class="text-gray-500">ธนาคาร</div>
+              <div class="font-medium text-gray-900">{{ viewingTransaction.bankName || '-' }}</div>
+            </div>
+            <div>
+              <div class="text-gray-500">เลขบัญชี</div>
+              <div class="font-medium text-gray-900">{{ viewingTransaction.accountNumber || '-' }}</div>
+            </div>
+            <div>
+              <div class="text-gray-500">ชื่อบัญชี</div>
+              <div class="font-medium text-gray-900">{{ viewingTransaction.accountName || '-' }}</div>
+            </div>
+          </template>
+
+          <!-- PromptPay channel -->
+          <template v-else-if="viewingTransaction.channel === 'promptpay'">
+            <div class="col-span-2">
+              <div class="text-gray-500">ช่องทาง</div>
+              <div class="font-medium text-gray-900">พร้อมเพย์</div>
+            </div>
+            <div>
+              <div class="text-gray-500">{{ viewingTransaction.promptpayIdentifierType === 'idcard' ? 'เลขบัตรประชาชน' : 'หมายเลขโทรศัพท์' }}</div>
+              <div class="font-medium text-gray-900">{{ viewingTransaction.promptpayIdentifier || '-' }}</div>
+            </div>
+            <div>
+              <div class="text-gray-500">ชื่อบัญชี</div>
+              <div class="font-medium text-gray-900">{{ viewingTransaction.promptpayAccountName || viewingTransaction.accountName || '-' }}</div>
+            </div>
+          </template>
+
           <div>
             <div class="text-gray-500">ประเภท</div>
             <div class="font-medium text-gray-900">{{ getTransactionTypeLabel(viewingTransaction.transactionType) }}</div>
           </div>
-          <div>
+          <div v-if="viewingTransaction.transactionType === 'owner_deposit'">
             <div class="text-gray-500">ช่องทาง</div>
             <div class="font-medium text-gray-900">{{ getChannelLabel(viewingTransaction.channel) }}</div>
           </div>

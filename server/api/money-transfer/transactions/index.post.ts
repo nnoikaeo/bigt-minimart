@@ -154,14 +154,14 @@ export default defineEventHandler(async (event) => {
       recordedByName: validatedData.recordedByName,
       notes: validatedData.notes,
       balanceImpact: {
-        bankAccountBefore: currentBalance.bankAccount,
-        bankAccountAfter: balanceAfterBankAccount,
-        transferCashBefore: currentBalance.transferCash,
-        transferCashAfter: balanceAfterTransferCash,
-        serviceFeeBeforeCash: currentBalance.serviceFeeCash,
-        serviceFeeAfterCash: balanceAfterServiceFeeCash,
-        serviceFeeBeforeTransfer: currentBalance.serviceFeeTransfer,
-        serviceFeeAfterTransfer: balanceAfterServiceFeeTransfer,
+        bankAccountBefore: Number(currentBalance.bankAccount),
+        bankAccountAfter: Number(balanceAfterBankAccount),
+        transferCashBefore: Number(currentBalance.transferCash),
+        transferCashAfter: Number(balanceAfterTransferCash),
+        serviceFeeBeforeCash: Number(currentBalance.serviceFeeCash),
+        serviceFeeAfterCash: Number(balanceAfterServiceFeeCash),
+        serviceFeeBeforeTransfer: Number(currentBalance.serviceFeeTransfer),
+        serviceFeeAfterTransfer: Number(balanceAfterServiceFeeTransfer),
       },
     }
 
