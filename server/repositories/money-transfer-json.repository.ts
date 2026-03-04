@@ -438,8 +438,8 @@ export class MoneyTransferJsonRepository implements IMoneyTransferRepository {
       balance = await this.initializeBalance(date)
     }
     return this.updateBalance(date, {
-      bankAccount: amount,
-      openingBalance: amount,
+      bankAccount: Number(amount),
+      openingBalance: Number(amount),
       openingBalanceSetAt: new Date().toISOString(),
       openingBalanceSource: source,
       openingBalanceSetBy: userId,
@@ -447,13 +447,15 @@ export class MoneyTransferJsonRepository implements IMoneyTransferRepository {
   }
 
   /**
-   * READ: Get balance record for the day before a given date
+   * READ: Get the most recent balance record with a date strictly before the given date
+   * that was actually initialized (has openingBalanceSource set).
+   * Falls back across non-consecutive days (e.g. no record yesterday → takes 2026-02-27).
    */
   async getPreviousDayBalance(date: string): Promise<MoneyTransferBalance | null> {
-    const prev = new Date(date + 'T00:00:00')
-    prev.setDate(prev.getDate() - 1)
-    const prevDate = prev.toISOString().split('T')[0]
-    return this.balances.find(b => b.date === prevDate) || null
+    const sorted = this.balances
+      .filter(b => b.date < date && b.openingBalanceSource != null)
+      .sort((a, b) => b.date.localeCompare(a.date))
+    return sorted[0] || null
   }
 
   /**

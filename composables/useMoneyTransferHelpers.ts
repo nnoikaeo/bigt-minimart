@@ -69,6 +69,39 @@ export function useMoneyTransferHelpers() {
     return map[status] || status
   }
 
+  /**
+   * Returns the recipient/account name for a transaction.
+   * - bank/other channel → accountName
+   * - promptpay channel  → promptpayAccountName, fallback to accountName
+   * - owner_deposit / no channel → '-'
+   */
+  function getAccountName(txn: {
+    transactionType: string
+    channel?: string
+    accountName?: string
+    promptpayAccountName?: string
+  }): string {
+    if (txn.transactionType === 'owner_deposit') return '-'
+    if (txn.channel === 'promptpay') return txn.promptpayAccountName || txn.accountName || '-'
+    return txn.accountName || '-'
+  }
+
+  /**
+   * Returns the subtitle (2nd line) under account name in the table.
+   * - promptpay channel  → 'พร้อมเพย์'
+   * - bank/other channel → bankName
+   * - owner_deposit      → '' (hidden)
+   */
+  function getChannelSubtitle(txn: {
+    transactionType: string
+    channel?: string
+    bankName?: string
+  }): string {
+    if (txn.transactionType === 'owner_deposit') return ''
+    if (txn.channel === 'promptpay') return 'พร้อมเพย์'
+    return txn.bankName || ''
+  }
+
   return {
     formatCurrency,
     formatTime,
@@ -77,5 +110,7 @@ export function useMoneyTransferHelpers() {
     getChannelLabel,
     getStatusBadgeVariant,
     getStatusLabel,
+    getAccountName,
+    getChannelSubtitle,
   }
 }

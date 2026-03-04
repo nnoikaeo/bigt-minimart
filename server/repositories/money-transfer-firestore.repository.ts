@@ -14,6 +14,8 @@ import {
   collection,
   query,
   where,
+  orderBy,
+  limit,
   getDocs,
   getDoc,
   addDoc,
@@ -602,7 +604,7 @@ export class MoneyTransferFirestoreRepository implements IMoneyTransferRepositor
    */
   async setOpeningBalance(date: string, amount: number, source: 'carryover' | 'manual', userId?: string): Promise<MoneyTransferBalance> {
     return this.updateBalance(date, {
-      openingBalance: amount,
+      openingBalance: Number(amount),
       openingBalanceSetAt: new Date().toISOString(),
       openingBalanceSource: source,
       openingBalanceSetBy: userId,
@@ -613,10 +615,19 @@ export class MoneyTransferFirestoreRepository implements IMoneyTransferRepositor
    * READ: Get previous day's balance
    */
   async getPreviousDayBalance(date: string): Promise<MoneyTransferBalance | null> {
-    const prevDate = new Date(date)
-    prevDate.setDate(prevDate.getDate() - 1)
-    const prevDateStr = prevDate.toISOString().split('T')[0] as string
-    return this.getBalance(prevDateStr)
+    // Find the most recent balance record with date strictly before the given date
+    // that was actually initialized (has openingBalanceSource set).
+    // Uses 'in' instead of '!= null' to avoid composite index requirement.
+    const q = query(
+      collection(this.db, this.balancesCollection),
+      where('date', '<', date),
+      where('openingBalanceSource', 'in', ['carryover', 'manual']),
+      orderBy('date', 'desc'),
+      limit(1)
+    )
+    const snap = await getDocs(q)
+    if (snap.empty) return null
+    return this.firestoreToBalance(snap.docs[0].data())
   }
 
   // ============================================================================
