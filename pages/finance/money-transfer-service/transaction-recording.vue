@@ -77,6 +77,14 @@ const isOwnerDepositSubmitting = ref(false)
 // Completing step 1
 const isCompletingStep1 = ref(false)
 
+// ─── Step 2: Cash Counting ────────────────────────────────────────────────────
+const actualTransferWithdrawal = ref<number>(0)
+const actualServiceFee = ref<number>(0)
+const verificationStatus = ref<'match' | 'discrepancy' | ''>('')
+const verificationNotes = ref('')
+const followUpAction = ref('')
+const isSubmittingStep2 = ref(false)
+
 // ─── Opening Balance ──────────────────────────────────────────────────────────
 const showOpeningBalanceModal = ref(false)
 const openingSource = ref<'carryover' | 'manual'>('carryover')
@@ -145,6 +153,53 @@ function getTabCount(status: string): number {
   return dateTransactions.value.filter((t: any) => t.status === status).length
 }
 
+// ─── Step 2 Computed ──────────────────────────────────────────────────────────
+const completedTransactions = computed(() =>
+  dateTransactions.value.filter((t: any) => t.status === 'completed')
+)
+
+const expectedTransferWithdrawal = computed(() =>
+  completedTransactions.value
+    .filter((t: any) => t.transactionType !== 'owner_deposit')
+    .reduce((sum: number, t: any) => {
+      if (t.transactionType === 'transfer') return sum + t.amount
+      if (t.transactionType === 'withdrawal') return sum - t.amount
+      return sum
+    }, 0)
+)
+
+const expectedServiceFee = computed(() =>
+  completedTransactions.value
+    .filter((t: any) => t.commission && t.commissionType === 'cash')
+    .reduce((sum: number, t: any) => sum + (t.commission || 0), 0)
+)
+
+const expectedServiceFeeTransfer = computed(() =>
+  completedTransactions.value
+    .filter((t: any) => t.commission && t.commissionType === 'transfer')
+    .reduce((sum: number, t: any) => sum + (t.commission || 0), 0)
+)
+
+const expectedTotal = computed(() => expectedTransferWithdrawal.value + expectedServiceFee.value)
+const actualTotal = computed(() => Number(actualTransferWithdrawal.value) + Number(actualServiceFee.value))
+const diffTransferWithdrawal = computed(() => Number(actualTransferWithdrawal.value) - expectedTransferWithdrawal.value)
+const diffServiceFee = computed(() => Number(actualServiceFee.value) - expectedServiceFee.value)
+const diffTotal = computed(() => actualTotal.value - expectedTotal.value)
+const hasDiscrepancy = computed(() => diffTotal.value !== 0)
+
+const isStep2FormValid = computed(() =>
+  Number(actualTransferWithdrawal.value) >= 0 &&
+  Number(actualServiceFee.value) >= 0 &&
+  verificationStatus.value !== ''
+)
+
+// Auto-set verificationStatus when actual values change
+watch(hasDiscrepancy, (val) => {
+  if (actualTotal.value > 0) {
+    verificationStatus.value = val ? 'discrepancy' : 'match'
+  }
+})
+
 /** Favorites for the currently selected tab, sorted by order */
 const favTabItems = computed(() =>
   (store.favorites as any[])
@@ -196,12 +251,25 @@ function getShortfall(draft: any): number {
   return Math.max(0, draft.amount - (store.currentBalance?.bankAccount ?? 0))
 }
 
+function diffClass(diff: number): string {
+  if (diff === 0) return 'text-green-700'
+  if (diff > 0) return 'text-blue-700'
+  return 'text-red-700'
+}
+
+function diffSign(diff: number): string {
+  if (diff > 0) return '+' + formatCurrency(diff)
+  if (diff < 0) return formatCurrency(diff)
+  return '✓ ตรง'
+}
+
 // ─── Actions ──────────────────────────────────────────────────────────────────
 async function handleDateChange() {
   try {
     await store.fetchTransactionsByDate(selectedDate.value)
     await store.fetchDailySummary(selectedDate.value)
     await store.fetchPreviousDayBalance(selectedDate.value)
+    loadExistingStep2Data()
   } catch (err: any) {
     errorMessage.value = err.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูล'
   }
@@ -474,8 +542,12 @@ async function handleCompleteStep1() {
   isCompletingStep1.value = true
   try {
     await store.completeStep1(selectedDate.value)
-    successMessage.value = 'บันทึกรายการเสร็จสมบูรณ์ ไปยังตรวจนับเงินสดได้เลย'
+    successMessage.value = 'บันทึกรายการเสร็จสมบูรณ์ — ดำเนินการตรวจนับเงินสดได้เลย'
     logger.log('Step 1 completed')
+    // Scroll to cash-counting section
+    setTimeout(() => {
+      document.getElementById('cash-counting-section')?.scrollIntoView({ behavior: 'smooth' })
+    }, 300)
   } catch (err: any) {
     errorMessage.value = err.message || 'เกิดข้อผิดพลาด'
     logger.error('Failed to complete Step 1', err)
@@ -484,8 +556,41 @@ async function handleCompleteStep1() {
   }
 }
 
-function goToStep2() {
-  router.push('/finance/money-transfer-service/cash-counting')
+function loadExistingStep2Data() {
+  if (store.currentSummary?.step2) {
+    const step2 = store.currentSummary.step2
+    actualTransferWithdrawal.value = step2.actualCash?.transferWithdrawal ?? 0
+    actualServiceFee.value = step2.actualCash?.serviceFee ?? 0
+    verificationNotes.value = step2.verificationNotes ?? ''
+    verificationStatus.value = step2.hasDiscrepancies ? 'discrepancy' : 'match'
+  }
+}
+
+async function handleConfirmVerification() {
+  if (!isStep2FormValid.value) return
+  isSubmittingStep2.value = true
+  try {
+    await store.completeStep2(selectedDate.value, {
+      actualCash: {
+        transferWithdrawal: actualTransferWithdrawal.value,
+        serviceFee: actualServiceFee.value,
+      },
+      verificationNotes: verificationNotes.value
+        ? `${verificationNotes.value}${followUpAction.value ? '\n\nการดำเนินการต่อ: ' + followUpAction.value : ''}`
+        : followUpAction.value ? `การดำเนินการต่อ: ${followUpAction.value}` : '',
+    })
+    successMessage.value = 'ยืนยันการตรวจนับสำเร็จ — ส่งให้ Auditor ตรวจสอบได้เลย'
+    logger.log('Step 2 completed')
+  } catch (err: any) {
+    errorMessage.value = err.message || 'เกิดข้อผิดพลาด'
+    logger.error('Failed to complete Step 2', err)
+  } finally {
+    isSubmittingStep2.value = false
+  }
+}
+
+function goToAuditReview() {
+  router.push('/finance/money-transfer-service/auditor-review')
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
@@ -495,6 +600,8 @@ onMounted(async () => {
     await store.fetchPreviousDayBalance(selectedDate.value)
     if (selectedDate.value) {
       await store.fetchTransactionsByDate(selectedDate.value)
+      await store.fetchDailySummary(selectedDate.value)
+      loadExistingStep2Data()
     }
     await settingsStore.fetchMoneyTransferFees()
     // Show notice when redirected from cash-counting guard
@@ -509,8 +616,8 @@ onMounted(async () => {
 
 <template>
   <PageWrapper
-    title="บันทึกรายการ"
-    description="บันทึกรายการ โอนเงิน/ถอนเงิน ประจำวัน"
+    title="บันทึกรายการ & ตรวจนับเงินสด"
+    description="Step 1: บันทึกรายการโอน/ถอนเงิน  ·  Step 2: ตรวจนับเงินสดจริง"
     icon="🏦"
     :loading="store.isLoading"
     :error="store.error"
@@ -945,7 +1052,7 @@ onMounted(async () => {
         />
       </div>
 
-      <!-- Complete button — glows green when all prerequisites met -->
+      <!-- Complete button -->
       <div class="flex justify-center">
         <div
           class="rounded-xl transition-all duration-300"
@@ -960,23 +1067,179 @@ onMounted(async () => {
             @click="handleCompleteStep1"
           >
             <CheckCircleIcon class="w-5 h-5" />
-            ยืนยันบันทึกรายการ → ไปตรวจนับเงินสด
+            ยืนยันบันทึกรายการ → ตรวจนับเงินสด
           </ActionButton>
         </div>
       </div>
     </section>
 
-    <section v-else class="flex flex-col items-center gap-3 py-4">
-      <BaseAlert
-        variant="success"
-        title="บันทึกรายการเสร็จสมบูรณ์"
-        message="ไปยังขั้นตอนตรวจนับเงินสดได้เลย"
-        :dismissible="false"
-        class="w-full max-w-lg"
-      />
-      <BaseButton variant="success" size="lg" @click="goToStep2">
-        ไปตรวจนับเงินสด →
-      </BaseButton>
+    <!-- ── Step 2: ตรวจนับเงินสดจริง ─────────────────────────────────── -->
+    <section
+      id="cash-counting-section"
+      class="mt-2 transition-all duration-300"
+      :class="!store.isStep1Complete ? 'opacity-40 pointer-events-none select-none' : ''"
+    >
+      <div class="flex items-center gap-3 mb-4">
+        <h2 class="text-base font-semibold text-gray-700">💵 ตรวจนับเงินสดจริง</h2>
+        <BaseBadge v-if="!store.isStep1Complete" variant="warning" size="sm">🔒 รอยืนยันขั้นตอนบันทึกรายการ</BaseBadge>
+        <BaseBadge v-else-if="store.isStep2Complete" variant="success" size="sm">✅ เสร็จสมบูรณ์</BaseBadge>
+      </div>
+
+      <!-- Step 2 Already Completed -->
+      <template v-if="store.isStep2Complete">
+        <div class="bg-white border border-gray-200 rounded-xl p-5 mb-4 space-y-2 text-sm">
+          <div v-if="store.currentSummary?.step2" class="space-y-2">
+            <div class="flex justify-between py-2 border-b border-gray-100">
+              <span class="text-gray-600">เงินสดโอน/ถอน (นับจริง)</span>
+              <span class="font-semibold">{{ formatCurrency(store.currentSummary.step2.actualCash?.transferWithdrawal ?? 0) }}</span>
+            </div>
+            <div class="flex justify-between py-2 border-b border-gray-100">
+              <span class="text-gray-600">ค่าบริการ เงินสด (นับจริง)</span>
+              <span class="font-semibold">{{ formatCurrency(store.currentSummary.step2.actualCash?.serviceFee ?? 0) }}</span>
+            </div>
+            <div class="flex justify-between py-2">
+              <span class="text-gray-700 font-medium">ผลต่างรวม</span>
+              <BaseBadge :variant="store.currentSummary.step2.hasDiscrepancies ? 'warning' : 'success'" size="md">
+                {{ store.currentSummary.step2.hasDiscrepancies ? '⚠️ มีผลต่าง' : '✅ ตรงกัน' }}
+              </BaseBadge>
+            </div>
+            <div v-if="store.currentSummary.step2.verificationNotes" class="bg-gray-50 rounded-lg p-3 text-gray-600 text-sm">
+              <strong>หมายเหตุ:</strong> {{ store.currentSummary.step2.verificationNotes }}
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-center pb-6">
+          <BaseButton variant="success" size="lg" @click="goToAuditReview">
+            ส่งให้ Auditor ตรวจสอบ →
+          </BaseButton>
+        </div>
+      </template>
+
+      <!-- Step 2 Form -->
+      <template v-else>
+        <div class="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100 mb-4">
+          <!-- A: Transfer/Withdrawal -->
+          <div class="p-4">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div class="flex-1">
+                <div class="font-medium text-gray-900 mb-0.5">A. เงินสดจากโอน/ถอนเงิน</div>
+                <div class="text-sm text-gray-500">Expected: {{ formatCurrency(expectedTransferWithdrawal) }}</div>
+              </div>
+              <div class="flex items-center gap-3">
+                <FormField>
+                  <div class="relative w-40">
+                    <BaseInput v-model="actualTransferWithdrawal" type="number" placeholder="0" />
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">บาท</span>
+                  </div>
+                </FormField>
+                <div :class="['text-sm font-semibold min-w-20 text-right', diffClass(diffTransferWithdrawal)]">
+                  {{ diffSign(diffTransferWithdrawal) }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- B: Service Fee -->
+          <div class="p-4">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div class="flex-1">
+                <div class="font-medium text-gray-900 mb-0.5">B. ค่าบริการ (เงินสด)</div>
+                <div class="text-sm text-gray-500">Expected: {{ formatCurrency(expectedServiceFee) }}</div>
+              </div>
+              <div class="flex items-center gap-3">
+                <FormField>
+                  <div class="relative w-40">
+                    <BaseInput v-model="actualServiceFee" type="number" placeholder="0" />
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">บาท</span>
+                  </div>
+                </FormField>
+                <div :class="['text-sm font-semibold min-w-20 text-right', diffClass(diffServiceFee)]">
+                  {{ diffSign(diffServiceFee) }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- C: Service Fee Transfer (info only) -->
+          <div class="p-4 bg-gray-50">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div class="flex-1">
+                <div class="font-medium text-gray-600 mb-0.5">C. ค่าบริการ (โอน)</div>
+                <div class="text-sm text-gray-500">ตรวจสอบผ่าน Bank Statement</div>
+              </div>
+              <div class="text-sm font-semibold text-gray-700">Expected: {{ formatCurrency(expectedServiceFeeTransfer) }}</div>
+            </div>
+          </div>
+
+          <!-- Total Row -->
+          <div class="p-4 bg-gray-50">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div class="flex-1 font-semibold text-gray-900">รวมเงินสดทั้งหมด</div>
+              <div class="flex items-center gap-3">
+                <div class="w-40 px-3 py-2 bg-gray-100 rounded-lg text-right font-bold text-gray-900">
+                  {{ formatCurrency(actualTotal) }}
+                </div>
+                <div :class="['text-sm font-bold min-w-20 text-right', diffClass(diffTotal)]">
+                  {{ diffSign(diffTotal) }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Discrepancy Alert -->
+        <div class="mb-4">
+          <BaseAlert
+            v-if="hasDiscrepancy && (Number(actualTransferWithdrawal) > 0 || Number(actualServiceFee) > 0)"
+            variant="warning"
+            title="พบผลต่าง"
+            :message="`ผลต่างรวม ${diffTotal > 0 ? '+' : ''}${formatCurrency(diffTotal)} — กรุณาระบุหมายเหตุ`"
+            :dismissible="false"
+          />
+          <BaseAlert
+            v-else-if="!hasDiscrepancy && actualTotal > 0"
+            variant="success"
+            message="✅ ยอดเงินสดตรงกับที่คำนวณทั้งหมด"
+            :dismissible="false"
+          />
+        </div>
+
+        <!-- Notes (only when there's a discrepancy or already typed) -->
+        <div v-if="verificationStatus === 'discrepancy' || verificationNotes" class="bg-white border border-gray-200 rounded-xl p-4 space-y-3 mb-4">
+          <FormField
+            label="หมายเหตุ/สาเหตุ"
+            :hint="verificationStatus === 'discrepancy' ? 'กรุณาระบุสาเหตุของผลต่างที่พบ' : ''"
+          >
+            <BaseTextarea
+              v-model="verificationNotes"
+              :placeholder="verificationStatus === 'discrepancy' ? 'ระบุสาเหตุของผลต่าง เช่น เงินสดขาด X บาท เนื่องจาก...' : 'หมายเหตุเพิ่มเติม (ไม่บังคับ)'"
+              :rows="3"
+            />
+          </FormField>
+          <FormField v-if="verificationStatus === 'discrepancy'" label="การดำเนินการต่อ">
+            <BaseTextarea
+              v-model="followUpAction"
+              placeholder="แผนการดำเนินการต่อ เช่น ตรวจสอบเพิ่มเติมในรอบถัดไป..."
+              :rows="2"
+            />
+          </FormField>
+        </div>
+
+        <!-- Confirm Button -->
+        <div class="flex justify-end pb-6">
+          <ActionButton
+            :permission="PERMISSIONS.EDIT_FINANCE"
+            variant="primary"
+            size="lg"
+            :disabled="!isStep2FormValid || !store.isStep1Complete"
+            :loading="isSubmittingStep2"
+            @click="handleConfirmVerification"
+          >
+            <CheckCircleIcon class="w-5 h-5" />
+            ยืนยันการตรวจนับ → ส่ง Auditor
+          </ActionButton>
+        </div>
+      </template>
     </section>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->

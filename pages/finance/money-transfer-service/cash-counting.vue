@@ -64,19 +64,26 @@ const expectedServiceFeeTransfer = computed(() => {
 
 const expectedTotal = computed(() => expectedTransferWithdrawal.value + expectedServiceFee.value)
 
-const actualTotal = computed(() => actualTransferWithdrawal.value + actualServiceFee.value)
+const actualTotal = computed(() => Number(actualTransferWithdrawal.value) + Number(actualServiceFee.value))
 
-const diffTransferWithdrawal = computed(() => actualTransferWithdrawal.value - expectedTransferWithdrawal.value)
-const diffServiceFee = computed(() => actualServiceFee.value - expectedServiceFee.value)
+const diffTransferWithdrawal = computed(() => Number(actualTransferWithdrawal.value) - expectedTransferWithdrawal.value)
+const diffServiceFee = computed(() => Number(actualServiceFee.value) - expectedServiceFee.value)
 const diffTotal = computed(() => actualTotal.value - expectedTotal.value)
 
 const hasDiscrepancy = computed(() => diffTotal.value !== 0)
 
 const isFormValid = computed(() =>
-  actualTransferWithdrawal.value >= 0 &&
-  actualServiceFee.value >= 0 &&
+  Number(actualTransferWithdrawal.value) >= 0 &&
+  Number(actualServiceFee.value) >= 0 &&
   verificationStatus.value !== ''
 )
+
+// Auto-set verificationStatus based on computed discrepancy
+watch(hasDiscrepancy, (val) => {
+  if (actualTotal.value > 0) {
+    verificationStatus.value = val ? 'discrepancy' : 'match'
+  }
+})
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const { formatCurrency, formatTime, getTransactionTypeLabel, getChannelLabel } =
@@ -378,17 +385,19 @@ onMounted(async () => {
           <div class="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
             <FormField label="ผลการตรวจนับ" required>
               <div class="space-y-2">
-                <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-green-50 transition-colors"
-                  :class="verificationStatus === 'match' ? 'border-green-500 bg-green-50' : ''">
+                <!-- Auto-selected based on discrepancy calculation; manager can override -->
+                <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-green-50 transition-colors"
+                  :class="verificationStatus === 'match' ? 'border-green-500 bg-green-50' : 'border-gray-200'">
                   <input v-model="verificationStatus" type="radio" value="match" class="accent-green-600" />
                   <span class="text-green-700 font-medium">✅ ยอดตรงกันทั้งหมด</span>
                 </label>
-                <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-amber-50 transition-colors"
-                  :class="verificationStatus === 'discrepancy' ? 'border-amber-500 bg-amber-50' : ''">
+                <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-amber-50 transition-colors"
+                  :class="verificationStatus === 'discrepancy' ? 'border-amber-500 bg-amber-50' : 'border-gray-200'">
                   <input v-model="verificationStatus" type="radio" value="discrepancy" class="accent-amber-600" />
-                  <span class="text-amber-700 font-medium">⚠️ พบผลต่าง</span>
+                  <span class="text-amber-700 font-medium">⚠️ พบผลต่าง (สามารถแก้ไขได้)</span>
                 </label>
               </div>
+              <p v-if="verificationStatus" class="text-xs text-gray-400 mt-1">ระบบเลือกให้อัตโนมัติจากผลการคำนวณ — สามารถแก้ไขได้</p>
             </FormField>
 
             <FormField

@@ -615,7 +615,7 @@ onMounted(async () => {
       <div v-else class="flex justify-start py-4">
         <BaseButton
           variant="secondary"
-          @click="router.push('/finance/money-transfer-service/transaction-recording')"
+          @click="router.push('/finance/money-transfer-service')"
         >
           ⬅️ กลับหน้าหลัก
         </BaseButton>

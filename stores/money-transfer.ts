@@ -501,10 +501,15 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
       this.isLoading = true
 
       try {
+        const authStore = useAuthStore()
         const response = await $fetch(
           `/api/money-transfer/summaries/${date}/complete-step1`,
           {
             method: 'POST',
+            body: {
+              userId: authStore.user?.uid || 'system',
+              userName: authStore.user?.displayName || 'Manager',
+            },
           }
         )
 
