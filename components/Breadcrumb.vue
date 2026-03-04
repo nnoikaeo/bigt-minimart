@@ -62,8 +62,6 @@ const labelMap: Record<string, string> = {
   'monthly-report': 'รายงานประจำเดือน',
   'money-transfer-service': 'บริการโอนเงิน',
   'bill-payment-service': 'บริการรับชำระบิล',
-  'transaction-recording': 'บันทึกรายการ',
-  'cash-counting': 'ตรวจนับเงินสด',
   // HR pages
   hr: 'บุคคล',
   attendance: 'เวลาเข้าออก',
