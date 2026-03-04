@@ -30,7 +30,7 @@ export default defineEventHandler(async (event) => {
     console.log('[POST /api/money-transfer/summaries/[date]/complete-step1] Date:', date)
 
     // Get current user info from request body (optional but recommended)
-    const body = await readBody(event).catch(() => ({}))
+    const body = (await readBody(event).catch(() => ({}))) ?? {}
     const userId = body.userId || 'system'
     const userName = body.userName || 'Manager'
 

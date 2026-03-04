@@ -1,6 +1,6 @@
 <script setup lang="ts">
 definePageMeta({
-  middleware: () => navigateTo('/finance/money-transfer-service/transaction-recording', { replace: true }),
+  middleware: () => navigateTo('/finance/money-transfer-service', { replace: true }),
 })
 </script>
 

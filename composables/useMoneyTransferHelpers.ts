@@ -1,6 +1,6 @@
 /**
  * Shared formatting utilities and label maps for the money transfer service.
- * Single source of truth — used across transaction-recording.vue, cash-counting.vue, TransactionForm.vue
+ * Single source of truth — used across transaction-recording.vue, TransactionForm.vue
  */
 export function useMoneyTransferHelpers() {
   function formatCurrency(amount: number): string {
