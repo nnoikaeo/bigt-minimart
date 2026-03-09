@@ -318,30 +318,98 @@ Recommendation: Follow up on QR and Government transfers in next round"
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ WORKFLOW 2.1: Manager/Assistant Manager บันทึก & ตรวจสอบ      │
+│ WORKFLOW 2.0: Money Transfer History Page (Entry Point)        │
+│   ├─ ทุก Role เข้ามาที่หน้านี้ก่อนเสมอ                          │
+│   ├─ Pending Inbox: แต่ละ Role เห็น pending count ของตน        │
+│   └─ Smart Navigation: ปุ่ม Action นำไปยัง WF step ที่ถูกต้อง │
 ├─────────────────────────────────────────────────────────────────┤
+│ WORKFLOW 2.1: Manager/Assistant Manager บันทึก & ตรวจสอบ      │
 │                                                                 │
 │ Step 1: Record Transfer & Withdrawal Transactions              │
-│   ├─ Manager บันทึกรายการโอน/ถอนเงิน throughout the day        │
+│   ├─ Manager/AM บันทึกรายการโอน/ถอนเงิน throughout the day     │
 │   ├─ System auto-calculates all 4 balance accounts             │
 │   └─ ไม่ต้องมีการบันทึกเพิ่มเติมแล้ว                             │
 │                                                                 │
 │ Step 2: Verify Recorded Transactions & Count Actual Cash       │
-│   ├─ Manager นับเงินสดจริง ณ วันท้ายวัน                         │
+│   ├─ Manager/AM นับเงินสดจริง ณ วันท้ายวัน                      │
 │   ├─ System แสดง expected amounts จาก Step 1                   │
-│   ├─ Manager verify match or note discrepancies                │
+│   ├─ Manager/AM verify match or note discrepancies             │
 │   └─ ยืนยันข้อมูล (ไม่ใช่บันทึกใหม่)                           │
 │                                                                 │
 ├─────────────────────────────────────────────────────────────────┤
 │ WORKFLOW 2.2: Auditor ตรวจสอบเงินจากบริการโอนเงิน              │
+│   └─ มาจาก History Page (คลิก "ตรวจสอบ" บนแถว step2_completed) │
 │   └─ Cross-check กับ bank statement                            │
 │   └─ Verify all transactions & amounts                         │
 │                                                                 │
 │ WORKFLOW 2.3: Owner อนุมัติการตรวจสอบ                          │
+│   └─ มาจาก History Page (คลิก "อนุมัติ" บนแถว audited)         │
 │   └─ Final approval ของ Manager & Auditor records              │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## Workflow 2.0: หน้าประวัติบริการโอนเงิน (History Page — Entry Point)
+
+**บริบท**: ทุก Role เข้าสู่ระบบผ่านหน้านี้ก่อนเสมอ ทำหน้าที่เป็น "Pending Inbox" ที่แสดงรายการทุกวันพร้อม Smart Navigation พาแต่ละ Role ไปยัง WF step ที่ถูกต้องโดยอัตโนมัติ
+
+### Process Flow
+```
+[User เข้าเมนู "บริการโอนเงิน"]
+        ↓
+[Landing: /finance/money-transfer-history]
+        ↓
+เห็น list รายการทุกวัน (เรียงล่าสุดก่อน)
++ Summary Cards: pending count แต่ละ Role
+        ↓
+┌─ Manager/Assistant Manager ─────────────────────────────┐
+│ คลิก [เพิ่มรายการ] → date picker                        │
+│   ↓ เลือกวันที่ (วันนี้หรือย้อนหลัง)                     │
+│   ↓ navigate to /finance/money-transfer-service?date=    │
+│                                                          │
+│ คลิก [ทำงาน] (step1_in_progress) → WF 2.1              │
+│ คลิก [แก้ไข] (needs_correction)  → WF 2.1              │
+│ คลิก [ดูรายละเอียด] (อื่นๆ)      → index.vue read-only  │
+└──────────────────────────────────────────────────────────┘
+        ↓
+┌─ Auditor ───────────────────────────────────────────────┐
+│ คลิก [ตรวจสอบ] (step2_completed) → WF 2.2              │
+│ คลิก [ดูรายละเอียด] (step1_*)    → index.vue read-only  │
+└──────────────────────────────────────────────────────────┘
+        ↓
+┌─ Owner ─────────────────────────────────────────────────┐
+│ คลิก [อนุมัติ] (audited)         → WF 2.3              │
+│ คลิก [ดูรายละเอียด] (step1_*/step2_*) → index.vue read-only│
+└──────────────────────────────────────────────────────────┘
+```
+
+### Details
+- **Role**: ทุก Role — owner, manager, assistant_manager, auditor
+- **Page**: `/finance/money-transfer-history`
+- **Sidebar route**: เมนู "บริการโอนเงิน" ชี้มาที่หน้านี้แทน
+- **Pending Inbox (Summary Cards)**:
+  - Manager/AM: นับ `step1_in_progress` + `needs_correction`
+  - Auditor: นับ `step2_completed`
+  - Owner: นับ `audited`
+- **Smart Action Button** — label + destination เปลี่ยนตาม Role × workflowStatus:
+
+  | Role | workflowStatus | ปุ่ม | ปลายทาง |
+  |------|----------------|------|---------|
+  | manager/AM | step1_in_progress | "ทำงาน" | `money-transfer-service?date=` |
+  | manager/AM | needs_correction | "แก้ไข" | `money-transfer-service?date=` |
+  | manager/AM | step2_completed/audited/approved | "ดูรายละเอียด" | `money-transfer-service?date=` |
+  | auditor | step2_completed | "ตรวจสอบ" | `auditor-review?date=` |
+  | auditor | audited | "ดูการตรวจสอบ" | `auditor-review?date=` |
+  | auditor | step1_* | "ดูรายละเอียด" | `money-transfer-service?date=` |
+  | owner | audited | "อนุมัติ" | `owner-approval?date=` |
+  | owner | approved | "ดูรายละเอียด" | `owner-approval?date=` |
+  | owner | step1_*/step2_* | "ดูรายละเอียด" | `money-transfer-service?date=` |
+
+- **ปุ่ม "เพิ่มรายการ"**: กั้นด้วย `EDIT_FINANCE` permission → manager, assistant_manager, owner เห็นเท่านั้น
+- **Backdated Entry**: ปุ่ม "เพิ่มรายการ" ให้เลือกวันที่ได้อิสระ รวมถึงวันในอดีต (กรณีระบบมีปัญหา ให้บันทึกลงกระดาษแล้วนำมาบันทึกระบบภายหลัง)
+- **Back Navigation**: ทุก WF page (2.1, 2.2, 2.3) มีปุ่ม "← ประวัติ" กลับมาที่หน้านี้
 
 ---
 
@@ -486,12 +554,18 @@ TOTAL BANK BALANCE: 10,210 บาท
 
 ### Process Flow - Step 1: Record Transfer & Withdrawal Transactions
 ```
-[Start Manager/Assistant Manager Shift]
+[มาจาก History Page (WF 2.0)]
+        ↓
+[คลิก "เพิ่มรายการ" → เลือกวันที่ หรือ คลิก "ทำงาน"/"แก้ไข" บน existing row]
+        ↓
+navigate to /finance/money-transfer-service?date=YYYY-MM-DD
+        ↓
+[ถ้า date เป็นวันในอดีต: แสดง warning banner "⚠️ กำลังบันทึกย้อนหลัง: วันที่ DD/MM/YYYY"]
         ↓
 [Throughout the day - each transfer/withdrawal happens]
         ↓
 Manager/Assistant Manager บันทึกลงแอพ:
-     Go to /finance/money-transfer-service → "รายการใหม่"
+     คลิก "รายการใหม่" หรือ Quick Action บนหน้า
         ↓
      Fill in transaction details:
      - Date & Time of transaction
@@ -516,7 +590,9 @@ Manager/Assistant Manager บันทึกลงแอพ:
 
 ### Details - Step 1
 - **Role**: ผู้จัดการหรือผู้ช่วยผู้จัดการ (Manager/Assistant Manager)
-- **Page**: /finance/money-transfer-service (Transaction Recording)
+- **Entry**: มาจาก History Page (WF 2.0) → คลิก "เพิ่มรายการ" หรือ "ทำงาน"
+- **Page**: `/finance/money-transfer-service?date=YYYY-MM-DD`
+- **Note**: ถ้า date เป็นวันในอดีต → แสดง warning banner (Backdated Entry)
 - **Timing**: Throughout the day, as each transaction occurs
 - **Time Required**: ~2-3 minutes per transaction
 - **Success Criteria**:
@@ -653,11 +729,12 @@ Review System Data from Step 1:
             → verificationNotes: detailed notes
         ↓
      [Complete] → Ready for Auditor (Workflow 2.2)
+     → กลับ History Page (/finance/money-transfer-history) อัตโนมัติ
 ```
 
 ### Details - Step 2
 - **Role**: ผู้จัดการหรือผู้ช่วยผู้จัดการ (Manager/Assistant Manager)
-- **Page**: /finance/money-transfer-service (Transaction Verification)
+- **Page**: `/finance/money-transfer-service?date=YYYY-MM-DD` (same page, Step 2 section)
 - **Timing**: End of day, after all transactions in Step 1 are recorded
 - **Time Required**: ~5-10 minutes
 - **Success Criteria**:
@@ -683,7 +760,7 @@ Review System Data from Step 1:
   - verifiedAt: timestamp
   - verifiedBy: Manager ID
   - verificationNotes: (if needed)
-- **Next Step**: Auditor final review & approval (Workflow 2.2)
+- **Next Step**: Auditor final review & approval (Workflow 2.2) — Auditor เห็น row ที่ `step2_completed` ใน History Page แล้วคลิก "ตรวจสอบ"
 
 ---
 
@@ -764,9 +841,9 @@ auditedBy: auditor-001
 
 ### Process Flow - Step 2 Verification
 ```
-[Auditor Reviews Manager's "verified" Record]
+[Auditor เข้า History Page → เห็น row ที่ workflowStatus = "step2_completed"]
         ↓
-Go to /finance/money-transfer-service → "verified" status
+คลิก [ตรวจสอบ] → navigate to /finance/money-transfer-service/auditor-review?date=YYYY-MM-DD
         ↓
      VERIFY MANAGER'S STEP 1 RECORDS:
      - Review all recorded transactions (6 total)
@@ -818,8 +895,10 @@ Go to /finance/money-transfer-service → "verified" status
 
 ### Details - Step 2 Auditor Verification
 - **Role**: ผู้ตรวจสอบ (Auditor)
-- **Page**: /finance/money-transfer-service (Auditor Review)
-- **Timing**: After Manager completes Step 1 & 2 (Status: "verified")
+- **Entry**: มาจาก History Page (WF 2.0) → คลิก "ตรวจสอบ" บน row ที่ `step2_completed`
+- **Page**: `/finance/money-transfer-service/auditor-review?date=YYYY-MM-DD`
+- **Back Navigation**: ปุ่ม "← ประวัติ" กลับ History Page
+- **Timing**: After Manager completes Step 1 & 2 (Status: "step2_completed")
 - **Time Required**: ~10-15 minutes
 - **Success Criteria**:
   - ✅ All Step 1 transactions verified with bank statement
@@ -850,7 +929,7 @@ Go to /finance/money-transfer-service → "verified" status
   - auditedAt: timestamp
   - auditedBy: Auditor ID
   - auditNotes: verification details
-- **Next Step**: Owner final approval (Workflow 2.3)
+- **Next Step**: Owner final approval (Workflow 2.3) — Owner เห็น row ที่ `audited` ใน History Page แล้วคลิก "อนุมัติ"
 
 ---
 
@@ -860,9 +939,9 @@ Go to /finance/money-transfer-service → "verified" status
 
 ### Process Flow
 ```
-[Owner Reviews Auditor's "audited" Record]
+[Owner เข้า History Page → เห็น row ที่ workflowStatus = "audited"]
         ↓
-Go to /finance/money-transfer-service → "audited" or "audited_with_issues"
+คลิก [อนุมัติ] → navigate to /finance/money-transfer-service/owner-approval?date=YYYY-MM-DD
         ↓
      REVIEW ALL RECORDS:
 
@@ -914,8 +993,10 @@ Go to /finance/money-transfer-service → "audited" or "audited_with_issues"
 
 ### Details - Owner Final Approval
 - **Role**: เจ้าของร้าน (Owner)
-- **Page**: /finance/money-transfer-service (Owner Approval)
-- **Timing**: After Auditor completes verification (Status: "audited" or "audited_with_issues")
+- **Entry**: มาจาก History Page (WF 2.0) → คลิก "อนุมัติ" บน row ที่ `audited`
+- **Page**: `/finance/money-transfer-service/owner-approval?date=YYYY-MM-DD`
+- **Back Navigation**: ปุ่ม "← ประวัติ" กลับ History Page
+- **Timing**: After Auditor completes verification (Status: "audited")
 - **Time Required**: ~5-10 minutes
 - **Success Criteria**:
   - ✅ All records reviewed (Step 1, Step 2, Audit)
