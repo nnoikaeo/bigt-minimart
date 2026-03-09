@@ -60,6 +60,7 @@ const labelMap: Record<string, string> = {
   'daily-expenses': 'รายรับ-รายจ่าย',
   'cash-flow': 'กระแสเงินสด',
   'monthly-report': 'รายงานประจำเดือน',
+  'money-transfer-history': 'บริการโอนเงิน',
   'money-transfer-service': 'บริการโอนเงิน',
   'bill-payment-service': 'บริการรับชำระบิล',
   // HR pages
