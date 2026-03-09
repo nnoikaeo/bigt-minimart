@@ -29,9 +29,17 @@ const auditSchema = z.object({
   transactionsVerified: z.number().nonnegative('Transaction count cannot be negative'),
   transactionsWithIssues: z.number().nonnegative('Issues count cannot be negative'),
   bankStatementVerified: z.boolean(),
-  auditResult: z.enum(['no_issues', 'minor_issues', 'major_issues']),
-  auditNotes: z.string().min(1, 'Audit notes are required'),
+  bankStatementAmount: z.number().nonnegative().optional(),
+  auditorCash: z.object({
+    transferWithdrawal: z.number().nonnegative(),
+    serviceFee: z.number().nonnegative(),
+    total: z.number().nonnegative(),
+  }).optional(),
+  auditResult: z.enum(['no_issues', 'minor_issues', 'major_issues', 'rejected']),
+  auditNotes: z.string().optional().default(''),
   issuesFound: z.string().optional(),
+  completedBy: z.string().optional(),
+  completedByName: z.string().optional(),
 })
 
 export default defineEventHandler(async (event) => {
@@ -89,22 +97,26 @@ export default defineEventHandler(async (event) => {
       `[POST /api/money-transfer/summaries/[date]/audit] Auditing ${completed.length} transactions`
     )
 
+    const isRejected = validated.auditResult === 'rejected'
+
     // Update summary with auditor verification data
     const updatedSummary = await moneyTransferJsonRepository.updateDailySummary(date, {
       auditorVerification: {
         status: 'completed',
         completedAt: new Date().toISOString(),
-        completedBy: 'auditor', // TODO: Get from auth context
-        completedByName: 'Auditor', // TODO: Get from auth context
+        completedBy: validated.completedBy || 'auditor',
+        completedByName: validated.completedByName || 'Auditor',
         transactionsVerified: validated.transactionsVerified,
         transactionsWithIssues: validated.transactionsWithIssues,
         bankStatementVerified: validated.bankStatementVerified,
+        bankStatementAmount: validated.bankStatementAmount,
         bankBalanceMatches: true, // TODO: Verify against bank statement
+        auditorCash: validated.auditorCash,
         auditNotes: validated.auditNotes,
         issuesFound: validated.issuesFound ? [validated.issuesFound] : undefined,
-        auditResult: validated.auditResult,
+        auditResult: isRejected ? 'major_issues' : validated.auditResult,
       },
-      workflowStatus: 'audited',
+      workflowStatus: isRejected ? 'needs_correction' : 'audited',
     })
 
     console.log(`[POST /api/money-transfer/summaries/[date]/audit] Completed audit for ${date}`)

@@ -51,14 +51,14 @@ const myPendingCount = computed(() => {
 })
 
 // ─── Smart Action Button ───────────────────────────────────────────────────────
-function getActionButton(summary: any): { label: string; route: string; variant: 'primary' | 'secondary' | 'warning' } | null {
+function getActionButton(summary: any): { label: string; route: string; variant: 'primary' | 'secondary' | 'danger' } | null {
   const role = userRole.value
   const status = summary.workflowStatus
   const date = summary.date
 
   if (role === ROLES.MANAGER || role === ROLES.ASSISTANT_MANAGER) {
     if (status === 'step1_in_progress') return { label: 'ทำงาน', route: `/finance/money-transfer-service?date=${date}`, variant: 'primary' }
-    if (status === 'needs_correction') return { label: 'แก้ไข', route: `/finance/money-transfer-service?date=${date}`, variant: 'warning' }
+    if (status === 'needs_correction') return { label: 'แก้ไข', route: `/finance/money-transfer-service?date=${date}`, variant: 'danger' }
     return { label: 'ดูรายละเอียด', route: `/finance/money-transfer-service?date=${date}`, variant: 'secondary' }
   }
 
@@ -82,8 +82,8 @@ function getStatusBadge(status: string): { label: string; class: string } {
   const map: Record<string, { label: string; class: string }> = {
     step1_in_progress:  { label: 'กำลังทำงาน',        class: 'bg-blue-100 text-blue-800' },
     step1_completed:    { label: 'รอตรวจนับเงิน',       class: 'bg-blue-100 text-blue-800' },
-    step2_completed:    { label: 'รอตรวจสอบ Auditor',  class: 'bg-orange-100 text-orange-800' },
-    audited:            { label: 'รออนุมัติ Owner',     class: 'bg-yellow-100 text-yellow-800' },
+    step2_completed:    { label: 'รอตรวจสอบ',  class: 'bg-orange-100 text-orange-800' },
+    audited:            { label: 'รออนุมัติ',     class: 'bg-yellow-100 text-yellow-800' },
     approved:           { label: 'อนุมัติแล้ว',          class: 'bg-green-100 text-green-800' },
     needs_correction:   { label: 'รอแก้ไข',             class: 'bg-red-100 text-red-800' },
   }
@@ -164,7 +164,7 @@ onMounted(async () => {
           {{ pendingForManager }}
         </div>
         <div>
-          <div class="text-sm font-semibold text-gray-800">รอดำเนินการ (คุณ)</div>
+          <div class="text-sm font-semibold text-gray-800">รอดำเนินการ</div>
           <div class="text-xs text-gray-500">รายการที่รอบันทึก/แก้ไข</div>
         </div>
       </div>
@@ -178,8 +178,8 @@ onMounted(async () => {
           {{ pendingForAuditor }}
         </div>
         <div>
-          <div class="text-sm font-semibold text-gray-800">รอตรวจสอบ (Auditor)</div>
-          <div class="text-xs text-gray-500">บันทึก Step 2 เสร็จแล้ว</div>
+          <div class="text-sm font-semibold text-gray-800">รอตรวจสอบ</div>
+          <div class="text-xs text-gray-500">รายการที่รอตรวจสอบ</div>
         </div>
       </div>
 
@@ -192,23 +192,24 @@ onMounted(async () => {
           {{ pendingForOwner }}
         </div>
         <div>
-          <div class="text-sm font-semibold text-gray-800">รออนุมัติ (Owner)</div>
-          <div class="text-xs text-gray-500">ตรวจสอบแล้ว รอ Owner</div>
+          <div class="text-sm font-semibold text-gray-800">รออนุมัติ</div>
+          <div class="text-xs text-gray-500">รายการที่รอการอนุมัติ</div>
         </div>
       </div>
 
-      <!-- Auditor-only view (show only relevant cards) -->
-      <template v-if="isAuditor && !isManagerOrAM">
-        <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4">
-          <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-700 text-lg font-bold flex-shrink-0">
-            {{ pendingForAuditor }}
-          </div>
-          <div>
-            <div class="text-sm font-semibold text-gray-800">รอตรวจสอบ (คุณ)</div>
-            <div class="text-xs text-gray-500">รายการที่รอ Audit</div>
-          </div>
+      <!-- Auditor-only: pending owner approval card -->
+      <div
+        v-if="isAuditor && !isManagerOrAM"
+        class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4"
+      >
+        <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 text-lg font-bold flex-shrink-0">
+          {{ pendingForOwner }}
         </div>
-      </template>
+        <div>
+          <div class="text-sm font-semibold text-gray-800">รออนุมัติ</div>
+          <div class="text-xs text-gray-500">รายการที่รออนุมัติ</div>
+        </div>
+      </div>
     </section>
 
     <!-- ── History List ───────────────────────────────────────────────────────── -->
@@ -295,7 +296,7 @@ onMounted(async () => {
 
   <!-- ── Modal: เพิ่มรายการ (date picker) ──────────────────────────────────── -->
   <BaseModal
-    v-if="showAddModal"
+    :open="showAddModal"
     title="เพิ่มรายการบริการโอนเงิน"
     @close="showAddModal = false"
   >

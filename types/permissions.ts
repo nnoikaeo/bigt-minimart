@@ -91,6 +91,7 @@ export const ROLE_PERMISSIONS: Record<RoleId, PermissionId[]> = {
     // 'create-sales',
     // 'edit-sales',
     'view-finance',
+    'edit-finance',
   ],
   cashier: [
     'view-dashboard',

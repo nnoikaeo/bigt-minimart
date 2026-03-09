@@ -440,6 +440,20 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
     },
 
     /**
+     * Fetch balance for a specific date (used when viewing past dates)
+     */
+    async fetchBalanceByDate(date: string): Promise<void> {
+      try {
+        const response = await $fetch(`/api/money-transfer/balances/${date}`)
+        this.currentBalance = response.data
+        console.log('[fetchBalanceByDate] Balance for', date, this.currentBalance)
+      } catch (error: any) {
+        this.error = `Failed to fetch balance for ${date}: ${error.message}`
+        console.error('[fetchBalanceByDate]', error)
+      }
+    },
+
+    /**
      * Fetch all daily summaries (for History Page WF 2.0)
      */
     async fetchAllSummaries(): Promise<void> {
@@ -465,6 +479,20 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
         console.log('[fetchDailySummary] No summary found for', date)
         // It's OK if summary doesn't exist yet
         this.currentSummary = null
+      }
+    },
+
+    /**
+     * Initialize daily summary for a date (creates if not exists).
+     * Idempotent — safe to call on page load.
+     */
+    async initDailySummary(date: string): Promise<void> {
+      try {
+        const response = await $fetch(`/api/money-transfer/summaries/${date}/init`, { method: 'POST' })
+        this.currentSummary = response.data
+        console.log('[initDailySummary]', response.created ? 'Created' : 'Already exists', date)
+      } catch (error: any) {
+        console.error('[initDailySummary] Failed to init summary for', date, error.message)
       }
     },
 
@@ -574,9 +602,14 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
       this.isLoading = true
 
       try {
+        const authStore = useAuthStore()
         const response = await $fetch(`/api/money-transfer/summaries/${date}/audit`, {
           method: 'POST',
-          body: auditData,
+          body: {
+            ...auditData,
+            completedBy: authStore.user?.uid || 'auditor',
+            completedByName: authStore.user?.displayName || 'Auditor',
+          },
         })
 
         this.currentSummary = response.data

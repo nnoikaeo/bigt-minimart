@@ -311,7 +311,13 @@ export interface MoneyTransferDailySummary {
     transactionsVerified: number
     transactionsWithIssues: number
     bankStatementVerified: boolean
+    bankStatementAmount?: number
     bankBalanceMatches: boolean
+    auditorCash?: {
+      transferWithdrawal: number
+      serviceFee: number
+      total: number
+    }
     auditNotes: string
     issuesFound?: string[]
     auditResult: 'no_issues' | 'minor_issues' | 'major_issues'

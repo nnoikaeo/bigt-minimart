@@ -112,6 +112,9 @@ const canEdit = computed(() => can(PERMISSIONS.EDIT_FINANCE))
 /** Opening balance has been set for the selected date */
 const isOpeningSet = computed(() => store.currentBalance?.openingBalanceSource != null)
 
+/** Can add transactions: opening set AND Step 1 not yet completed */
+const canAddTransaction = computed(() => isOpeningSet.value && !store.isStep1Complete)
+
 /** All prerequisites met — user should click the complete button */
 const canCompleteStep1 = computed(
   () => isOpeningSet.value && todayStats.value.total > 0 && !hasDrafts.value
@@ -266,8 +269,9 @@ function diffSign(diff: number): string {
 async function handleDateChange() {
   try {
     await store.fetchTransactionsByDate(selectedDate.value)
-    await store.fetchDailySummary(selectedDate.value)
+    await store.fetchBalanceByDate(selectedDate.value)
     await store.fetchPreviousDayBalance(selectedDate.value)
+    await store.initDailySummary(selectedDate.value)
     loadExistingStep2Data()
   } catch (err: any) {
     errorMessage.value = err.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูล'
@@ -596,10 +600,11 @@ function goToAuditReview() {
 onMounted(async () => {
   try {
     await store.initializeStore()
-    await store.fetchPreviousDayBalance(selectedDate.value)
     if (selectedDate.value) {
       await store.fetchTransactionsByDate(selectedDate.value)
-      await store.fetchDailySummary(selectedDate.value)
+      await store.fetchBalanceByDate(selectedDate.value)
+      await store.fetchPreviousDayBalance(selectedDate.value)
+      await store.initDailySummary(selectedDate.value)
       loadExistingStep2Data()
     }
     await settingsStore.fetchMoneyTransferFees()
@@ -676,7 +681,7 @@ onMounted(async () => {
           ✅ ยอดเงินเริ่มต้น:
           <strong>{{ formatCurrency(store.currentBalance?.openingBalance ?? 0) }}</strong>
           <span class="text-green-600 font-normal ml-2">
-            ({{ store.currentBalance?.openingBalanceSource === 'carryover' ? 'Carry-over จากเมื่อวาน' : 'กำหนดเอง' }})
+            ({{ store.currentBalance?.openingBalanceSource === 'carryover' ? 'เงินในบัญชีจากเมื่อวาน' : 'กำหนดเอง' }})
           </span>
         </div>
         <BaseButton variant="secondary" size="sm" disabled>✓ ตั้งค่าแล้ว</BaseButton>
@@ -733,53 +738,53 @@ onMounted(async () => {
       <h2 class="text-base font-semibold text-gray-700 mb-3">⚡ รายการด่วน</h2>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <button
-          :disabled="!isOpeningSet"
+          :disabled="!canAddTransaction"
           :class="[
             'flex flex-col items-center gap-2 p-4 border rounded-xl font-medium text-sm transition-colors',
-            isOpeningSet
+            canAddTransaction
               ? 'bg-yellow-50 border-yellow-200 hover:bg-yellow-100 text-yellow-800 cursor-pointer'
               : 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-50',
           ]"
-          @click="isOpeningSet && openFavoriteModal()"
+          @click="canAddTransaction && openFavoriteModal()"
         >
           <StarIcon class="w-6 h-6" />
           รายการโปรด
         </button>
         <button
-          :disabled="!isOpeningSet"
+          :disabled="!canAddTransaction"
           :class="[
             'flex flex-col items-center gap-2 p-4 border rounded-xl font-medium text-sm transition-colors',
-            isOpeningSet
+            canAddTransaction
               ? 'bg-blue-50 border-blue-200 hover:bg-blue-100 text-blue-800 cursor-pointer'
               : 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-50',
           ]"
-          @click="isOpeningSet && openNewTransactionModal('transfer')"
+          @click="canAddTransaction && openNewTransactionModal('transfer')"
         >
           <ArrowUpTrayIcon class="w-6 h-6" />
           โอนเงิน
         </button>
         <button
-          :disabled="!isOpeningSet"
+          :disabled="!canAddTransaction"
           :class="[
             'flex flex-col items-center gap-2 p-4 border rounded-xl font-medium text-sm transition-colors',
-            isOpeningSet
+            canAddTransaction
               ? 'bg-purple-50 border-purple-200 hover:bg-purple-100 text-purple-800 cursor-pointer'
               : 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-50',
           ]"
-          @click="isOpeningSet && openNewTransactionModal('withdrawal')"
+          @click="canAddTransaction && openNewTransactionModal('withdrawal')"
         >
           <ArrowDownTrayIcon class="w-6 h-6" />
           ถอนเงิน
         </button>
         <button
-          :disabled="!isOpeningSet"
+          :disabled="!canAddTransaction"
           :class="[
             'flex flex-col items-center gap-2 p-4 border rounded-xl font-medium text-sm transition-colors',
-            isOpeningSet
+            canAddTransaction
               ? 'bg-green-50 border-green-200 hover:bg-green-100 text-green-800 cursor-pointer'
               : 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-50',
           ]"
-          @click="isOpeningSet && openNewTransactionModal('owner_deposit')"
+          @click="canAddTransaction && openNewTransactionModal('owner_deposit')"
         >
           <BanknotesIcon class="w-6 h-6" />
           ฝากเงิน
@@ -860,7 +865,7 @@ onMounted(async () => {
             :permission="PERMISSIONS.EDIT_FINANCE"
             variant="primary"
             size="sm"
-            :disabled="!isOpeningSet"
+            :disabled="!canAddTransaction"
             @click="openNewTransactionModal()"
           >
             <PlusIcon class="w-4 h-4" />
@@ -1095,8 +1100,8 @@ onMounted(async () => {
           </div>
         </div>
         <div class="flex justify-center pb-6">
-          <BaseButton variant="primary" size="lg" @click="goToAuditReview">
-            ยืนยัน
+          <BaseButton variant="secondary" size="md" @click="goToAuditReview">
+            ← ประวัติ
           </BaseButton>
         </div>
       </template>
@@ -1109,7 +1114,7 @@ onMounted(async () => {
             <div class="flex flex-col sm:flex-row sm:items-center gap-4">
               <div class="flex-1">
                 <div class="font-medium text-gray-900 mb-0.5">A. เงินสดจากโอน/ถอนเงิน</div>
-                <div class="text-sm text-gray-500">Expected: {{ formatCurrency(expectedTransferWithdrawal) }}</div>
+                <div class="text-sm text-gray-500">คาดหวัง: {{ formatCurrency(expectedTransferWithdrawal) }}</div>
               </div>
               <div class="flex items-center gap-3">
                 <FormField>
@@ -1130,7 +1135,7 @@ onMounted(async () => {
             <div class="flex flex-col sm:flex-row sm:items-center gap-4">
               <div class="flex-1">
                 <div class="font-medium text-gray-900 mb-0.5">B. ค่าบริการ (เงินสด)</div>
-                <div class="text-sm text-gray-500">Expected: {{ formatCurrency(expectedServiceFee) }}</div>
+                <div class="text-sm text-gray-500">คาดหวัง: {{ formatCurrency(expectedServiceFee) }}</div>
               </div>
               <div class="flex items-center gap-3">
                 <FormField>
@@ -1151,9 +1156,9 @@ onMounted(async () => {
             <div class="flex flex-col sm:flex-row sm:items-center gap-4">
               <div class="flex-1">
                 <div class="font-medium text-gray-600 mb-0.5">C. ค่าบริการ (โอน)</div>
-                <div class="text-sm text-gray-500">ตรวจสอบผ่าน Bank Statement</div>
+                <div class="text-sm text-gray-500">ตรวจสอบเงินในบัญชี</div>
               </div>
-              <div class="text-sm font-semibold text-gray-700">Expected: {{ formatCurrency(expectedServiceFeeTransfer) }}</div>
+              <div class="text-sm font-semibold text-gray-700">คาดหวัง: {{ formatCurrency(expectedServiceFeeTransfer) }}</div>
             </div>
           </div>
 

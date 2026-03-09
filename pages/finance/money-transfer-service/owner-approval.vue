@@ -53,6 +53,20 @@ const allTransactions = computed(() =>
 
 const step2Data = computed(() => store.currentSummary?.step2)
 const auditData = computed(() => store.currentSummary?.auditorVerification)
+const step1FinalBalances = computed(() => store.currentSummary?.step1?.finalBalances)
+
+// Balance snapshot
+const openingBalance = computed(() => store.currentBalance?.openingBalance ?? 0)
+const closingBalance = computed(() =>
+  store.currentSummary?.step1?.finalBalances?.bankAccount ?? store.currentBalance?.bankAccount ?? 0
+)
+const netChange = computed(() => closingBalance.value - openingBalance.value)
+
+function formatDiff(diff: number | null): string {
+  if (diff === null) return '-'
+  if (diff === 0) return '✅ ตรงกัน'
+  return (diff > 0 ? '+' : '') + formatCurrency(diff)
+}
 
 const auditResultLabel = computed(() => {
   const result = auditData.value?.auditResult
@@ -108,6 +122,7 @@ async function handleDateChange() {
   try {
     await store.fetchTransactionsByDate(selectedDate.value)
     await store.fetchDailySummary(selectedDate.value)
+    await store.fetchBalanceByDate(selectedDate.value)
     decision.value = ''
     ownerNotes.value = ''
     correctionReason.value = ''
@@ -164,6 +179,7 @@ onMounted(async () => {
     await store.initializeStore()
     await store.fetchTransactionsByDate(selectedDate.value)
     await store.fetchDailySummary(selectedDate.value)
+    await store.fetchBalanceByDate(selectedDate.value)
   } catch (err: any) {
     errorMessage.value = err.message || 'เกิดข้อผิดพลาด'
   }
@@ -230,6 +246,33 @@ onMounted(async () => {
         </div>
 
         <div class="p-6 space-y-6">
+          <!-- Balance Snapshot -->
+          <div>
+            <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">ยอดเงินในบัญชี Bank</h3>
+            <div class="grid grid-cols-3 gap-3 mb-3">
+              <div class="bg-blue-50 rounded-lg p-3 text-center">
+                <div class="text-xs text-blue-600 mb-1">ยอดเปิดบัญชี (เริ่มต้นวัน)</div>
+                <div class="text-base font-bold text-blue-900">{{ formatCurrency(openingBalance) }} ฿</div>
+              </div>
+              <div :class="['rounded-lg p-3 text-center', netChange >= 0 ? 'bg-green-50' : 'bg-red-50']">
+                <div :class="['text-xs mb-1', netChange >= 0 ? 'text-green-600' : 'text-red-600']">สุทธิระหว่างวัน</div>
+                <div :class="['text-base font-bold', netChange >= 0 ? 'text-green-800' : 'text-red-800']">
+                  {{ netChange >= 0 ? '+' : '' }}{{ formatCurrency(netChange) }} ฿
+                </div>
+              </div>
+              <div class="bg-gray-100 rounded-lg p-3 text-center ring-1 ring-gray-300">
+                <div class="text-xs text-gray-500 mb-1">ยอดปิดบัญชี (ที่คาดหวัง)</div>
+                <div class="text-base font-bold text-gray-900">{{ formatCurrency(closingBalance) }} ฿</div>
+              </div>
+            </div>
+            <div class="flex gap-6 text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
+              <span>เงินสดในมือ (โอน/ถอน): <strong>{{ formatCurrency(step1FinalBalances?.transferCash ?? 0) }}</strong></span>
+              <span>ค่าบริการสะสม: <strong class="text-green-700">{{ formatCurrency(step1FinalBalances?.serviceFeeCash ?? 0) }}</strong></span>
+            </div>
+          </div>
+
+          <hr class="border-gray-100" />
+
           <!-- Step 1 Summary -->
           <div>
             <div class="flex items-center justify-between mb-3">
@@ -246,20 +289,20 @@ onMounted(async () => {
 
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div class="bg-blue-50 rounded-lg p-3 text-center">
-                <p class="text-xs text-blue-600 mb-1">รายรับ Bank</p>
-                <p class="font-semibold text-blue-900">{{ formatCurrency(store.currentBalance?.bankAccount ?? 0) }} ฿</p>
+                <p class="text-xs text-blue-600 mb-1">ยอดปิดบัญชี Bank</p>
+                <p class="font-semibold text-blue-900">{{ formatCurrency(step1FinalBalances?.bankAccount ?? 0) }} ฿</p>
               </div>
               <div class="bg-green-50 rounded-lg p-3 text-center">
-                <p class="text-xs text-green-600 mb-1">เงินสดจากโอน</p>
-                <p class="font-semibold text-green-900">{{ formatCurrency(store.currentBalance?.transferCash ?? 0) }} ฿</p>
+                <p class="text-xs text-green-600 mb-1">เงินสดโอน/ถอน</p>
+                <p class="font-semibold text-green-900">{{ formatCurrency(step1FinalBalances?.transferCash ?? 0) }} ฿</p>
               </div>
               <div class="bg-yellow-50 rounded-lg p-3 text-center">
                 <p class="text-xs text-yellow-600 mb-1">ค่าบริการ (เงินสด)</p>
-                <p class="font-semibold text-yellow-900">{{ formatCurrency(store.currentBalance?.serviceFeeCash ?? 0) }} ฿</p>
+                <p class="font-semibold text-yellow-900">{{ formatCurrency(step1FinalBalances?.serviceFeeCash ?? 0) }} ฿</p>
               </div>
               <div class="bg-purple-50 rounded-lg p-3 text-center">
                 <p class="text-xs text-purple-600 mb-1">ค่าบริการ (โอน)</p>
-                <p class="font-semibold text-purple-900">{{ formatCurrency(store.currentBalance?.serviceFeeTransfer ?? 0) }} ฿</p>
+                <p class="font-semibold text-purple-900">{{ formatCurrency(step1FinalBalances?.serviceFeeTransfer ?? 0) }} ฿</p>
               </div>
             </div>
 
@@ -311,7 +354,8 @@ onMounted(async () => {
               <ShieldCheckIcon class="w-5 h-5 text-indigo-600" />
               <h3 class="font-medium text-gray-900">Auditor Verification (WF 2.2)</h3>
             </div>
-            <div v-if="auditData" class="space-y-2 text-sm">
+            <div v-if="auditData" class="space-y-3 text-sm">
+              <!-- Audit result badge -->
               <div
                 class="flex items-center gap-3 p-3 rounded-lg border"
                 :class="auditResultLabel.containerClass"
@@ -319,16 +363,94 @@ onMounted(async () => {
                 <CheckCircleIcon class="w-5 h-5 shrink-0" />
                 <div>
                   <p class="font-semibold">{{ auditResultLabel.text }}</p>
-                  <p class="text-xs opacity-80 mt-0.5">Audited {{ formatDateTime(auditData.completedAt) }}</p>
+                  <p class="text-xs opacity-80 mt-0.5">
+                    ตรวจสอบโดย {{ auditData.completedByName ?? '-' }} · {{ formatDateTime(auditData.completedAt) }}
+                  </p>
                 </div>
               </div>
-              <div v-if="auditData.auditNotes" class="py-2 px-3 rounded-lg bg-gray-50">
-                <span class="text-gray-500 text-xs">Audit Notes:</span>
-                <p class="text-gray-700 mt-0.5 whitespace-pre-wrap">{{ auditData.auditNotes }}</p>
+
+              <!-- Bank Statement row -->
+              <div class="flex items-center gap-3 py-2 px-3 rounded-lg bg-gray-50 flex-wrap">
+                <span class="text-gray-600">รายการเดินบัญชี:</span>
+                <template v-if="auditData.bankStatementAmount">
+                  <span class="font-semibold text-blue-800">{{ formatCurrency(auditData.bankStatementAmount) }} ฿</span>
+                  <span class="text-gray-400 text-xs">(Auditor กรอก)</span>
+                </template>
+                <BaseBadge :variant="auditData.bankStatementVerified ? 'success' : 'warning'" size="sm">
+                  {{ auditData.bankStatementVerified ? '✅ ตรวจสอบแล้ว' : '⚠️ ไม่ได้ตรวจสอบ' }}
+                </BaseBadge>
+                <BaseBadge v-if="auditData.bankStatementAmount" :variant="(auditData.bankStatementAmount - closingBalance) === 0 ? 'success' : 'error'" size="sm">
+                  {{ formatDiff(auditData.bankStatementAmount - closingBalance) }}
+                </BaseBadge>
               </div>
-              <div class="flex items-center justify-between py-1.5 px-3 rounded-lg bg-gray-50">
-                <span class="text-gray-600">Bank Statement Verified</span>
-                <span class="font-medium">{{ auditData.bankStatementVerified ? 'ใช่ ✅' : 'ไม่ใช่' }}</span>
+
+              <!-- Cash Verification Table -->
+              <div class="overflow-x-auto rounded-lg border border-gray-200">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="text-xs text-gray-500 border-b border-gray-100 bg-gray-50">
+                      <th class="text-left py-2 px-3 font-medium">รายการ</th>
+                      <th class="text-right py-2 px-3 font-medium">คาดหวัง</th>
+                      <th class="text-right py-2 px-3 font-medium">ผู้จัดการนับ</th>
+                      <th class="text-right py-2 px-3 font-medium text-blue-700">ผู้ตรวจสอบนับ</th>
+                      <th class="text-right py-2 px-3 font-medium">ผลต่าง</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-50">
+                    <tr>
+                      <td class="py-2 px-3 font-medium text-gray-700">เงินสดโอน/ถอน</td>
+                      <td class="py-2 px-3 text-right text-gray-700">{{ formatCurrency(step2Data?.expectedCash?.transferWithdrawal ?? 0) }}</td>
+                      <td class="py-2 px-3 text-right text-gray-500">{{ formatCurrency(step2Data?.actualCash?.transferWithdrawal ?? 0) }}</td>
+                      <td class="py-2 px-3 text-right text-blue-800 font-medium">
+                        {{ auditData.auditorCash ? formatCurrency(auditData.auditorCash.transferWithdrawal) : '-' }}
+                      </td>
+                      <td class="py-2 px-3 text-right">
+                        <span v-if="auditData.auditorCash" :class="['font-medium', (auditData.auditorCash.transferWithdrawal - (step2Data?.expectedCash?.transferWithdrawal ?? 0)) === 0 ? 'text-green-700' : 'text-red-700']">
+                          {{ formatDiff(auditData.auditorCash.transferWithdrawal - (step2Data?.expectedCash?.transferWithdrawal ?? 0)) }}
+                        </span>
+                        <span v-else class="text-gray-400">-</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="py-2 px-3 font-medium text-gray-700">ค่าบริการเงินสด</td>
+                      <td class="py-2 px-3 text-right text-gray-700">{{ formatCurrency(step2Data?.expectedCash?.serviceFee ?? 0) }}</td>
+                      <td class="py-2 px-3 text-right text-gray-500">{{ formatCurrency(step2Data?.actualCash?.serviceFee ?? 0) }}</td>
+                      <td class="py-2 px-3 text-right text-blue-800 font-medium">
+                        {{ auditData.auditorCash ? formatCurrency(auditData.auditorCash.serviceFee) : '-' }}
+                      </td>
+                      <td class="py-2 px-3 text-right">
+                        <span v-if="auditData.auditorCash" :class="['font-medium', (auditData.auditorCash.serviceFee - (step2Data?.expectedCash?.serviceFee ?? 0)) === 0 ? 'text-green-700' : 'text-red-700']">
+                          {{ formatDiff(auditData.auditorCash.serviceFee - (step2Data?.expectedCash?.serviceFee ?? 0)) }}
+                        </span>
+                        <span v-else class="text-gray-400">-</span>
+                      </td>
+                    </tr>
+                    <tr class="bg-gray-50 font-semibold border-t border-gray-200">
+                      <td class="py-2 px-3 text-gray-800">รวม</td>
+                      <td class="py-2 px-3 text-right text-gray-800">{{ formatCurrency(step2Data?.expectedCash?.total ?? 0) }}</td>
+                      <td class="py-2 px-3 text-right text-gray-500">{{ formatCurrency(step2Data?.actualCash?.total ?? 0) }}</td>
+                      <td class="py-2 px-3 text-right text-blue-800">
+                        {{ auditData.auditorCash ? formatCurrency(auditData.auditorCash.total) : '-' }}
+                      </td>
+                      <td class="py-2 px-3 text-right">
+                        <span v-if="auditData.auditorCash" :class="['font-medium', (auditData.auditorCash.total - (step2Data?.expectedCash?.total ?? 0)) === 0 ? 'text-green-700' : 'text-red-700 font-bold']">
+                          {{ formatDiff(auditData.auditorCash.total - (step2Data?.expectedCash?.total ?? 0)) }}
+                        </span>
+                        <span v-else class="text-gray-400">-</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Audit notes / issues -->
+              <div v-if="auditData.issuesFound?.length" class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <p class="text-xs font-medium text-amber-700 uppercase tracking-wide mb-1">รายละเอียดปัญหาที่พบ</p>
+                <p class="text-amber-900">{{ auditData.issuesFound.join(', ') }}</p>
+              </div>
+              <div v-if="auditData.auditNotes" class="py-2 px-3 rounded-lg bg-gray-50">
+                <span class="text-gray-500 text-xs">หมายเหตุ Auditor:</span>
+                <p class="text-gray-700 mt-0.5 whitespace-pre-wrap">{{ auditData.auditNotes }}</p>
               </div>
             </div>
             <p v-else class="text-sm text-gray-500 italic">ไม่มีข้อมูล Audit</p>
