@@ -60,7 +60,10 @@ const labelMap: Record<string, string> = {
   'daily-expenses': 'รายรับ-รายจ่าย',
   'cash-flow': 'กระแสเงินสด',
   'monthly-report': 'รายงานประจำเดือน',
+  'money-transfer-history': 'บริการโอนเงิน',
   'money-transfer-service': 'บริการโอนเงิน',
+  'auditor-review': 'ตรวจสอบ',
+  'owner-approval': 'อนุมัติ',
   'bill-payment-service': 'บริการรับชำระบิล',
   // HR pages
   hr: 'บุคคล',
@@ -79,6 +82,11 @@ const labelMap: Record<string, string> = {
   user: 'บัญชีผู้ใช้',
   profile: 'โปรไฟล์',
   'account-settings': 'ตั้งค่าบัญชี',
+}
+
+// Override the auto-generated path for certain segments
+const pathOverrideMap: Record<string, string> = {
+  'money-transfer-service': '/finance/money-transfer-history',
 }
 
 // Helper function to get context-aware label
@@ -130,7 +138,7 @@ const breadcrumbs = computed<Breadcrumb[]>(() => {
 
     breadcrumbArray.push({
       label,
-      path: cumulativePath,
+      path: pathOverrideMap[part] ?? cumulativePath,
     })
   }
 

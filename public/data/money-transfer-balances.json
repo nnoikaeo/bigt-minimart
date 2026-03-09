@@ -16,12 +16,12 @@
   {
     "id": "mtbal-2026-02-27",
     "date": "2026-02-27",
-    "bankAccount": 7710,
-    "transferCash": 12300,
+    "bankAccount": 7210,
+    "transferCash": 12800,
     "serviceFeeTransfer": 10,
-    "serviceFeeCash": 90,
+    "serviceFeeCash": 100,
     "history": [],
-    "updatedAt": "2026-02-27T15:11:06.034Z",
+    "updatedAt": "2026-02-27T20:02:16.380Z",
     "openingBalance": 10000,
     "openingBalanceSetAt": "2026-02-27T06:17:40.866Z",
     "openingBalanceSource": "carryover",
@@ -50,5 +50,35 @@
     "openingBalanceSetAt": "2026-03-04T11:52:32.210Z",
     "openingBalanceSource": "carryover",
     "openingBalanceSetBy": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2"
+  },
+  {
+    "id": "mtbal-2026-03-06",
+    "date": "2026-03-06",
+    "bankAccount": 0,
+    "transferCash": 0,
+    "serviceFeeTransfer": 0,
+    "serviceFeeCash": 0,
+    "history": [],
+    "updatedAt": "2026-03-06T12:28:10.361Z"
+  },
+  {
+    "id": "mtbal-2026-03-09",
+    "date": "2026-03-09",
+    "bankAccount": 0,
+    "transferCash": 0,
+    "serviceFeeTransfer": 0,
+    "serviceFeeCash": 0,
+    "history": [],
+    "updatedAt": "2026-03-09T08:28:41.947Z"
+  },
+  {
+    "id": "mtbal-2026-03-08",
+    "date": "2026-03-08",
+    "bankAccount": 0,
+    "transferCash": 0,
+    "serviceFeeTransfer": 0,
+    "serviceFeeCash": 0,
+    "history": [],
+    "updatedAt": "2026-03-09T11:44:41.624Z"
   }
 ]

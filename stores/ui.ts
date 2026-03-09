@@ -180,17 +180,20 @@ export const useUIStore = defineStore('ui', {
         }
       }
 
-      // Second pass: prefix match (e.g. current path is /finance/money-transfer-service/transaction-recording
-      // and menu route is /finance/money-transfer-service)
+      // Second pass: prefix match (e.g. current path is /finance/money-transfer-service/auditor-review
+      // and menu route is /finance/money-transfer-history with routePrefixes ['/finance/money-transfer-service'])
       let bestMatch: { pageKey: string; groupKey: string; routeLength: number } | null = null
       for (const group of menuData) {
         for (const page of group.pages) {
-          const normalizedPageRoute = page.route.endsWith('/') && page.route !== '/'
-            ? page.route.slice(0, -1)
-            : page.route
-          if (normalizedPageRoute !== '/' && normalizedPath.startsWith(normalizedPageRoute + '/')) {
-            if (!bestMatch || normalizedPageRoute.length > bestMatch.routeLength) {
-              bestMatch = { pageKey: page.pageKey, groupKey: group.groupKey, routeLength: normalizedPageRoute.length }
+          const allPrefixes = [page.route, ...(page.routePrefixes ?? [])]
+          for (const prefix of allPrefixes) {
+            const normalizedPageRoute = prefix.endsWith('/') && prefix !== '/'
+              ? prefix.slice(0, -1)
+              : prefix
+            if (normalizedPageRoute !== '/' && normalizedPath.startsWith(normalizedPageRoute + '/')) {
+              if (!bestMatch || normalizedPageRoute.length > bestMatch.routeLength) {
+                bestMatch = { pageKey: page.pageKey, groupKey: group.groupKey, routeLength: normalizedPageRoute.length }
+              }
             }
           }
         }

@@ -35,7 +35,8 @@
           "pageKey": "money-transfer-service",
           "icon": "🏦",
           "pageName": "บริการโอนเงิน",
-          "route": "/finance/money-transfer-service",
+          "route": "/finance/money-transfer-history",
+          "routePrefixes": ["/finance/money-transfer-service"],
           "requiredRoles": [
             "owner",
             "manager",

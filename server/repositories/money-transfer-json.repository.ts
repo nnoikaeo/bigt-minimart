@@ -291,6 +291,13 @@ export class MoneyTransferJsonRepository implements IMoneyTransferRepository {
   }
 
   /**
+   * READ: Get all daily summaries (sorted by date descending)
+   */
+  async getAllSummaries(): Promise<MoneyTransferDailySummary[]> {
+    return [...this.summaries].sort((a, b) => b.date.localeCompare(a.date))
+  }
+
+  /**
    * READ: Get daily summary
    */
   async getDailySummary(date: string): Promise<MoneyTransferDailySummary | null> {

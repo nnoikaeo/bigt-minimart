@@ -1,13 +1,112 @@
-# 📐 Wireframes: FLOW 2 Workflows 2.1 - 2.3
+# 📐 Wireframes: FLOW 2 Workflows 2.0 - 2.3
 ## Daily Money Transfer Service Income (นับและตรวจสอบเงินจากบริการโอนเงิน)
+
+---
+
+# 🔷 WORKFLOW 2.0: History Page (Unified Entry Point)
+
+## Money Transfer History Page
+**Route**: `/finance/money-transfer-history`
+**Role**: owner, manager, assistant_manager, auditor
+**Sidebar**: เมนู "บริการโอนเงิน" ชี้มาที่หน้านี้แทนทุก Role
+
+### Layout: Main History & Inbox Page
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
+│  🏦 ประวัติบริการโอนเงิน          [➕ เพิ่มรายการ] ← EDIT_FIN  │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  📊 PENDING INBOX (เปลี่ยนตาม Role)                              │
+│  ┌──────────────────┐  ┌──────────────┐  ┌──────────────────┐  │
+│  │ 🔴 รอดำเนินการ   │  │ 🟠 รอตรวจสอบ │  │ ✅ อนุมัติแล้ว   │  │
+│  │                  │  │              │  │                  │  │
+│  │  Manager: in_progress+needs_correction                   │  │
+│  │  Auditor: step2_completed                                │  │
+│  │  Owner:   audited                                        │  │
+│  └──────────────────┘  └──────────────┘  └──────────────────┘  │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  📋 HISTORY LIST                                                 │
+│  ┌────────┬──────────────────────┬──────┬────────┬───────────┐  │
+│  │ วันที่  │ สถานะ               │ Txn  │ ยอดรวม │ Actions   │  │
+│  ├────────┼──────────────────────┼──────┼────────┼───────────┤  │
+│  │ 6 มี.ค.│ 🔵 กำลังทำงาน       │  12  │ 28,000 │ [ทำงาน]   │  │
+│  │ 5 มี.ค.│ 🟡 รออนุมัติ        │  23  │ 45,000 │ [อนุมัติ] │  │
+│  │ 4 มี.ค.│ 🟠 รอตรวจสอบ       │  18  │ 32,000 │ [ตรวจสอบ] │  │
+│  │ 3 มี.ค.│ 🔴 รอแก้ไข         │   8  │ 12,000 │ [แก้ไข]   │  │
+│  │ 2 มี.ค.│ ✅ อนุมัติแล้ว      │  21  │ 38,000 │[ดูรายละฯ]│  │
+│  └────────┴──────────────────────┴──────┴────────┴───────────┘  │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+* Actions button label + destination เปลี่ยนตาม Role × workflowStatus
+* ปุ่ม [เพิ่มรายการ] แสดงเฉพาะ Role ที่มี EDIT_FINANCE permission
+```
+
+---
+
+## Modal: เพิ่มรายการ → Date Picker
+
+> กด [➕ เพิ่มรายการ] → เปิด Modal เลือกวันที่
+
+```
+┌──────────────────────────────────────────┐
+│  ➕ เพิ่มรายการบริการโอนเงิน        [✕]  │
+├──────────────────────────────────────────┤
+│                                          │
+│  เลือกวันที่:  [📅 2026-03-06]           │
+│                                          │
+│  * สามารถเลือกวันย้อนหลังได้             │
+│    กรณีระบบมีปัญหาในวันก่อนหน้า          │
+│    (Manager/Owner เท่านั้น)              │
+│                                          │
+│         [ยกเลิก]  [➡ ไปบันทึกรายการ]    │
+└──────────────────────────────────────────┘
+
+→ Navigate to /finance/money-transfer-service?date=YYYY-MM-DD
+```
+
+---
+
+## Smart Action Button — Role × workflowStatus
+
+| Role | workflowStatus | ปุ่ม | Route ปลายทาง |
+|------|---------------|------|--------------|
+| manager/AM | step1_in_progress | **"ทำงาน"** | `money-transfer-service?date=` |
+| manager/AM | needs_correction | **"แก้ไข"** | `money-transfer-service?date=` |
+| manager/AM | step2_completed/audited/approved | **"ดูรายละเอียด"** | `money-transfer-service?date=` (read-only) |
+| auditor | step2_completed | **"ตรวจสอบ"** | `auditor-review?date=` |
+| auditor | audited | **"ดูการตรวจสอบ"** | `auditor-review?date=` |
+| auditor | step1_in_progress/step1_completed | **"ดูรายละเอียด"** | `money-transfer-service?date=` (read-only) |
+| owner | audited | **"อนุมัติ"** | `owner-approval?date=` |
+| owner | approved | **"ดูรายละเอียด"** | `owner-approval?date=` (read-only) |
+| owner | step1_*/step2_completed | **"ดูรายละเอียด"** | `money-transfer-service?date=` (read-only) |
+
+---
+
+## Status Badge Colors
+
+| workflowStatus | สี | ป้าย |
+|---------------|-----|------|
+| step1_in_progress | 🔵 Blue | กำลังทำงาน |
+| step1_completed | 🔵 Blue | รอตรวจนับเงิน |
+| step2_completed | 🟠 Orange | รอตรวจสอบ Auditor |
+| audited | 🟡 Yellow | รออนุมัติ Owner |
+| approved | ✅ Green | อนุมัติแล้ว |
+| needs_correction | 🔴 Red | รอแก้ไข |
 
 ---
 
 # 🔷 WORKFLOW 2.1: Manager - Record Transfer & Verification
 
 ## Step 1: Record Transfer & Withdrawal Transactions Page
-**Route**: `/finance/money-transfer-service/step-1`
+**Route**: `/finance/money-transfer-service?date=YYYY-MM-DD`
 **Role**: Manager/Assistant Manager
+*(เข้ามาจาก History Page โดยคลิก "เพิ่มรายการ" หรือ "ทำงาน"/"แก้ไข")*
 
 ### Layout: Main Transaction Recording Page (Updated)
 
@@ -20,10 +119,12 @@
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                                                                 │
-│  🏦 Money Transfer Service - Step 1: Record Transactions       │
+│  [← ประวัติ]  🏦 Money Transfer Service - Step 1              │
 │                                                                 │
 │  📅 Date: 2026-01-29  👤 Manager: สมชาย              [Status]  │
 │                                                                 │
+│  [แสดงเมื่อ date ≠ วันนี้]                                       │
+│  ⚠️ กำลังบันทึกย้อนหลัง: วันที่ 29/01/2569                      │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  📊 CURRENT BALANCES (Real-time)                               │
@@ -446,7 +547,7 @@ When clicking row 3 (Draft Transaction):
 ---
 
 ## Step 2: Verify & Count Actual Cash Page
-**Route**: `/finance/money-transfer-service/step-2`
+**Route**: `/finance/money-transfer-service?date=YYYY-MM-DD` (same page — Step 2 section unlocks after Step 1 completed)
 **Role**: Manager/Assistant Manager
 
 ### Layout: Verification & Cash Count Page
@@ -564,15 +665,16 @@ When clicking "Confirm Verification":
 # 🔷 WORKFLOW 2.2: Auditor - Verify Money Transfer Service Income
 
 ## Auditor Verification Page
-**Route**: `/finance/money-transfer-service/auditor-review`
+**Route**: `/finance/money-transfer-service/auditor-review?date=YYYY-MM-DD`
 **Role**: Auditor
+*(เข้ามาจาก History Page โดยคลิก "ตรวจสอบ" บน row ที่ step2_completed)*
 
 ### Layout: Comprehensive Audit Review Page
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                                                                 │
-│  🔍 Money Transfer Service - Auditor Verification              │
+│  [← ประวัติ]  🔍 ตรวจสอบ Auditor (WF 2.2)                     │
 │                                                                 │
 │  📅 Date: 2026-01-29  👤 Auditor: สวนัย              [Status]  │
 │  Status: VERIFIED (from Manager) → Awaiting Audit             │
@@ -715,15 +817,16 @@ When clicking "Click to verify" for any transaction:
 # 🔷 WORKFLOW 2.3: Owner - Approve Money Transfer Service Income
 
 ## Owner Approval Page
-**Route**: `/finance/money-transfer-service/owner-approval`
+**Route**: `/finance/money-transfer-service/owner-approval?date=YYYY-MM-DD`
 **Role**: Owner
+*(เข้ามาจาก History Page โดยคลิก "อนุมัติ" บน row ที่ audited)*
 
 ### Layout: Final Approval Page
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                                                                 │
-│  ✅ Money Transfer Service - Owner Final Approval              │
+│  [← ประวัติ]  ✅ อนุมัติ Owner (WF 2.3)                        │
 │                                                                 │
 │  📅 Date: 2026-01-29                                           │
 │  Status: AUDITED (from Auditor) → Awaiting Owner Approval     │
@@ -849,57 +952,74 @@ When Owner clicks "Approve":
 
 ---
 
-# 📋 Complete Workflow 2.1-2.3 Navigation Flow
+# 📋 Complete Workflow 2.0-2.3 Navigation Flow
 
 ```
-START
+START (ทุก Role เข้าเมนู "บริการโอนเงิน")
   ↓
 ┌─────────────────────────────────────────────┐
-│ Manager - Workflow 2.1                      │
+│ WF 2.0: History Page (Entry Point)         │
 ├─────────────────────────────────────────────┤
 │                                             │
-│ Step 1: Record Transactions                │
-│ /finance/money-transfer-service/step-1     │
-│ └─ Record 6 transactions throughout day   │
-│ └─ System auto-calculates balances        │
-│ └─ Status: "submitted"                    │
-│ ↓                                           │
-│ Step 2: Verify & Count Cash                │
-│ /finance/money-transfer-service/step-2     │
-│ └─ Count actual cash                      │
-│ └─ Compare with system expected            │
-│ └─ Verify match or note discrepancies     │
-│ └─ Status: "verified" ✅                   │
-│ ↓                                           │
-└─────────────────────────────────────────────┘
-│
-├─────────────────────────────────────────────┐
-│ Auditor - Workflow 2.2                      │
-├─────────────────────────────────────────────┤
+│ /finance/money-transfer-history             │
+│ └─ แสดง list ทุกวัน เรียงล่าสุดก่อน       │
+│ └─ Pending Inbox Cards (role-specific)     │
+│ └─ Smart Action Button (role × status)     │
+│ └─ [เพิ่มรายการ] → date picker (EDIT_FIN)  │
 │                                             │
-│ Auditor Verification                       │
-│ /finance/money-transfer-service/auditor    │
-│ └─ Review Manager's Step 1 records        │
-│ └─ Verify Step 2 cash count results       │
-│ └─ Cross-check with bank statement        │
-│ └─ Status: "audited" or "audited_issues" │
-│ ↓                                           │
 └─────────────────────────────────────────────┘
-│
-├─────────────────────────────────────────────┐
-│ Owner - Workflow 2.3                        │
-├─────────────────────────────────────────────┤
-│                                             │
-│ Owner Approval                              │
-│ /finance/money-transfer-service/approval   │
-│ └─ Review complete workflow summary       │
-│ └─ Approve / Reject / Request correction  │
-│ └─ Status: "approved" or "needs_correction"
-│ ↓                                           │
-└─────────────────────────────────────────────┘
-│
-COMPLETE ✅
-Recorded in financial system
+  │
+  ├─ Manager/AM คลิก [เพิ่มรายการ] หรือ [ทำงาน]/[แก้ไข]
+  │     ↓
+  │   ┌─────────────────────────────────────────────┐
+  │   │ WF 2.1: Work Page                          │
+  │   ├─────────────────────────────────────────────┤
+  │   │                                             │
+  │   │ /finance/money-transfer-service?date=       │
+  │   │ [← ประวัติ] ← มุมบนซ้าย                    │
+  │   │                                             │
+  │   │ Step 1: บันทึกรายการตลอดวัน                 │
+  │   │ └─ System auto-calculates balances         │
+  │   │ └─ Status: step1_in_progress → step1_completed│
+  │   │ ↓                                           │
+  │   │ Step 2: นับเงินสดจริง ณ วันท้ายวัน          │
+  │   │ └─ Compare actual vs expected               │
+  │   │ └─ Status: step2_completed ✅               │
+  │   │                                             │
+  │   └─────────────────────────────────────────────┘
+  │
+  ├─ Auditor คลิก [ตรวจสอบ] (บน row step2_completed)
+  │     ↓
+  │   ┌─────────────────────────────────────────────┐
+  │   │ WF 2.2: Auditor Review                     │
+  │   ├─────────────────────────────────────────────┤
+  │   │                                             │
+  │   │ /finance/money-transfer-service/            │
+  │   │   auditor-review?date=                      │
+  │   │ [← ประวัติ] ← มุมบนซ้าย                    │
+  │   │                                             │
+  │   │ └─ ตรวจรายการ vs bank statement            │
+  │   │ └─ Status: audited / needs_correction       │
+  │   │                                             │
+  │   └─────────────────────────────────────────────┘
+  │
+  └─ Owner คลิก [อนุมัติ] (บน row audited)
+        ↓
+      ┌─────────────────────────────────────────────┐
+      │ WF 2.3: Owner Approval                     │
+      ├─────────────────────────────────────────────┤
+      │                                             │
+      │ /finance/money-transfer-service/            │
+      │   owner-approval?date=                      │
+      │ [← ประวัติ] ← มุมบนซ้าย                    │
+      │                                             │
+      │ └─ Review Step 1 + Step 2 + Audit          │
+      │ └─ Approve / Approve w/ Notes / Correction │
+      │ └─ Status: approved ✅ / needs_correction   │
+      │                                             │
+      └─────────────────────────────────────────────┘
+        ↓
+COMPLETE ✅ → กลับ History Page (status = "approved")
 ```
 
 ---

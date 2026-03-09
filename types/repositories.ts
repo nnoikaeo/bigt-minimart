@@ -311,7 +311,13 @@ export interface MoneyTransferDailySummary {
     transactionsVerified: number
     transactionsWithIssues: number
     bankStatementVerified: boolean
+    bankStatementAmount?: number
     bankBalanceMatches: boolean
+    auditorCash?: {
+      transferWithdrawal: number
+      serviceFee: number
+      total: number
+    }
     auditNotes: string
     issuesFound?: string[]
     auditResult: 'no_issues' | 'minor_issues' | 'major_issues'
@@ -401,6 +407,7 @@ export interface IMoneyTransferRepository {
   completeDraftTransaction(id: string, updates: Partial<MoneyTransferTransaction>): Promise<MoneyTransferTransaction>
 
   // Daily summary CRUD
+  getAllSummaries(): Promise<MoneyTransferDailySummary[]>
   getDailySummary(date: string): Promise<MoneyTransferDailySummary | null>
   createDailySummary(date: string): Promise<MoneyTransferDailySummary>
   updateDailySummary(date: string, updates: Partial<MoneyTransferDailySummary>): Promise<MoneyTransferDailySummary>

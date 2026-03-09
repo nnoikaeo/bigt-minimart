@@ -285,6 +285,18 @@ export class MoneyTransferFirestoreRepository implements IMoneyTransferRepositor
   // ============================================================================
 
   /**
+   * READ: Get all daily summaries (sorted by date descending)
+   */
+  async getAllSummaries(): Promise<MoneyTransferDailySummary[]> {
+    const q = query(
+      collection(this.db, this.summariesCollection),
+      orderBy('date', 'desc')
+    )
+    const snapshot = await getDocs(q)
+    return snapshot.docs.map(d => this.firestoreToSummary(d.data()))
+  }
+
+  /**
    * READ: Get daily summary
    */
   async getDailySummary(date: string): Promise<MoneyTransferDailySummary | null> {

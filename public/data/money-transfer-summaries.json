@@ -3,16 +3,66 @@
     "id": "mtsum-2026-02-27",
     "date": "2026-02-27",
     "step1": {
-      "status": "in_progress",
-      "totalTransactions": 5,
-      "completedTransactions": 5,
+      "status": "completed",
+      "completedAt": "2026-03-09T11:00:35.355Z",
+      "completedBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
+      "completedByName": "กัลญา ผิวขำทองดี",
+      "totalTransactions": 6,
+      "completedTransactions": 6,
       "draftTransactions": 0,
-      "totalAmount": 22900,
-      "totalCommission": 140
+      "totalAmount": 23400,
+      "totalCommission": 110,
+      "finalBalances": {
+        "bankAccount": 7210,
+        "transferCash": 12800,
+        "serviceFeeTransfer": 10,
+        "serviceFeeCash": 100
+      }
     },
-    "workflowStatus": "step1_in_progress",
+    "workflowStatus": "audited",
     "createdAt": "2026-02-27T13:43:45.925Z",
-    "updatedAt": "2026-02-27T15:11:06.050Z"
+    "updatedAt": "2026-03-09T19:27:36.403Z",
+    "step2": {
+      "status": "completed",
+      "completedAt": "2026-03-09T11:17:25.409Z",
+      "completedBy": "manager",
+      "completedByName": "Manager",
+      "expectedCash": {
+        "transferWithdrawal": 12800,
+        "serviceFee": 100,
+        "total": 12900
+      },
+      "actualCash": {
+        "transferWithdrawal": 12800,
+        "serviceFee": 100,
+        "total": 12900
+      },
+      "differences": {
+        "transferWithdrawal": 0,
+        "serviceFee": 0,
+        "total": 0
+      },
+      "verificationNotes": "",
+      "hasDiscrepancies": false
+    },
+    "auditorVerification": {
+      "status": "completed",
+      "completedAt": "2026-03-09T19:27:36.403Z",
+      "completedBy": "dAuL8YQfWDcbiP4NL0z8z2J0wIy2",
+      "completedByName": "พรทิพย์ เรือนสุข",
+      "transactionsVerified": 6,
+      "transactionsWithIssues": 0,
+      "bankStatementVerified": true,
+      "bankStatementAmount": 7210,
+      "bankBalanceMatches": true,
+      "auditorCash": {
+        "transferWithdrawal": 12800,
+        "serviceFee": 100,
+        "total": 12900
+      },
+      "auditNotes": "",
+      "auditResult": "no_issues"
+    }
   },
   {
     "id": "mtsum-2026-03-04",
@@ -60,5 +110,35 @@
       "verificationNotes": "",
       "hasDiscrepancies": false
     }
+  },
+  {
+    "id": "mtsum-2026-03-08",
+    "date": "2026-03-08",
+    "step1": {
+      "status": "in_progress",
+      "totalTransactions": 0,
+      "completedTransactions": 0,
+      "draftTransactions": 0,
+      "totalAmount": 0,
+      "totalCommission": 0
+    },
+    "workflowStatus": "step1_in_progress",
+    "createdAt": "2026-03-09T10:38:09.287Z",
+    "updatedAt": "2026-03-09T10:38:09.287Z"
+  },
+  {
+    "id": "mtsum-2026-03-09",
+    "date": "2026-03-09",
+    "step1": {
+      "status": "in_progress",
+      "totalTransactions": 0,
+      "completedTransactions": 0,
+      "draftTransactions": 0,
+      "totalAmount": 0,
+      "totalCommission": 0
+    },
+    "workflowStatus": "step1_in_progress",
+    "createdAt": "2026-03-09T19:43:22.466Z",
+    "updatedAt": "2026-03-09T19:43:22.466Z"
   }
 ]
