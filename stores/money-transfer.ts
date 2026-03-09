@@ -440,6 +440,19 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
     },
 
     /**
+     * Fetch all daily summaries (for History Page WF 2.0)
+     */
+    async fetchAllSummaries(): Promise<void> {
+      try {
+        const response = await $fetch('/api/money-transfer/summaries')
+        this.summaries = response.data
+      } catch (error: any) {
+        this.error = `Failed to fetch summaries: ${error.message}`
+        throw error
+      }
+    },
+
+    /**
      * Fetch daily summary for a date
      */
     async fetchDailySummary(date: string): Promise<void> {

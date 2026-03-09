@@ -26,6 +26,7 @@ const logger = useLogger('MoneyTransferStep1')
 const store = useMoneyTransferStore()
 const settingsStore = useDailyRecordSettingsStore()
 const router = useRouter()
+const route = useRoute()
 const { can } = usePermissions()
 
 // true = ยังไม่เคยตั้งค่าค่าบริการ (ใช้ค่าเริ่มต้น)
@@ -35,7 +36,9 @@ const usingDefaultFees = computed(() => settingsStore.moneyTransferFees.updatedA
 const { currentUser } = useCurrentUser()
 
 // ─── State ───────────────────────────────────────────────────────────────────
-const selectedDate = ref<string>(new Date().toISOString().split('T')[0] ?? '')
+const selectedDate = ref<string>(
+  (route.query.date as string) || (new Date().toISOString().split('T')[0] ?? '')
+)
 const activeFilter = ref<'all' | 'completed' | 'draft' | 'failed'>('all')
 const successMessage = ref('')
 const errorMessage = ref('')
@@ -576,7 +579,7 @@ async function handleConfirmVerification() {
         : followUpAction.value ? `การดำเนินการต่อ: ${followUpAction.value}` : '',
     })
     logger.log('Step 2 completed')
-    router.push('/finance/money-transfer-service/auditor-review')
+    router.push('/finance/money-transfer-history')
   } catch (err: any) {
     errorMessage.value = err.message || 'เกิดข้อผิดพลาด'
     logger.error('Failed to complete Step 2', err)
@@ -586,7 +589,7 @@ async function handleConfirmVerification() {
 }
 
 function goToAuditReview() {
-  router.push('/finance/money-transfer-service/auditor-review')
+  router.push('/finance/money-transfer-history')
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
@@ -615,6 +618,10 @@ onMounted(async () => {
     :error="store.error"
   >
     <template #actions>
+      <!-- Back to history -->
+      <BaseButton variant="secondary" size="sm" @click="router.push('/finance/money-transfer-history')">
+        ← ประวัติ
+      </BaseButton>
       <!-- Date Picker -->
       <div class="flex items-center gap-2">
         <label class="text-sm font-medium text-gray-700">วันที่:</label>

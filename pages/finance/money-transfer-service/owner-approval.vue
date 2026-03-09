@@ -21,10 +21,13 @@ definePageMeta({
 const logger = useLogger('OwnerApproval')
 const store = useMoneyTransferStore()
 const router = useRouter()
+const route = useRoute()
 usePermissions()
 
 // ─── State ───────────────────────────────────────────────────────────────────
-const selectedDate = ref<string>(new Date().toISOString().split('T')[0] ?? '')
+const selectedDate = ref<string>(
+  (route.query.date as string) || (new Date().toISOString().split('T')[0] ?? '')
+)
 const isSubmitting = ref(false)
 const successMessage = ref('')
 const errorMessage = ref('')
@@ -176,6 +179,9 @@ onMounted(async () => {
     :error="store.error"
   >
     <template #actions>
+      <BaseButton variant="secondary" size="sm" @click="router.push('/finance/money-transfer-history')">
+        ← ประวัติ
+      </BaseButton>
       <div class="flex items-center gap-2">
         <label class="text-sm font-medium text-gray-700">วันที่:</label>
         <input
@@ -583,9 +589,9 @@ onMounted(async () => {
       <div v-if="!store.isApproved" class="flex flex-col sm:flex-row items-center justify-between gap-3 py-4">
         <BaseButton
           variant="secondary"
-          @click="router.push('/finance/money-transfer-service/auditor-review')"
+          @click="router.push('/finance/money-transfer-history')"
         >
-          ⬅️ กลับหน้า Auditor
+          ⬅️ กลับหน้าประวัติ
         </BaseButton>
 
         <div class="flex items-center gap-3">
@@ -615,9 +621,9 @@ onMounted(async () => {
       <div v-else class="flex justify-start py-4">
         <BaseButton
           variant="secondary"
-          @click="router.push('/finance/money-transfer-service')"
+          @click="router.push('/finance/money-transfer-history')"
         >
-          ⬅️ กลับหน้าหลัก
+          ⬅️ กลับหน้าประวัติ
         </BaseButton>
       </div>
     </template>

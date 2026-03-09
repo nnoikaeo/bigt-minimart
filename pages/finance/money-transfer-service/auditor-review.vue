@@ -18,10 +18,13 @@ definePageMeta({
 const logger = useLogger('AuditorReview')
 const store = useMoneyTransferStore()
 const router = useRouter()
+const route = useRoute()
 usePermissions()
 
 // ─── State ───────────────────────────────────────────────────────────────────
-const selectedDate = ref<string>(new Date().toISOString().split('T')[0] ?? '')
+const selectedDate = ref<string>(
+  (route.query.date as string) || (new Date().toISOString().split('T')[0] ?? '')
+)
 const isSubmitting = ref(false)
 const successMessage = ref('')
 const errorMessage = ref('')
@@ -199,6 +202,9 @@ onMounted(async () => {
     :error="store.error"
   >
     <template #actions>
+      <BaseButton variant="secondary" size="sm" @click="router.push('/finance/money-transfer-history')">
+        ← ประวัติ
+      </BaseButton>
       <div class="flex items-center gap-2">
         <label class="text-sm font-medium text-gray-700">วันที่:</label>
         <input
@@ -233,8 +239,8 @@ onMounted(async () => {
         class="mb-6"
       />
       <div class="flex justify-center">
-        <BaseButton variant="primary" size="lg" @click="router.push('/finance/money-transfer-service/owner-approval')">
-          ดูหน้า Owner Approval →
+        <BaseButton variant="primary" size="lg" @click="router.push('/finance/money-transfer-history')">
+          กลับหน้าประวัติ →
         </BaseButton>
       </div>
     </template>

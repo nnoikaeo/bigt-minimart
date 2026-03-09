@@ -401,6 +401,7 @@ export interface IMoneyTransferRepository {
   completeDraftTransaction(id: string, updates: Partial<MoneyTransferTransaction>): Promise<MoneyTransferTransaction>
 
   // Daily summary CRUD
+  getAllSummaries(): Promise<MoneyTransferDailySummary[]>
   getDailySummary(date: string): Promise<MoneyTransferDailySummary | null>
   createDailySummary(date: string): Promise<MoneyTransferDailySummary>
   updateDailySummary(date: string, updates: Partial<MoneyTransferDailySummary>): Promise<MoneyTransferDailySummary>
