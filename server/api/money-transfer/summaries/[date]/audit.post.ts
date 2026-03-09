@@ -114,7 +114,7 @@ export default defineEventHandler(async (event) => {
         auditorCash: validated.auditorCash,
         auditNotes: validated.auditNotes,
         issuesFound: validated.issuesFound ? [validated.issuesFound] : undefined,
-        auditResult: isRejected ? 'major_issues' : validated.auditResult,
+        auditResult: (isRejected ? 'major_issues' : validated.auditResult) as 'no_issues' | 'minor_issues' | 'major_issues',
       },
       workflowStatus: isRejected ? 'needs_correction' : 'audited',
     })
