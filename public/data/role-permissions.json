@@ -25,7 +25,7 @@
       "delete-sales": false,
       "approve-sales": false,
       "view-finance": true,
-      "edit-finance": false,
+      "edit-finance": true,
       "manage-users": false,
       "manage-roles": false,
       "view-audit-log": true
@@ -41,7 +41,7 @@
       "delete-sales": false,
       "approve-sales": false,
       "view-finance": true,
-      "edit-finance": false,
+      "edit-finance": true,
       "manage-users": false,
       "manage-roles": false,
       "view-audit-log": true

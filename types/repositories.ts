@@ -311,10 +311,22 @@ export interface MoneyTransferDailySummary {
     transactionsVerified: number
     transactionsWithIssues: number
     bankStatementVerified: boolean
+    bankStatementAmount?: number
     bankBalanceMatches: boolean
+    auditorCash?: {
+      transferWithdrawal: number
+      serviceFee: number
+      total: number
+    }
+    auditorCashMatches?: boolean // true when auditorCash totals match manager step2 totals
+    // Bank reconciliation (for explaining D discrepancies)
+    reconciliationItems?: Array<{ name: string; amount: number }>
+    adjustedBankBalance?: number // closingBalance + sum(reconciliationItems)
+    bankBalanceReconciled?: boolean // true when adjustedBankBalance matches bankStatementAmount
     auditNotes: string
     issuesFound?: string[]
     auditResult: 'no_issues' | 'minor_issues' | 'major_issues'
+    txnIssueStatus?: Record<string, true>
   }
 
   // Workflow 2.3: Owner approval
@@ -401,6 +413,7 @@ export interface IMoneyTransferRepository {
   completeDraftTransaction(id: string, updates: Partial<MoneyTransferTransaction>): Promise<MoneyTransferTransaction>
 
   // Daily summary CRUD
+  getAllSummaries(): Promise<MoneyTransferDailySummary[]>
   getDailySummary(date: string): Promise<MoneyTransferDailySummary | null>
   createDailySummary(date: string): Promise<MoneyTransferDailySummary>
   updateDailySummary(date: string, updates: Partial<MoneyTransferDailySummary>): Promise<MoneyTransferDailySummary>

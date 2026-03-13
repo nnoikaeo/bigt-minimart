@@ -17,6 +17,8 @@ export interface SidebarPage {
   pageName: string
   /** Route path (e.g., '/auditor/daily-sales') */
   route: string
+  /** Additional route prefixes that should highlight this sidebar item (for sub-pages) */
+  routePrefixes?: string[]
   /** Required roles to access this page */
   requiredRoles?: UserRole[] | null
 }
@@ -69,8 +71,9 @@ export const sidebarMenu: SidebarGroup[] = [
         pageKey: 'money-transfer-service',
         icon: '🏦',
         pageName: 'บริการโอนเงิน',
-        route: '/finance/money-transfer-service',
-        requiredRoles: ['owner', 'manager', 'auditor'],
+        route: '/finance/money-transfer-history',
+        routePrefixes: ['/finance/money-transfer-service'],
+        requiredRoles: ['owner', 'manager', 'assistant_manager', 'auditor'],
       },
       {
         pageKey: 'bill-payment-service',

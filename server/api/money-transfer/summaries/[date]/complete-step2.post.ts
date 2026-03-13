@@ -76,10 +76,15 @@ export default defineEventHandler(async (event) => {
     const completed = transactions.filter(t => t.status === 'completed')
 
     // Calculate expected cash amounts from completed transactions
+    // Transfer: cash received from customer (+), Withdrawal: cash returned to customer (-)
     const expectedCash = {
       transferWithdrawal: completed
         .filter(t => t.transactionType !== 'owner_deposit')
-        .reduce((sum, t) => sum + t.amount, 0),
+        .reduce((sum, t) => {
+          if (t.transactionType === 'transfer') return sum + t.amount
+          if (t.transactionType === 'withdrawal') return sum - t.amount
+          return sum
+        }, 0),
       serviceFee: completed
         .filter(t => t.commission && t.commissionType === 'cash')
         .reduce((sum, t) => sum + (t.commission || 0), 0),

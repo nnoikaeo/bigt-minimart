@@ -1,77 +1,407 @@
-# 📐 Wireframes: FLOW 2 Workflows 2.1 - 2.3
+# 📐 Wireframes: FLOW 2 Workflows 2.0 - 2.3
 ## Daily Money Transfer Service Income (นับและตรวจสอบเงินจากบริการโอนเงิน)
+
+---
+
+# 🔷 WORKFLOW 2.0: History Page (Unified Entry Point)
+
+## Money Transfer History Page
+**Route**: `/finance/money-transfer-history`
+**Role**: owner, manager, assistant_manager, auditor
+**Sidebar**: เมนู "บริการโอนเงิน" ชี้มาที่หน้านี้แทนทุก Role
+
+### Layout: Main History & Inbox Page
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
+│  🏦 ประวัติบริการโอนเงิน          [➕ เพิ่มรายการ] ← EDIT_FIN  │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  📊 PENDING INBOX (เปลี่ยนตาม Role)                              │
+│  ┌──────────────────┐  ┌──────────────┐  ┌──────────────────┐  │
+│  │ 🔴 รอดำเนินการ   │  │ 🟠 รอตรวจสอบ │  │ ✅ อนุมัติแล้ว   │  │
+│  │                  │  │              │  │                  │  │
+│  │  Manager: in_progress+needs_correction                   │  │
+│  │  Auditor: step2_completed                                │  │
+│  │  Owner:   audited                                        │  │
+│  └──────────────────┘  └──────────────┘  └──────────────────┘  │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  📋 HISTORY LIST                                                 │
+│  ┌────────┬──────────────────────┬──────┬────────┬───────────┐  │
+│  │ วันที่  │ สถานะ               │ Txn  │ ยอดรวม │ Actions   │  │
+│  ├────────┼──────────────────────┼──────┼────────┼───────────┤  │
+│  │ 6 มี.ค.│ 🔵 กำลังทำงาน       │  12  │ 28,000 │ [ทำงาน]   │  │
+│  │ 5 มี.ค.│ 🟡 รออนุมัติ        │  23  │ 45,000 │ [อนุมัติ] │  │
+│  │ 4 มี.ค.│ 🟠 รอตรวจสอบ       │  18  │ 32,000 │ [ตรวจสอบ] │  │
+│  │ 3 มี.ค.│ 🔴 รอแก้ไข         │   8  │ 12,000 │ [แก้ไข]   │  │
+│  │ 2 มี.ค.│ ✅ อนุมัติแล้ว      │  21  │ 38,000 │[ดูรายละฯ]│  │
+│  └────────┴──────────────────────┴──────┴────────┴───────────┘  │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+* Actions button label + destination เปลี่ยนตาม Role × workflowStatus
+* ปุ่ม [เพิ่มรายการ] แสดงเฉพาะ Role ที่มี EDIT_FINANCE permission
+```
+
+---
+
+## Modal: เพิ่มรายการ → Date Picker
+
+> กด [➕ เพิ่มรายการ] → เปิด Modal เลือกวันที่
+
+```
+┌──────────────────────────────────────────┐
+│  ➕ เพิ่มรายการบริการโอนเงิน        [✕]  │
+├──────────────────────────────────────────┤
+│                                          │
+│  เลือกวันที่:  [📅 2026-03-06]           │
+│                                          │
+│  * สามารถเลือกวันย้อนหลังได้             │
+│    กรณีระบบมีปัญหาในวันก่อนหน้า          │
+│    (Manager/Owner เท่านั้น)              │
+│                                          │
+│         [ยกเลิก]  [➡ ไปบันทึกรายการ]    │
+└──────────────────────────────────────────┘
+
+→ Navigate to /finance/money-transfer-service?date=YYYY-MM-DD
+```
+
+---
+
+## Smart Action Button — Role × workflowStatus
+
+> **หมายเหตุ (Updated)**: WF 2.2 และ WF 2.3 ถูกรวมเข้าหน้าเดียวกับ WF 2.1 แล้ว
+> ไม่มีหน้า `auditor-review` หรือ `owner-approval` แยกต่างหาก — ทุก Role ใช้ `/finance/money-transfer-service?date=`
+> และแต่ละ Section แสดง/ซ่อนตาม Role × workflowStatus
+
+| Role | workflowStatus | ปุ่ม | Route ปลายทาง |
+|------|---------------|------|--------------|
+| manager/AM | step1_in_progress | **"ทำงาน"** | `money-transfer-service?date=` |
+| manager/AM | needs_correction | **"แก้ไข"** | `money-transfer-service?date=` |
+| manager/AM | step2_completed/audited/approved | **"ดูรายละเอียด"** | `money-transfer-service?date=` (read-only) |
+| auditor | step2_completed | **"ตรวจสอบ"** | `money-transfer-service?date=` (Section 6B แสดง Auditor form) |
+| auditor | audited | **"ดูการตรวจสอบ"** | `money-transfer-service?date=` (Section 6B read-only) |
+| auditor | step1_in_progress/step1_completed | **"ดูรายละเอียด"** | `money-transfer-service?date=` (read-only) |
+| owner | audited | **"อนุมัติ"** | `money-transfer-service?date=` (Section 6C แสดง Owner Decision) |
+| owner | approved | **"ดูรายละเอียด"** | `money-transfer-service?date=` (Section 6C approved banner) |
+| owner | step1_*/step2_completed | **"ดูรายละเอียด"** | `money-transfer-service?date=` (read-only) |
+
+---
+
+## Status Badge Colors
+
+| workflowStatus | สี | ป้าย |
+|---------------|-----|------|
+| step1_in_progress | 🔵 Blue | กำลังทำงาน |
+| step1_completed | 🔵 Blue | รอตรวจนับเงิน |
+| step2_completed | 🟠 Orange | รอตรวจสอบ Auditor |
+| audited | 🟡 Yellow | รออนุมัติ Owner |
+| approved | ✅ Green | อนุมัติแล้ว |
+| needs_correction | 🔴 Red | รอแก้ไข |
 
 ---
 
 # 🔷 WORKFLOW 2.1: Manager - Record Transfer & Verification
 
-## Step 1: Record Transfer & Withdrawal Transactions Page
-**Route**: `/finance/money-transfer-service/step-1`
-**Role**: Manager/Assistant Manager
+## Main Page: บริการโอนเงิน (Role-Based Dashboard)
+**Route**: `/finance/money-transfer-service?date=YYYY-MM-DD`
+**Role**: manager, assistant_manager, auditor, owner
+*(เข้ามาจาก History Page — ปุ่ม "ทำงาน"/"แก้ไข"/"ดูรายละเอียด")*
 
-### Layout: Main Transaction Recording Page (Updated)
-
-> **Design Decision**:
+> **Design Decision (Updated)**:
+> - หน้าเดียวกันสำหรับทุก Role — แต่ละ section แสดง/ซ่อนตาม Role × workflowStatus
 > - ส่วนกรอกรายการย้ายเข้า **Modal** ทั้งหมด — หน้าหลักเป็น Dashboard สะอาด
-> - เพิ่ม **Quick Actions Bar** สำหรับรายการที่ทำบ่อย — ลด click ให้น้อยที่สุด
-> - **⭐ Favorite Transfer**: 3 clicks + กรอกจำนวนเงิน = เสร็จทันที
-> - Modal เปิดเมื่อ: กด Quick Action / [➕ New] / [✏️ Edit] เท่านั้น
+> - **⭐ Quick Actions** แสดงเฉพาะ Manager/Asst.Mgr ขณะ `step1_in_progress`
+> - **💵 ผลการตรวจนับ** แสดงเมื่อ workflowStatus ≠ `step1_in_progress` (ทุก Role)
+> - Transaction List: Pagination 10 รายการ/หน้า
+
+---
+
+### Role × Section Visibility Matrix
+
+| Section | Manager / Asst.Mgr | Auditor | Owner | เงื่อนไขเพิ่มเติม |
+|---|:---:|:---:|:---:|---|
+| Opening Balance (blue banner) | ✅ | ❌ | ❌ | ซ่อนเมื่อ opening ตั้งค่าแล้ว |
+| ยอดเงินปัจจุบัน (8 การ์ด) | ✅ | ✅ | ✅ | — |
+| ⚡ Quick Actions (4 ปุ่ม) | ✅ | ❌ | ❌ | + `step1_in_progress` เท่านั้น |
+| ⚠️ Draft Alert | ✅ | ❌ | ❌ | + มี draft transactions |
+| 📋 Transaction List | ✅ + edit/delete | ✅ view only (ซ่อนเมื่อ step2 done) | ✅ collapsible (ซ่อน default) | pagination 10/หน้า; ซ่อนเมื่อ Auditor step2_completed หรือ Owner audited |
+| ปุ่ม "+ รายการใหม่" | ✅ | ❌ | ❌ | + `step1_in_progress` + opening set แล้ว |
+| Prerequisite Checklist + ปุ่ม "ยืนยันบันทึก" | ✅ | ❌ | ❌ | + step1 ยังไม่เสร็จ |
+| [6A] นับเงินสด — form กรอก (A+B+C) | ✅ editable | ❌ | ❌ | + step2 ยังไม่เสร็จ + ไม่ใช่ Owner |
+| [6A] นับเงินสด — read-only (`MoneyTransferCashVerificationTable`) | ✅ (หลัง step2 done) | ✅ (แสดงก่อน 6B form) | ❌ | status ≠ `step1_in_progress` + ไม่ใช่ Owner + ไม่ใช่ (Auditor + step2 done) |
+| [6B] Auditor Review — form กรอก | ❌ | ✅ editable | ❌ | Auditor + status = `step2_completed` เท่านั้น |
+| [6B] Audit Result — read-only (Balance + Txn + Cash Table) | ✅ | ✅ | ✅ | status ≥ `audited` |
+| [6C] Owner Decision + Action Buttons | ❌ | ❌ | ✅ | Owner + status ≥ `audited` |
+
+---
+
+### Layout: Full Page Wireframe
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                                                                 │
-│  🏦 Money Transfer Service - Step 1: Record Transactions       │
-│                                                                 │
-│  📅 Date: 2026-01-29  👤 Manager: สมชาย              [Status]  │
+│  🏦 บริการโอนเงิน              [← ประวัติ]  [วันที่: 04/03/26]  │
+│  บันทึกรายการและตรวจนับเงินสด                                    │
 │                                                                 │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  📊 CURRENT BALANCES (Real-time)                               │
+│  ── SECTION 1: Opening Balance ─────────────────── (Manager/AM) │
+│                                                                 │
+│  [กรณียังไม่ตั้งค่า → แสดง]                                      │
 │  ┌─────────────────────────────────────────────────────────┐   │
-│  │ Bank Account: 10,210 บาท  │  Cash from Transfers: 9,800 บาท│
-│  │ Service Fee Cash: 70 บาท  │  Service Fee Transfer: 10 บาท  │
+│  │ 💳 กำหนดยอดเงินในบัญชีเริ่มต้น       [กำหนดยอดเริ่มต้น]  │   │
+│  │    กรุณากำหนดยอดเงินก่อนเริ่มบันทึกรายการ               │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+│  [กรณีตั้งค่าแล้ว → ซ่อน banner นี้ ยอดเริ่มต้นแสดงเป็นการ์ด] │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ── SECTION 2: ยอดเงินปัจจุบัน ──────────────────── (ทุก Role) │
+│  📊 ยอดเงินปัจจุบัน                                              │
+│                                                                 │
+│  แถวที่ 1 — รายละเอียดรายการ (4 การ์ด)                           │
+│  ┌─────────────┬─────────────┬─────────────┬─────────────┐     │
+│  │เงินในบัญชีเริ่มต้น│  รวมเงินฝาก │  รวมเงินโอน │  รวมเงินถอน │     │
+│  │  (opening)  │(owner_dep.) │ (transfer)  │(withdrawal) │     │
+│  │  7,710 บ   │     0 บ    │  3,950 บ   │     0 บ    │     │
+│  │   gray      │   blue      │    red      │  purple     │     │
+│  └─────────────┴─────────────┴─────────────┴─────────────┘     │
+│                                                                 │
+│  แถวที่ 2 — สรุปยอด (4 การ์ด)                                   │
+│  ┌─────────────┬─────────────┬─────────────┬─────────────┐     │
+│  │รวมค่าบริการ  │รวมค่าบริการ  │เงินในบัญชี  │เงินสดคงเหลือ│     │
+│  │ (เงินสด)   │ (เงินโอน)   │  คงเหลือ   │             │     │
+│  │   30 บ    │    0 บ    │  3,760 บ   │  3,980 บ   │     │
+│  │  green     │  green      │  gray/bold  │  blue/bold  │     │
+│  └─────────────┴─────────────┴─────────────┴─────────────┘     │
+│                                                                 │
+│  สูตร:                                                          │
+│  เงินในบัญชีคงเหลือ = เริ่มต้น + ฝาก - โอน + ถอน + บริการ(โอน)  │
+│  เงินสดคงเหลือ     = รวมเงินโอน - รวมเงินถอน + รวมค่าบริการ(เงินสด)│
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ── SECTION 3: Quick Actions ─── (Manager/AM + step1_in_progress)│
+│  ⚡ รายการด่วน                                                   │
+│  ┌──────────────┬──────────────┬──────────────┬──────────────┐ │
+│  │ ⭐ รายการโปรด │  ↑ โอนเงิน   │  ↓ ถอนเงิน  │  ฝากเงิน   │ │
+│  └──────────────┴──────────────┴──────────────┴──────────────┘ │
+│  * ซ่อนทั้ง section เมื่อ workflowStatus ≠ step1_in_progress    │
+│  * ซ่อนทั้ง section เมื่อ role = auditor หรือ owner             │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ── SECTION 4: Draft Alert ──────────────────── (Manager/AM only)│
+│  [แสดงเฉพาะเมื่อมี draft transactions]                           │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ ⚠️ Draft Transactions (2 รายการ)                        │   │
+│  │                                                         │   │
+│  │ DRAFT │ โอนเงิน │ 8,800 บ │ ขาด 3,800 บ │[ดำเนิน][ลบ] │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                                                                 │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ⚡ QUICK ACTIONS                                               │
+│  ── SECTION 5: Transaction List ──────────────────── (ทุก Role) │
+│  📋 รายการธุรกรรมวันนี้           [+ รายการใหม่] ← Manager/AM   │
+│                                                                 │
+│  [ทั้งหมด 6] [สำเร็จ 5] [รอดำเนินการ 1] [ล้มเหลว 0]            │
+│                                                                 │
+│  ┌───┬───────┬───────────┬────────────────┬────────┬─────────┐  │
+│  │ # │ เวลา  │ ประเภท    │ ชื่อบัญชี       │ จำนวน  │ จัดการ  │  │
+│  ├───┼───────┼───────────┼────────────────┼────────┼─────────┤  │
+│  │ 1 │ 10:30 │ PromptPay │ สมชาย          │ 2,000 │ 👁 ✏️ 🗑 │  Manager/AM
+│  │ 2 │ 13:15 │ ถอนเงิน   │ -              │   500 │ 👁 ✏️ 🗑 │  │
+│  │ 3 │ 14:00 │ Bank Trf  │ สมชาย บ.      │ 8,800 │ 👁 ✏️ 🗑 │  │
+│  │ 4 │ 14:30 │ ฝากเงิน  │ เจ้าของ        │10,000 │ 👁 ✏️ 🗑 │  │
+│  │ 5 │ 14:45 │ Bank Trf  │ นายดำ          │ 8,800 │ 👁 ✏️ 🗑 │  │
+│  │ 1 │ 10:30 │ PromptPay │ สมชาย          │ 2,000 │   👁    │  Auditor/Owner
+│  └───┴───────┴───────────┴────────────────┴────────┴─────────┘  │
+│                   (แสดงสูงสุด 10 รายการ/หน้า)                   │
+│                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐   │
-│  │                                                         │   │
-│  │  [⭐ Favorite Transfer]  [💰 Owner Deposit]             │   │
-│  │  [📤 New Transfer]       [💵 New Withdrawal]            │   │
-│  │                                                         │   │
-│  │  ⭐ Favorite Transfer → เปิด Modal แบบ Tabs (เร็วสุด)   │   │
-│  │  💰 Owner Deposit     → เปิด Modal pre-filled           │   │
-│  │  📤 New Transfer      → เปิด Modal ฟอร์มเปล่า           │   │
-│  │  💵 New Withdrawal    → เปิด Modal ฟอร์มเปล่า           │   │
+│  │       [< ก่อนหน้า]   หน้า 1 จาก 3   [ถัดไป >]          │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                                                                 │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  📋 TODAY'S TRANSACTIONS                    [➕ New Transaction] │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │ Filter: [All ▼]  [Completed]  [Draft]  [Failed]        │   │
-│  │                                                         │   │
-│  │ #  │ Time   │ Type        │ Amount  │ Commission │ Status│   │
-│  ├────┼────────┼─────────────┼─────────┼────────────┼───────┤   │
-│  │ 1  │ 10:30  │ PromptPay   │ 2,000 ฿ │  20 ฿     │ ✅    │   │
-│  │ 2  │ 13:15  │ Withdrawal  │   500 ฿ │  10 ฿     │ ✅    │   │
-│  │ 3  │ 14:00  │ Bank Trf    │ 8,800 ฿ │   -       │ ⏸️    │   │
-│  │    │        │ (Insufficient)        │           │ DRAFT  │   │
-│  │ 4  │ 14:30  │ Owner Dep   │10,000 ฿ │   -       │ ✅    │   │
-│  │ 5  │ 14:45  │ Bank Trf    │ 8,800 ฿ │  40 ฿     │ ✅    │   │
-│  │ 6  │ 15:30  │ Withdrawal  │   500 ฿ │  10 ฿ T   │ ✅    │   │
-│  └────┴────────┴─────────────┴─────────┴───────────┴───────┘   │
+│  ── SECTION 6: ผลการตรวจนับเงินสด ────────────────────────────  │
+│  เงื่อนไขแสดง: workflowStatus ≠ 'step1_in_progress'             │
 │                                                                 │
-│  SUMMARY: 6 Transactions │ Commission: 70 บาท                  │
+│  ┌─ [6A] ผลนับเงินสด (Manager บันทึก) ──────────────────────┐  │
+│  │                                                           │  │
+│  │  [CASE A — กรอก] Manager/AM + step2 ยังไม่เสร็จ           │  │
+│  │  ────────────────────────────────────────────────         │  │
+│  │  💵 ตรวจนับเงินสดจริง                                      │  │
+│  │  ┌───────────────────────────────────────────────────┐    │  │
+│  │  │ A. เงินสดจากโอน/ถอนเงิน                           │    │  │
+│  │  │    คาดหวัง: 3,950 บาท                             │    │  │
+│  │  │    นับจริง: [___________] บาท   ผลต่าง: [AUTO]   │    │  │
+│  │  │                                                   │    │  │
+│  │  │ B. ค่าบริการ (เงินสด)                             │    │  │
+│  │  │    คาดหวัง: 30 บาท                                │    │  │
+│  │  │    นับจริง: [___________] บาท   ผลต่าง: [AUTO]   │    │  │
+│  │  │                                                   │    │  │
+│  │  │ ─────────────────────────────────────────         │    │  │
+│  │  │ รวมเงินสดทั้งหมด: [_______]  คาดหวัง: 3,980  ∆:[]│    │  │
+│  │  └───────────────────────────────────────────────────┘    │  │
+│  │  [หมายเหตุ — แสดงเมื่อมีผลต่าง]  [___________________]   │  │
+│  │                  [ยืนยัน → ตรวจนับเงินสด]                 │  │
+│  │                                                           │  │
+│  │  [CASE B — อ่านอย่างเดียว] step2 เสร็จแล้ว / ทุก Role    │  │
+│  │  ────────────────────────────────────────────────         │  │
+│  │  💵 ผลนับเงินสด (Manager)     [✅ ตรงกัน / ⚠️ มีผลต่าง]  │  │
+│  │  ┌─────────────────────┬─────────┬─────────┬──────────┐  │  │
+│  │  │ รายการ              │  คาดไว้ │  นับจริง │  ผลต่าง  │  │  │
+│  │  ├─────────────────────┼─────────┼─────────┼──────────┤  │  │
+│  │  │ A. เงินสดโอน/ถอน   │ 3,950 บ │ 3,950 บ │  ✓ ตรง  │  │  │
+│  │  │ B. ค่าบริการ (สด)  │    30 บ │    30 บ │  ✓ ตรง  │  │  │
+│  │  ├─────────────────────┼─────────┼─────────┼──────────┤  │  │
+│  │  │ รวมเงินสด           │ 3,980 บ │ 3,980 บ │  ✓ ตรง  │  │  │
+│  │  └─────────────────────┴─────────┴─────────┴──────────┘  │  │
+│  │  หมายเหตุ: "..." (แสดงเมื่อมี verificationNotes)           │  │
+│  └───────────────────────────────────────────────────────────┘  │
 │                                                                 │
-│  ⏸️ DRAFT PENDING: Transaction #3 — Bank Transfer 8,800 บาท    │
-│  └─ Bank Balance was 5,000 บาท (ขาด 3,800 บาท)               │
-│  └─ [✅ Complete Transaction]  [❌ Cancel]                     │
+│  ┌─ [6B] Auditor Review Form ─── (Auditor + step2_completed) ─┐  │
+│  │  🔍 ตรวจสอบบริการโอนเงิน              [⏳ รอตรวจสอบ]        │  │
+│  │                                                           │  │
+│  │  ─ ยอดเงินในบัญชี Bank ─────────────────────────────────  │  │
+│  │  ┌─ MoneyTransferBalanceSnapshot ───────────────────────┐  │  │
+│  │  │ ยอดเปิด: 7,710 บ              ยอดปิด: 3,760 บ       │  │  │
+│  │  │ ─────────────────────────────────────────────────── │  │  │
+│  │  │ Bank Statement แสดง: [___________] บาท              │  │  │
+│  │  │ ผลต่าง (Statement − ยอดปิด): [AUTO ✅/❌]            │  │  │
+│  │  └──────────────────────────────────────────────────────┘  │  │
+│  │                                                           │  │
+│  │  ─ รายการธุรกรรม [collapsible ▶/▼] ─ 6 รายการ ─ [badge]─  │  │
+│  │  [เมื่อขยาย → MoneyTransferTransactionTable]               │  │
+│  │  ┌───┬───────┬───────────┬──────────┬────────┬──────────┐  │  │
+│  │  │ # │ เวลา  │ ประเภท    │ บัญชี    │ จำนวน  │ จัดการ   │  │  │
+│  │  ├───┼───────┼───────────┼──────────┼────────┼──────────┤  │  │
+│  │  │ 1 │ 10:30 │ PromptPay │ สมชาย   │ 2,000  │👁 [มีปัญหา]│  │  │
+│  │  │ 2 │ 13:15 │ ถอนเงิน   │ -        │   500  │👁 [มีปัญหา]│  │  │
+│  │  └───┴───────┴───────────┴──────────┴────────┴──────────┘  │  │
+│  │  * [มีปัญหา] toggle → mark/unmark issue badge บนแถวนั้น    │  │
+│  │  * footer: รวม N รายการ · ⚠️ X รายการมีปัญหา / ✅ ไม่พบ   │  │
+│  │                                                           │  │
+│  │  ─ ตรวจสอบยอดเงินสด ─────────────────────────────────── │  │
+│  │  ┌────────────────────┬──────────┬──────────┬────────────┬──────┐│  │
+│  │  │ รายการ             │  คาดหวัง │ Manager  │  Auditor   │ผลต่าง││  │
+│  │  ├────────────────────┼──────────┼──────────┼────────────┼──────┤│  │
+│  │  │ เงินสดโอน/ถอน      │ 3,950 บ │ 3,950 บ  │[__________]│[AUTO]││  │
+│  │  │ ค่าบริการเงินสด     │    30 บ │    30 บ  │[__________]│[AUTO]││  │
+│  │  ├────────────────────┼──────────┼──────────┼────────────┼──────┤│  │
+│  │  │ รวม                │ 3,980 บ │ 3,980 บ  │ [AUTO]     │[AUTO]││  │
+│  │  └────────────────────┴──────────┴──────────┴────────────┴──────┘│  │
+│  │  * Auditor column = input fields; ผลต่าง = Auditor − คาดหวัง   │  │
+│  │  * canSubmitAudit = Auditor กรอก A และ B แล้วทั้งคู่           │  │
+│  │                                                           │  │
+│  │  ─ รายละเอียดปัญหาที่พบ (ถ้ามี) ───────────────────────── │  │
+│  │  [_______________________________________________]         │  │
+│  │  [_______________________________________________]         │  │
+│  │  (ว่างได้ถ้าไม่พบปัญหา)                                    │  │
+│  │                                                           │  │
+│  │  [⚠️ พบ X รายการมีปัญหา — แสดงเมื่อ txnsWithIssues > 0]  │  │
+│  │                                                           │  │
+│  │        [❌ ส่งคืนแก้ไข]    [✅ ยืนยันการตรวจสอบ]          │  │
+│  └───────────────────────────────────────────────────────────┘  │
 │                                                                 │
-│                           [Next: Step 2 ➜]                     │
+│  ┌─ [6B] Audit Result — Read-only ─── (ทุก Role, status ≥ audited) ┐
+│  │  🔍 ผลการตรวจสอบ Auditor        [✅ ตรวจสอบแล้ว]            │  │
+│  │                                                           │  │
+│  │  ─ ยอดเงินในบัญชี Bank ─────────────────────────────────  │  │
+│  │  ┌─ MoneyTransferBalanceSnapshot ───────────────────────┐  │  │
+│  │  │ ยอดเปิด: 7,710 บ              ยอดปิด: 3,760 บ       │  │  │
+│  │  │ รายการเดินบัญชี: 3,780 บ (Auditor กรอก) ✅/⚠️        │  │  │
+│  │  └──────────────────────────────────────────────────────┘  │  │
+│  │                                                           │  │
+│  │  ─ รายการธุรกรรม [collapsible] ─── N รายการ ─── [badge] ─  │  │
+│  │  [เมื่อขยาย → MoneyTransferTransactionTable พร้อม issue flags]│  │
+│  │  footer: ตรวจสอบ N รายการ · มีปัญหา X · โดย [name] · [datetime]│  │
+│  │                                                           │  │
+│  │  ─ ตรวจสอบยอดเงินสด ─ MoneyTransferCashVerificationTable ─ │  │
+│  │  ┌────────────────────┬──────────┬──────────┬────────────┐  │  │
+│  │  │ รายการ             │  คาดหวัง │ Manager  │  Auditor   │  │  │
+│  │  ├────────────────────┼──────────┼──────────┼────────────┤  │  │
+│  │  │ เงินสดโอน/ถอน      │ 3,950 บ │ 3,950 บ  │  3,950 บ  │  │  │
+│  │  │ ค่าบริการเงินสด     │    30 บ │    30 บ  │     30 บ  │  │  │
+│  │  └────────────────────┴──────────┴──────────┴────────────┘  │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                 │
+│  ┌─ [6C] Owner Approval ─────── (Owner + status ≥ audited) ──┐  │
+│  │  ✅ การอนุมัติ Owner        [✅ อนุมัติแล้ว / ⏳ รออนุมัติ]│  │
+│  │                                                           │  │
+│  │  [ถ้า approved แล้ว → แสดง Banner สีเขียว + ซ่อน form]    │  │
+│  │  ┌───────────────────────────────────────────────────────┐ │  │
+│  │  │ ✅ อนุมัติแล้ว                                         │ │  │
+│  │  │ วันที่ YYYY-MM-DD — ได้รับการอนุมัติจาก Owner          │ │  │
+│  │  │ หมายเหตุ: [ownerNotes] (ถ้ามี)                        │ │  │
+│  │  └───────────────────────────────────────────────────────┘ │  │
+│  │                                                           │  │
+│  │  [ถ้ายังไม่ approved → แสดง Decision Card]                 │  │
+│  │  ┌─ Owner Decision Card ─────────────────────────────────┐ │  │
+│  │  │ ┌─────────────────┬───────────────────┬─────────────┐ │ │  │
+│  │  │ │ ◉ อนุมัติ ✅    │ ○ อนุมัติ+หมายเหตุ│ ○ ขอให้แก้  │ │ │  │
+│  │  │ │  บันทึกเป็น     │  มีข้อสังเกต      │  ส่งคืน    │ │ │  │
+│  │  │ │  ที่สิ้นสุด      │  เพิ่มเติม        │  Auditor/  │ │ │  │
+│  │  │ │                │                   │  Manager   │ │ │  │
+│  │  │ └─────────────────┴───────────────────┴─────────────┘ │ │  │
+│  │  │ [ถ้า approve_with_notes → textarea หมายเหตุ]           │ │  │
+│  │  │ [ถ้า request_correction → textarea เหตุผลแก้ไข]        │ │  │
+│  │  └───────────────────────────────────────────────────────┘ │  │
+│  │                                                           │  │
+│  │        [❌ ส่งคืนแก้ไข]    [✅ อนุมัติ / ส่งคืน]          │  │
+│  │        * ปุ่มซ้าย = shortcut ส่งคืน (confirm dialog)      │  │
+│  │        * ปุ่มขวา label = "อนุมัติ ✅" หรือ "ส่งคืน"       │  │
+│  └───────────────────────────────────────────────────────────┘  │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Section 6 — Role Differences
+
+| Sub-section | Manager / Asst.Mgr | Auditor | Owner | เงื่อนไข |
+|---|:---:|:---:|:---:|---|
+| **[6A] นับเงินสด — form กรอก (A+B+C)** | ✅ editable | ❌ | ❌ | step2 ยังไม่เสร็จ |
+| **[6A] นับเงินสด — read-only** | ✅ (หลัง step2 done) | ❌ (ซ่อนเมื่อ step2 done) | ❌ | `MoneyTransferCashVerificationTable` |
+| **[6B] Auditor form** (Balance Snapshot + Txn List + 4-col Cash Table + Issue Details) | ❌ | ✅ editable | ❌ | Auditor + step2_completed |
+| **[6B] Audit Result read-only** (Balance Snapshot + Txn List + Cash Table 3-col) | ✅ | ✅ | ✅ | status ≥ audited |
+| **[6C] Owner Decision Card + Buttons** | ❌ | ❌ | ✅ | Owner + audited |
+| **[6C] Approved Banner** | ❌ | ❌ | ✅ | Owner + approved |
+
+---
+
+### Step 1 Complete Button + Prerequisite Checklist (Manager/AM only)
+
+```
+[แสดงเมื่อ: Manager/AM + workflowStatus = step1_in_progress]
+
+┌──────────────────────────────────────────────────────────────────┐
+│  📋 เงื่อนไขก่อนยืนยันบันทึกรายการ                                │
+│  (หรือ ✅ พร้อมยืนยันบันทึกรายการแล้ว — เมื่อครบทุกข้อ)          │
+│                                                                  │
+│  ✅ / ⬜  กำหนดยอดเงินเริ่มต้นแล้ว                               │
+│  ✅ / ⬜  มีรายการอย่างน้อย 1 รายการ (ปัจจุบัน: N รายการ)         │
+│  ✅ / ❌  ไม่มีดราฟต์ค้างอยู่ (N รายการ ถ้ามี)                    │
+│                                                                  │
+│  [⚠️ Warning: มี Draft ค้าง — แสดงเมื่อ hasDrafts]               │
+│                                                                  │
+│          [ยืนยันบันทึกรายการ → ตรวจนับเงินสด]                    │
+│          (disabled เมื่อ: hasDrafts / total=0 / opening ไม่ set) │
+│          (ring animation เมื่อ canCompleteStep1 = true)          │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+* กด → store.completeStep1(date)
+       → workflowStatus เปลี่ยนเป็น step1_completed
+       → Section 6A (Form ตรวจนับ) ปลดล็อก
+       → Scroll ลงไปที่ #cash-counting-section อัตโนมัติ (300ms)
 ```
 
 ---
@@ -445,461 +775,296 @@ When clicking row 3 (Draft Transaction):
 
 ---
 
-## Step 2: Verify & Count Actual Cash Page
-**Route**: `/finance/money-transfer-service/step-2`
-**Role**: Manager/Assistant Manager
+## Step 2: ตรวจนับเงินสด (Section 6 ในหน้าเดิม)
+**Route**: `/finance/money-transfer-service?date=YYYY-MM-DD`
+*(Section 6 ในหน้าเดียวกัน — ปลดล็อกหลังกด "ยืนยันบันทึกรายการ")*
+**Role**: Manager/Assistant Manager (กรอก), Auditor/Owner (ดูอย่างเดียว)
 
-### Layout: Verification & Cash Count Page
+> ดู Layout ทั้งหมดใน **Section 6** ของ Main Page Wireframe ด้านบน
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
-│  🏦 Money Transfer Service - Step 2: Verify & Count Cash       │
-│                                                                 │
-│  📅 Date: 2026-01-29  👤 Manager: สมชาย              [Status]  │
-│                                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  📊 SYSTEM DATA FROM STEP 1 (Expected Amounts)                 │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │ Expected Balances:                                      │   │
-│  │ • Bank Account:           10,210 บาท                    │   │
-│  │ • Transfer/Withdrawal:     9,800 บาท                    │   │
-│  │ • Service Fee Cash:           70 บาท                    │   │
-│  │ • Service Fee Transfer:       10 บาท                    │   │
-│  │                                                         │   │
-│  │ Expected Total Cash:       9,870 บาท                    │   │
-│  │ Expected Transactions:     6 (5 success, 1 failed)      │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  💰 ACTUAL CASH COUNT (ผู้จัดการนับจริง)                        │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │ A. Transfer/Withdrawal Cash Count:                      │   │
-│  │    Expected:  9,800 บาท                                 │   │
-│  │    Actual:    [_____________] บาท                       │   │
-│  │    Difference: [AUTO-CALC] บาท   ✅/⚠️/❌              │   │
-│  │                                                         │   │
-│  │ B. Service Fee Cash Count:                              │   │
-│  │    Expected:  70 บาท                                    │   │
-│  │    Actual:    [_____________] บาท                       │   │
-│  │    Difference: [AUTO-CALC] บาท   ✅/⚠️/❌              │   │
-│  │                                                         │   │
-│  │ C. Service Fee Transfer:                                │   │
-│  │    Expected:  10 บาท                                    │   │
-│  │    Note:      (Not counted in cash, verify in Bank)    │   │
-│  │                                                         │   │
-│  │ ─────────────────────────────────────────────          │   │
-│  │ TOTAL CASH COUNTED: [_____________] บาท                │   │
-│  │ EXPECTED TOTAL:     9,870 บาท                          │   │
-│  │ TOTAL DIFFERENCE:   [AUTO-CALC] บาท   ✅/⚠️/❌        │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  📝 VERIFICATION NOTES (ถ้ามีปัญหา)                             │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │ If all amounts match:                                   │   │
-│  │ ○ All amounts match perfectly ✅                       │   │
-│  │                                                         │   │
-│  │ If discrepancies found:                                 │   │
-│  │ ○ Some amounts don't match ⚠️                          │   │
-│  │                                                         │   │
-│  │ Reason/Notes:                                           │   │
-│  │ [_________________________________________________]      │   │
-│  │ [_________________________________________________]      │   │
-│  │                                                         │   │
-│  │ Follow-up Action:                                       │   │
-│  │ [_________________________________________________]      │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  📋 STEP 1 TRANSACTIONS SUMMARY (for reference)                │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │ #│ Time  │ Type      │ Amount │ Comm. │ Status │ View   │   │
-│  ├─┼───────┼───────────┼────────┼───────┼────────┼────────┤   │
-│  │1│10:30  │PromptPay  │2,000 ฿ │20 ฿  │   ✅   │[👁️]    │   │
-│  │2│13:15  │Withdrawal │ 500 ฿  │10 ฿  │   ✅   │[👁️]    │   │
-│  │3│14:00  │Bank Trf   │8,800 ฿ │ -    │   ❌   │[👁️]    │   │
-│  │4│14:30  │Owner Dep  │10,000 ฿│ -    │   ✅   │[👁️]    │   │
-│  │5│14:45  │Bank Trf   │8,800 ฿ │40 ฿  │   ✅   │[👁️]    │   │
-│  │6│15:30  │Withdrawal │ 500 ฿  │10 ฿T │   ✅   │[👁️]    │   │
-│  └─┴───────┴───────────┴────────┴───────┴────────┴────────┘   │
-│                                                                 │
-│              [⬅️ Back to Step 1]  [✅ Confirm Verification]    │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Verification Result (After Confirming):
+### หลังยืนยันการตรวจนับ (workflowStatus → step2_completed):
 
 ```
-When clicking "Confirm Verification":
-
 ┌─────────────────────────────────────┐
-│ ✅ Verification Complete            │
+│ ✅ ตรวจนับเงินสดเสร็จสมบูรณ์         │
 ├─────────────────────────────────────┤
 │                                     │
-│ Status: VERIFIED ✅                │
-│ Verified By: สมชาย                  │
-│ Verified At: 2026-01-29 17:00:00   │
+│ ตรวจนับโดย: สมชาย                    │
+│ เวลา: 2026-03-04 17:00              │
 │                                     │
-│ Summary:                            │
-│ • Transfer/Withdrawal Cash: 9,800 บาท
-│ • Service Fee Cash:        70 บาท  │
-│ • Total Cash:            9,870 บาท │
+│ A. เงินสดโอน/ถอน:  3,950 บ  ✅ ตรง │
+│ B. ค่าบริการเงินสด:   30 บ  ✅ ตรง  │
+│ รวมเงินสด:         3,980 บ  ✅ ตรง  │
 │                                     │
-│ ✅ All amounts match                │
-│ ✅ Ready for Auditor review         │
+│ ✅ พร้อมส่ง Auditor ตรวจสอบ         │
 │                                     │
-│        [Next: Send to Auditor ➜]    │
-│                                     │
+│              [← กลับประวัติ]         │
 └─────────────────────────────────────┘
+* workflowStatus → step2_completed
+* Section 6 เปลี่ยนเป็น read-only table (CASE B) ทันที
 ```
 
 ---
 
 # 🔷 WORKFLOW 2.2: Auditor - Verify Money Transfer Service Income
 
-## Auditor Verification Page
-**Route**: `/finance/money-transfer-service/auditor-review`
-**Role**: Auditor
+## Auditor Review (Section 6B ในหน้า index.vue)
+**Route**: `/finance/money-transfer-service?date=YYYY-MM-DD`
+**Role**: Auditor (section 6B แสดงเมื่อ `isAuditor && store.isStep2Complete && !store.isAudited`)
+*(เข้ามาจาก History Page โดยคลิก "ตรวจสอบ" — ใช้หน้าเดียวกับ WF 2.1)*
 
-### Layout: Comprehensive Audit Review Page
+> **Design Decision**: ไม่มีหน้าแยก `auditor-review.vue` แล้ว — Section 6B ในหน้า index.vue
+> ทำหน้าที่แทนทั้งหมด Transaction list ของ Auditor ซ่อนเมื่อ step2 complete (ใช้ list ใน 6B แทน)
+
+### Layout: Section 6B — Auditor Review Form
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                                                                 │
-│  🔍 Money Transfer Service - Auditor Verification              │
+│  🏦 บริการโอนเงิน              [← ประวัติ]  [วันที่: YYYY-MM-DD] │
+│  (header เดิม — ทุก Role ใช้หน้าเดียวกัน)                        │
 │                                                                 │
-│  📅 Date: 2026-01-29  👤 Auditor: สวนัย              [Status]  │
-│  Status: VERIFIED (from Manager) → Awaiting Audit             │
+│  [Section 1-5 แสดงตามปกติ — Transaction List ซ่อนเมื่อ step2 done]
 │                                                                 │
-├─────────────────────────────────────────────────────────────────┤
+├─ Section 6B: ตรวจสอบบริการโอนเงิน ─── [⏳ รอตรวจสอบ] ─────────┤
 │                                                                 │
-│  📊 MANAGER'S DATA (Step 1 & 2)                                │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │ Manager: สมชาย                                           │  │
-│  │ Status: VERIFIED (Step 2 completed)                     │  │
-│  │                                                          │  │
-│  │ STEP 1 RECORDS:                                          │  │
-│  │ ├─ 6 Total Transactions Recorded                        │  │
-│  │ ├─ 5 Successful / 1 Failed                              │  │
-│  │ └─ Final Expected Balance: 10,210 บาท                   │  │
-│  │                                                          │  │
-│  │ STEP 2 VERIFICATION:                                     │  │
-│  │ ├─ Transfer/Withdrawal Cash: 9,800 บาท ✅              │  │
-│  │ ├─ Service Fee Cash: 70 บาท ✅                          │  │
-│  │ └─ All amounts match system expected                    │  │
-│  │                                                          │  │
-│  └──────────────────────────────────────────────────────────┘  │
+│  ── ยอดเงินในบัญชี Bank ─────────────────────────────────────  │
+│  ┌─ MoneyTransferBalanceSnapshot ─────────────────────────────┐ │
+│  │  ยอดเงินเริ่มต้น (Opening):  7,710 บาท                    │ │
+│  │  ยอดเงินปิด     (Closing):   3,760 บาท                    │ │
+│  │  ─────────────────────────────────────────────────────    │ │
+│  │  Bank Statement แสดง: [___________] บาท                   │ │
+│  │  ผลต่าง (Statement − ยอดปิด):  [0 บ ✅ ตรงกัน / +X ❌]   │ │
+│  └────────────────────────────────────────────────────────────┘ │
 │                                                                 │
-├─────────────────────────────────────────────────────────────────┤
+│  ── รายการธุรกรรม [▶ ขยาย / ▼ ซ่อน] ─── 6 รายการ ── [badge] ─ │
+│  [เมื่อขยาย → MoneyTransferTransactionTable]                    │
+│  ┌───┬───────┬───────────┬──────────────┬────────┬────────────┐ │
+│  │ # │ เวลา  │ ประเภท    │ บัญชีปลายทาง │ จำนวน  │ จัดการ     │ │
+│  ├───┼───────┼───────────┼──────────────┼────────┼────────────┤ │
+│  │ 1 │ 10:30 │ PromptPay │ สมชาย        │ 2,000  │ 👁 [มีปัญหา]│ │
+│  │ 2 │ 13:15 │ ถอนเงิน   │ -            │   500  │ 👁 [มีปัญหา]│ │
+│  └───┴───────┴───────────┴──────────────┴────────┴────────────┘ │
+│  * [มีปัญหา] = toggle; เมื่อ active → แถวนั้นถูก flag           │
+│  * footer: รวม N รายการ · ⚠️ X รายการมีปัญหา / ✅ ไม่พบปัญหา  │
 │                                                                 │
-│  🔐 AUDITOR VERIFICATION CHECKLIST                              │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │                                                          │  │
-│  │ ☐ VERIFY STEP 1 TRANSACTIONS                            │  │
-│  │                                                          │  │
-│  │   Transaction 1: PromptPay Transfer 2,000 บาท          │  │
-│  │   └─ Bank Impact: -2,000 บาท                           │  │
-│  │   └─ Bank Statement Check: [Click to verify]           │  │
-│  │   └─ Status: ✅ Verified                               │  │
-│  │                                                          │  │
-│  │   Transaction 2: Cash Withdrawal 500 บาท               │  │
-│  │   └─ Bank Impact: +500 บาท                             │  │
-│  │   └─ Bank Statement Check: [Click to verify]           │  │
-│  │   └─ Status: ✅ Verified                               │  │
-│  │                                                          │  │
-│  │   Transaction 3: Bank Transfer 8,800 บาท (FAILED)     │  │
-│  │   └─ Bank Impact: No change (rejected)                │  │
-│  │   └─ Bank Statement Check: [Click to verify]           │  │
-│  │   └─ Status: ✅ Verified                               │  │
-│  │                                                          │  │
-│  │   Transaction 4: Owner Deposit 10,000 บาท              │  │
-│  │   └─ Bank Impact: +10,000 บาท                          │  │
-│  │   └─ Bank Statement Check: [Click to verify]           │  │
-│  │   └─ Status: ✅ Verified                               │  │
-│  │                                                          │  │
-│  │   Transaction 5: Bank Transfer 8,800 บาท (SUCCESS)    │  │
-│  │   └─ Bank Impact: -8,800 บาท                           │  │
-│  │   └─ Bank Statement Check: [Click to verify]           │  │
-│  │   └─ Status: ✅ Verified                               │  │
-│  │                                                          │  │
-│  │   Transaction 6: Cash Withdrawal 500 บาท               │  │
-│  │   └─ Bank Impact: +500 + 10 (commission transfer)      │  │
-│  │   └─ Bank Statement Check: [Click to verify]           │  │
-│  │   └─ Status: ✅ Verified                               │  │
-│  │                                                          │  │
-│  │ ☐ VERIFY BANK ACCOUNT BALANCE                           │  │
-│  │                                                          │  │
-│  │   Expected (from Step 1):  10,210 บาท                  │  │
-│  │   Bank Statement shows:    10,210 บาท                  │  │
-│  │   Match: ✅ YES                                         │  │
-│  │                                                          │  │
-│  │ ☐ VERIFY STEP 2 CASH COUNT                              │  │
-│  │                                                          │  │
-│  │   Transfer/Withdrawal Cash:                             │  │
-│  │   └─ Expected: 9,800 บาท  ✅                            │  │
-│  │   └─ Counted: 9,800 บาท   ✅                            │  │
-│  │   └─ Match: ✅ YES                                      │  │
-│  │                                                          │  │
-│  │   Service Fee Cash:                                     │  │
-│  │   └─ Expected: 70 บาท     ✅                            │  │
-│  │   └─ Counted: 70 บาท      ✅                            │  │
-│  │   └─ Match: ✅ YES                                      │  │
-│  │                                                          │  │
-│  └──────────────────────────────────────────────────────────┘  │
+│  ── ตรวจสอบยอดเงินสด ──────────────────────────────────────── │
+│  ┌──────────────────┬──────────┬──────────┬────────────┬───────┐ │
+│  │ รายการ           │  คาดหวัง │ Manager  │  Auditor   │ผลต่าง │ │
+│  ├──────────────────┼──────────┼──────────┼────────────┼───────┤ │
+│  │ เงินสดโอน/ถอน   │ 3,950 บ │ 3,950 บ  │[__________]│[AUTO] │ │
+│  │ ค่าบริการเงินสด  │    30 บ │    30 บ  │[__________]│[AUTO] │ │
+│  ├──────────────────┼──────────┼──────────┼────────────┼───────┤ │
+│  │ รวม              │ 3,980 บ │ 3,980 บ  │ [AUTO]     │[AUTO] │ │
+│  └──────────────────┴──────────┴──────────┴────────────┴───────┘ │
+│  * Auditor column = input fields (type=number)                  │
+│  * ผลต่าง = Auditor − คาดหวัง (สีเขียว=0, แดง≠0)              │
+│  * canSubmitAudit: ต้องกรอก A และ B ทั้งคู่ก่อน                │
 │                                                                 │
-├─────────────────────────────────────────────────────────────────┤
+│  ── รายละเอียดปัญหาที่พบ (ถ้ามี) ─────────────────────────────  │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │ [_______________________________________________]           │ │
+│  │ (ว่างได้ถ้าไม่พบปัญหา)                                      │ │
+│  └────────────────────────────────────────────────────────────┘ │
 │                                                                 │
-│  📝 AUDIT NOTES & FINDINGS                                      │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │ Audit Result: ✅ NO ISSUES FOUND                        │  │
-│  │                                                          │  │
-│  │ Summary:                                                 │  │
-│  │ All 6 transactions verified against bank statement.    │  │
-│  │ Manager's Step 1 records are accurate. Manager's Step  │  │
-│  │ 2 cash verification confirmed. Bank balance matches    │  │
-│  │ expected amount. No discrepancies or missing txns.     │  │
-│  │                                                          │  │
-│  │ Detailed Notes:                                          │  │
-│  │ [_________________________________________________]      │  │
-│  │ [_________________________________________________]      │  │
-│  │                                                          │  │
-│  │ Issues Found: ○ None  ○ Minor  ○ Major                 │  │
-│  │                                                          │  │
-│  │ If issues: [____________________________________]       │  │
-│  │                                                          │  │
-│  └──────────────────────────────────────────────────────────┘  │
+│  [⚠️ พบ X รายการมีปัญหาในรายการธุรกรรม — แสดงเมื่อ > 0]        │
 │                                                                 │
-│              [❌ Reject]  [✅ Approve Audit]  [⬅️ Back]       │
+│          [❌ ส่งคืนแก้ไข]      [✅ ยืนยันการตรวจสอบ]            │
+│          (ConfirmDialog)        (disabled จนกว่ากรอก A+B)      │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Popup: Transaction Verification Detail
+> **หมายเหตุการออกแบบ:**
+> - Auditor นับ A+B **ด้วยตนเอง** (independent verification) — ไม่ copy จาก Manager
+> - ไม่มี Reconciliation feature — Bank Statement ใส่เป็น input เดียว คำนวณ diff ได้เลย
+> - "ส่งคืนแก้ไข" → `store.submitAudit(date, { auditResult: 'rejected' })`
+> - "ยืนยันการตรวจสอบ" → `store.submitAudit(date, { auditResult: 'no_issues' | 'minor_issues' })`
+>   - `no_issues` เมื่อ issueDetails ว่างและไม่มี txnIssueStatus
+>   - `minor_issues` เมื่อมีปัญหาอย่างใดอย่างหนึ่ง
+
+### Popup: Transaction Detail (เมื่อ Auditor คลิก row หรือ 👁)
 
 ```
-When clicking "Click to verify" for any transaction:
+เปิด showVerifyModal → verifyingTransaction = txn → แสดง Transaction Detail Modal
 
 ┌──────────────────────────────────────────┐
-│ Transaction #1 Bank Statement Verification
+│ รายละเอียดรายการ #1               [✕]   │
 ├──────────────────────────────────────────┤
+│ Status: ✅ COMPLETED                     │
 │                                          │
-│ Manager's Record:                        │
-│ • PromptPay Transfer: 2,000 บาท          │
-│ • Commission: 20 บาท (Cash)              │
-│ • Expected Bank Impact: -2,000 บาท       │
+│ ประเภท:   PromptPay Transfer             │
+│ จำนวน:    2,000 บาท                      │
+│ ค่าบริการ: 20 บาท (เงินสด)               │
+│ เวลา:     10:30                          │
+│ บัญชีปลาย: สมชาย · 081-234-5678         │
 │                                          │
-│ Bank Statement (2026-01-29):             │
-│ ✅ PromptPay OUT: 2,000 บาท              │
-│    Time: 10:30 AM                        │
-│    Reference: Customer A                 │
-│    Confirmed: Matches Manager's record   │
-│                                          │
-│ Verification Status:                     │
-│ ✅ Amount matches                        │
-│ ✅ Date/Time matches                     │
-│ ✅ All details confirmed                 │
-│                                          │
-│       [Close]  [Mark as Issue?]          │
-│                                          │
+│       [ปิด]                              │
 └──────────────────────────────────────────┘
+
+* การ flag ปัญหาทำจากปุ่ม [มีปัญหา] ในตาราง — ไม่ได้อยู่ใน modal นี้
 ```
 
 ---
 
 # 🔷 WORKFLOW 2.3: Owner - Approve Money Transfer Service Income
 
-## Owner Approval Page
-**Route**: `/finance/money-transfer-service/owner-approval`
-**Role**: Owner
+## Owner Approval (Section 6C ในหน้า index.vue)
+**Route**: `/finance/money-transfer-service?date=YYYY-MM-DD`
+**Role**: Owner (section 6C แสดงเมื่อ `isOwner && store.isAudited`)
+*(เข้ามาจาก History Page โดยคลิก "อนุมัติ" — ใช้หน้าเดียวกับ WF 2.1)*
 
-### Layout: Final Approval Page
+> **Design Decision**: ไม่มีหน้าแยก `owner-approval.vue` แล้ว — Section 6C ใน index.vue
+> Transaction list ของ Owner ซ่อนเมื่อ audited (collapsible — collapsed by default)
+
+### Layout: Section 6B + 6C สำหรับ Owner (เมื่อ audited)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                                                                 │
-│  ✅ Money Transfer Service - Owner Final Approval              │
+│  🏦 บริการโอนเงิน              [← ประวัติ]  [วันที่: YYYY-MM-DD] │
+│  (header เดิม — ทุก Role ใช้หน้าเดียวกัน)                        │
 │                                                                 │
-│  📅 Date: 2026-01-29                                           │
-│  Status: AUDITED (from Auditor) → Awaiting Owner Approval     │
+│  [Section 1-2: Opening Balance Banner (ซ่อน) + Balance Cards]   │
+│  [Section 3-4: Quick Actions + Draft Alert (ซ่อน — Owner ไม่เห็น)]│
+│  [Section 5: Transaction List — collapsed by default สำหรับ Owner]│
+│  [คลิก header เพื่อขยาย ▶/▼]                                   │
 │                                                                 │
-├─────────────────────────────────────────────────────────────────┤
+├─ Section 6B: ผลการตรวจสอบ Auditor ─── [✅ ตรวจสอบแล้ว] ────────┤
 │                                                                 │
-│  📊 TRANSACTION SUMMARY                                         │
+│  ── ยอดเงินในบัญชี Bank ─────────────────────────────────────  │
+│  ┌─ MoneyTransferBalanceSnapshot ─────────────────────────────┐ │
+│  │  ยอดเปิด: 7,710 บาท              ยอดปิด: 3,760 บาท        │ │
+│  │  รายการเดินบัญชี: 3,780 บาท (Auditor กรอก) ✅ ตรวจสอบแล้ว  │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│                                                                 │
+│  ── รายการธุรกรรม [▶ ขยาย / ▼ ซ่อน] ─── N รายการ ─── [badge]  │
+│  * พร้อม Auditor issue flags (read-only)                        │
+│  * footer: ตรวจสอบ N รายการ · มีปัญหา X · โดย [name] · [time] │
+│                                                                 │
+│  ── MoneyTransferCashVerificationTable ─────────────────────── │
+│  ┌───────────────────┬──────────┬──────────┬────────────┐      │
+│  │ รายการ            │  คาดหวัง │ Manager  │  Auditor   │      │
+│  ├───────────────────┼──────────┼──────────┼────────────┤      │
+│  │ เงินสดโอน/ถอน     │ 3,950 บ │ 3,950 บ  │  3,950 บ  │      │
+│  │ ค่าบริการเงินสด   │    30 บ │    30 บ  │     30 บ  │      │
+│  └───────────────────┴──────────┴──────────┴────────────┘      │
+│                                                                 │
+├─ Section 6C: การอนุมัติ Owner ─── [✅ อนุมัติแล้ว / ⏳ รอ] ───  │
+│                                                                 │
+│  [กรณี approved แล้ว → แสดง Banner สีเขียว]                      │
 │  ┌──────────────────────────────────────────────────────────┐  │
-│  │ Manager: สมชาย                                           │  │
-│  │ Total Transactions: 6 (5 Success, 1 Failed)              │  │
-│  │                                                          │  │
-│  │ STEP 1: Manager Recorded Transactions                    │  │
-│  │ ├─ PromptPay Transfer:    2,000 บาท (+ 20 ฿ commission)│  │
-│  │ ├─ Cash Withdrawal:         500 บาท (+ 10 ฿ commission)│  │
-│  │ ├─ Bank Transfer (Failed): 8,800 บาท (rejected)         │  │
-│  │ ├─ Owner Deposit:         10,000 บาท                    │  │
-│  │ ├─ Bank Transfer (Success): 8,800 บาท (+ 40 ฿ comm.)  │  │
-│  │ └─ Cash Withdrawal:         500 บาท (+ 10 ฿ Transfer)  │  │
-│  │                                                          │  │
-│  │ Total Commission Collected:  80 บาท                     │  │
-│  │                                                          │  │
-│  │ STEP 2: Manager Cash Verification                        │  │
-│  │ ├─ Transfer/Withdrawal Cash:  9,800 บาท ✅ Match       │  │
-│  │ ├─ Service Fee Cash:             70 บาท ✅ Match       │  │
-│  │ └─ Total Cash Counted:         9,870 บาท ✅            │  │
-│  │                                                          │  │
-│  │ STEP 3 (WF 2.2): Auditor Verification                    │  │
-│  │ ├─ All transactions verified with bank statement ✅     │  │
-│  │ ├─ Bank balance matches expected (10,210 บาท) ✅       │  │
-│  │ ├─ No discrepancies found ✅                            │  │
-│  │ └─ Status: AUDITED - No Issues ✅                       │  │
-│  │                                                          │  │
+│  │ ✅ อนุมัติแล้ว                                           │  │
+│  │ วันที่ YYYY-MM-DD — ได้รับการอนุมัติจาก Owner            │  │
+│  │ หมายเหตุ: "..." (ถ้ามี ownerNotes)                       │  │
 │  └──────────────────────────────────────────────────────────┘  │
 │                                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  👁️ DETAIL REVIEW (Expand to see)                              │
+│  [กรณียังไม่ approved → แสดง Decision Card]                      │
 │  ┌──────────────────────────────────────────────────────────┐  │
-│  │ [▼] Manager Step 1 - Full Transaction List              │  │
-│  │ [▼] Manager Step 2 - Verification Details               │  │
-│  │ [▼] Auditor 2.2 - Verification Notes                   │  │
-│  │ [▼] Auditor 2.2 - Bank Statement Cross-check           │  │
-│  │                                                          │  │
+│  │ ┌─────────────────┬───────────────────┬─────────────┐   │  │
+│  │ │ ◉ อนุมัติ ✅    │ ○ อนุมัติ+หมายเหตุ│ ○ ขอให้แก้  │   │  │
+│  │ │  บันทึกเป็น     │  มีข้อสังเกต      │  ส่งคืน     │   │  │
+│  │ │  ที่สิ้นสุด      │  เพิ่มเติม        │  Auditor/  │   │  │
+│  │ │                │                   │  Manager   │   │  │
+│  │ └─────────────────┴───────────────────┴─────────────┘   │  │
+│  │ [ถ้า approve_with_notes → textarea หมายเหตุ Owner]        │  │
+│  │ [ถ้า request_correction → textarea เหตุผลที่ต้องแก้ไข]   │  │
 │  └──────────────────────────────────────────────────────────┘  │
 │                                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ⚠️ AUDIT RESULT CHECK                                         │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │ Status: AUDITED                                          │  │
-│  │ Auditor: สวนัย                                           │  │
-│  │ Audit Date: 2026-01-29 17:30:00                         │  │
-│  │                                                          │  │
-│  │ ✅ NO ISSUES FOUND                                       │  │
-│  │                                                          │  │
-│  │ Audit Notes:                                             │  │
-│  │ "All 6 transactions from Manager's Step 1 verified      │  │
-│  │ against bank statement. Manager's Step 2 cash           │  │
-│  │ verification confirmed. Bank balance 10,210 บาท         │  │
-│  │ matches expected. No issues found. Ready for Owner      │  │
-│  │ approval."                                               │  │
-│  │                                                          │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  📋 OWNER'S DECISION                                            │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │ Audit Status: AUDITED (No Issues) ✅                     │  │
-│  │                                                          │  │
-│  │ ○ APPROVE                                               │  │
-│  │   → Data will be finalized and recorded                │  │
-│  │   → Status = APPROVED ✅                               │  │
-│  │                                                          │  │
-│  │ ○ APPROVE WITH NOTES                                   │  │
-│  │   (If Owner wants to add additional notes/conditions)   │  │
-│  │   [_____________________________________]              │  │
-│  │                                                          │  │
-│  │ ○ REQUEST CORRECTION                                    │  │
-│  │   (If Owner finds issues despite audit)                │  │
-│  │   [_____________________________________]              │  │
-│  │                                                          │  │
-│  │ Owner's Notes/Comments (optional):                      │  │
-│  │ [_____________________________________]                │  │
-│  │ [_____________________________________]                │  │
-│  │                                                          │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                                                                 │
-│    [❌ Reject]  [📝 Preview]  [✅ Approve]  [⬅️ Back]        │
+│        [❌ ส่งคืนแก้ไข]        [✅ อนุมัติ / ส่งคืน]           │
+│        (ConfirmDialog)          label = "อนุมัติ ✅" หรือ "ส่งคืน"│
+│        * disabled จนกว่าเลือก decision                          │
+│        * approve_with_notes ต้องกรอก ownerNotes                 │
+│        * request_correction ต้องกรอก correctionReason           │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Approval Confirmation (After Click "Approve"):
-
-```
-When Owner clicks "Approve":
-
-┌───────────────────────────────────────────┐
-│ ✅ Approval Complete                      │
-├───────────────────────────────────────────┤
-│                                           │
-│ Transaction Date: 2026-01-29              │
-│ Status: APPROVED ✅                       │
-│ Approved By: Owner (เจ้าของร้าน)           │
-│ Approved At: 2026-01-29 18:00:00          │
-│                                           │
-│ Summary:                                  │
-│ • Total Transactions: 6                   │
-│ • Total Commission: 80 บาท                │
-│ • Bank Balance: 10,210 บาท                │
-│ • Cash Verified: 9,870 บาท                │
-│                                           │
-│ ✅ Money transfer service income          │
-│    has been recorded and finalized        │
-│                                           │
-│ Next: Data ready for financial reporting  │
-│                                           │
-│     [View Report]  [Print]  [Close]       │
-│                                           │
-└───────────────────────────────────────────┘
-```
+> **Store Actions:**
+> - "อนุมัติ" → `store.submitOwnerApproval(date, { decision: 'approve', ownerNotes })`
+> - "อนุมัติพร้อมหมายเหตุ" → `decision: 'approve_with_notes'`
+> - "ขอให้แก้ไข" → `decision: 'request_correction', correctionReason`
 
 ---
 
-# 📋 Complete Workflow 2.1-2.3 Navigation Flow
+# 📋 Complete Workflow 2.0-2.3 Navigation Flow
 
 ```
-START
+START (ทุก Role เข้าเมนู "บริการโอนเงิน")
   ↓
 ┌─────────────────────────────────────────────┐
-│ Manager - Workflow 2.1                      │
+│ WF 2.0: History Page (Entry Point)         │
 ├─────────────────────────────────────────────┤
 │                                             │
-│ Step 1: Record Transactions                │
-│ /finance/money-transfer-service/step-1     │
-│ └─ Record 6 transactions throughout day   │
-│ └─ System auto-calculates balances        │
-│ └─ Status: "submitted"                    │
-│ ↓                                           │
-│ Step 2: Verify & Count Cash                │
-│ /finance/money-transfer-service/step-2     │
-│ └─ Count actual cash                      │
-│ └─ Compare with system expected            │
-│ └─ Verify match or note discrepancies     │
-│ └─ Status: "verified" ✅                   │
-│ ↓                                           │
-└─────────────────────────────────────────────┘
-│
-├─────────────────────────────────────────────┐
-│ Auditor - Workflow 2.2                      │
-├─────────────────────────────────────────────┤
+│ /finance/money-transfer-history             │
+│ └─ แสดง list ทุกวัน เรียงล่าสุดก่อน       │
+│ └─ Pending Inbox Cards (role-specific)     │
+│ └─ Smart Action Button (role × status)     │
+│ └─ [เพิ่มรายการ] → date picker (EDIT_FIN)  │
 │                                             │
-│ Auditor Verification                       │
-│ /finance/money-transfer-service/auditor    │
-│ └─ Review Manager's Step 1 records        │
-│ └─ Verify Step 2 cash count results       │
-│ └─ Cross-check with bank statement        │
-│ └─ Status: "audited" or "audited_issues" │
-│ ↓                                           │
 └─────────────────────────────────────────────┘
-│
-├─────────────────────────────────────────────┐
-│ Owner - Workflow 2.3                        │
-├─────────────────────────────────────────────┤
-│                                             │
-│ Owner Approval                              │
-│ /finance/money-transfer-service/approval   │
-│ └─ Review complete workflow summary       │
-│ └─ Approve / Reject / Request correction  │
-│ └─ Status: "approved" or "needs_correction"
-│ ↓                                           │
-└─────────────────────────────────────────────┘
-│
-COMPLETE ✅
-Recorded in financial system
+  │
+  ├─ Manager/AM คลิก [เพิ่มรายการ] หรือ [ทำงาน]/[แก้ไข]
+  │     ↓
+  │   ┌─────────────────────────────────────────────┐
+  │   │ WF 2.1: Work Page (Manager/AM)             │
+  │   ├─────────────────────────────────────────────┤
+  │   │                                             │
+  │   │ /finance/money-transfer-service?date=       │
+  │   │                                             │
+  │   │ Section 1: Opening Balance (ถ้ายังไม่ตั้ง) │
+  │   │ Section 2: Balance Cards (8 การ์ด)          │
+  │   │ Section 3: Quick Actions (4 ปุ่ม)           │
+  │   │ Section 4: Draft Alert (ถ้ามี)              │
+  │   │ Section 5: Transaction Table + Pagination   │
+  │   │ Section 5B: Prerequisite Checklist + ปุ่ม   │
+  │   │   → store.completeStep1()                  │
+  │   │   → Status: step1_completed                │
+  │   │ Section 6A: Cash Count Form (A+B+C)        │
+  │   │   → store.completeStep2()                  │
+  │   │   → Status: step2_completed ✅             │
+  │   │   → router.push('/finance/money-transfer-history')│
+  │   │                                             │
+  │   └─────────────────────────────────────────────┘
+  │
+  ├─ Auditor คลิก [ตรวจสอบ] (บน row step2_completed)
+  │     ↓
+  │   ┌─────────────────────────────────────────────┐
+  │   │ WF 2.2: Auditor Review (ใน index.vue)      │
+  │   ├─────────────────────────────────────────────┤
+  │   │                                             │
+  │   │ /finance/money-transfer-service?date=       │
+  │   │ (หน้าเดียวกัน — Section 6B แสดงสำหรับ Auditor)│
+  │   │                                             │
+  │   │ Section 5: Transaction Table ซ่อน (hidden)  │
+  │   │ Section 6B Active: Balance Snapshot +       │
+  │   │   Collapsible Txn List + 4-col Cash Table + │
+  │   │   Issue Details + [ส่งคืน] [ยืนยัน]        │
+  │   │   → store.submitAudit()                    │
+  │   │   → Status: audited / needs_correction      │
+  │   │                                             │
+  │   └─────────────────────────────────────────────┘
+  │
+  └─ Owner คลิก [อนุมัติ] (บน row audited)
+        ↓
+      ┌─────────────────────────────────────────────┐
+      │ WF 2.3: Owner Approval (ใน index.vue)      │
+      ├─────────────────────────────────────────────┤
+      │                                             │
+      │ /finance/money-transfer-service?date=       │
+      │ (หน้าเดียวกัน — Section 6B+6C สำหรับ Owner) │
+      │                                             │
+      │ Section 5: Transaction Table collapsible    │
+      │   (collapsed by default สำหรับ Owner)       │
+      │ Section 6B Read-only: Audit Result          │
+      │   (Balance Snapshot + Txn List + Cash Table)│
+      │ Section 6C: Owner Decision Card             │
+      │   → store.submitOwnerApproval()            │
+      │   → Status: approved ✅ / needs_correction  │
+      │                                             │
+      └─────────────────────────────────────────────┘
+        ↓
+COMPLETE ✅ → แสดง Approved Banner ในหน้าเดิม
 ```
 
 ---
