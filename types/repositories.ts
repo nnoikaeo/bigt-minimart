@@ -318,9 +318,15 @@ export interface MoneyTransferDailySummary {
       serviceFee: number
       total: number
     }
+    auditorCashMatches?: boolean // true when auditorCash totals match manager step2 totals
+    // Bank reconciliation (for explaining D discrepancies)
+    reconciliationItems?: Array<{ name: string; amount: number }>
+    adjustedBankBalance?: number // closingBalance + sum(reconciliationItems)
+    bankBalanceReconciled?: boolean // true when adjustedBankBalance matches bankStatementAmount
     auditNotes: string
     issuesFound?: string[]
     auditResult: 'no_issues' | 'minor_issues' | 'major_issues'
+    txnIssueStatus?: Record<string, true>
   }
 
   // Workflow 2.3: Owner approval

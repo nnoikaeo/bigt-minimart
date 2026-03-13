@@ -102,6 +102,16 @@ export function useMoneyTransferHelpers() {
     return txn.bankName || ''
   }
 
+  /**
+   * Format a numeric diff value for display in cash verification tables.
+   * Returns '✅ ตรงกัน' for zero, '+X ฿' / '-X ฿' for non-zero, '-' for null.
+   */
+  function formatDiff(diff: number | null): string {
+    if (diff === null) return '-'
+    if (diff === 0) return '✅ ตรงกัน'
+    return (diff > 0 ? '+' : '') + formatCurrency(diff)
+  }
+
   return {
     formatCurrency,
     formatTime,
@@ -112,5 +122,6 @@ export function useMoneyTransferHelpers() {
     getStatusLabel,
     getAccountName,
     getChannelSubtitle,
+    formatDiff,
   }
 }

@@ -63,14 +63,14 @@ function getActionButton(summary: any): { label: string; route: string; variant:
   }
 
   if (role === ROLES.AUDITOR) {
-    if (status === 'step2_completed') return { label: 'ตรวจสอบ', route: `/finance/money-transfer-service/auditor-review?date=${date}`, variant: 'primary' }
-    if (status === 'audited') return { label: 'ดูการตรวจสอบ', route: `/finance/money-transfer-service/auditor-review?date=${date}`, variant: 'secondary' }
+    if (status === 'step2_completed') return { label: 'ตรวจสอบ', route: `/finance/money-transfer-service?date=${date}`, variant: 'primary' }
+    if (status === 'audited') return { label: 'ดูการตรวจสอบ', route: `/finance/money-transfer-service?date=${date}`, variant: 'secondary' }
     return { label: 'ดูรายละเอียด', route: `/finance/money-transfer-service?date=${date}`, variant: 'secondary' }
   }
 
   if (role === ROLES.OWNER) {
-    if (status === 'audited') return { label: 'อนุมัติ', route: `/finance/money-transfer-service/owner-approval?date=${date}`, variant: 'primary' }
-    if (status === 'approved') return { label: 'ดูรายละเอียด', route: `/finance/money-transfer-service/owner-approval?date=${date}`, variant: 'secondary' }
+    if (status === 'audited') return { label: 'อนุมัติ', route: `/finance/money-transfer-service?date=${date}`, variant: 'primary' }
+    if (status === 'approved') return { label: 'ดูรายละเอียด', route: `/finance/money-transfer-service?date=${date}`, variant: 'secondary' }
     return { label: 'ดูรายละเอียด', route: `/finance/money-transfer-service?date=${date}`, variant: 'secondary' }
   }
 
