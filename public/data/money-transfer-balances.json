@@ -80,5 +80,25 @@
     "serviceFeeCash": 0,
     "history": [],
     "updatedAt": "2026-03-09T11:44:41.624Z"
+  },
+  {
+    "id": "mtbal-2026-03-11",
+    "date": "2026-03-11",
+    "bankAccount": 0,
+    "transferCash": 0,
+    "serviceFeeTransfer": 0,
+    "serviceFeeCash": 0,
+    "history": [],
+    "updatedAt": "2026-03-11T12:42:05.788Z"
+  },
+  {
+    "id": "mtbal-2026-03-13",
+    "date": "2026-03-13",
+    "bankAccount": 0,
+    "transferCash": 0,
+    "serviceFeeTransfer": 0,
+    "serviceFeeCash": 0,
+    "history": [],
+    "updatedAt": "2026-03-13T12:30:12.006Z"
   }
 ]

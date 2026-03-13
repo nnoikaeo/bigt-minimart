@@ -180,7 +180,7 @@ export const useUIStore = defineStore('ui', {
         }
       }
 
-      // Second pass: prefix match (e.g. current path is /finance/money-transfer-service/auditor-review
+      // Second pass: prefix match (e.g. current path is /finance/money-transfer-service?date=...
       // and menu route is /finance/money-transfer-history with routePrefixes ['/finance/money-transfer-service'])
       let bestMatch: { pageKey: string; groupKey: string; routeLength: number } | null = null
       for (const group of menuData) {
