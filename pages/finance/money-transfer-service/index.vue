@@ -109,6 +109,13 @@ const correctionReason = ref('')
 const showOwnerApproveConfirm = ref(false)
 const showOwnerRejectConfirm = ref(false)
 
+// ─── Sticky Action Buttons (mobile) ──────────────────────────────────────────
+const auditorActionsRef = ref<HTMLElement | null>(null)
+const ownerActionsRef = ref<HTMLElement | null>(null)
+const isAuditorActionsVisible = ref(true)
+const isOwnerActionsVisible = ref(true)
+let stickyObserver: IntersectionObserver | null = null
+
 // ─── Step 2: Cash Counting ────────────────────────────────────────────────────
 const actualTransferWithdrawal = ref<number>(0)
 const actualServiceFee = ref<number>(0)
@@ -445,6 +452,14 @@ const statusBannerContent = computed(() => {
   }
   return null
 })
+
+// ─── Sticky Action Bar (mobile) ─────────────────────────────────────────────
+const showStickyAuditorActions = computed(() =>
+  isAuditor.value && store.isStep2Complete && !store.isAudited && !isAuditorActionsVisible.value
+)
+const showStickyOwnerActions = computed(() =>
+  isOwner.value && store.isAudited && !store.isApproved && !isOwnerActionsVisible.value
+)
 
 function canCompleteDraft(draft: any): boolean {
   return (store.currentBalance?.bankAccount ?? 0) >= draft.amount
@@ -938,6 +953,29 @@ onMounted(async () => {
   } catch (err: any) {
     errorMessage.value = err.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูล'
   }
+
+  // Sticky action buttons — observe visibility of original buttons
+  stickyObserver = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (entry.target === auditorActionsRef.value) {
+        isAuditorActionsVisible.value = entry.isIntersecting
+      } else if (entry.target === ownerActionsRef.value) {
+        isOwnerActionsVisible.value = entry.isIntersecting
+      }
+    }
+  }, { threshold: 0.1 })
+})
+
+watch([auditorActionsRef, ownerActionsRef], ([auditorEl, ownerEl], [oldAuditorEl, oldOwnerEl]) => {
+  if (oldAuditorEl) stickyObserver?.unobserve(oldAuditorEl)
+  if (oldOwnerEl) stickyObserver?.unobserve(oldOwnerEl)
+  if (auditorEl) stickyObserver?.observe(auditorEl)
+  if (ownerEl) stickyObserver?.observe(ownerEl)
+})
+
+onBeforeUnmount(() => {
+  stickyObserver?.disconnect()
+  stickyObserver = null
 })
 </script>
 
@@ -1376,7 +1414,7 @@ onMounted(async () => {
       </section>
 
       <!-- Owner Action Buttons -->
-      <div v-if="!store.isApproved" class="flex flex-col sm:flex-row items-center justify-between gap-3 py-4">
+      <div v-if="!store.isApproved" ref="ownerActionsRef" class="flex flex-col sm:flex-row items-center justify-between gap-3 py-4">
         <BaseButton variant="danger" :disabled="isSubmittingAction" @click="showOwnerRejectConfirm = true">
           <XCircleIcon class="w-4 h-4" />
           ส่งคืนแก้ไข
@@ -2131,7 +2169,7 @@ onMounted(async () => {
       <div v-if="txnsWithIssues > 0" class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700 font-medium">
         ⚠️ พบ {{ txnsWithIssues }} รายการมีปัญหาในรายการธุรกรรม
       </div>
-      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 py-4">
+      <div ref="auditorActionsRef" class="flex flex-col sm:flex-row items-center justify-between gap-4 py-4">
         <BaseButton variant="danger" @click="showAuditRejectConfirm = true">
           <XCircleIcon class="w-4 h-4" />
           ส่งคืนแก้ไข
@@ -2242,6 +2280,47 @@ onMounted(async () => {
         <p class="text-sm mt-0.5 opacity-80">{{ statusBannerContent.description }}</p>
       </div>
     </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- Sticky Action Bar (mobile only)                                   -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <Teleport to="body">
+      <!-- Auditor sticky actions -->
+      <div
+        v-if="showStickyAuditorActions"
+        class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg px-4 py-3 flex items-center justify-between z-50 sm:hidden"
+      >
+        <BaseButton variant="danger" size="sm" @click="showAuditRejectConfirm = true">
+          <XCircleIcon class="w-4 h-4" />
+          ส่งคืนแก้ไข
+        </BaseButton>
+        <BaseButton variant="success" size="sm" :disabled="!canSubmitAudit" @click="showAuditApproveConfirm = true">
+          <CheckCircleIcon class="w-4 h-4" />
+          ยืนยันการตรวจสอบ
+        </BaseButton>
+      </div>
+      <!-- Owner sticky actions -->
+      <div
+        v-if="showStickyOwnerActions"
+        class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg px-4 py-3 flex items-center justify-between z-50 sm:hidden"
+      >
+        <BaseButton variant="danger" size="sm" :disabled="isSubmittingAction" @click="showOwnerRejectConfirm = true">
+          <XCircleIcon class="w-4 h-4" />
+          ส่งคืนแก้ไข
+        </BaseButton>
+        <ActionButton
+          :permission="PERMISSIONS.EDIT_FINANCE"
+          variant="primary"
+          size="sm"
+          :loading="isSubmittingAction"
+          :disabled="!canApprove || isSubmittingAction"
+          @click="showOwnerApproveConfirm = true"
+        >
+          <CheckCircleIcon class="w-4 h-4" />
+          {{ decision === 'request_correction' ? 'ส่งคืน' : 'อนุมัติ ✅' }}
+        </ActionButton>
+      </div>
+    </Teleport>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <!-- Modal O: Opening Balance -->
