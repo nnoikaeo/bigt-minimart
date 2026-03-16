@@ -22,6 +22,7 @@ import {
   ExclamationTriangleIcon,
   DocumentTextIcon,
   ShieldCheckIcon,
+  ClockIcon,
 } from '@heroicons/vue/24/outline'
 
 definePageMeta({
@@ -412,6 +413,37 @@ const cashVerificationSummary = computed(() => {
 const auditResultSummary = computed(() => {
   const issues = store.currentSummary?.auditorVerification?.transactionsWithIssues ?? 0
   return issues > 0 ? `${issues} รายการมีปัญหา` : 'ไม่พบปัญหา · ยอดตรงกัน'
+})
+
+// ─── Status Banner Computed ──────────────────────────────────────────────────
+const showStatusBanner = computed(() => {
+  if (isManagerOrAsst.value && !isStep1InProgress.value && !canEditCashCount.value) return true
+  if (isAuditor.value && store.isAudited) return true
+  if (isOwner.value && !store.isAudited) return true
+  return false
+})
+
+const statusBannerContent = computed(() => {
+  const ws = workflowStatus.value
+  if (ws === 'step2_completed') return {
+    title: '⏳ รอ Auditor ตรวจสอบ',
+    description: 'รายการนี้อยู่ระหว่างรอการตรวจสอบจาก Auditor',
+    classes: 'border-orange-200 bg-orange-50 text-orange-800',
+    icon: ClockIcon,
+  }
+  if (ws === 'audited' && !isOwner.value) return {
+    title: '⏳ รอ Owner อนุมัติ',
+    description: 'รายการนี้ผ่านการตรวจสอบแล้ว อยู่ระหว่างรอ Owner อนุมัติ',
+    classes: 'border-yellow-200 bg-yellow-50 text-yellow-800',
+    icon: ClockIcon,
+  }
+  if (ws === 'approved') return {
+    title: '✅ อนุมัติแล้ว',
+    description: 'อนุมัติโดย Owner',
+    classes: 'border-green-200 bg-green-50 text-green-800',
+    icon: CheckCircleIcon,
+  }
+  return null
 })
 
 function canCompleteDraft(draft: any): boolean {
@@ -1059,6 +1091,308 @@ onMounted(async () => {
       :opening-source="store.currentBalance?.openingBalanceSource ?? ''"
       class="mb-6"
     />
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- Section 6C: Owner Approval (moved up — before Audit/Txn/Cash)    -->
+    <!-- Visible: Owner role + audited                                     -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <section v-if="isOwner && store.isAudited" class="mb-4">
+      <div class="flex items-center gap-3 mb-4">
+        <h2 class="text-base font-semibold text-gray-700">✅ การอนุมัติ Owner</h2>
+        <BaseBadge v-if="store.isApproved" variant="success" size="sm">✅ อนุมัติแล้ว</BaseBadge>
+        <BaseBadge v-else variant="warning" size="sm">⏳ รออนุมัติ</BaseBadge>
+      </div>
+
+      <!-- Already Approved Banner -->
+      <div v-if="store.isApproved" class="rounded-xl border border-green-200 bg-green-50 p-6 mb-6 flex items-start gap-4">
+        <CheckCircleIcon class="w-8 h-8 text-green-600 shrink-0 mt-0.5" />
+        <div>
+          <p class="font-semibold text-green-800 text-lg">อนุมัติแล้ว ✅</p>
+          <p class="text-sm text-green-700 mt-1">วันที่ {{ selectedDate }} — ได้รับการอนุมัติจาก Owner เรียบร้อยแล้ว</p>
+          <p v-if="store.currentSummary?.ownerApproval?.ownerNotes" class="text-sm text-green-700 mt-1">
+            หมายเหตุ: {{ store.currentSummary?.ownerApproval?.ownerNotes }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Transaction Summary Card -->
+      <section v-if="false" class="bg-white border border-gray-200 rounded-xl mb-6 overflow-hidden">
+        <div class="flex items-center gap-3 px-6 py-4 bg-gray-50 border-b border-gray-200">
+          <DocumentTextIcon class="w-5 h-5 text-gray-600" />
+          <h3 class="font-semibold text-gray-900">สรุปรายการ</h3>
+          <span class="ml-auto text-sm text-gray-500">{{ selectedDate }}</span>
+        </div>
+        <div class="p-6 space-y-6">
+          <!-- Balance Snapshot -->
+          <div>
+            <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">ยอดเงินในบัญชี Bank</h4>
+            <MoneyTransferBalanceSnapshot :opening-balance="openingBalance" :closing-balance="closingBalance">
+              <div class="flex gap-6 text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
+                <span>เงินสดในมือ (โอน/ถอน): <strong>{{ formatCurrency(step1FinalBalances?.transferCash ?? 0) }}</strong></span>
+                <span>ค่าบริการสะสม: <strong class="text-green-700">{{ formatCurrency(step1FinalBalances?.serviceFeeCash ?? 0) }}</strong></span>
+              </div>
+            </MoneyTransferBalanceSnapshot>
+          </div>
+          <hr class="border-gray-100" />
+
+          <!-- Step 1 Summary -->
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <span class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">1</span>
+                <h4 class="font-medium text-gray-900">Step 1: Manager บันทึกรายการ</h4>
+              </div>
+              <div class="flex items-center gap-3 text-sm">
+                <span class="text-gray-500">{{ dateTransactions.length }} รายการ</span>
+                <span class="text-green-700">{{ successCount }} สำเร็จ</span>
+                <span v-if="failedCount" class="text-red-600">{{ failedCount }} ล้มเหลว</span>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div class="bg-blue-50 rounded-lg p-3 text-center">
+                <p class="text-xs text-blue-600 mb-1">ยอดปิดบัญชี Bank</p>
+                <p class="font-semibold text-blue-900">{{ formatCurrency(step1FinalBalances?.bankAccount ?? 0) }}</p>
+              </div>
+              <div class="bg-green-50 rounded-lg p-3 text-center">
+                <p class="text-xs text-green-600 mb-1">เงินสดโอน/ถอน</p>
+                <p class="font-semibold text-green-900">{{ formatCurrency(step1FinalBalances?.transferCash ?? 0) }}</p>
+              </div>
+              <div class="bg-yellow-50 rounded-lg p-3 text-center">
+                <p class="text-xs text-yellow-600 mb-1">ค่าบริการ (เงินสด)</p>
+                <p class="font-semibold text-yellow-900">{{ formatCurrency(step1FinalBalances?.serviceFeeCash ?? 0) }}</p>
+              </div>
+              <div class="bg-purple-50 rounded-lg p-3 text-center">
+                <p class="text-xs text-purple-600 mb-1">ค่าบริการ (โอน)</p>
+                <p class="font-semibold text-purple-900">{{ formatCurrency(step1FinalBalances?.serviceFeeTransfer ?? 0) }}</p>
+              </div>
+            </div>
+            <div class="mt-3 flex items-center gap-2 text-sm text-gray-700">
+              <BanknotesIcon class="w-4 h-4 text-gray-500" />
+              <span>ค่าบริการรวม: <span class="font-semibold text-gray-900">{{ formatCurrency(totalCommission) }}</span></span>
+            </div>
+          </div>
+          <hr class="border-gray-100" />
+
+          <!-- Step 2 Summary -->
+          <div>
+            <div class="flex items-center gap-2 mb-3">
+              <span class="flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-700 text-xs font-bold">2</span>
+              <h4 class="font-medium text-gray-900">Step 2: Manager ตรวจนับเงิน</h4>
+            </div>
+            <div v-if="step2Data" class="space-y-2 text-sm">
+              <div class="flex items-center justify-between py-1.5 px-3 rounded-lg bg-gray-50">
+                <span class="text-gray-600">เงินสดโอน/ถอน (นับจริง A)</span>
+                <span class="font-medium">{{ formatCurrency(step2Data?.actualCash?.transferWithdrawal ?? 0) }}</span>
+              </div>
+              <div class="flex items-center justify-between py-1.5 px-3 rounded-lg bg-gray-50">
+                <span class="text-gray-600">ค่าบริการเงินสด (นับจริง B)</span>
+                <span class="font-medium">{{ formatCurrency(step2Data?.actualCash?.serviceFee ?? 0) }}</span>
+              </div>
+              <div class="flex items-center justify-between py-1.5 px-3 rounded-lg" :class="step2Data?.hasDiscrepancies ? 'bg-yellow-50' : 'bg-green-50'">
+                <span class="text-gray-600">ผลการตรวจนับ</span>
+                <BaseBadge :variant="step2Data?.hasDiscrepancies ? 'warning' : 'success'" size="sm">
+                  {{ step2Data?.hasDiscrepancies ? 'มีส่วนต่าง ⚠️' : 'ตรงกัน ✅' }}
+                </BaseBadge>
+              </div>
+            </div>
+          </div>
+          <hr class="border-gray-100" />
+
+          <!-- Auditor Summary -->
+          <div>
+            <div class="flex items-center gap-2 mb-3">
+              <ShieldCheckIcon class="w-5 h-5 text-indigo-600" />
+              <h4 class="font-medium text-gray-900">Auditor Verification</h4>
+            </div>
+            <div v-if="auditData" class="space-y-3 text-sm">
+              <div class="flex items-center gap-3 p-3 rounded-lg border" :class="auditResultLabel.containerClass">
+                <CheckCircleIcon class="w-5 h-5 shrink-0" />
+                <div>
+                  <p class="font-semibold">{{ auditResultLabel.text }}</p>
+                  <p class="text-xs opacity-80 mt-0.5">ตรวจสอบโดย {{ auditData?.completedByName ?? '-' }}<template v-if="auditData?.completedAt"> · {{ formatDatetime(auditData?.completedAt as string) }}</template></p>
+                </div>
+              </div>
+              <div v-if="auditData?.bankStatementAmount" class="flex items-center gap-3 py-2 px-3 rounded-lg bg-gray-50 flex-wrap">
+                <span class="text-gray-600">รายการเดินบัญชี:</span>
+                <span class="font-semibold text-blue-800">{{ formatCurrency(auditData?.bankStatementAmount ?? 0) }}</span>
+                <BaseBadge :variant="auditData?.bankStatementVerified ? 'success' : 'warning'" size="sm">
+                  {{ auditData?.bankStatementVerified ? '✅ ตรวจสอบแล้ว' : '⚠️ ไม่ได้ตรวจสอบ' }}
+                </BaseBadge>
+              </div>
+              <div v-if="auditData?.auditNotes" class="py-2 px-3 rounded-lg bg-gray-50">
+                <span class="text-gray-500 text-xs">หมายเหตุ Auditor:</span>
+                <p class="text-gray-700 mt-0.5 whitespace-pre-wrap">{{ auditData?.auditNotes }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Expandable detail sections -->
+      <section v-if="false" class="bg-white border border-gray-200 rounded-xl mb-6 overflow-hidden">
+        <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+          <h3 class="font-semibold text-gray-900">รายละเอียดเพิ่มเติม</h3>
+        </div>
+        <!-- Step 1 Transaction List -->
+        <div class="border-b border-gray-100">
+          <button
+            class="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition-colors"
+            @click="expandStep1Owner = !expandStep1Owner"
+          >
+            <div class="flex items-center gap-2">
+              <DocumentTextIcon class="w-4 h-4 text-gray-500" />
+              <span class="font-medium text-gray-900">Step 1 — รายการธุรกรรมทั้งหมด</span>
+              <BaseBadge variant="default" size="sm">{{ dateTransactions.length }} รายการ</BaseBadge>
+            </div>
+            <ChevronUpIcon v-if="expandStep1Owner" class="w-4 h-4 text-gray-500" />
+            <ChevronDownIcon v-else class="w-4 h-4 text-gray-500" />
+          </button>
+          <div v-if="expandStep1Owner" class="px-6 pb-4">
+            <MoneyTransferTransactionTable
+              :transactions="dateTransactions"
+              empty-message="ไม่มีรายการ"
+              @row-click="openDetailModal"
+            >
+              <template #action-header>ดู</template>
+            </MoneyTransferTransactionTable>
+          </div>
+        </div>
+        <!-- Step 2 Detail -->
+        <div class="border-b border-gray-100">
+          <button
+            class="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition-colors"
+            @click="expandStep2Owner = !expandStep2Owner"
+          >
+            <div class="flex items-center gap-2">
+              <BanknotesIcon class="w-4 h-4 text-gray-500" />
+              <span class="font-medium text-gray-900">Step 2 — รายละเอียดการตรวจนับ</span>
+            </div>
+            <ChevronUpIcon v-if="expandStep2Owner" class="w-4 h-4 text-gray-500" />
+            <ChevronDownIcon v-else class="w-4 h-4 text-gray-500" />
+          </button>
+          <div v-if="expandStep2Owner && step2Data" class="px-6 pb-4 space-y-3 text-sm">
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-gray-50 rounded-lg p-3">
+                <p class="text-xs text-gray-500 mb-1">ยอดที่ควรจะมี (A)</p>
+                <p class="font-medium">{{ formatCurrency(step2Data?.expectedCash?.transferWithdrawal ?? 0) }}</p>
+              </div>
+              <div class="bg-gray-50 rounded-lg p-3">
+                <p class="text-xs text-gray-500 mb-1">นับจริง (A)</p>
+                <p class="font-medium">{{ formatCurrency(step2Data?.actualCash?.transferWithdrawal ?? 0) }}</p>
+              </div>
+              <div class="bg-gray-50 rounded-lg p-3">
+                <p class="text-xs text-gray-500 mb-1">ยอดที่ควรจะมี (B)</p>
+                <p class="font-medium">{{ formatCurrency(step2Data?.expectedCash?.serviceFee ?? 0) }}</p>
+              </div>
+              <div class="bg-gray-50 rounded-lg p-3">
+                <p class="text-xs text-gray-500 mb-1">นับจริง (B)</p>
+                <p class="font-medium">{{ formatCurrency(step2Data?.actualCash?.serviceFee ?? 0) }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Audit Detail -->
+        <div>
+          <button
+            class="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition-colors"
+            @click="expandAuditOwner = !expandAuditOwner"
+          >
+            <div class="flex items-center gap-2">
+              <ShieldCheckIcon class="w-4 h-4 text-gray-500" />
+              <span class="font-medium text-gray-900">Auditor — รายละเอียดการตรวจสอบ</span>
+            </div>
+            <ChevronUpIcon v-if="expandAuditOwner" class="w-4 h-4 text-gray-500" />
+            <ChevronDownIcon v-else class="w-4 h-4 text-gray-500" />
+          </button>
+          <div v-if="expandAuditOwner && auditData" class="px-6 pb-4 space-y-3 text-sm">
+            <div class="bg-gray-50 rounded-lg p-3 space-y-1.5">
+              <div class="flex justify-between">
+                <span class="text-gray-500">ผล Audit</span>
+                <span class="font-medium" :class="auditResultLabel.colorClass">{{ auditResultLabel.text }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-500">Bank Statement Verified</span>
+                <span class="font-medium">{{ auditData?.bankStatementVerified ? 'ใช่ ✅' : 'ไม่ใช่' }}</span>
+              </div>
+              <div v-if="auditData?.completedAt" class="flex justify-between">
+                <span class="text-gray-500">เวลา Audit</span>
+                <span>{{ formatDatetime(auditData?.completedAt as string) }}</span>
+              </div>
+            </div>
+            <div v-if="auditData?.auditNotes" class="bg-gray-50 rounded-lg p-3">
+              <p class="text-xs text-gray-500 mb-1">Audit Notes</p>
+              <p class="text-gray-700 whitespace-pre-wrap">{{ auditData?.auditNotes }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Owner Decision Card (only when not yet approved) -->
+      <section v-if="!store.isApproved" class="bg-white border border-gray-200 rounded-xl mb-6 overflow-hidden">
+        <div class="flex items-center gap-3 px-6 py-4 bg-gray-50 border-b border-gray-200">
+          <ExclamationTriangleIcon class="w-5 h-5 text-yellow-600" />
+          <h3 class="font-semibold text-gray-900">การตัดสินใจของ Owner</h3>
+        </div>
+        <div class="p-4 space-y-3">
+          <div class="grid grid-cols-3 gap-2">
+            <label
+              class="flex flex-col gap-1 p-3 rounded-lg border cursor-pointer transition-colors"
+              :class="decision === 'approve' ? 'border-green-400 bg-green-50' : 'border-gray-200 hover:border-gray-300'"
+            >
+              <div class="flex items-center gap-2">
+                <input v-model="decision" type="radio" value="approve" class="accent-green-600 shrink-0" />
+                <p class="font-medium text-sm text-gray-900">อนุมัติ ✅</p>
+              </div>
+              <p class="text-xs text-gray-500 pl-5">บันทึกเป็นที่สิ้นสุด</p>
+            </label>
+            <label
+              class="flex flex-col gap-1 p-3 rounded-lg border cursor-pointer transition-colors"
+              :class="decision === 'approve_with_notes' ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:border-gray-300'"
+            >
+              <div class="flex items-center gap-2">
+                <input v-model="decision" type="radio" value="approve_with_notes" class="accent-blue-600 shrink-0" />
+                <p class="font-medium text-sm text-gray-900">อนุมัติพร้อมหมายเหตุ</p>
+              </div>
+              <p class="text-xs text-gray-500 pl-5">มีข้อสังเกตเพิ่มเติม</p>
+            </label>
+            <label
+              class="flex flex-col gap-1 p-3 rounded-lg border cursor-pointer transition-colors"
+              :class="decision === 'request_correction' ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-gray-300'"
+            >
+              <div class="flex items-center gap-2">
+                <input v-model="decision" type="radio" value="request_correction" class="accent-red-600 shrink-0" />
+                <p class="font-medium text-sm text-gray-900">ขอให้แก้ไข</p>
+              </div>
+              <p class="text-xs text-gray-500 pl-5">ส่งคืน Auditor/Manager</p>
+            </label>
+          </div>
+          <div v-if="decision === 'approve_with_notes'">
+            <BaseTextarea v-model="ownerNotes" placeholder="ระบุหมายเหตุหรือข้อสังเกต..." :rows="2" />
+          </div>
+          <div v-if="decision === 'request_correction'">
+            <BaseTextarea v-model="correctionReason" placeholder="ระบุสิ่งที่ต้องแก้ไข..." :rows="2" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Owner Action Buttons -->
+      <div v-if="!store.isApproved" class="flex flex-col sm:flex-row items-center justify-between gap-3 py-4">
+        <BaseButton variant="danger" :disabled="isSubmittingAction" @click="showOwnerRejectConfirm = true">
+          <XCircleIcon class="w-4 h-4" />
+          ส่งคืนแก้ไข
+        </BaseButton>
+        <ActionButton
+          :permission="PERMISSIONS.EDIT_FINANCE"
+          variant="primary"
+          :loading="isSubmittingAction"
+          :disabled="!canApprove || isSubmittingAction"
+          @click="showOwnerApproveConfirm = true"
+        >
+          <CheckCircleIcon class="w-4 h-4" />
+          {{ decision === 'request_correction' ? 'ส่งคืน' : 'อนุมัติ ✅' }}
+        </ActionButton>
+      </div>
+    </section>
 
     <!-- ── Default Fee Banner ──────────────────────────────────────────── -->
     <div v-if="usingDefaultFees && !isOwner" class="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm">
@@ -1895,306 +2229,19 @@ onMounted(async () => {
     </UiDisplayCollapsibleSection>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <!-- Section 6C: Owner Approval                                        -->
-    <!-- Visible: Owner role + audited                                     -->
+    <!-- Status Banner — No Action Available                               -->
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <section v-if="isOwner && store.isAudited" class="mt-6">
-      <div class="flex items-center gap-3 mb-4">
-        <h2 class="text-base font-semibold text-gray-700">✅ การอนุมัติ Owner</h2>
-        <BaseBadge v-if="store.isApproved" variant="success" size="sm">✅ อนุมัติแล้ว</BaseBadge>
-        <BaseBadge v-else variant="warning" size="sm">⏳ รออนุมัติ</BaseBadge>
+    <div
+      v-if="showStatusBanner && statusBannerContent"
+      class="rounded-xl border px-5 py-4 flex items-start gap-3 mb-4"
+      :class="statusBannerContent.classes"
+    >
+      <component :is="statusBannerContent.icon" class="w-5 h-5 shrink-0 mt-0.5" />
+      <div>
+        <p class="font-semibold">{{ statusBannerContent.title }}</p>
+        <p class="text-sm mt-0.5 opacity-80">{{ statusBannerContent.description }}</p>
       </div>
-
-      <!-- Already Approved Banner -->
-      <div v-if="store.isApproved" class="rounded-xl border border-green-200 bg-green-50 p-6 mb-6 flex items-start gap-4">
-        <CheckCircleIcon class="w-8 h-8 text-green-600 shrink-0 mt-0.5" />
-        <div>
-          <p class="font-semibold text-green-800 text-lg">อนุมัติแล้ว ✅</p>
-          <p class="text-sm text-green-700 mt-1">วันที่ {{ selectedDate }} — ได้รับการอนุมัติจาก Owner เรียบร้อยแล้ว</p>
-          <p v-if="store.currentSummary?.ownerApproval?.ownerNotes" class="text-sm text-green-700 mt-1">
-            หมายเหตุ: {{ store.currentSummary?.ownerApproval?.ownerNotes }}
-          </p>
-        </div>
-      </div>
-
-      <!-- Transaction Summary Card -->
-      <section v-if="false" class="bg-white border border-gray-200 rounded-xl mb-6 overflow-hidden">
-        <div class="flex items-center gap-3 px-6 py-4 bg-gray-50 border-b border-gray-200">
-          <DocumentTextIcon class="w-5 h-5 text-gray-600" />
-          <h3 class="font-semibold text-gray-900">สรุปรายการ</h3>
-          <span class="ml-auto text-sm text-gray-500">{{ selectedDate }}</span>
-        </div>
-        <div class="p-6 space-y-6">
-          <!-- Balance Snapshot -->
-          <div>
-            <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">ยอดเงินในบัญชี Bank</h4>
-            <MoneyTransferBalanceSnapshot :opening-balance="openingBalance" :closing-balance="closingBalance">
-              <div class="flex gap-6 text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
-                <span>เงินสดในมือ (โอน/ถอน): <strong>{{ formatCurrency(step1FinalBalances?.transferCash ?? 0) }}</strong></span>
-                <span>ค่าบริการสะสม: <strong class="text-green-700">{{ formatCurrency(step1FinalBalances?.serviceFeeCash ?? 0) }}</strong></span>
-              </div>
-            </MoneyTransferBalanceSnapshot>
-          </div>
-          <hr class="border-gray-100" />
-
-          <!-- Step 1 Summary -->
-          <div>
-            <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-2">
-                <span class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">1</span>
-                <h4 class="font-medium text-gray-900">Step 1: Manager บันทึกรายการ</h4>
-              </div>
-              <div class="flex items-center gap-3 text-sm">
-                <span class="text-gray-500">{{ dateTransactions.length }} รายการ</span>
-                <span class="text-green-700">{{ successCount }} สำเร็จ</span>
-                <span v-if="failedCount" class="text-red-600">{{ failedCount }} ล้มเหลว</span>
-              </div>
-            </div>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div class="bg-blue-50 rounded-lg p-3 text-center">
-                <p class="text-xs text-blue-600 mb-1">ยอดปิดบัญชี Bank</p>
-                <p class="font-semibold text-blue-900">{{ formatCurrency(step1FinalBalances?.bankAccount ?? 0) }}</p>
-              </div>
-              <div class="bg-green-50 rounded-lg p-3 text-center">
-                <p class="text-xs text-green-600 mb-1">เงินสดโอน/ถอน</p>
-                <p class="font-semibold text-green-900">{{ formatCurrency(step1FinalBalances?.transferCash ?? 0) }}</p>
-              </div>
-              <div class="bg-yellow-50 rounded-lg p-3 text-center">
-                <p class="text-xs text-yellow-600 mb-1">ค่าบริการ (เงินสด)</p>
-                <p class="font-semibold text-yellow-900">{{ formatCurrency(step1FinalBalances?.serviceFeeCash ?? 0) }}</p>
-              </div>
-              <div class="bg-purple-50 rounded-lg p-3 text-center">
-                <p class="text-xs text-purple-600 mb-1">ค่าบริการ (โอน)</p>
-                <p class="font-semibold text-purple-900">{{ formatCurrency(step1FinalBalances?.serviceFeeTransfer ?? 0) }}</p>
-              </div>
-            </div>
-            <div class="mt-3 flex items-center gap-2 text-sm text-gray-700">
-              <BanknotesIcon class="w-4 h-4 text-gray-500" />
-              <span>ค่าบริการรวม: <span class="font-semibold text-gray-900">{{ formatCurrency(totalCommission) }}</span></span>
-            </div>
-          </div>
-          <hr class="border-gray-100" />
-
-          <!-- Step 2 Summary -->
-          <div>
-            <div class="flex items-center gap-2 mb-3">
-              <span class="flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-700 text-xs font-bold">2</span>
-              <h4 class="font-medium text-gray-900">Step 2: Manager ตรวจนับเงิน</h4>
-            </div>
-            <div v-if="step2Data" class="space-y-2 text-sm">
-              <div class="flex items-center justify-between py-1.5 px-3 rounded-lg bg-gray-50">
-                <span class="text-gray-600">เงินสดโอน/ถอน (นับจริง A)</span>
-                <span class="font-medium">{{ formatCurrency(step2Data?.actualCash?.transferWithdrawal ?? 0) }}</span>
-              </div>
-              <div class="flex items-center justify-between py-1.5 px-3 rounded-lg bg-gray-50">
-                <span class="text-gray-600">ค่าบริการเงินสด (นับจริง B)</span>
-                <span class="font-medium">{{ formatCurrency(step2Data?.actualCash?.serviceFee ?? 0) }}</span>
-              </div>
-              <div class="flex items-center justify-between py-1.5 px-3 rounded-lg" :class="step2Data?.hasDiscrepancies ? 'bg-yellow-50' : 'bg-green-50'">
-                <span class="text-gray-600">ผลการตรวจนับ</span>
-                <BaseBadge :variant="step2Data?.hasDiscrepancies ? 'warning' : 'success'" size="sm">
-                  {{ step2Data?.hasDiscrepancies ? 'มีส่วนต่าง ⚠️' : 'ตรงกัน ✅' }}
-                </BaseBadge>
-              </div>
-            </div>
-          </div>
-          <hr class="border-gray-100" />
-
-          <!-- Auditor Summary -->
-          <div>
-            <div class="flex items-center gap-2 mb-3">
-              <ShieldCheckIcon class="w-5 h-5 text-indigo-600" />
-              <h4 class="font-medium text-gray-900">Auditor Verification</h4>
-            </div>
-            <div v-if="auditData" class="space-y-3 text-sm">
-              <div class="flex items-center gap-3 p-3 rounded-lg border" :class="auditResultLabel.containerClass">
-                <CheckCircleIcon class="w-5 h-5 shrink-0" />
-                <div>
-                  <p class="font-semibold">{{ auditResultLabel.text }}</p>
-                  <p class="text-xs opacity-80 mt-0.5">ตรวจสอบโดย {{ auditData?.completedByName ?? '-' }}<template v-if="auditData?.completedAt"> · {{ formatDatetime(auditData?.completedAt as string) }}</template></p>
-                </div>
-              </div>
-              <div v-if="auditData?.bankStatementAmount" class="flex items-center gap-3 py-2 px-3 rounded-lg bg-gray-50 flex-wrap">
-                <span class="text-gray-600">รายการเดินบัญชี:</span>
-                <span class="font-semibold text-blue-800">{{ formatCurrency(auditData?.bankStatementAmount ?? 0) }}</span>
-                <BaseBadge :variant="auditData?.bankStatementVerified ? 'success' : 'warning'" size="sm">
-                  {{ auditData?.bankStatementVerified ? '✅ ตรวจสอบแล้ว' : '⚠️ ไม่ได้ตรวจสอบ' }}
-                </BaseBadge>
-              </div>
-              <div v-if="auditData?.auditNotes" class="py-2 px-3 rounded-lg bg-gray-50">
-                <span class="text-gray-500 text-xs">หมายเหตุ Auditor:</span>
-                <p class="text-gray-700 mt-0.5 whitespace-pre-wrap">{{ auditData?.auditNotes }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Expandable detail sections -->
-      <section v-if="false" class="bg-white border border-gray-200 rounded-xl mb-6 overflow-hidden">
-        <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
-          <h3 class="font-semibold text-gray-900">รายละเอียดเพิ่มเติม</h3>
-        </div>
-        <!-- Step 1 Transaction List -->
-        <div class="border-b border-gray-100">
-          <button
-            class="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition-colors"
-            @click="expandStep1Owner = !expandStep1Owner"
-          >
-            <div class="flex items-center gap-2">
-              <DocumentTextIcon class="w-4 h-4 text-gray-500" />
-              <span class="font-medium text-gray-900">Step 1 — รายการธุรกรรมทั้งหมด</span>
-              <BaseBadge variant="default" size="sm">{{ dateTransactions.length }} รายการ</BaseBadge>
-            </div>
-            <ChevronUpIcon v-if="expandStep1Owner" class="w-4 h-4 text-gray-500" />
-            <ChevronDownIcon v-else class="w-4 h-4 text-gray-500" />
-          </button>
-          <div v-if="expandStep1Owner" class="px-6 pb-4">
-            <MoneyTransferTransactionTable
-              :transactions="dateTransactions"
-              empty-message="ไม่มีรายการ"
-              @row-click="openDetailModal"
-            >
-              <template #action-header>ดู</template>
-            </MoneyTransferTransactionTable>
-          </div>
-        </div>
-        <!-- Step 2 Detail -->
-        <div class="border-b border-gray-100">
-          <button
-            class="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition-colors"
-            @click="expandStep2Owner = !expandStep2Owner"
-          >
-            <div class="flex items-center gap-2">
-              <BanknotesIcon class="w-4 h-4 text-gray-500" />
-              <span class="font-medium text-gray-900">Step 2 — รายละเอียดการตรวจนับ</span>
-            </div>
-            <ChevronUpIcon v-if="expandStep2Owner" class="w-4 h-4 text-gray-500" />
-            <ChevronDownIcon v-else class="w-4 h-4 text-gray-500" />
-          </button>
-          <div v-if="expandStep2Owner && step2Data" class="px-6 pb-4 space-y-3 text-sm">
-            <div class="grid grid-cols-2 gap-3">
-              <div class="bg-gray-50 rounded-lg p-3">
-                <p class="text-xs text-gray-500 mb-1">ยอดที่ควรจะมี (A)</p>
-                <p class="font-medium">{{ formatCurrency(step2Data?.expectedCash?.transferWithdrawal ?? 0) }}</p>
-              </div>
-              <div class="bg-gray-50 rounded-lg p-3">
-                <p class="text-xs text-gray-500 mb-1">นับจริง (A)</p>
-                <p class="font-medium">{{ formatCurrency(step2Data?.actualCash?.transferWithdrawal ?? 0) }}</p>
-              </div>
-              <div class="bg-gray-50 rounded-lg p-3">
-                <p class="text-xs text-gray-500 mb-1">ยอดที่ควรจะมี (B)</p>
-                <p class="font-medium">{{ formatCurrency(step2Data?.expectedCash?.serviceFee ?? 0) }}</p>
-              </div>
-              <div class="bg-gray-50 rounded-lg p-3">
-                <p class="text-xs text-gray-500 mb-1">นับจริง (B)</p>
-                <p class="font-medium">{{ formatCurrency(step2Data?.actualCash?.serviceFee ?? 0) }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- Audit Detail -->
-        <div>
-          <button
-            class="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition-colors"
-            @click="expandAuditOwner = !expandAuditOwner"
-          >
-            <div class="flex items-center gap-2">
-              <ShieldCheckIcon class="w-4 h-4 text-gray-500" />
-              <span class="font-medium text-gray-900">Auditor — รายละเอียดการตรวจสอบ</span>
-            </div>
-            <ChevronUpIcon v-if="expandAuditOwner" class="w-4 h-4 text-gray-500" />
-            <ChevronDownIcon v-else class="w-4 h-4 text-gray-500" />
-          </button>
-          <div v-if="expandAuditOwner && auditData" class="px-6 pb-4 space-y-3 text-sm">
-            <div class="bg-gray-50 rounded-lg p-3 space-y-1.5">
-              <div class="flex justify-between">
-                <span class="text-gray-500">ผล Audit</span>
-                <span class="font-medium" :class="auditResultLabel.colorClass">{{ auditResultLabel.text }}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-500">Bank Statement Verified</span>
-                <span class="font-medium">{{ auditData?.bankStatementVerified ? 'ใช่ ✅' : 'ไม่ใช่' }}</span>
-              </div>
-              <div v-if="auditData?.completedAt" class="flex justify-between">
-                <span class="text-gray-500">เวลา Audit</span>
-                <span>{{ formatDatetime(auditData?.completedAt as string) }}</span>
-              </div>
-            </div>
-            <div v-if="auditData?.auditNotes" class="bg-gray-50 rounded-lg p-3">
-              <p class="text-xs text-gray-500 mb-1">Audit Notes</p>
-              <p class="text-gray-700 whitespace-pre-wrap">{{ auditData?.auditNotes }}</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Owner Decision Card (only when not yet approved) -->
-      <section v-if="!store.isApproved" class="bg-white border border-gray-200 rounded-xl mb-6 overflow-hidden">
-        <div class="flex items-center gap-3 px-6 py-4 bg-gray-50 border-b border-gray-200">
-          <ExclamationTriangleIcon class="w-5 h-5 text-yellow-600" />
-          <h3 class="font-semibold text-gray-900">การตัดสินใจของ Owner</h3>
-        </div>
-        <div class="p-4 space-y-3">
-          <div class="grid grid-cols-3 gap-2">
-            <label
-              class="flex flex-col gap-1 p-3 rounded-lg border cursor-pointer transition-colors"
-              :class="decision === 'approve' ? 'border-green-400 bg-green-50' : 'border-gray-200 hover:border-gray-300'"
-            >
-              <div class="flex items-center gap-2">
-                <input v-model="decision" type="radio" value="approve" class="accent-green-600 shrink-0" />
-                <p class="font-medium text-sm text-gray-900">อนุมัติ ✅</p>
-              </div>
-              <p class="text-xs text-gray-500 pl-5">บันทึกเป็นที่สิ้นสุด</p>
-            </label>
-            <label
-              class="flex flex-col gap-1 p-3 rounded-lg border cursor-pointer transition-colors"
-              :class="decision === 'approve_with_notes' ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:border-gray-300'"
-            >
-              <div class="flex items-center gap-2">
-                <input v-model="decision" type="radio" value="approve_with_notes" class="accent-blue-600 shrink-0" />
-                <p class="font-medium text-sm text-gray-900">อนุมัติพร้อมหมายเหตุ</p>
-              </div>
-              <p class="text-xs text-gray-500 pl-5">มีข้อสังเกตเพิ่มเติม</p>
-            </label>
-            <label
-              class="flex flex-col gap-1 p-3 rounded-lg border cursor-pointer transition-colors"
-              :class="decision === 'request_correction' ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-gray-300'"
-            >
-              <div class="flex items-center gap-2">
-                <input v-model="decision" type="radio" value="request_correction" class="accent-red-600 shrink-0" />
-                <p class="font-medium text-sm text-gray-900">ขอให้แก้ไข</p>
-              </div>
-              <p class="text-xs text-gray-500 pl-5">ส่งคืน Auditor/Manager</p>
-            </label>
-          </div>
-          <div v-if="decision === 'approve_with_notes'">
-            <BaseTextarea v-model="ownerNotes" placeholder="ระบุหมายเหตุหรือข้อสังเกต..." :rows="2" />
-          </div>
-          <div v-if="decision === 'request_correction'">
-            <BaseTextarea v-model="correctionReason" placeholder="ระบุสิ่งที่ต้องแก้ไข..." :rows="2" />
-          </div>
-        </div>
-      </section>
-
-      <!-- Owner Action Buttons -->
-      <div v-if="!store.isApproved" class="flex flex-col sm:flex-row items-center justify-between gap-3 py-4">
-        <BaseButton variant="danger" :disabled="isSubmittingAction" @click="showOwnerRejectConfirm = true">
-          <XCircleIcon class="w-4 h-4" />
-          ส่งคืนแก้ไข
-        </BaseButton>
-        <ActionButton
-          :permission="PERMISSIONS.EDIT_FINANCE"
-          variant="primary"
-          :loading="isSubmittingAction"
-          :disabled="!canApprove || isSubmittingAction"
-          @click="showOwnerApproveConfirm = true"
-        >
-          <CheckCircleIcon class="w-4 h-4" />
-          {{ decision === 'request_correction' ? 'ส่งคืน' : 'อนุมัติ ✅' }}
-        </ActionButton>
-      </div>
-    </section>
+    </div>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <!-- Modal O: Opening Balance -->
