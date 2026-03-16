@@ -311,8 +311,8 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
           this.hasDrafts = true
         }
 
-        // Refresh balance
-        await this.fetchCurrentBalanceAction()
+        // Refresh balance for the transaction's date (not always today)
+        await this.fetchBalanceByDate(transactionData.date)
 
         console.log('[createTransaction] Created transaction:', newTransaction.id)
         return newTransaction
@@ -346,8 +346,10 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
           this.transactions[index] = updated
         }
 
-        // Refresh balance
-        await this.fetchCurrentBalanceAction()
+        // Refresh balance for the transaction's date
+        if (updated.date) {
+          await this.fetchBalanceByDate(updated.date)
+        }
 
         console.log('[updateTransaction] Updated transaction:', id)
         return updated
@@ -381,8 +383,10 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
         this.draftCount = this.transactions.filter((t: any) => t.status === 'draft').length
         this.hasDrafts = this.draftCount > 0
 
-        // Refresh balance
-        await this.fetchCurrentBalanceAction()
+        // Refresh balance for the transaction's date
+        if (updated.date) {
+          await this.fetchBalanceByDate(updated.date)
+        }
 
         console.log('[completeDraftTransaction] Completed draft:', id)
         return updated
