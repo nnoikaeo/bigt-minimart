@@ -930,6 +930,24 @@ onMounted(async () => {
       @close="errorMessage = ''"
     />
 
+    <!-- ── Workflow Progress Bar ────────────────────────────────────────── -->
+    <MoneyTransferWorkflowProgressBar
+      v-if="!(isManagerOrAsst && isStep1InProgress)"
+      :status="workflowStatus"
+      class="mb-4"
+    />
+
+    <!-- ── Quick Glance Summary ─────────────────────────────────────────── -->
+    <MoneyTransferQuickGlanceSummary
+      v-if="!(isManagerOrAsst && isStep1InProgress)"
+      :date="selectedDate"
+      :total-transactions="todayStats.total"
+      :success-count="todayStats.completed"
+      :total-commission="totalCommission"
+      :workflow-status="workflowStatus"
+      class="mb-4"
+    />
+
     <!-- ── Opening Balance ──────────────────────────────────────────────── -->
     <!-- แสดงเฉพาะ Manager/AM และยังไม่ได้ตั้งค่า -->
     <section v-if="isManagerOrAsst && !isOpeningSet" class="mb-4">
@@ -944,8 +962,8 @@ onMounted(async () => {
       </div>
     </section>
 
-    <!-- ── Balance Cards ────────────────────────────────────────────────── -->
-    <section class="mb-6">
+    <!-- ── Balance Cards — full 8 cards (Manager step1 active) ────────── -->
+    <section v-if="isManagerOrAsst && isStep1InProgress" class="mb-6">
       <h2 class="text-base font-semibold text-gray-700 mb-3">📊 ยอดเงินปัจจุบัน</h2>
       <!-- แถวที่ 1: รายละเอียดรายการ -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
@@ -1005,6 +1023,21 @@ onMounted(async () => {
         </BaseCard>
       </div>
     </section>
+
+    <!-- ── Balance Cards — compact 4 cards + expandable (ทุกกรณีอื่น) ──── -->
+    <MoneyTransferCompactBalanceSummary
+      v-else
+      :opening-balance="openingBalance"
+      :total-deposit="totalDeposits"
+      :total-transfer="totalTransfers"
+      :total-withdrawal="totalWithdrawals"
+      :service-fee-cash="store.currentBalance?.serviceFeeCash ?? 0"
+      :service-fee-transfer="store.currentBalance?.serviceFeeTransfer ?? 0"
+      :bank-account-balance="store.currentBalance?.bankAccount ?? 0"
+      :cash-balance="totalCash"
+      :opening-source="store.currentBalance?.openingBalanceSource ?? ''"
+      class="mb-6"
+    />
 
     <!-- ── Default Fee Banner ──────────────────────────────────────────── -->
     <div v-if="usingDefaultFees && !isOwner" class="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm">
