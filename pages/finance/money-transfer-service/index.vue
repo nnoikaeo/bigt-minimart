@@ -393,6 +393,27 @@ const {
   formatDiff,
 } = useMoneyTransferHelpers()
 
+// ─── CollapsibleSection Summary Computed ──────────────────────────────────────
+const txnSectionBadge = computed(() => ({
+  label: hasDrafts.value ? '⚠️ มี Draft' : '✅ สำเร็จ',
+  variant: hasDrafts.value ? 'warning' as const : 'success' as const,
+}))
+
+const txnSectionSummary = computed(() =>
+  `${todayStats.value.total} รายการ · สำเร็จ ${todayStats.value.completed} · ค่าบริการ ${formatCurrency(totalCommission.value)}`
+)
+
+const cashVerificationSummary = computed(() => {
+  const expected = expectedTotal.value
+  const hasDiscrep = store.currentSummary?.step2?.hasDiscrepancies
+  return `คาดไว้ ${formatCurrency(expected)} · ${hasDiscrep ? 'มีผลต่าง' : 'ตรงกัน'}`
+})
+
+const auditResultSummary = computed(() => {
+  const issues = store.currentSummary?.auditorVerification?.transactionsWithIssues ?? 0
+  return issues > 0 ? `${issues} รายการมีปัญหา` : 'ไม่พบปัญหา · ยอดตรงกัน'
+})
+
 function canCompleteDraft(draft: any): boolean {
   return (store.currentBalance?.bankAccount ?? 0) >= draft.amount
 }
@@ -1176,25 +1197,15 @@ onMounted(async () => {
     </section>
 
     <!-- ── Transactions Table ─────────────────────────────────────────── -->
-    <!-- Hidden for Auditor (step2 complete) and Owner (audited) — Section 6B has annotated list instead -->
-    <section v-if="!(isAuditor && store.isStep2Complete) && !(isOwner && store.isAudited)" class="mb-6">
+    <!-- Manager step1 active → original layout with add button -->
+    <section v-if="isManagerOrAsst && isStep1InProgress" class="mb-6">
       <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <!-- Table Header -->
-        <div
-          class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-b border-gray-100"
-          :class="shouldCollapseTxnTable ? 'cursor-pointer select-none hover:bg-gray-50' : ''"
-          @click="shouldCollapseTxnTable && (expandStep1Owner = !expandStep1Owner)"
-        >
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-b border-gray-100">
           <h2 class="text-base font-semibold text-gray-700">📋 รายการธุรกรรมวันนี้</h2>
           <div class="flex items-center gap-2">
-            <template v-if="shouldCollapseTxnTable">
-              <span class="text-sm text-gray-500">
-                {{ todayStats.total }} รายการ · สำเร็จ {{ todayStats.completed }} · ค่าบริการ {{ formatCurrency(todayStats.totalCommission) }}
-              </span>
-              <component :is="expandStep1Owner ? ChevronUpIcon : ChevronDownIcon" class="w-4 h-4 text-gray-400" />
-            </template>
             <ActionButton
-              v-if="isManagerOrAsst && canAddTransaction"
+              v-if="canAddTransaction"
               :permission="PERMISSIONS.EDIT_FINANCE"
               variant="primary"
               size="sm"
@@ -1206,7 +1217,6 @@ onMounted(async () => {
           </div>
         </div>
 
-        <template v-if="!shouldCollapseTxnTable || expandStep1Owner">
         <!-- Filter Tabs -->
         <div class="flex border-b border-gray-100 overflow-x-auto">
           <button
@@ -1299,9 +1309,113 @@ onMounted(async () => {
           <span v-if="hasDrafts" class="text-amber-700">Draft {{ todayStats.drafts }} รายการ</span>
           <span class="font-medium text-green-700">รวมค่าบริการทั้งหมด: {{ formatCurrency(todayStats.totalCommission) }}</span>
         </div>
-        </template>
       </div>
     </section>
+
+    <!-- All other visible cases → CollapsibleSection (collapsed by default) -->
+    <UiDisplayCollapsibleSection
+      v-else-if="!(isAuditor && store.isStep2Complete) && !(isOwner && store.isAudited)"
+      icon="📋"
+      title="ธุรกรรมวันนี้"
+      :badge="txnSectionBadge"
+      :summary="txnSectionSummary"
+      class="mb-4"
+    >
+      <div class="-mx-6 -my-4">
+        <!-- Filter Tabs -->
+        <div class="flex border-b border-gray-100 overflow-x-auto">
+          <button
+            v-for="tab in filterTabs"
+            :key="tab.value"
+            :class="[
+              'px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors',
+              activeFilter === tab.value
+                ? 'border-red-600 text-red-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700',
+            ]"
+            @click="activeFilter = tab.value"
+          >
+            {{ tab.label }}
+            <span
+              :class="[
+                'ml-1.5 px-1.5 py-0.5 rounded-full text-xs',
+                activeFilter === tab.value ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600',
+              ]"
+            >
+              {{ getTabCount(tab.value) }}
+            </span>
+          </button>
+        </div>
+
+        <!-- Table -->
+        <MoneyTransferTransactionTable
+          :transactions="paginatedTransactions"
+          :index-offset="(currentPage - 1) * PAGE_SIZE"
+          :empty-message="activeFilter === 'all' ? 'กด Quick Actions หรือ [รายการใหม่] เพื่อเริ่มบันทึก' : `ไม่มีรายการที่มีสถานะ ${filterTabs.find(t => t.value === activeFilter)?.label}`"
+          @row-click="openDetailModal"
+        >
+          <template #actions="{ txn }">
+            <button
+              aria-label="ดูรายละเอียด"
+              class="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              @click="openDetailModal(txn)"
+            >
+              <EyeIcon class="w-4 h-4" />
+            </button>
+            <ActionButton
+              v-if="isManagerOrAsst && txn.status === 'draft'"
+              :permission="PERMISSIONS.EDIT_FINANCE"
+              variant="ghost"
+              size="sm"
+              aria-label="แก้ไขรายการ"
+              @click="openEditModal(txn)"
+            >
+              <PencilIcon class="w-4 h-4" />
+            </ActionButton>
+            <ActionButton
+              v-if="isManagerOrAsst && txn.status === 'draft'"
+              :permission="PERMISSIONS.EDIT_FINANCE"
+              variant="ghost"
+              size="sm"
+              aria-label="ลบรายการ"
+              class="text-red-500 hover:text-red-600 hover:bg-red-50"
+              @click="confirmDelete(txn.id)"
+            >
+              <TrashIcon class="w-4 h-4" />
+            </ActionButton>
+          </template>
+        </MoneyTransferTransactionTable>
+
+        <!-- Pagination -->
+        <div v-if="totalPages > 1" class="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
+          <button
+            class="px-3 py-1.5 text-sm rounded-lg border transition-colors"
+            :class="currentPage === 1 ? 'border-gray-200 text-gray-400 cursor-not-allowed' : 'border-gray-300 text-gray-700 hover:bg-white'"
+            :disabled="currentPage === 1"
+            @click="currentPage--"
+          >
+            &lt; ก่อนหน้า
+          </button>
+          <span class="text-sm text-gray-600">หน้า {{ currentPage }} จาก {{ totalPages }}</span>
+          <button
+            class="px-3 py-1.5 text-sm rounded-lg border transition-colors"
+            :class="currentPage === totalPages ? 'border-gray-200 text-gray-400 cursor-not-allowed' : 'border-gray-300 text-gray-700 hover:bg-white'"
+            :disabled="currentPage === totalPages"
+            @click="currentPage++"
+          >
+            ถัดไป &gt;
+          </button>
+        </div>
+
+        <!-- Summary Row -->
+        <div v-if="filteredTransactions.length > 0" class="px-4 py-3 bg-gray-50 border-t border-gray-100 flex flex-wrap gap-4 text-sm text-gray-600">
+          <span>รวม {{ todayStats.total }} รายการ</span>
+          <span>สำเร็จ {{ todayStats.completed }} รายการ</span>
+          <span v-if="hasDrafts" class="text-amber-700">Draft {{ todayStats.drafts }} รายการ</span>
+          <span class="font-medium text-green-700">รวมค่าบริการทั้งหมด: {{ formatCurrency(todayStats.totalCommission) }}</span>
+        </div>
+      </div>
+    </UiDisplayCollapsibleSection>
 
     <!-- ── Step 1 Completion: Manager/AM เท่านั้น ──────────────────────── -->
     <section v-if="isManagerOrAsst && !store.isStep1Complete" class="py-4">
@@ -1368,19 +1482,16 @@ onMounted(async () => {
     </section>
 
     <!-- ── ส่วนที่ 6: ผลการตรวจนับเงินสด ────────────────────────────────── -->
+    <!-- CASE A: Editable form (Manager/Asst.Mgr when step2 not done) -->
     <section
-      v-if="showCashCountSection && !isOwner && !(isAuditor && store.isStep2Complete)"
+      v-if="showCashCountSection && canEditCashCount && !isOwner && !(isAuditor && store.isStep2Complete)"
       id="cash-counting-section"
       class="mt-2"
     >
       <div class="flex items-center gap-3 mb-4">
         <h2 class="text-base font-semibold text-gray-700">💵 ผลการตรวจนับเงินสด</h2>
-        <BaseBadge v-if="store.isStep2Complete" variant="success" size="sm">✅ เสร็จสมบูรณ์</BaseBadge>
-        <BaseBadge v-else-if="canEditCashCount" variant="warning" size="sm">⏳ รอตรวจนับ</BaseBadge>
+        <BaseBadge variant="warning" size="sm">⏳ รอตรวจนับ</BaseBadge>
       </div>
-
-      <!-- CASE A: Editable form (Manager/Asst.Mgr when step2 not done) -->
-      <template v-if="canEditCashCount">
         <div class="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100 mb-4">
           <!-- A: Transfer/Withdrawal -->
           <div class="p-4">
@@ -1488,20 +1599,27 @@ onMounted(async () => {
             ยืนยัน
           </ActionButton>
         </div>
-      </template>
+    </section>
 
-      <!-- CASE B: Read-only comparison table (step2 done OR Auditor/Owner) -->
-      <template v-else>
+    <!-- CASE B: Read-only → CollapsibleSection (collapsed) -->
+    <UiDisplayCollapsibleSection
+      v-if="showCashCountSection && !canEditCashCount && !isOwner && !(isAuditor && store.isStep2Complete)"
+      icon="💵"
+      title="ผลการตรวจนับเงินสด"
+      :badge="{ label: '✅ เสร็จสมบูรณ์', variant: 'success' }"
+      :summary="cashVerificationSummary"
+      class="mt-2"
+    >
+      <div class="-mx-6 -my-4">
         <MoneyTransferCashVerificationTable
-          class="mb-4"
           :expected-transfer-withdrawal="expectedTransferWithdrawal"
           :expected-service-fee="expectedServiceFee"
           :manager-actual="store.currentSummary?.step2?.actualCash ?? null"
           :has-discrepancies="store.currentSummary?.step2?.hasDiscrepancies"
           :verification-notes="store.currentSummary?.step2?.verificationNotes"
         />
-      </template>
-    </section>
+      </div>
+    </UiDisplayCollapsibleSection>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <!-- Section 6B: Auditor Review — Active Form                          -->
@@ -1694,11 +1812,15 @@ onMounted(async () => {
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <!-- Section 6B: Audit Result — Read-only (ALL roles when audited)     -->
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <section v-if="store.isAudited" class="mt-6">
-      <div class="flex items-center gap-3 mb-4">
-        <h2 class="text-base font-semibold text-gray-700">🔍 ผลการตรวจสอบ Auditor</h2>
-        <BaseBadge variant="success" size="sm">✅ ตรวจสอบแล้ว</BaseBadge>
-      </div>
+    <UiDisplayCollapsibleSection
+      v-if="store.isAudited"
+      icon="🔍"
+      title="ผลตรวจสอบ Auditor"
+      :badge="{ label: '✅ ตรวจสอบแล้ว', variant: 'success' }"
+      :summary="auditResultSummary"
+      :expanded="isAuditor"
+      class="mt-4"
+    >
 
       <!-- Balance Snapshot read-only -->
       <div class="mb-5">
@@ -1770,7 +1892,7 @@ onMounted(async () => {
           :auditor-actual="auditData?.auditorCash ?? null"
         />
       </div>
-    </section>
+    </UiDisplayCollapsibleSection>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <!-- Section 6C: Owner Approval                                        -->
