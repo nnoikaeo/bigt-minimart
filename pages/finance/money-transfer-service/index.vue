@@ -378,7 +378,9 @@ const canApprove = computed(() =>
   (decision.value !== 'request_correction' || correctionReason.value.trim() !== '')
 )
 const totalCommission = computed(() =>
-  dateTransactions.value.reduce((sum: number, t: any) => sum + (t.commissionAmount ?? 0), 0)
+  dateTransactions.value
+    .filter((t: any) => t.status === 'completed' && t.transactionType !== 'owner_deposit')
+    .reduce((sum: number, t: any) => sum + (t.commission || 0), 0)
 )
 const successCount = computed(() =>
   dateTransactions.value.filter((t: any) => t.status === 'completed').length
