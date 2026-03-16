@@ -18,10 +18,10 @@ interface Props {
 const props = defineProps<Props>()
 
 const steps = [
-  { key: 'step1', label: 'บันทึก' },
-  { key: 'step2', label: 'ตรวจนับ' },
-  { key: 'auditor', label: 'Auditor' },
-  { key: 'owner', label: 'Owner' },
+  { key: 'step1', label: 'บันทึก', shortLabel: 'บันทึก' },
+  { key: 'step2', label: 'ตรวจนับ', shortLabel: 'นับ' },
+  { key: 'auditor', label: 'Auditor', shortLabel: 'Audit' },
+  { key: 'owner', label: 'Owner', shortLabel: 'Owner' },
 ] as const
 
 const stepStates = computed<Record<(typeof steps)[number]['key'], StepState>>(() => {
@@ -102,10 +102,11 @@ function getLineState(leftKey: (typeof steps)[number]['key'], rightKey: (typeof 
   <div class="flex items-center px-4 py-2">
     <template v-for="(step, index) in steps" :key="step.key">
       <!-- Step: dot + label -->
-      <div class="flex flex-col items-center">
+      <div class="flex flex-col items-center min-w-0">
         <div :class="dotClasses(stepStates[step.key])" />
         <span :class="labelClasses(stepStates[step.key])">
-          {{ step.label }}
+          <span class="hidden sm:inline">{{ step.label }}</span>
+          <span class="sm:hidden">{{ step.shortLabel }}</span>
         </span>
       </div>
 
