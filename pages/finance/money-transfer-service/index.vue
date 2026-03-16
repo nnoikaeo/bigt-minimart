@@ -1022,14 +1022,14 @@ onBeforeUnmount(() => {
     />
 
     <!-- ── Workflow Progress Bar ────────────────────────────────────────── -->
-    <MoneyTransferWorkflowProgressBar
+    <WorkflowProgressBar
       v-if="!(isManagerOrAsst && isStep1InProgress)"
       :status="workflowStatus"
       class="mb-4"
     />
 
     <!-- ── Quick Glance Summary ─────────────────────────────────────────── -->
-    <MoneyTransferQuickGlanceSummary
+    <QuickGlanceSummary
       v-if="!(isManagerOrAsst && isStep1InProgress)"
       :date="selectedDate"
       :total-transactions="todayStats.total"
@@ -1116,7 +1116,7 @@ onBeforeUnmount(() => {
     </section>
 
     <!-- ── Balance Cards — compact 4 cards + expandable (ทุกกรณีอื่น) ──── -->
-    <MoneyTransferCompactBalanceSummary
+    <CompactBalanceSummary
       v-else
       :opening-balance="openingBalance"
       :total-deposit="totalDeposits"
@@ -1685,7 +1685,7 @@ onBeforeUnmount(() => {
     </section>
 
     <!-- All other visible cases → CollapsibleSection (collapsed by default) -->
-    <UiDisplayCollapsibleSection
+    <CollapsibleSection
       v-else-if="!(isAuditor && store.isStep2Complete) && !(isOwner && store.isAudited)"
       icon="📋"
       title="ธุรกรรมวันนี้"
@@ -1787,7 +1787,7 @@ onBeforeUnmount(() => {
           <span class="font-medium text-green-700">รวมค่าบริการทั้งหมด: {{ formatCurrency(todayStats.totalCommission) }}</span>
         </div>
       </div>
-    </UiDisplayCollapsibleSection>
+    </CollapsibleSection>
 
     <!-- ── Step 1 Completion: Manager/AM เท่านั้น ──────────────────────── -->
     <section v-if="isManagerOrAsst && !store.isStep1Complete" class="py-4">
@@ -1974,7 +1974,7 @@ onBeforeUnmount(() => {
     </section>
 
     <!-- CASE B: Read-only → CollapsibleSection (collapsed) -->
-    <UiDisplayCollapsibleSection
+    <CollapsibleSection
       v-if="showCashCountSection && !canEditCashCount && !isOwner && !(isAuditor && store.isStep2Complete)"
       icon="💵"
       title="ผลการตรวจนับเงินสด"
@@ -1991,7 +1991,7 @@ onBeforeUnmount(() => {
           :verification-notes="store.currentSummary?.step2?.verificationNotes"
         />
       </div>
-    </UiDisplayCollapsibleSection>
+    </CollapsibleSection>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <!-- Section 6B: Auditor Review — Active Form                          -->
@@ -2184,7 +2184,7 @@ onBeforeUnmount(() => {
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <!-- Section 6B: Audit Result — Read-only (ALL roles when audited)     -->
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <UiDisplayCollapsibleSection
+    <CollapsibleSection
       v-if="store.isAudited"
       icon="🔍"
       title="ผลตรวจสอบ Auditor"
@@ -2264,7 +2264,7 @@ onBeforeUnmount(() => {
           :auditor-actual="auditData?.auditorCash ?? null"
         />
       </div>
-    </UiDisplayCollapsibleSection>
+    </CollapsibleSection>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <!-- Status Banner — No Action Available                               -->
@@ -2804,7 +2804,7 @@ onBeforeUnmount(() => {
               <div class="font-medium text-gray-900">พร้อมเพย์</div>
             </div>
             <div>
-              <div class="text-gray-500">{{ viewingTransaction.promptpayIdentifierType === 'idcard' ? 'เลขบัตรประชาชน' : 'หมายเลขโทรศัพท์' }}</div>
+              <div class="text-gray-500">{{ viewingTransaction.promptpayIdentifierType === 'id_card' ? 'เลขบัตรประชาชน' : 'หมายเลขโทรศัพท์' }}</div>
               <div class="font-medium text-gray-900">{{ viewingTransaction.promptpayIdentifier || '-' }}</div>
             </div>
             <div>
