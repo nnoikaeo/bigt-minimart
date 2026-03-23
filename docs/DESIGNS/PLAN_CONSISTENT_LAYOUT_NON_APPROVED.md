@@ -1,8 +1,9 @@
 # Plan: Consistent Layout for Non-Approved Workflow Statuses
 
 > **Created**: 2026-03-23  
-> **Status**: Task 1 ✅ Done (2026-03-23) · Task 2 🟡 In Progress  
+> **Status**: ✅ All Done (2026-03-24)  
 > **Related**: PR #80 (Approved State Layout — commit ed49905)  
+> **Commits**: Task 1 — PR #82 (b164bbe) · Task 2 — PR #83 (355cdde)  
 > **File**: `pages/finance/money-transfer-service/index.vue`
 
 ---
