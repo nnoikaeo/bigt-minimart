@@ -406,8 +406,12 @@ const {
 
 // ─── CollapsibleSection Summary Computed ──────────────────────────────────────
 const txnSectionBadge = computed(() => ({
-  label: hasDrafts.value ? '⚠️ มี Draft' : '✅ สำเร็จ',
-  variant: hasDrafts.value ? 'warning' as const : 'success' as const,
+  label: hasDrafts.value ? '⚠️ มี Draft'
+    : store.isStep1Complete ? '✅ สำเร็จ'
+    : '🔵 กำลังบันทึก',
+  variant: hasDrafts.value ? 'warning' as const
+    : store.isStep1Complete ? 'success' as const
+    : 'info' as const,
 }))
 
 const txnSectionSummary = computed(() =>
@@ -1991,7 +1995,7 @@ onBeforeUnmount(() => {
 
     <!-- CASE B: Read-only → CollapsibleSection (collapsed) -->
     <CollapsibleSection
-      v-if="showCashCountSection && !canEditCashCount && !isOwner && !(isAuditor && store.isStep2Complete) && !isApproved"
+      v-if="showCashCountSection && store.isStep2Complete && !canEditCashCount && !isAuditor && !isApproved"
       icon="💵"
       title="ผลการตรวจนับเงินสด"
       :badge="{ label: '✅ เสร็จสมบูรณ์', variant: 'success' }"
