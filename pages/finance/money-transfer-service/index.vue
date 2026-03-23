@@ -155,6 +155,7 @@ const isManagerOrAsst = computed(() =>
 )
 const isAuditor = computed(() => hasAnyRole([ROLES.AUDITOR]))
 const isOwner = computed(() => hasAnyRole([ROLES.OWNER]))
+const isApproved = computed(() => store.isApproved)
 const workflowStatus = computed(() => store.getCurrentWorkflowStatus)
 /** Transaction table collapsed by default for Owner (always) and Auditor (when step2 complete — they have their own txn list in audit form) */
 const shouldCollapseTxnTable = computed(() => isOwner.value || (isAuditor.value && store.isStep2Complete))
@@ -426,6 +427,7 @@ const auditResultSummary = computed(() => {
 
 // ─── Status Banner Computed ──────────────────────────────────────────────────
 const showStatusBanner = computed(() => {
+  if (isApproved.value) return false
   if (isManagerOrAsst.value && !isStep1InProgress.value && !canEditCashCount.value) return true
   if (isAuditor.value && store.isAudited) return true
   if (isOwner.value && !store.isAudited) return true
@@ -1025,7 +1027,7 @@ onBeforeUnmount(() => {
 
     <!-- ── Workflow Progress Bar ────────────────────────────────────────── -->
     <WorkflowProgressBar
-      v-if="!(isManagerOrAsst && isStep1InProgress)"
+      v-if="!(isManagerOrAsst && isStep1InProgress) && !isApproved"
       :status="workflowStatus"
       class="mb-4"
     />
@@ -1136,7 +1138,7 @@ onBeforeUnmount(() => {
     <!-- Section 6C: Owner Approval (moved up — before Audit/Txn/Cash)    -->
     <!-- Visible: Owner role + audited                                     -->
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <section v-if="isOwner && store.isAudited" class="mb-4">
+    <section v-if="(isOwner && store.isAudited) || isApproved" class="mb-4">
       <div class="flex items-center gap-3 mb-4">
         <h2 class="text-base font-semibold text-gray-700">✅ การอนุมัติ Owner</h2>
         <BaseBadge v-if="store.isApproved" variant="success" size="sm">✅ อนุมัติแล้ว</BaseBadge>
@@ -1688,7 +1690,7 @@ onBeforeUnmount(() => {
 
     <!-- All other visible cases → CollapsibleSection (collapsed by default) -->
     <CollapsibleSection
-      v-else-if="!(isAuditor && store.isStep2Complete) && !(isOwner && store.isAudited)"
+      v-else-if="!isApproved && !(isAuditor && store.isStep2Complete) && !(isOwner && store.isAudited)"
       icon="📋"
       title="ธุรกรรมวันนี้"
       :badge="txnSectionBadge"
@@ -1977,7 +1979,7 @@ onBeforeUnmount(() => {
 
     <!-- CASE B: Read-only → CollapsibleSection (collapsed) -->
     <CollapsibleSection
-      v-if="showCashCountSection && !canEditCashCount && !isOwner && !(isAuditor && store.isStep2Complete)"
+      v-if="showCashCountSection && !canEditCashCount && !isOwner && !(isAuditor && store.isStep2Complete) && !isApproved"
       icon="💵"
       title="ผลการตรวจนับเงินสด"
       :badge="{ label: '✅ เสร็จสมบูรณ์', variant: 'success' }"
