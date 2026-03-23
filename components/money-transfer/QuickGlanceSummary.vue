@@ -44,17 +44,14 @@ const statusBadge = computed<{ label: string; variant: 'success' | 'warning' | '
 </script>
 
 <template>
-  <div class="bg-white border border-gray-200 rounded-xl px-4 py-3">
-    <!-- Row 1: Summary stats -->
+  <div class="bg-white border border-gray-200 rounded-xl px-4 py-3 flex flex-wrap items-center justify-between gap-2">
     <div class="text-sm text-gray-600">
       📅 {{ formattedDate }}
       · {{ totalTransactions }} รายการ
       · สำเร็จ {{ successCount }}
       · ค่าบริการ {{ formatCurrency(totalCommission) }}
     </div>
-
-    <!-- Row 2: Status badge -->
-    <div class="mt-1 flex items-center gap-2">
+    <div class="flex items-center gap-2">
       <span class="text-sm text-gray-600">สถานะ:</span>
       <BaseBadge :variant="statusBadge.variant" size="sm" dot>
         {{ statusBadge.label }}
