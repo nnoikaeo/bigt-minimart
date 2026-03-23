@@ -429,13 +429,25 @@ const auditResultSummary = computed(() => {
 const showStatusBanner = computed(() => {
   if (isApproved.value) return false
   if (isManagerOrAsst.value && !isStep1InProgress.value && !canEditCashCount.value) return true
-  if (isAuditor.value && store.isAudited) return true
+  if (isAuditor.value && (store.isAudited || !store.isStep2Complete)) return true
   if (isOwner.value && !store.isAudited) return true
   return false
 })
 
 const statusBannerContent = computed(() => {
   const ws = workflowStatus.value
+  if (ws === 'step1_in_progress') return {
+    title: '⏳ Manager กำลังบันทึกรายการ',
+    description: 'Manager/AM กำลังบันทึกรายการโอนเงินประจำวัน',
+    classes: 'border-blue-200 bg-blue-50 text-blue-800',
+    icon: ClockIcon,
+  }
+  if (ws === 'step1_completed') return {
+    title: '⏳ รอ Manager ตรวจนับเงินสด',
+    description: 'Manager/AM กำลังดำเนินการตรวจนับเงินสด (Step 2)',
+    classes: 'border-blue-200 bg-blue-50 text-blue-800',
+    icon: ClockIcon,
+  }
   if (ws === 'step2_completed') return {
     title: '⏳ รอ Auditor ตรวจสอบ',
     description: 'รายการนี้อยู่ระหว่างรอการตรวจสอบจาก Auditor',

@@ -1,7 +1,7 @@
 # Plan: Consistent Layout for Non-Approved Workflow Statuses
 
 > **Created**: 2026-03-23  
-> **Status**: Planned  
+> **Status**: Task 1 ✅ Done (2026-03-23) · Task 2 🟡 In Progress  
 > **Related**: PR #80 (Approved State Layout — commit ed49905)  
 > **File**: `pages/finance/money-transfer-service/index.vue`
 
@@ -27,7 +27,7 @@ PR #80 จัดการ Approved State Layout ให้ทุก role (Manager
 | WorkflowProgressBar | M:❌ A:✅ O:✅ | All ✅ | All ✅ |
 | QuickGlanceSummary | M:❌ A:✅ O:✅ | All ✅ | All ✅ |
 | CompactBalance | M:full8 A:✅ O:✅ | All ✅ | All ✅ |
-| Txns (collapsed) | M:edit A:✅ O:✅ | All ✅ | M:✅ A:❌(audit form) O:✅ |
+| Txns badge | M:edit **A:"✅ สำเร็จ" O:"✅ สำเร็จ"** | All ✅ | M:✅ A:❌(audit form) O:✅ |
 | Cash Count readonly | ❌ all | ❌ all | M:✅ A:❌(in audit) **O:❌** |
 | **Status Banner** | M:❌ **A:❌ O:null** | M:❌ **A:❌ O:null** | M:✅ A:❌(has form) O:✅ |
 
@@ -55,6 +55,17 @@ Cash Count readonly (line ~1982):
 v-if="showCashCountSection && !canEditCashCount && !isOwner && ..."
 ```
 `!isOwner` hardcoded ทำให้ Owner ไม่เห็นผล step2 จนกว่าจะถึง Owner Approval section (หลัง audit)
+
+### Issue #4: `txnSectionBadge` แสดง "✅ สำเร็จ" ตอน step1_in_progress
+
+Computed `txnSectionBadge` (line ~400):
+```js
+const txnSectionBadge = computed(() => ({
+  label: hasDrafts.value ? '⚠️ มี Draft' : '✅ สำเร็จ',
+  variant: hasDrafts.value ? 'warning' : 'success',
+}))
+```
+เมื่อ `step1_in_progress` และไม่มี drafts → badge แสดง "✅ สำเร็จ" ให้ Auditor/Owner เห็น ทั้งที่ Manager ยังบันทึกไม่เสร็จ ทำให้เข้าใจผิดว่า step1 เสร็จแล้ว
 
 ---
 
@@ -100,13 +111,13 @@ v-if="showCashCountSection && !canEditCashCount && !isOwner && ..."
 
 ---
 
-### Task 2: Make Cash Count Result Visible to Owner in step2_completed
-> **Scope**: 1 v-if change in `index.vue`  
-> **Estimated changes**: ~1 line
+### Task 2: Fix Cash Count Visibility + txnSectionBadge
+> **Scope**: 2 changes in `index.vue`  
+> **Estimated changes**: ~5 lines
 
 **สิ่งที่ต้องทำ:**
 
-1. **เปลี่ยน Cash Count readonly v-if** (line ~1982)
+1. **เปลี่ยน Cash Count readonly v-if** (line ~1994)
    - จาก:
      ```html
      v-if="showCashCountSection && !canEditCashCount && !isOwner && !(isAuditor && store.isStep2Complete) && !isApproved"
@@ -116,11 +127,30 @@ v-if="showCashCountSection && !canEditCashCount && !isOwner && ..."
      v-if="showCashCountSection && store.isStep2Complete && !canEditCashCount && !isAuditor && !isApproved"
      ```
    - ลบ `!isOwner` ออก → Owner เห็น Cash Count result
-   - เพิ่ม `store.isStep2Complete` → มั่นใจว่ามีข้อมูลก่อน render
+   - เพิ่ม `store.isStep2Complete` → มั่นใจว่ามีข้อมูลจริงก่อน render (แก้ bug รูปที่ 2)
    - ยัง exclude Auditor (เห็นใน audit form อยู่แล้ว)
 
+2. **แก้ `txnSectionBadge` computed** (line ~400)
+   - จาก:
+     ```js
+     label: hasDrafts.value ? '⚠️ มี Draft' : '✅ สำเร็จ',
+     variant: hasDrafts.value ? 'warning' : 'success',
+     ```
+   - เป็น:
+     ```js
+     label: hasDrafts.value ? '⚠️ มี Draft'
+           : store.isStep1Complete ? '✅ สำเร็จ'
+           : '🔵 กำลังบันทึก',
+     variant: hasDrafts.value ? 'warning'
+             : store.isStep1Complete ? 'success'
+             : 'info',
+     ```
+   - เมื่อ step1_in_progress + ไม่มี drafts → badge แสดง "🔵 กำลังบันทึก" แทน "✅ สำเร็จ"
+
 **การทดสอบ:**
-- date=2026-03-04 (step2_completed): Login Owner → Cash Count readonly section ปรากฏ (ตารางเปรียบเทียบ). Login Auditor → audit form (ไม่ซ้ำ). Login Manager → readonly + orange banner.
+- date=2026-03-09 (step1_in_progress): Login Auditor/Owner → Txns badge แสดง "🔵 กำลังบันทึก" แทน "✅ สำเร็จ"
+- date=2026-03-08 (step1_completed): Login Auditor/Owner → Cash Count section ไม่แสดง (step2 ยังไม่เสร็จ) ✅
+- date=2026-03-04 (step2_completed): Login Owner → Cash Count readonly section ปรากฏ. Login Auditor → audit form (ไม่ซ้ำ). Login Manager → readonly + orange banner.
 - date=2026-02-27 (approved): ทุก role → approved layout ไม่เปลี่ยน.
 
 ---
@@ -136,18 +166,18 @@ v-if="showCashCountSection && !canEditCashCount && !isOwner && ..."
 
 ---
 
-## Expected Result After Fix
+## Expected Result After All Tasks Done
 
 | Section | step1_in_progress | step1_completed | step2_completed |
 |---------|:-:|:-:|:-:|
 | WorkflowProgressBar | M:❌ A:✅ O:✅ | All ✅ | All ✅ |
 | QuickGlanceSummary | M:❌ A:✅ O:✅ | All ✅ | All ✅ |
 | CompactBalance | M:full8 A:✅ O:✅ | All ✅ | All ✅ |
-| Txns (collapsed) | M:edit A:✅ O:✅ | All ✅ | M:✅ A:❌(audit form) O:✅ |
-| Cash Count readonly | ❌ all | ❌ all | M:✅ A:❌(in audit) **O:✅** ✨ |
+| Txns badge | M:edit **A:"🔵 กำลังบันทึก" O:"🔵 กำลังบันทึก"** ✨ | All ✅ | M:✅ A:❌(audit form) O:✅ |
+| Cash Count readonly | ❌ all | **❌ all** ✨ (Audit ไม่เห็น bug อีก) | M:✅ A:❌(in audit) **O:✅** ✨ |
 | **Status Banner** | M:❌ **A:✅ O:✅** ✨ | M:❌ **A:✅ O:✅** ✨ | M:✅ A:❌(has form) O:✅ |
 
-> ✨ = Fixed in this plan
+> ✨ = Fixed (Task 1: Status Banner · Task 2: Cash Count + txnSectionBadge)
 
 ---
 
