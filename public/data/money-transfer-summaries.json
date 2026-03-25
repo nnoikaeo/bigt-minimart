@@ -147,15 +147,62 @@
     "id": "mtsum-2026-03-09",
     "date": "2026-03-09",
     "step1": {
-      "status": "in_progress",
-      "totalTransactions": 0,
-      "completedTransactions": 0,
+      "status": "completed",
+      "completedAt": "2026-03-25T15:17:56.898Z",
+      "completedBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
+      "completedByName": "กัลญา ผิวขำทองดี",
+      "totalTransactions": 5,
+      "completedTransactions": 5,
       "draftTransactions": 0,
-      "totalAmount": 0,
-      "totalCommission": 0
+      "totalAmount": 3700,
+      "totalCommission": 50,
+      "finalBalances": {
+        "bankAccount": 3360,
+        "transferCash": 2900,
+        "serviceFeeTransfer": 0,
+        "serviceFeeCash": 50
+      }
+    },
+    "workflowStatus": "step2_completed",
+    "createdAt": "2026-03-09T19:43:22.466Z",
+    "updatedAt": "2026-03-25T15:18:28.363Z",
+    "step2": {
+      "status": "completed",
+      "completedAt": "2026-03-25T15:18:28.363Z",
+      "completedBy": "manager",
+      "completedByName": "Manager",
+      "expectedCash": {
+        "transferWithdrawal": 2900,
+        "serviceFee": 50,
+        "total": 2950
+      },
+      "actualCash": {
+        "transferWithdrawal": 2900,
+        "serviceFee": 50,
+        "total": 2950
+      },
+      "differences": {
+        "transferWithdrawal": 0,
+        "serviceFee": 0,
+        "total": 0
+      },
+      "verificationNotes": "",
+      "hasDiscrepancies": false
+    }
+  },
+  {
+    "id": "mtsum-2026-03-10",
+    "date": "2026-03-10",
+    "step1": {
+      "status": "in_progress",
+      "totalTransactions": 10,
+      "completedTransactions": 9,
+      "draftTransactions": 0,
+      "totalAmount": 15616,
+      "totalCommission": 110
     },
     "workflowStatus": "step1_in_progress",
-    "createdAt": "2026-03-09T19:43:22.466Z",
-    "updatedAt": "2026-03-09T19:43:22.466Z"
+    "createdAt": "2026-03-25T16:02:00.138Z",
+    "updatedAt": "2026-03-25T21:20:36.314Z"
   }
 ]

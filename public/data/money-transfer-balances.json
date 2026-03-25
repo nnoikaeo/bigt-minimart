@@ -64,12 +64,16 @@
   {
     "id": "mtbal-2026-03-09",
     "date": "2026-03-09",
-    "bankAccount": 0,
-    "transferCash": 0,
+    "bankAccount": 3360,
+    "transferCash": 2900,
     "serviceFeeTransfer": 0,
-    "serviceFeeCash": 0,
+    "serviceFeeCash": 50,
     "history": [],
-    "updatedAt": "2026-03-09T08:28:41.947Z"
+    "updatedAt": "2026-03-25T14:59:11.330Z",
+    "openingBalance": 6260,
+    "openingBalanceSetAt": "2026-03-25T14:48:03.316Z",
+    "openingBalanceSource": "carryover",
+    "openingBalanceSetBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3"
   },
   {
     "id": "mtbal-2026-03-08",
@@ -134,5 +138,19 @@
     "serviceFeeCash": 0,
     "history": [],
     "updatedAt": "2026-03-25T09:40:54.853Z"
+  },
+  {
+    "id": "mtbal-2026-03-10",
+    "date": "2026-03-10",
+    "bankAccount": 7934,
+    "transferCash": 5436,
+    "serviceFeeTransfer": 10,
+    "serviceFeeCash": 100,
+    "history": [],
+    "updatedAt": "2026-03-25T21:15:12.647Z",
+    "openingBalance": 3360,
+    "openingBalanceSetAt": "2026-03-25T16:02:09.495Z",
+    "openingBalanceSource": "carryover",
+    "openingBalanceSetBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3"
   }
 ]
