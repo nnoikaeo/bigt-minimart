@@ -1,131 +1,68 @@
-# 🗂️ Archive - Previous Versions
+# Archive — Previous & Completed Documentation
 
-**Status**: 📦 Archive (Deprecated)  
-**Version**: 1.0 (Original)  
-**Moved Date**: January 7, 2026  
-**Reason**: Documentation restructuring to new hierarchical organization
+> Files moved here are either outdated, superseded by merged docs, or describe completed work.
+> They are preserved for historical reference.
 
----
-
-## 📌 Important Note
-
-The files in this archive are the **original documentation files** from the initial project setup. They have been safely moved here to prevent confusion with the new organized documentation structure.
-
-**All current documentation should be referenced from the main [/docs](../README.md) folder.**
+**Last Updated**: Mar 25, 2026
 
 ---
 
-## 📂 What's in This Archive
+## Archive Contents
 
-### Original 6 Files (Version 1.0)
+### VERSIONS/v1.0/ — Original Project Docs (Jan 7, 2026)
 
-1. **01_PROJECT_OVERVIEW.md** - Project overview and business context
-2. **02_BUSINESS_REQUIREMENTS.md** - Business requirements and workflows
-3. **03_TECHNICAL_SPECIFICATION.md** - Technical architecture and database schema
-4. **04_UI_UX_GUIDELINES.md** - UI/UX design guidelines
-5. **05_DEVELOPMENT_ROADMAP.md** - Phase-by-phase development plan
-6. **06_PROJECT_INSTRUCTIONS.md** - Instructions for Claude Code developer
+6 original monolithic files replaced by the organized folder structure.
 
----
+### DESIGN/ — Superseded Design Files (Mar 25, 2026)
 
-## 📚 Where to Find Updated Information
+Merged into `docs/DESIGN/DESIGN_SYSTEM.md`:
 
-The content from these original files has been **extracted and reorganized** into a new hierarchical structure for better maintainability:
+| File | Content |
+|------|---------|
+| BRAND_IDENTITY.md | Logo, brand colors, typography |
+| COLOR_PALETTE.md | Detailed color values, Tailwind config |
+| UI_UX_GUIDELINES.md | Sidebar, daily sales page, design system |
 
-| Original File | New Location(s) |
-|---|---|
-| 01_PROJECT_OVERVIEW.md | [PROJECT/PROJECT_OVERVIEW.md](../PROJECT/PROJECT_OVERVIEW.md) |
-| 02_BUSINESS_REQUIREMENTS.md | [REQUIREMENTS/](../REQUIREMENTS/) (4 files) |
-| 03_TECHNICAL_SPECIFICATION.md | [TECHNICAL/](../TECHNICAL/) (5 files) |
-| 04_UI_UX_GUIDELINES.md | [DESIGN/](../DESIGN/) (3 files) |
-| 05_DEVELOPMENT_ROADMAP.md | [ROADMAP/ROADMAP_PHASE1.md](../ROADMAP/ROADMAP_PHASE1.md) |
-| 06_PROJECT_INSTRUCTIONS.md | [DEVELOPMENT/PROJECT_INSTRUCTIONS.md](../DEVELOPMENT/PROJECT_INSTRUCTIONS.md) + more |
+### DESIGNS/ — Completed Implementation Plans (Mar 25, 2026)
 
----
+All plans fully implemented:
 
-## 🔍 Quick Reference Guide
+| File | Status | PRs |
+|------|--------|-----|
+| IMPLEMENTATION_PLAN_COMPACT_VIEW.md | Done | #73-#79 |
+| PLAN_CONSISTENT_LAYOUT_NON_APPROVED.md | Done | #82-#83 |
+| WIREFRAMES_COMPACT_HISTORY_DETAIL.md | Done | #73-#79 |
+| WIREFRAMES_FLOW2_2.1-2.3.md | Done | #57-#69 |
 
-### 📋 By Topic
+### TECHNICAL/ — Stable/Superseded Technical Docs (Mar 25, 2026)
 
-| Topic | New Location |
-|-------|---|
-| **Project Overview** | [PROJECT/](../PROJECT/) |
-| **Business Requirements** | [REQUIREMENTS/](../REQUIREMENTS/) |
-| **Technical Details** | [TECHNICAL/](../TECHNICAL/) |
-| **Design System** | [DESIGN/](../DESIGN/) |
-| **Development Guide** | [DEVELOPMENT/](../DEVELOPMENT/) |
-| **Development Roadmap** | [ROADMAP/](../ROADMAP/) |
-| **Progress Tracking** | [PROGRESS/](../PROGRESS/) |
-| **Reference Materials** | [REFERENCE/](../REFERENCE/) |
+| File | Reason |
+|------|--------|
+| ACCESS_CONTROL_IMPLEMENTATION.md | Content covered by ROLE_BASED_ACCESS_CONTROL.md |
+| COMPONENT_INTEGRATION_GUIDE.md | Daily Sales Week 3, implementation stable |
+| COMPONENT_SYSTEM_IMPLEMENTATION_STATUS.md | Outdated status (82%), system is complete |
+| DAILY_SALES_API.md | Week 3 API, implementation stable |
+| FIREBASE_HOSTING_SETUP.md | Merged into TECHNICAL/FIREBASE.md |
+| FIREBASE_SETUP.md | Merged into TECHNICAL/FIREBASE.md |
+| HYBRID_APPROACH_SETUP.md | Auth setup completed |
+| SIDEBAR_IMPLEMENTATION.md | Sidebar implemented and stable |
 
-### 👥 By Audience
+### PROGRESS/ — Historical Progress Records (Mar 25, 2026)
 
-| Audience | Start Here |
-|----------|---|
-| **Owner** | [PROJECT/PROJECT_OVERVIEW.md](../PROJECT/PROJECT_OVERVIEW.md) |
-| **Developer** | [DEVELOPMENT/PROJECT_INSTRUCTIONS.md](../DEVELOPMENT/PROJECT_INSTRUCTIONS.md) |
-| **Manager** | [STATUS.md](../PROGRESS/STATUS.md) |
-| **User** | [REFERENCE/FAQ.md](../REFERENCE/FAQ.md) |
+Replaced by single `docs/PROGRESS/STATUS.md`:
 
----
+| File | Period |
+|------|--------|
+| README.md | Old progress overview (Week 4) |
+| CHANGELOG.md | v1.0-v1.7 (Jan 7 - Feb 9, 2026) |
+| WEEK_SUMMARIES/WEEK_01.md | Jan 7-12, 2026 |
+| WEEK_SUMMARIES/WEEK_02.md | Jan 7-13, 2026 |
+| WEEK_SUMMARIES/WEEK_03.md | Jan 14-20, 2026 |
+| WEEK_SUMMARIES/WEEK_04.md | Feb 3-10, 2026 |
 
-## ✅ Archive Organization
+### Other
 
-```
-ARCHIVE/
-├── README.md                           # ← You are here
-├── VERSIONS/
-│   └── v1.0/
-│       ├── 01_PROJECT_OVERVIEW.md
-│       ├── 02_BUSINESS_REQUIREMENTS.md
-│       ├── 03_TECHNICAL_SPECIFICATION.md
-│       ├── 04_UI_UX_GUIDELINES.md
-│       ├── 05_DEVELOPMENT_ROADMAP.md
-│       └── 06_PROJECT_INSTRUCTIONS.md
-```
-
----
-
-## 🎯 Why Files Were Archived
-
-1. **✅ Avoid Confusion** - Single source of truth in new organized structure
-2. **✅ Better Maintenance** - Easy to find information in organized folders
-3. **✅ Improved Search** - Clean hierarchy makes searching more intuitive
-4. **✅ Preserve History** - Original files safely backed up for reference
-5. **✅ Professional Structure** - Enterprise-level documentation organization
-
----
-
-## 📞 Need the Original Files?
-
-If you need to reference the original files for any reason, they are available in [VERSIONS/v1.0/](./VERSIONS/v1.0/) folder.
-
-However, **we recommend using the new organized documentation** as it provides:
-- Better organization by topic
-- More detailed and extracted information
-- Clearer navigation paths
-- Improved searchability
-
----
-
-## 📝 Version History
-
-| Version | Date | Status |
-|---------|------|--------|
-| 1.0 | 2026-01-07 | Original (Archived) |
-| 1.1+ | 2026-01-07+ | New Organized Structure |
-
----
-
-## 📞 Questions?
-
-- 📚 Check [../README.md](../README.md) for main documentation hub
-- 🔍 Use documentation index for organized reference
-- 📧 Contact development team for clarifications
-
----
-
-<div align="center">
-  <p><strong>Archive Created</strong>: January 7, 2026</p>
-  <p><em>All files safely preserved for historical reference</em></p>
-</div>
+| File | Reason |
+|------|--------|
+| SESSION_SUMMARY_2026_02_09.md | Single session snapshot |
+| CLEANUP_SUMMARY.md | v1.0 → v1.1 reorganization record |

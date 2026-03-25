@@ -1,414 +1,111 @@
-# 📚 BigT Minimart Documentation Hub
+# BigT Minimart — Documentation Index
 
-**Version**: 1.4
-**Last Updated**: Feb 9, 2026 (Daily Sales UI Refinements)
-**Status**: 📖 Complete Documentation Structure + Daily Work Updates
+> Master index for all project documentation. Each folder has one purpose.
 
----
-
-## 🎯 Welcome
-
-Welcome to the BigT Minimart Management System documentation hub. This comprehensive documentation is organized by category for easy navigation and maintenance.
+**Last Updated**: Mar 25, 2026
 
 ---
 
-## 📁 Documentation Structure
-
-### 🏢 [PROJECT/](./PROJECT/) - Project Overview
-Main project information and business context.
-
-- [PROJECT_OVERVIEW.md](./PROJECT/PROJECT_OVERVIEW.md) - Project scope, objectives, and stakeholders
-
-### 📋 [REQUIREMENTS/](./REQUIREMENTS/) - Business Requirements
-What the system needs to do from a business perspective.
-
-- [BUSINESS_REQUIREMENTS.md](./REQUIREMENTS/BUSINESS_REQUIREMENTS.md) - Complete business requirements
-- [USER_ROLES.md](./REQUIREMENTS/USER_ROLES.md) - Role definitions and permissions
-- [WORKFLOWS.md](./REQUIREMENTS/WORKFLOWS.md) - Business workflow processes
-- [USE_CASES.md](./REQUIREMENTS/USE_CASES.md) - System use cases and interactions
-
-### 💻 [TECHNICAL/](./TECHNICAL/) - Technical Specification
-Technical architecture and implementation details.
-
-- [FULL_SPECIFICATION.md](./TECHNICAL/FULL_SPECIFICATION.md) - Complete technical specification
-- [TECHNOLOGY_STACK.md](./TECHNICAL/TECHNOLOGY_STACK.md) - Technology choices and versions
-- [STATE_MANAGEMENT_ARCHITECTURE.md](./TECHNICAL/STATE_MANAGEMENT_ARCHITECTURE.md) - Pinia + Repository Pattern guide
-- [DATABASE_SCHEMA.md](./TECHNICAL/DATABASE_SCHEMA.md) - Firestore data structure
-- [API_ENDPOINTS.md](./TECHNICAL/API_ENDPOINTS.md) - REST API documentation
-- [FIREBASE_SETUP.md](./TECHNICAL/FIREBASE_SETUP.md) - Firebase configuration and setup
-- [FIREBASE_HOSTING_SETUP.md](./TECHNICAL/FIREBASE_HOSTING_SETUP.md) - Firebase Hosting technical setup
-- [ROLE_BASED_ACCESS_CONTROL.md](./TECHNICAL/ROLE_BASED_ACCESS_CONTROL.md) - RBAC implementation guide
-- [ACCESS_CONTROL_IMPLEMENTATION.md](./TECHNICAL/ACCESS_CONTROL_IMPLEMENTATION.md) - Access Control (Users + Roles + Permissions) complete implementation guide (NEW - Feb 2)
-
-### 🎨 [DESIGN/](./DESIGN/) - UI/UX Guidelines
-Design standards and visual guidelines.
-
-- [UI_UX_GUIDELINES.md](./DESIGN/UI_UX_GUIDELINES.md) - Complete UI/UX guidelines
-- [BRAND_IDENTITY.md](./DESIGN/BRAND_IDENTITY.md) - Brand identity and logo
-- [COLOR_PALETTE.md](./DESIGN/COLOR_PALETTE.md) - Color system and usage
-
-### 🔧 [DEVELOPMENT/](./DEVELOPMENT/) - Development Guide
-Development standards and processes.
-
-- [PROJECT_INSTRUCTIONS.md](./DEVELOPMENT/PROJECT_INSTRUCTIONS.md) - Development instructions
-- [CODING_STANDARDS.md](./DEVELOPMENT/CODING_STANDARDS.md) - Code standards (extracted)
-- [TESTING_GUIDELINES.md](./DEVELOPMENT/TESTING_GUIDELINES.md) - Testing approach (extracted)
-- [GIT_WORKFLOW.md](./DEVELOPMENT/GIT_WORKFLOW.md) - Git strategy (extracted)
-- [DEPLOYMENT.md](./DEVELOPMENT/DEPLOYMENT.md) - Deployment and CI/CD process
-- [CI_CD.md](./DEVELOPMENT/CI_CD.md) - CI/CD pipeline overview
-- [CI_CD_SETUP.md](./DEVELOPMENT/CI_CD_SETUP.md) - Detailed CI/CD setup and configuration
-- [FIREBASE_DEPLOYMENT_CHECKLIST.md](./DEVELOPMENT/FIREBASE_DEPLOYMENT_CHECKLIST.md) - Step-by-step deployment checklist
-
-### 🗺️ [ROADMAP/](./ROADMAP/) - Development Roadmap
-Phase-by-phase development timeline.
-
-- [ROADMAP_PHASE1.md](./ROADMAP/ROADMAP_PHASE1.md) - Phase 1 detailed roadmap
-
-### 📊 [PROGRESS/](./PROGRESS/) - Progress Tracking
-Week-by-week progress and status tracking.
-
-#### Week Summaries
-- [WEEK_SUMMARIES/WEEK_01.md](./PROGRESS/WEEK_SUMMARIES/WEEK_01.md) - Week 1 completion summary
-- [WEEK_SUMMARIES/WEEK_02.md](./PROGRESS/WEEK_SUMMARIES/WEEK_02.md) - Week 2 completion summary
-- [WEEK_SUMMARIES/WEEK_03.md](./PROGRESS/WEEK_SUMMARIES/WEEK_03.md) - Week 3 completion summary
-- [WEEK_SUMMARIES/WEEK_04.md](./PROGRESS/WEEK_SUMMARIES/WEEK_04.md) - Week 4 progress (Problem Types UI + Access Control)
-
-#### Progress Dashboards
-- [STATUS.md](./PROGRESS/STATUS.md) - Current project status dashboard (Updated Jan 30, 2026)
-- [CHANGELOG.md](./PROGRESS/CHANGELOG.md) - Change log and version history (Updated v1.3)
-
-#### Phase Summaries
-- [PHASE_SUMMARIES/](./PROGRESS/PHASE_SUMMARIES/) - Phase summaries (to be added)
-
-### 📚 [REFERENCE/](./REFERENCE/) - Reference Materials
-Glossaries, FAQs, and reference materials.
-
-- [GLOSSARY.md](./REFERENCE/GLOSSARY.md) - Thai-English glossary and terminology
-- [FAQ.md](./REFERENCE/FAQ.md) - Frequently asked questions
-- [TROUBLESHOOTING.md](./REFERENCE/TROUBLESHOOTING.md) - Troubleshooting guide (to be added)
-- [RESOURCES.md](./REFERENCE/RESOURCES.md) - External resources and links (to be added)
-- [FIREBASE_COMMANDS.md](./REFERENCE/FIREBASE_COMMANDS.md) - Firebase CLI commands reference
-
-### 🗂️ [ARCHIVE/](./ARCHIVE/) - Version Archives
-Previous versions and backups.
-
-- [VERSIONS/v1.0/](./ARCHIVE/VERSIONS/v1.0/) - Original documentation backup
-
----
-
-## 🚀 Quick Start
-
-### For New Team Members
-1. Start with [PROJECT_OVERVIEW.md](./PROJECT/PROJECT_OVERVIEW.md)
-2. Read [USER_ROLES.md](./REQUIREMENTS/USER_ROLES.md) to understand system roles
-3. Check [TECHNOLOGY_STACK.md](./TECHNICAL/TECHNOLOGY_STACK.md) for tech info
-4. Review [CODING_STANDARDS.md](./DEVELOPMENT/CODING_STANDARDS.md) for code guidelines
-
-### For Developers
-1. [TECHNOLOGY_STACK.md](./TECHNICAL/TECHNOLOGY_STACK.md) - What we're using
-2. [DATABASE_SCHEMA.md](./TECHNICAL/DATABASE_SCHEMA.md) - Data structure
-3. [API_ENDPOINTS.md](./TECHNICAL/API_ENDPOINTS.md) - API reference
-4. [PROJECT_INSTRUCTIONS.md](./DEVELOPMENT/PROJECT_INSTRUCTIONS.md) - Development setup
-
-### For Managers
-1. [PROJECT_OVERVIEW.md](./PROJECT/PROJECT_OVERVIEW.md) - Project scope
-2. [ROADMAP_PHASE1.md](./ROADMAP/ROADMAP_PHASE1.md) - Development timeline
-3. [STATUS.md](./PROGRESS/STATUS.md) - Current status
-4. [WEEK_02.md](./PROGRESS/WEEK_SUMMARIES/WEEK_02.md) - Latest progress
-
-### For Users
-1. [GLOSSARY.md](./REFERENCE/GLOSSARY.md) - Terminology
-2. [FAQ.md](./REFERENCE/FAQ.md) - Frequently asked questions
-3. [USER_ROLES.md](./REQUIREMENTS/USER_ROLES.md) - Your role and permissions
-4. [WORKFLOWS.md](./REQUIREMENTS/WORKFLOWS.md) - How to do tasks
-
----
-
-## 📊 Documentation Statistics
-
-| Section | Files | Status |
-|---------|-------|--------|
-| PROJECT | 1 | ✅ Complete |
-| REQUIREMENTS | 4 | ✅ Complete |
-| TECHNICAL | 6 | ✅ Complete |
-| DESIGN | 3 | ✅ Complete |
-| DEVELOPMENT | 5 | ✅ Complete |
-| ROADMAP | 1 | ✅ Complete |
-| PROGRESS | 7 | ✅ Organized (Feb 6) |
-| REFERENCE | 2+ | ✅ In Progress |
-| **TOTAL** | **28+** | **✅ Comprehensive** |
-
-> **Last Updated**: February 2, 2026 - Added ACCESS_CONTROL_IMPLEMENTATION.md, consolidated documentation
-
----
-
-## 🔄 How to Use This Documentation
-
-### Finding Information
-1. **By Topic**: Browse the folders above
-2. **By Audience**: Use "Quick Start" section above
-3. **By Search**: Use Ctrl+F (Windows) or Cmd+F (Mac)
-4. **By Glossary**: Check [GLOSSARY.md](./REFERENCE/GLOSSARY.md) for terminology
-
-### Staying Updated
-- Check [STATUS.md](./PROGRESS/STATUS.md) for current project status
-- Review [CHANGELOG.md](./PROGRESS/CHANGELOG.md) for recent changes
-- Read weekly summaries in [WEEK_SUMMARIES/](./PROGRESS/WEEK_SUMMARIES/)
-
-### Reporting Issues
-- Find solutions in [TROUBLESHOOTING.md](./REFERENCE/TROUBLESHOOTING.md)
-- Check [FAQ.md](./REFERENCE/FAQ.md) for common questions
-- Contact team for unresolved issues
-
----
-
-## 📖 Documentation Standards
-
-### All Documents Include
-- Clear title with emoji
-- Version and last update date
-- Table of contents (for long docs)
-- Practical examples
-- Cross-references to related docs
-
-### Language
-- **Primary**: English for technical content
-- **Secondary**: Thai for UI/business context
-- **Glossary**: Both languages provided
-
-### Formatting
-- Markdown format for consistency
-- Code blocks for technical content
-- Tables for structured data
-- Hierarchical headings (H1-H4)
-- Lists for organization
-
----
-
-## 📊 Project Timeline
+## Folder Structure
 
 ```
-PHASE 1: Core Features (Weeks 1-6)
-├─ Week 1: Setup + Auth ✅ COMPLETE (100%)
-├─ Week 2: Layout + Navigation ✅ COMPLETE (100%)
-├─ Week 3: Daily Sales ✅ COMPLETE (100%)
-├─ Week 4: Access Control + Problem Types 🟡 IN PROGRESS (75%)
-│  ├─ Access Control UI: ✅ COMPLETE
-│  ├─ Problem Types UI: ✅ COMPLETE
-│  └─ API Integration: ⏳ PENDING
-└─ Week 5-6: Dashboard + Reports ⏳ PENDING (0%)
-
-PHASE 2: Reports & Export (Weeks 7-9)
-PHASE 3: Monthly/Yearly (Weeks 10-12)
-PHASE 4: HR Management (Future)
+docs/
+├── PROJECT/          — What the project is
+├── REQUIREMENTS/     — What we need to build
+├── DESIGN/           — How it looks
+├── TECHNICAL/        — How it works
+├── DEVELOPMENT/      — How we work
+├── PROGRESS/         — Where we are
+├── REFERENCE/        — Quick lookups
+└── ARCHIVE/          — Old/completed docs
 ```
 
-**Target Launch**: March 15, 2026 (On Schedule ✓)
-**Current Status**: Week 4 Problem Types UI Complete ✅
+---
+
+## PROJECT/ — Project Context
+
+| File | Description |
+|------|-------------|
+| [PROJECT_OVERVIEW.md](PROJECT/PROJECT_OVERVIEW.md) | Store info, objectives, scope, stakeholders, timeline |
 
 ---
 
-## 👥 Key Contacts
+## REQUIREMENTS/ — Business & Functional Specs
 
-| Role | Name | Email | Phone |
-|------|------|-------|-------|
-| Project Owner | นพ | - | 061-578-7174 |
-| Development Lead | Claude Code | - | - |
-| Product Manager | Claude.ai | - | - |
-
----
-
-## 📝 Document Maintenance
-
-### Update Schedule
-- **Weekly**: Progress tracking (STATUS.md, CHANGELOG.md)
-- **Per Phase**: Phase summaries
-- **As Needed**: Technical documentation
-- **Monthly**: Feature documentation updates
-
-### Who Updates Docs
-- **Development Team**: Technical documentation
-- **Project Manager**: Progress tracking, status
-- **All Team Members**: Can suggest improvements
-
-### How to Suggest Changes
-1. Open relevant document
-2. Note what needs updating
-3. Contact Project Manager
-4. Changes made with version bump
+| File | Description |
+|------|-------------|
+| [BUSINESS_REQUIREMENTS.md](REQUIREMENTS/BUSINESS_REQUIREMENTS.md) | Functional/non-functional requirements, KPIs |
+| [USER_ROLES.md](REQUIREMENTS/USER_ROLES.md) | 5 roles, permission matrix, page access |
+| [USE_CASES.md](REQUIREMENTS/USE_CASES.md) | 8 use cases with flows and success criteria |
+| [WORKFLOWS.md](REQUIREMENTS/WORKFLOWS.md) | Flow 1-4: Cash, Money Transfer, Bill Payment, Income/Expense |
+| [DEVELOPMENT_ROADMAP.md](REQUIREMENTS/DEVELOPMENT_ROADMAP.md) | Phase 1-4 roadmap, repository pattern strategy |
 
 ---
 
-## ✅ Quality Assurance
+## DESIGN/ — Visual & UI
 
-### Documentation Review
-- ✅ All documents reviewed for accuracy
-- ✅ Examples tested and verified
-- ✅ Links checked and working
-- ✅ Formatting consistent
-- ✅ Thai/English content verified
-
-### Version Control
-- Version 1.0: Initial complete documentation (Jan 7, 2026)
-- Older versions: Archived in [ARCHIVE/](./ARCHIVE/)
+| File | Description |
+|------|-------------|
+| [DESIGN_SYSTEM.md](DESIGN/DESIGN_SYSTEM.md) | Brand, colors, typography, spacing, UI patterns, sidebar |
 
 ---
 
-## 🔗 External Resources
+## TECHNICAL/ — Architecture & Implementation
 
-### Project Management
-- GitHub (Version control)
-- Firebase Console (Database)
-- VS Code (Development)
-
-### Learning Resources
-- [Nuxt Documentation](https://nuxt.com/)
-- [Vue 3 Guide](https://vuejs.org/)
-- [Firebase Docs](https://firebase.google.com/docs)
-- [Tailwind CSS](https://tailwindcss.com/)
-
-See [REFERENCE/RESOURCES.md](./REFERENCE/RESOURCES.md) for more links.
+| File | Description |
+|------|-------------|
+| [TECHNOLOGY_STACK.md](TECHNICAL/TECHNOLOGY_STACK.md) | Nuxt 3, Vue 3, TypeScript, Tailwind, Pinia, Firebase |
+| [COMPONENT_SYSTEM_ARCHITECTURE.md](TECHNICAL/COMPONENT_SYSTEM_ARCHITECTURE.md) | Design system components, RBAC, composables |
+| [STATE_MANAGEMENT_ARCHITECTURE.md](TECHNICAL/STATE_MANAGEMENT_ARCHITECTURE.md) | Pinia stores, repository pattern, caching |
+| [DATABASE_SCHEMA.md](TECHNICAL/DATABASE_SCHEMA.md) | Firestore collections, TypeScript interfaces, security rules |
+| [API_ENDPOINTS.md](TECHNICAL/API_ENDPOINTS.md) | All REST endpoints with response format |
+| [AUTH_STORE_USAGE.md](TECHNICAL/AUTH_STORE_USAGE.md) | Auth store guide (Thai), reading user data |
+| [ROLE_BASED_ACCESS_CONTROL.md](TECHNICAL/ROLE_BASED_ACCESS_CONTROL.md) | RBAC design, permission matrix, composable, route guards |
+| [FIREBASE.md](TECHNICAL/FIREBASE.md) | Firebase project setup, hosting, deployment, security rules |
 
 ---
 
-## 🎉 Acknowledgments
+## DEVELOPMENT/ — Processes & Standards
 
-**Documentation Created**: January 7, 2026  
-**Documentation Organized**: January 7, 2026  
-**Created By**: Claude Code + Claude.ai  
-**Reviewed By**: นพ (Project Owner)
-
----
-
-## 📞 Getting Help
-
-### Found an Error?
-- Check [FAQ.md](./REFERENCE/FAQ.md) first
-- Contact Project Manager with details
-- Update document if obvious fix
-
-### Have Questions?
-- Check [GLOSSARY.md](./REFERENCE/GLOSSARY.md) for terminology
-- Search relevant section
-- Contact team for clarification
-
-### Need More Details?
-- Check related documents (cross-referenced)
-- Review [RESOURCES.md](./REFERENCE/RESOURCES.md) for external docs
-- Ask development team
+| File | Description |
+|------|-------------|
+| [README.md](DEVELOPMENT/README.md) | Development quick start |
+| [GIT_WORKFLOW.md](DEVELOPMENT/GIT_WORKFLOW.md) | Branch strategy, commit conventions, merge policy |
+| [COMPONENT_QUALITY_CHECKLIST.md](DEVELOPMENT/COMPONENT_QUALITY_CHECKLIST.md) | Checklist for new components (TS, RBAC, styling, a11y) |
+| [DEPLOYMENT.md](DEVELOPMENT/DEPLOYMENT.md) | Firebase Hosting deploy guide (staging/production) |
+| [CI_CD.md](DEVELOPMENT/CI_CD.md) | GitHub Actions workflows |
 
 ---
 
-## 🚀 Next Steps
+## PROGRESS/ — Status Tracking
 
-- [ ] Complete Phase 1 (Week 2-6)
-- [ ] Add Phase 2 documentation
-- [ ] Create troubleshooting guide
-- [ ] Add video tutorials (optional)
-- [ ] Translate to full Thai (Phase 3+)
+| File | Description |
+|------|-------------|
+| [STATUS.md](PROGRESS/STATUS.md) | Current project status dashboard (Weeks 1-9) |
 
 ---
 
-**Status**: ✅ COMPLETE AND READY  
-**Last Updated**: Jan 7, 2026 (Updated: File Structure Reorganized)
-**Maintained By**: Development Team  
-**Version**: 1.1
+## REFERENCE/ — Quick Lookups
+
+| File | Description |
+|------|-------------|
+| [GLOSSARY.md](REFERENCE/GLOSSARY.md) | Thai-English bilingual glossary (48+ terms) |
+| [FAQ.md](REFERENCE/FAQ.md) | Frequently asked questions by category |
+| [FIREBASE_COMMANDS.md](REFERENCE/FIREBASE_COMMANDS.md) | Firebase CLI command reference |
 
 ---
 
-## 📚 Archive Information
+## Quick Start by Role
 
-> **📌 หมายเหตุ:** ไฟล์เอกสารเวอร์ชันเก่า (01-06) ได้ย้ายไปอย่างปลอดภัยที่ [ARCHIVE/VERSIONS/v1.0/](./ARCHIVE/VERSIONS/v1.0/) 
->
-> **Note:** Old documentation files (01-06) have been safely moved to [ARCHIVE/VERSIONS/v1.0/](./ARCHIVE/VERSIONS/v1.0/) to avoid confusion and maintain a clean documentation structure.
-
-### เหตุผลในการจัดเก็บ (Reasons for Archive):
-- ✅ หลีกเลี่ยงความสับสนจากเอกสารซ้ำกัน (Avoid duplicate document confusion)
-- ✅ เก็บประวัติสำหรับอ้างอิง (Preserve history for reference)
-- ✅ โครงสร้างเอกสารสะอาดและเป็นระเบียบ (Clean, organized documentation structure)
-- ✅ ให้ผู้ใช้ค้นหาข้อมูลได้สะดวก (Easy information discovery)
-
-### การเข้าถึงเอกสารเก่า (Accessing Archived Files):
-เอกสารเดิมทั้งหมดถูกเก็บไว้ปลอดภัยใน: **[ARCHIVE/VERSIONS/v1.0/](./ARCHIVE/VERSIONS/v1.0/)**
+| Role | Start here |
+|------|------------|
+| New to project | [PROJECT_OVERVIEW](PROJECT/PROJECT_OVERVIEW.md) → [BUSINESS_REQUIREMENTS](REQUIREMENTS/BUSINESS_REQUIREMENTS.md) |
+| Developer | [TECHNOLOGY_STACK](TECHNICAL/TECHNOLOGY_STACK.md) → [GIT_WORKFLOW](DEVELOPMENT/GIT_WORKFLOW.md) → [COMPONENT_QUALITY_CHECKLIST](DEVELOPMENT/COMPONENT_QUALITY_CHECKLIST.md) |
+| Designer | [DESIGN_SYSTEM](DESIGN/DESIGN_SYSTEM.md) |
+| Product/Manager | [WORKFLOWS](REQUIREMENTS/WORKFLOWS.md) → [STATUS](PROGRESS/STATUS.md) |
 
 ---
 
-## 📊 สถานะปัจจุบัน (Current Status)
+## Archive
 
-| Phase | Status | Timeline |
-|-------|--------|----------|
-| Documentation | ✅ Complete + Reorganized | Jan 30, 2026 |
-| Phase 1, Week 1: Setup + Auth | ✅ Complete | Jan 7, 2026 |
-| Phase 1, Week 2: Layout + Navigation | ✅ Complete | Jan 13, 2026 |
-| Phase 1, Week 3: Daily Sales | ✅ Complete | Jan 29, 2026 |
-| Phase 1, Week 4: Access Control + Problem Types | 🟡 In Progress (75%) | Feb 6, 2026 |
-| Phase 1, Week 5-6: Dashboard + Reports | ⏳ Pending | Feb 25, 2026 |
-
-**Overall Progress**: 87.5% Phase 1 Complete ✓ (Week 4 UI Complete)
-
----
-
-## 🎯 การใช้งานเอกสาร (Documentation Usage)
-
-### สำหรับเจ้าของร้าน (นพ)
-1. 👉 [PROJECT_OVERVIEW.md](./PROJECT/PROJECT_OVERVIEW.md) - เข้าใจภาพรวมโปรเจกต์
-2. 👉 [BUSINESS_REQUIREMENTS.md](./REQUIREMENTS/BUSINESS_REQUIREMENTS.md) - เข้าใจ Workflow
-3. 👉 [ROADMAP_PHASE1.md](./ROADMAP/ROADMAP_PHASE1.md) - ติดตาม Timeline
-4. 👉 [UI_UX_GUIDELINES.md](./DESIGN/UI_UX_GUIDELINES.md) - อนุมัติการออกแบบ
-
-### สำหรับ Claude Code (Developer)
-1. 👉 [TECHNOLOGY_STACK.md](./TECHNICAL/TECHNOLOGY_STACK.md) - เทคโนโลยีที่ใช้
-2. 👉 [DATABASE_SCHEMA.md](./TECHNICAL/DATABASE_SCHEMA.md) - โครงสร้างฐานข้อมูล
-3. 👉 [API_ENDPOINTS.md](./TECHNICAL/API_ENDPOINTS.md) - API reference
-4. 👉 [PROJECT_INSTRUCTIONS.md](./DEVELOPMENT/PROJECT_INSTRUCTIONS.md) - วิธีพัฒนา
-5. 👉 [CODING_STANDARDS.md](./DEVELOPMENT/CODING_STANDARDS.md) - มาตรฐานโค้ด
-
-### สำหรับ Claude.ai (Planning & PM)
-1. 👉 [STATUS.md](./PROGRESS/STATUS.md) - สถานะโปรเจกต์ปัจจุบัน
-2. 👉 [WEEK_01.md](./PROGRESS/WEEK_SUMMARIES/WEEK_01.md) - สรุปความคืบหน้า
-3. 👉 [CHANGELOG.md](./PROGRESS/CHANGELOG.md) - บันทึกการเปลี่ยนแปลง
-4. 👉 [ROADMAP_PHASE1.md](./ROADMAP/ROADMAP_PHASE1.md) - แผนการพัฒนา
-
----
-
-## 🚀 Next Steps
-
-**ขั้นตอนต่อไป (Immediate Actions):**
-- [x] ✅ สร้างเอกสารครบทั้ง 10 โฟลเดอร์
-- [x] ✅ ย้ายไฟล์เก่า (01-06) ไป ARCHIVE
-- [x] ✅ อัปเดต README.md เป็นรุ่น 1.1
-- [ ] ⏳ เริ่ม Phase 2: Layout + Navigation Components
-- [ ] ⏳ ดำเนินการตามแผน Roadmap
-
----
-
-## 📞 ข้อมูลติดต่อ (Contact Information)
-
-**ร้านบิ๊กธี มินิมาร์ท**  
-85 ม.3 ต.บางตะเคียน อ.สองพี่น้อง จ.สุพรรณบุรี 72110  
-📱 โทรศัพท์: 061-578-7174  
-🏢 เลขประจำตัวผู้เสียภาษี: 0723564001232
-
-**ทีมโปรเจกต์ (Project Team):**
-- 👤 **Project Owner**: นพ (เจ้าของร้าน)
-- 👤 **Development**: Claude Code
-- 👤 **Planning & PM**: Claude.ai
-
----
-
-## 📝 Version History
-
-| Version | Date | Description |
-|---------|------|-------------|
-| 1.4 | 2026-02-09 | ✅ Daily Sales UI Refinements (ConfirmDialog, 3-color difference, data cleanup) |
-| 1.3 | 2026-02-06 | ✅ Week 4 Problem Types UI + Documentation Complete |
-| 1.2 | 2026-01-30 | ✅ Documentation reorganized + old PROGRESS files archived |
-| 1.1 | 2026-01-07 | ✅ Documentation restructured + old files archived |
-| 1.0 | 2026-01-07 | Initial documentation complete |
-
----
-
-**Status**: ✅ COMPLETE AND UP-TO-DATE
-**Last Updated**: Feb 6, 2026
-**Maintained By**: Development Team
-**Version**: 1.3
+Old, completed, or superseded docs are preserved in [ARCHIVE/](ARCHIVE/README.md).
