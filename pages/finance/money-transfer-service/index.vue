@@ -23,6 +23,7 @@ import {
   DocumentTextIcon,
   ShieldCheckIcon,
   ClockIcon,
+  ArrowPathIcon,
 } from '@heroicons/vue/24/outline'
 
 definePageMeta({
@@ -46,7 +47,7 @@ const { currentUser } = useCurrentUser()
 const selectedDate = ref<string>(
   (route.query.date as string) || (new Date().toISOString().split('T')[0] ?? '')
 )
-const activeFilter = ref<'all' | 'completed' | 'draft' | 'failed'>('all')
+const activeFilter = ref<'all' | 'completed' | 'draft' | 'on_hold' | 'cancelled'>('all')
 const successMessage = ref('')
 const errorMessage = ref('')
 // Modal visibility
@@ -61,6 +62,9 @@ const editingTransaction = ref<any>(null)
 const viewingTransaction = ref<any>(null)
 const deletingTransactionId = ref<string>('')
 const presetType = ref<'transfer' | 'withdrawal' | 'owner_deposit' | ''>('')
+
+// Status Change mode (when editing completed/on_hold transactions via TransactionForm)
+const statusChangeMode = ref<{ currentStatus: 'completed' | 'on_hold' } | undefined>(undefined)
 
 // Favorite Transfer modal state
 const favStep = ref<1 | 2>(1)
@@ -143,7 +147,7 @@ const filterTabs = [
   { label: 'ทั้งหมด', value: 'all' as const },
   { label: 'สำเร็จ', value: 'completed' as const },
   { label: 'รอดำเนินการ', value: 'draft' as const },
-  { label: 'ล้มเหลว', value: 'failed' as const },
+  { label: 'พักรายการ', value: 'on_hold' as const },
 ]
 
 // ─── Computed ─────────────────────────────────────────────────────────────────
@@ -176,7 +180,7 @@ const canAddTransaction = computed(() => isOpeningSet.value && !store.isStep1Com
 
 /** All prerequisites met — user should click the complete button */
 const canCompleteStep1 = computed(
-  () => isOpeningSet.value && todayStats.value.total > 0 && !hasDrafts.value
+  () => isOpeningSet.value && todayStats.value.total > 0 && !hasDrafts.value && !hasOnHold.value
 )
 
 /** bankAccount from previous day (pre-fills carry-over option) */
@@ -227,6 +231,9 @@ const draftTransactions = computed(() =>
 )
 
 const hasDrafts = computed(() => draftTransactions.value.length > 0)
+const hasOnHold = computed(() =>
+  dateTransactions.value.some((t: any) => t.status === 'on_hold')
+)
 
 const todayStats = computed(() => {
   const txns = dateTransactions.value
@@ -323,9 +330,9 @@ const ownerDepositBalanceAfter = computed(() => {
 })
 
 // ─── Auditor Computed ─────────────────────────────────────────────────────────
-/** Transactions visible to auditor (completed + failed) */
+/** Transactions visible to auditor (completed + on_hold + cancelled) */
 const auditTransactionList = computed(() =>
-  dateTransactions.value.filter((t: any) => t.status === 'completed' || t.status === 'failed')
+  dateTransactions.value.filter((t: any) => t.status === 'completed' || t.status === 'on_hold' || t.status === 'cancelled')
 )
 const txnsWithIssues = computed(() => Object.keys(txnIssueStatus.value).length)
 const canSubmitAudit = computed(() =>
@@ -386,8 +393,8 @@ const totalCommission = computed(() =>
 const successCount = computed(() =>
   dateTransactions.value.filter((t: any) => t.status === 'completed').length
 )
-const failedCount = computed(() =>
-  dateTransactions.value.filter((t: any) => t.status === 'failed').length
+const onHoldCount = computed(() =>
+  dateTransactions.value.filter((t: any) => t.status === 'on_hold').length
 )
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -530,12 +537,14 @@ async function handleDateChange() {
 
 function openNewTransactionModal(preset: 'transfer' | 'withdrawal' | 'owner_deposit' | '' = '') {
   editingTransaction.value = null
+  statusChangeMode.value = undefined
   presetType.value = preset
   showTransactionModal.value = true
 }
 
 function openEditModal(transaction: any) {
   editingTransaction.value = transaction
+  statusChangeMode.value = undefined
   presetType.value = ''
   showTransactionModal.value = true
 }
@@ -732,12 +741,28 @@ async function handleSubmitOwnerDeposit() {
 
 async function handleSubmitTransaction(transactionData: any) {
   try {
+    const statusChange = transactionData._statusChange
+    const { _statusChange, status: _status, ...txnFields } = transactionData
+
     if (editingTransaction.value?.id) {
-      await store.updateTransaction(editingTransaction.value.id, transactionData)
-      successMessage.value = 'อัปเดตรายการสำเร็จ'
+      // Update transaction fields (status handled separately if statusChange exists)
+      await store.updateTransaction(editingTransaction.value.id, statusChange ? txnFields : { ...txnFields, status: _status })
+
+      // If status change is requested, apply it after field update
+      if (statusChange) {
+        await store.changeTransactionStatus(
+          editingTransaction.value.id,
+          statusChange.status,
+          statusChange.statusNote
+        )
+        const labels: Record<string, string> = { on_hold: 'พักรายการ', completed: 'สำเร็จ', cancelled: 'ยกเลิก' }
+        successMessage.value = `อัปเดตรายการและเปลี่ยนสถานะเป็น "${labels[statusChange.status]}" สำเร็จ`
+      } else {
+        successMessage.value = 'อัปเดตรายการสำเร็จ'
+      }
     } else {
       await store.createTransaction({
-        ...transactionData,
+        ...txnFields,
         date: selectedDate.value,
         recordedBy: currentUser.value.uid,
         recordedByName: currentUser.value.displayName,
@@ -745,6 +770,7 @@ async function handleSubmitTransaction(transactionData: any) {
       successMessage.value = 'บันทึกรายการใหม่สำเร็จ'
     }
     showTransactionModal.value = false
+    statusChangeMode.value = undefined
     await store.fetchTransactionsByDate(selectedDate.value)
     logger.log('Transaction saved')
   } catch (err: any) {
@@ -783,9 +809,22 @@ async function handleDeleteTransaction() {
   }
 }
 
+// ─── Status Change ───────────────────────────────────────────────────────────
+function openStatusChange(txn: any) {
+  editingTransaction.value = txn
+  statusChangeMode.value = { currentStatus: txn.status }
+  presetType.value = ''
+  showDetailModal.value = false
+  showTransactionModal.value = true
+}
+
 async function handleCompleteStep1() {
   if (hasDrafts.value) {
     errorMessage.value = 'กรุณาดำเนินการหรือลบ Draft Transaction ทั้งหมดก่อน'
+    return
+  }
+  if (hasOnHold.value) {
+    errorMessage.value = 'กรุณาสรุปรายการที่พักไว้ (on hold) ทั้งหมดก่อน'
     return
   }
   if (todayStats.value.total === 0) {
@@ -1108,18 +1147,6 @@ onBeforeUnmount(() => {
       </div>
       <!-- แถวที่ 2: สรุปยอด -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <BaseCard class="text-center">
-          <div class="text-xs text-gray-500 mb-1">รวมค่าบริการ (เงินสด)</div>
-          <div class="text-lg font-bold text-green-700">
-            {{ formatCurrency(store.currentBalance?.serviceFeeCash ?? 0) }}
-          </div>
-        </BaseCard>
-        <BaseCard class="text-center">
-          <div class="text-xs text-gray-500 mb-1">รวมค่าบริการ (เงินโอน)</div>
-          <div class="text-lg font-bold text-green-700">
-            {{ formatCurrency(store.currentBalance?.serviceFeeTransfer ?? 0) }}
-          </div>
-        </BaseCard>
         <BaseCard class="text-center border-gray-300 bg-gray-50">
           <div class="text-xs text-gray-600 mb-1 font-medium">เงินในบัญชีคงเหลือ</div>
           <div class="text-xl font-bold text-gray-900">
@@ -1130,6 +1157,18 @@ onBeforeUnmount(() => {
           <div class="text-xs text-blue-600 mb-1 font-medium">เงินสดคงเหลือ</div>
           <div class="text-lg font-bold text-blue-800">
             {{ formatCurrency(totalCash) }}
+          </div>
+        </BaseCard>
+        <BaseCard class="text-center">
+          <div class="text-xs text-gray-500 mb-1">รวมค่าบริการ (เงินสด)</div>
+          <div class="text-lg font-bold text-green-700">
+            {{ formatCurrency(store.currentBalance?.serviceFeeCash ?? 0) }}
+          </div>
+        </BaseCard>
+        <BaseCard class="text-center">
+          <div class="text-xs text-gray-500 mb-1">รวมค่าบริการ (เงินโอน)</div>
+          <div class="text-lg font-bold text-green-700">
+            {{ formatCurrency(store.currentBalance?.serviceFeeTransfer ?? 0) }}
           </div>
         </BaseCard>
       </div>
@@ -1203,7 +1242,7 @@ onBeforeUnmount(() => {
               <div class="flex items-center gap-3 text-sm">
                 <span class="text-gray-500">{{ dateTransactions.length }} รายการ</span>
                 <span class="text-green-700">{{ successCount }} สำเร็จ</span>
-                <span v-if="failedCount" class="text-red-600">{{ failedCount }} ล้มเหลว</span>
+                <span v-if="onHoldCount" class="text-amber-600">{{ onHoldCount }} พักรายการ</span>
               </div>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -1650,6 +1689,17 @@ onBeforeUnmount(() => {
               <EyeIcon class="w-4 h-4" />
             </button>
             <ActionButton
+              v-if="isManagerOrAsst && (txn.status === 'completed' || txn.status === 'on_hold') && !store.isStep1Complete"
+              :permission="PERMISSIONS.EDIT_FINANCE"
+              variant="ghost"
+              size="sm"
+              :aria-label="txn.status === 'completed' ? 'พักรายการ' : 'เปลี่ยนสถานะ'"
+              class="text-amber-500 hover:text-amber-600 hover:bg-amber-50"
+              @click="openStatusChange(txn)"
+            >
+              <ArrowPathIcon class="w-4 h-4" />
+            </ActionButton>
+            <ActionButton
               v-if="isManagerOrAsst && txn.status === 'draft'"
               :permission="PERMISSIONS.EDIT_FINANCE"
               variant="ghost"
@@ -1755,6 +1805,17 @@ onBeforeUnmount(() => {
               <EyeIcon class="w-4 h-4" />
             </button>
             <ActionButton
+              v-if="isManagerOrAsst && (txn.status === 'completed' || txn.status === 'on_hold') && !store.isStep1Complete"
+              :permission="PERMISSIONS.EDIT_FINANCE"
+              variant="ghost"
+              size="sm"
+              :aria-label="txn.status === 'completed' ? 'พักรายการ' : 'เปลี่ยนสถานะ'"
+              class="text-amber-500 hover:text-amber-600 hover:bg-amber-50"
+              @click="openStatusChange(txn)"
+            >
+              <ArrowPathIcon class="w-4 h-4" />
+            </ActionButton>
+            <ActionButton
               v-if="isManagerOrAsst && txn.status === 'draft'"
               :permission="PERMISSIONS.EDIT_FINANCE"
               variant="ghost"
@@ -1838,15 +1899,27 @@ onBeforeUnmount(() => {
             {{ hasDrafts ? 'มีดราฟต์ค้างอยู่' : 'ไม่มีดราฟต์ค้างอยู่' }}
             <span v-if="hasDrafts" class="font-medium text-red-600">({{ todayStats.drafts }} รายการ)</span>
           </li>
+          <li class="flex items-center gap-2" :class="!hasOnHold ? 'text-green-700' : 'text-red-600'">
+            <span class="text-base">{{ !hasOnHold ? '✅' : '❌' }}</span>
+            {{ hasOnHold ? 'มีรายการพักค้างอยู่' : 'ไม่มีรายการพักค้างอยู่' }}
+            <span v-if="hasOnHold" class="font-medium text-red-600">({{ onHoldCount }} รายการ)</span>
+          </li>
         </ul>
       </div>
 
-      <!-- Draft warning -->
-      <div class="flex justify-center mb-3">
+      <!-- Draft / On Hold warning -->
+      <div class="flex justify-center mb-3 flex-col items-center gap-2">
         <BaseAlert
           v-if="hasDrafts"
           variant="warning"
           message="กรุณาดำเนินการหรือลบ Draft Transaction ทั้งหมดก่อนไปขั้นตอนถัดไป"
+          :dismissible="false"
+          class="w-full max-w-lg"
+        />
+        <BaseAlert
+          v-if="hasOnHold"
+          variant="warning"
+          message="กรุณาสรุปรายการที่พักไว้ (on hold) ทั้งหมดก่อนไปขั้นตอนถัดไป"
           :dismissible="false"
           class="w-full max-w-lg"
         />
@@ -2757,9 +2830,9 @@ onBeforeUnmount(() => {
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <BaseModal
       :open="showTransactionModal"
-      :title="editingTransaction ? '✏️ แก้ไขรายการ' : '📝 รายการใหม่'"
+      :title="statusChangeMode ? '✏️ แก้ไขรายการและเปลี่ยนสถานะ' : editingTransaction ? '✏️ แก้ไขรายการ' : '📝 รายการใหม่'"
       size="xl"
-      @close="showTransactionModal = false"
+      @close="showTransactionModal = false; statusChangeMode = undefined"
     >
       <TransactionForm
         v-if="showTransactionModal && store.currentBalance"
@@ -2768,8 +2841,9 @@ onBeforeUnmount(() => {
         :recorded-by-name="currentUser.displayName"
         :editing-data="editingTransaction"
         :preset-type="presetType || undefined"
+        :status-change="statusChangeMode"
         @submit="handleSubmitTransaction"
-        @cancel="showTransactionModal = false"
+        @cancel="showTransactionModal = false; statusChangeMode = undefined"
       />
     </BaseModal>
 
@@ -2909,6 +2983,14 @@ onBeforeUnmount(() => {
             </div>
           </div>
         </div>
+
+        <!-- Status Note -->
+        <div v-if="viewingTransaction.statusNote" class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <div class="text-xs font-medium text-amber-700 mb-1">หมายเหตุการเปลี่ยนสถานะ</div>
+          <p class="text-sm text-amber-900">{{ viewingTransaction.statusNote }}</p>
+        </div>
+
+        <!-- Status Change Actions removed — use edit (🔄) button in table instead -->
 
         <div v-if="viewingTransaction.status === 'draft'" class="border-t border-gray-100 pt-3 flex gap-2 justify-end">
           <ActionButton

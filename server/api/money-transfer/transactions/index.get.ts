@@ -55,7 +55,7 @@ export default defineEventHandler(async (event) => {
 
     // Apply filters
     if (status) {
-      const validStatuses = ['draft', 'completed', 'failed', 'cancelled']
+      const validStatuses = ['draft', 'completed', 'on_hold', 'cancelled']
       if (validStatuses.includes(status)) {
         transactions = transactions.filter(t => t.status === status)
         console.log(`[GET /api/money-transfer/transactions] Filtered by status ${status}: ${transactions.length}`)

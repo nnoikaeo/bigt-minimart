@@ -63,7 +63,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
       date: '',
       startDate: '',
       endDate: '',
-      status: '' as '' | 'draft' | 'completed' | 'failed' | 'cancelled',
+      status: '' as '' | 'draft' | 'completed' | 'on_hold' | 'cancelled',
       transactionType: '' as '' | 'transfer' | 'withdrawal' | 'owner_deposit',
     },
 
@@ -113,10 +113,10 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
     },
 
     /**
-     * Get failed transactions
+     * Get on-hold transactions
      */
-    getFailedTransactions: (state: any) => {
-      return state.transactions.filter((t: any) => t.status === 'failed')
+    getOnHoldTransactions: (state: any) => {
+      return state.transactions.filter((t: any) => t.status === 'on_hold')
     },
 
     /**
@@ -130,7 +130,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
         total: todayTxns.length,
         completed: todayTxns.filter((t: any) => t.status === 'completed').length,
         drafts: todayTxns.filter((t: any) => t.status === 'draft').length,
-        failed: todayTxns.filter((t: any) => t.status === 'failed').length,
+        onHold: todayTxns.filter((t: any) => t.status === 'on_hold').length,
         totalAmount: todayTxns
           .filter((t: any) => t.status === 'completed')
           .reduce((sum: any, t: any) => sum + t.amount, 0),
@@ -393,6 +393,44 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
       } catch (error: any) {
         this.error = `Failed to complete draft: ${error.message}`
         console.error('[completeDraftTransaction]', error)
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    /**
+     * Change transaction status (completed ↔ on_hold, on_hold → cancelled)
+     */
+    async changeTransactionStatus(
+      id: string,
+      status: 'completed' | 'on_hold' | 'cancelled',
+      statusNote: string
+    ): Promise<MoneyTransferTransaction> {
+      this.isLoading = true
+
+      try {
+        const response = await $fetch(`/api/money-transfer/transactions/${id}/status`, {
+          method: 'PUT',
+          body: { status, statusNote },
+        })
+
+        const updated = response.data
+        const index = this.transactions.findIndex((t: any) => t.id === id)
+        if (index !== -1) {
+          this.transactions[index] = updated
+        }
+
+        // Refresh balance for the transaction's date
+        if (updated.date) {
+          await this.fetchBalanceByDate(updated.date)
+        }
+
+        console.log('[changeTransactionStatus] Changed status:', id, '→', status)
+        return updated
+      } catch (error: any) {
+        this.error = `Failed to change status: ${error.message}`
+        console.error('[changeTransactionStatus]', error)
         throw error
       } finally {
         this.isLoading = false

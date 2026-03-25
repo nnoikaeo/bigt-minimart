@@ -229,8 +229,9 @@ export interface MoneyTransferTransaction {
   }
 
   // Status & workflow
-  status: 'draft' | 'completed' | 'failed' | 'cancelled'
+  status: 'draft' | 'completed' | 'on_hold' | 'cancelled'
   draftReason?: string // Reason why transaction is draft (e.g., insufficient balance)
+  statusNote?: string // Reason for status change (required for on_hold/cancelled)
   verificationStatus?: 'pending' | 'verified' | 'audited' | 'approved'
 
   // Notes and metadata

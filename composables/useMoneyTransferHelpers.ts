@@ -53,7 +53,7 @@ export function useMoneyTransferHelpers() {
     const map: Record<string, 'success' | 'warning' | 'error' | 'default'> = {
       completed: 'success',
       draft: 'warning',
-      failed: 'error',
+      on_hold: 'error',
       cancelled: 'default',
     }
     return map[status] ?? 'default'
@@ -63,7 +63,7 @@ export function useMoneyTransferHelpers() {
     const map: Record<string, string> = {
       completed: 'สำเร็จ',
       draft: 'รอดำเนินการ',
-      failed: 'ล้มเหลว',
+      on_hold: 'พักรายการ',
       cancelled: 'ยกเลิก',
     }
     return map[status] || status
