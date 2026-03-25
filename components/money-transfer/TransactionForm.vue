@@ -221,6 +221,59 @@
       <!-- สถานะการบันทึก (ไม่แสดงอีกต่อไป) -->
     </div>
 
+    <!-- ── Status Change Section ──────────────────────────────── -->
+    <div v-if="isStatusChangeMode && statusChange" class="space-y-3 border-t border-gray-200 pt-4">
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">เปลี่ยนสถานะ</p>
+
+      <div class="flex items-center gap-2 text-sm">
+        <span class="text-gray-500">สถานะปัจจุบัน:</span>
+        <BaseBadge :variant="getStatusBadgeVariant(statusChange.currentStatus)">
+          {{ getStatusLabel(statusChange.currentStatus) }}
+        </BaseBadge>
+      </div>
+
+      <!-- completed → edit_only / on_hold -->
+      <div v-if="statusChange.currentStatus === 'completed'" class="grid grid-cols-2 gap-2">
+        <label class="flex items-center gap-2 p-2.5 rounded-lg border border-blue-200 bg-blue-50 cursor-pointer">
+          <input v-model="statusTarget" type="radio" value="edit_only" class="text-blue-600 focus:ring-blue-500" />
+          <span class="font-medium text-sm text-blue-800">แก้ไขรายการ</span>
+        </label>
+        <label class="flex items-center gap-2 p-2.5 rounded-lg border border-amber-200 bg-amber-50 cursor-pointer">
+          <input v-model="statusTarget" type="radio" value="on_hold" class="text-amber-600 focus:ring-amber-500" />
+          <span class="font-medium text-sm text-amber-800">พักรายการ</span>
+        </label>
+      </div>
+
+      <!-- on_hold → completed / cancelled -->
+      <div v-if="statusChange.currentStatus === 'on_hold'" class="grid grid-cols-2 gap-2">
+        <label class="flex items-center gap-2 p-2.5 rounded-lg border border-green-200 bg-green-50 cursor-pointer">
+          <input v-model="statusTarget" type="radio" value="completed" class="text-green-600 focus:ring-green-500" />
+          <span class="font-medium text-sm text-green-800">สำเร็จ</span>
+        </label>
+        <label class="flex items-center gap-2 p-2.5 rounded-lg border border-gray-200 bg-gray-50 cursor-pointer">
+          <input v-model="statusTarget" type="radio" value="cancelled" class="text-gray-600 focus:ring-gray-500" />
+          <span class="font-medium text-sm text-gray-700">ยกเลิก</span>
+        </label>
+      </div>
+
+      <!-- Previous note (read-only) -->
+      <div v-if="previousStatusNote" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm">
+        <span class="text-gray-500">หมายเหตุล่าสุด:</span>
+        <span class="text-gray-700 ml-1">{{ previousStatusNote }}</span>
+      </div>
+
+      <!-- Required note (only for actual status changes, not edit_only) -->
+      <div v-if="needsStatusNote">
+        <label class="block text-sm font-medium text-gray-700 mb-1">เหตุผล <span class="text-red-500">*</span></label>
+        <textarea
+          v-model="statusNote"
+          rows="2"
+          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          placeholder="ระบุเหตุผลในการเปลี่ยนสถานะ..."
+        />
+      </div>
+    </div>
+
     <!-- ── Error ──────────────────────────────────────────────── -->
     <div v-if="errorMessage" class="rounded-lg bg-red-50 border border-red-200 px-4 py-2.5 text-sm text-red-700">
       {{ errorMessage }}
@@ -239,14 +292,14 @@
         type="button"
         class="flex-1 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         :class="isSubmitting ? 'bg-primary/60' : 'bg-primary hover:bg-primary-dark'"
-        :disabled="isSubmitting || formData.amount <= 0"
+        :disabled="isSubmitting || formData.amount <= 0 || alreadyEdited"
         @click="handleSubmit"
       >
         <svg v-if="isSubmitting" class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
         </svg>
-        <span>💾 บันทึก</span>
+        <span>{{ isStatusChangeMode ? (isEditOnly ? '💾 บันทึกการแก้ไข' : '💾 บันทึกและเปลี่ยนสถานะ') : '💾 บันทึก' }}</span>
       </button>
     </div>
 
@@ -264,6 +317,9 @@ interface Props {
   recordedByName: string
   editingData?: any
   presetType?: 'transfer' | 'withdrawal' | 'owner_deposit'
+  statusChange?: {
+    currentStatus: 'completed' | 'on_hold'
+  }
 }
 
 interface Emits {
@@ -381,7 +437,19 @@ const bannerInfo = computed(() => {
 })
 
 // ── Helpers ───────────────────────────────────────────────────
-const { formatCurrency } = useMoneyTransferHelpers()
+const { formatCurrency, getStatusLabel, getStatusBadgeVariant } = useMoneyTransferHelpers()
+
+// ── Status Change ────────────────────────────────────────────
+// Auto-pre-select edit_only only when completed + has previous note
+const statusTarget = ref<'edit_only' | 'on_hold' | 'completed' | 'cancelled' | ''>(
+  props.statusChange?.currentStatus === 'completed' && props.editingData?.statusNote ? 'edit_only' : ''
+)
+const statusNote = ref('')
+const previousStatusNote = computed(() => props.editingData?.statusNote ?? '')
+const alreadyEdited = computed(() => isEditOnly.value && !!previousStatusNote.value)
+const isStatusChangeMode = computed(() => !!props.statusChange)
+const isEditOnly = computed(() => statusTarget.value === 'edit_only')
+const needsStatusNote = computed(() => isStatusChangeMode.value && statusTarget.value !== '' && !alreadyEdited.value)
 
 // ── Validation & Submit ───────────────────────────────────────
 const isSubmitting = ref(false)
@@ -414,6 +482,18 @@ function handleSubmit() {
     }
   }
 
+  // Status change validation
+  if (isStatusChangeMode.value) {
+    if (!statusTarget.value) {
+      errorMessage.value = 'กรุณาเลือกการดำเนินการ'
+      return
+    }
+    if (needsStatusNote.value && !statusNote.value.trim()) {
+      errorMessage.value = 'กรุณาระบุเหตุผลในการเปลี่ยนสถานะ'
+      return
+    }
+  }
+
   // Capture datetime at submit time; keep original if editing a draft
   const datetime = props.editingData?.datetime ?? new Date().toISOString()
 
@@ -427,7 +507,19 @@ function handleSubmit() {
     notes: formData.value.notes,
     recordedBy: props.recordedBy,
     recordedByName: props.recordedByName,
-    status: hasSufficientBalance.value ? 'completed' : 'draft',
+    status: isStatusChangeMode.value
+      ? (isEditOnly.value ? props.statusChange!.currentStatus : statusTarget.value)
+      : (hasSufficientBalance.value ? 'completed' : 'draft'),
+    // Save statusNote for edit_only (persisted on transaction record)
+    ...(isStatusChangeMode.value && statusNote.value.trim() ? { statusNote: statusNote.value.trim() } : {}),
+  }
+
+  // Attach status change info for the parent handler (not for edit_only)
+  if (isStatusChangeMode.value && statusTarget.value && !isEditOnly.value) {
+    transactionData._statusChange = {
+      status: statusTarget.value,
+      statusNote: statusNote.value.trim(),
+    }
   }
 
   if (formData.value.transactionType === 'transfer') {
