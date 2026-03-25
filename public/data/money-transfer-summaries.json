@@ -19,9 +19,9 @@
         "serviceFeeCash": 100
       }
     },
-    "workflowStatus": "audited",
+    "workflowStatus": "approved",
     "createdAt": "2026-02-27T13:43:45.925Z",
-    "updatedAt": "2026-03-09T19:27:36.403Z",
+    "updatedAt": "2026-03-23T14:43:11.526Z",
     "step2": {
       "status": "completed",
       "completedAt": "2026-03-09T11:17:25.409Z",
@@ -62,6 +62,14 @@
       },
       "auditNotes": "",
       "auditResult": "no_issues"
+    },
+    "ownerApproval": {
+      "status": "approved",
+      "completedAt": "2026-03-23T14:43:11.525Z",
+      "completedBy": "owner",
+      "completedByName": "Owner",
+      "decision": "approve",
+      "ownerNotes": ""
     }
   },
   {
@@ -115,16 +123,25 @@
     "id": "mtsum-2026-03-08",
     "date": "2026-03-08",
     "step1": {
-      "status": "in_progress",
-      "totalTransactions": 0,
-      "completedTransactions": 0,
+      "status": "completed",
+      "completedAt": "2026-03-08T15:30:00.000Z",
+      "completedBy": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2",
+      "completedByName": "นพพล น้อยแก้ว",
+      "totalTransactions": 5,
+      "completedTransactions": 5,
       "draftTransactions": 0,
-      "totalAmount": 0,
-      "totalCommission": 0
+      "totalAmount": 8500,
+      "totalCommission": 90,
+      "finalBalances": {
+        "bankAccount": 6260,
+        "transferCash": 8500,
+        "serviceFeeTransfer": 0,
+        "serviceFeeCash": 90
+      }
     },
-    "workflowStatus": "step1_in_progress",
-    "createdAt": "2026-03-09T10:38:09.287Z",
-    "updatedAt": "2026-03-09T10:38:09.287Z"
+    "workflowStatus": "step1_completed",
+    "createdAt": "2026-03-08T09:00:00.000Z",
+    "updatedAt": "2026-03-08T15:30:00.000Z"
   },
   {
     "id": "mtsum-2026-03-09",
