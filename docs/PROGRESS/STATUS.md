@@ -1,585 +1,219 @@
-# 📊 Project Status Dashboard
+# Project Status Dashboard
 
-**Last Updated**: Feb 9, 2026 (Daily Sales UI Refinements & UX Improvements ✅)
-**Updated By**: Claude Code + Claude.ai
-**Next Update**: Feb 12, 2026 (Week 5 Planning + Dashboard Implementation)
+**Last Updated**: Mar 25, 2026
+**Updated By**: Claude Code
+**Current Branch**: main (latest merge: PR #85 — dcf1214)
 
 ---
 
-## 🎯 Overall Progress
+## Overall Progress
 
 ```
-PHASE 1: Core Features (Weeks 1-6 = 4-6 weeks)
-├─ Week 1: Setup + Auth ✅ COMPLETE (100%)
-├─ Week 2: Layout + Navigation ✅ COMPLETE (100%)
-├─ Week 3: Daily Sales ✅ COMPLETE (100%)
-│  ├─ Task 3.0: Sidebar Navigation ✅ IMPLEMENTED (10 pages created)
-│  ├─ Task 3.1: Design + Architecture ✅ COMPLETE
-│  ├─ Task 3.2: Repository Pattern ✅ MERGED (Jan 29)
-│  ├─ Task 3.3: Components Integration ✅ COMPLETE (Jan 29)
-│  ├─ Task 3.4: API CRUD Endpoints ✅ COMPLETE (Jan 29)
-│  ├─ Task 3.5: Integration Testing ✅ COMPLETE
-│  ├─ Task 3.6: Type Definitions ✅ COMPLETE
-│  ├─ Overall: Implementation complete, all CRUD verified, PR merged ✅
-├─ Week 4: Access Control + Problem Types UI + Owner Approval ✅ COMPLETE (100%)
-│  ├─ **Task 4.A: Problem Type Selection UI** ✅ COMPLETE (Feb 5-6)
-│  │  ├─ 7 problem type categories implemented
-│  │  ├─ Dropdown selections in modal (conditional per channel)
-│  │  ├─ Problem type badges in table display
-│  │  ├─ Color-coded UI (blue, purple, green, amber)
-│  │  ├─ Sample data updated with problem types
-│  │  └─ TypeScript fixes (middleware/auth.ts)
-│  ├─ **Task 4.B: Workflow 1.4 - Owner Approval System** ✅ COMPLETE (Feb 6)
-│  │  ├─ Owner approval workflow fully implemented
-│  │  ├─ Quick-approve button in sales table (✓)
-│  │  ├─ Detailed approval section in modal
-│  │  ├─ Approval tracking (timestamp + approver name)
-│  │  ├─ Role-based authorization (owner only)
-│  │  ├─ Data normalization (ID-only storage + dynamic lookup)
-│  │  ├─ Safe date formatting and type safety
-│  │  ├─ PR #30 merged to main & develop
-│  │  └─ All lint checks passing
-│  ├─ Task 4.0: Design & Architecture ✅ COMPLETE (Feb 1-3)
-│  ├─ Task 4.1: Access Control Store ✅ COMPLETE (Feb 2-3)
-│  ├─ Task 4.2: Users Table Component ✅ COMPLETE (Feb 3)
-│  ├─ Task 4.3: User Modal (CRUD) ✅ COMPLETE with Auto-sync (Feb 3)
-│  ├─ Task 4.4: Status Toggle (iOS Switch) ✅ COMPLETE (Feb 3)
-│  ├─ Task 4.5: Role Sorting ✅ COMPLETE (Feb 3)
-│  ├─ Task 4.6: Permissions Modal ✅ COMPLETE (Feb 6)
-│  ├─ Task 4.7: API Endpoints ✅ COMPLETE (Feb 6 - merged with approval endpoint)
-│  └─ Overall: ALL WEEK 4 TASKS COMPLETE - Access Control, Problem Types, Owner Approval all done!
-├─ Week 5-6: Dashboard + Reports ❌ NOT STARTED (0%)
-├─ **CURRENT (Feb 9)**: Daily Sales UI Refinements & UX Improvements ✅
-│  ├─ ConfirmDialog pattern for delete operations (consistent with approve)
-│  ├─ Three-level color-coded difference display (green/yellow/red)
-│  ├─ Removed recommendation field (simplifying data model)
-│  └─ TypeScript validation: 0 errors, all lint checks passing
-└─ Overall: WEEK 4 FULLY COMPLETE + UI POLISH ✅ (105% - Extra UX work)
+PHASE 1: Core Features
+├─ Week 1: Setup + Auth                          ✅ COMPLETE (100%)
+├─ Week 2: Layout + Navigation                   ✅ COMPLETE (100%)
+├─ Week 3: Daily Sales CRUD                      ✅ COMPLETE (100%)
+├─ Week 4: Access Control + Problem Types + Owner Approval ✅ COMPLETE (100%)
+├─ Week 5: Money Transfer Service (Phase 1-8)    ✅ COMPLETE (100%)
+├─ Week 6: Money Transfer Bug Fixes & Refactor   ✅ COMPLETE (100%)
+├─ Week 7: Auditor/Owner Workflow (WF 2.0-2.3)   ✅ COMPLETE (100%)
+├─ Week 8: UI Components & Layout Overhaul        ✅ COMPLETE (100%)
+├─ Week 9: Layout Consistency & Polish            ✅ COMPLETE (100%)
+├─ Week 5-6 (original plan): Dashboard + Reports ❌ NOT STARTED (0%)
+└─ Overall: PHASE 1 CORE COMPLETE — Dashboard/Reports remaining
 
-Timeline Status: ON SCHEDULE ✓ (Ahead of schedule!)
-Target Launch: March 2026 ✓
+Timeline Status: Money Transfer feature fully shipped ✓
 ```
 
 ---
 
-## 🎨 Recent Work (Feb 9, 2026)
+## Recent Work (Weeks 5-9: Feb 26 — Mar 25, 2026)
 
-### Daily Sales UI Refinements
+### Week 5 (Feb 26-28): Money Transfer Service
 
-**Current Session Improvements**:
-```
-✅ ConfirmDialog Implementation
-   ├─ Delete operations now use styled ConfirmDialog
-   ├─ Danger variant (red) for delete confirmation
-   ├─ Matches existing approval dialog pattern
-   └─ Better UX than browser native confirm()
-
-✅ Color-Coded Difference Display
-   ├─ Three-level system (green/yellow/red)
-   ├─ Green (✓): Perfect match (difference = 0)
-   ├─ Yellow (⚠️): Acceptable variance (-5 to 5, excluding 0)
-   ├─ Red (❌): Significant variance (< -5 or > 5)
-   └─ Conditional badge rendering with icons
-
-✅ Data Model Cleanup
-   ├─ Removed "recommendation" field
-   ├─ Updated DailySalesModal.vue form
-   ├─ Updated types/repositories.ts interface
-   ├─ Updated all API endpoints (POST/PUT)
-   └─ TypeScript: 0 errors, all lint passing
-
-✅ Code Quality
-   ├─ npm run type-check: PASS ✅
-   ├─ npm run lint: PASS ✅
-   ├─ No breaking changes ✅
-   └─ Backward compatible ✅
-```
-
-**Files Modified**:
-- pages/sales/daily-sales.vue
-- components/DailySalesModal.vue
-- types/repositories.ts
-- server/api/daily-sales/index.post.ts
-- server/api/daily-sales/[id].put.ts
-
----
-
----
-
-## 🏗️ Week 3: Daily Sales Implementation (✅ COMPLETE - 100%)
-
-### ✅ Completed (Jan 24-29, Final Update Jan 29)
-
-**Architecture Phase:**
-```
-✅ Repository Pattern Design
-   ├─ ISalesRepository interface defined
-   ├─ SalesJsonRepository implemented (270 lines)
-   ├─ SalesFirestoreRepository implemented (280 lines)
-   └─ Complete documentation (280 lines)
-
-✅ Type Definitions
-   ├─ DailySalesEntry interface (complete fields)
-   ├─ Support for Date | string (JSON & Firestore)
-   ├─ Support for calculated fields (total, difference)
-   └─ Complete type documentation
-
-✅ Pinia Store (stores/sales.ts - 447 lines)
-   ├─ State: dailySales[], selectedEntry, filters, stats
-   ├─ Getters: getAllSales, getFilteredSales, getPendingSales, getSortedFilteredSales, getSalesStats
-   ├─ Actions: fetchDailySales, addDailySale, updateDailySale, deleteDailySale, approveSale
-   └─ Full type safety & error handling
-
-✅ API Endpoints (All 4 CRUD operations updated)
-   ├─ GET /api/daily-sales (fetch with filtering)
-   ├─ POST /api/daily-sales (create with validation)
-   ├─ PUT /api/daily-sales/[id] (update with recalculation)
-   └─ DELETE /api/daily-sales/[id] (delete with ownership check)
-
-✅ Sample Data (public/data/daily-sales.json)
-   ├─ 5 complete sample entries
-   ├─ Various statuses (submitted, audited, approved)
-   ├─ Different payment distributions
-   └─ Ready for testing
-
-✅ Documentation (1300+ lines)
-   ├─ DAILY_SALES_API.md (API reference, examples)
-   ├─ INTEGRATION_TESTS.md (20+ test scenarios)
-   ├─ WEEK_03_IMPLEMENTATION_SUMMARY.md (complete summary)
-   ├─ COMPONENT_INTEGRATION_GUIDE.md (complete guide with testing)
-   └─ Code examples for all features
-
-✅ Quality Assurance
-   ├─ TypeScript: 0 errors ✅
-   ├─ All endpoints tested ✅
-   ├─ Zod validation working ✅
-   ├─ Repository Pattern verified ✅
-   └─ Documentation complete ✅
-```
-
-**Component Integration Phase:**
-```
-✅ DailySalesTable.vue (403 lines)
-   ├─ Displays sales entries in table format
-   ├─ Sorting by: date, cashier name, total amount
-   ├─ Filtering by: two separate fields (cashier name + date)
-   ├─ Pagination: 10 items per page
-   ├─ Actions: edit, delete with confirmation
-   ├─ Formatting: Currency (Thai Baht), Dates (Thai format), Status badges
-   ├─ Search improvements:
-   │  ├─ Split search fields (cashier name & date separate)
-   │  ├─ Removed ID search field (UX improvement)
-   │  ├─ Added reset button to clear all filters
-   │  └─ Dynamic date input color (gray-500 empty → text-gray-900 selected)
-   └─ Inlined helpers: formatCurrency, formatDateThai, formatStatus, calculateTotal
-
-✅ DailySalesModal.vue (422 lines)
-   ├─ Create new daily sales entries
-   ├─ Edit existing entries
-   ├─ Real-time calculations: total, difference
-   ├─ Cashier selection with auto-fill
-   ├─ Payment channel inputs (cash, QR, bank, government)
-   ├─ Cash reconciliation tracking
-   ├─ Form validation with error messages
-   └─ Thai localization complete
-
-✅ pages/sales/daily-sales.vue (190 lines)
-   ├─ Container component managing state
-   ├─ Modal state management (open/close)
-   ├─ Editing state (create vs update)
-   ├─ Store integration: useSalesStore()
-   ├─ CRUD operations: create, read, update, delete
-   ├─ Error and success messaging
-   └─ Data fetching on mount
-
-✅ Store Integration
-   ├─ Replaced composable with Pinia store
-   ├─ All components use useSalesStore()
-   ├─ Type safety with DailySalesEntry from types/repositories.ts
-   ├─ Inlined helper functions for independence
-   └─ Zero TypeScript errors ✅
-```
-
-**Integration Tests:**
-```
-✅ Test File Created: tests/integration/daily-sales.spec.ts
-   ├─ 50+ test cases covering all scenarios
-   ├─ DailySalesTable tests (20+ cases)
-   │  ├─ Rendering, filtering, sorting, pagination
-   │  ├─ Delete confirmation, loading states
-   │  └─ Currency & date formatting
-   ├─ DailySalesModal tests (18+ cases)
-   │  ├─ Create/edit mode, form population
-   │  ├─ Calculation, validation, emit events
-   │  └─ Visual feedback (highlighting, styling)
-   └─ Page integration tests (12+ cases)
-      ├─ CRUD operations, state management
-      ├─ Error handling, success messages
-      └─ Modal lifecycle
-
-✅ Test Structure
-   ├─ Sample data: mockSalesEntries with 2 entries
-   ├─ Component mounting with Pinia
-   ├─ Event emissions verification
-  7cf6309: style(sales): improve date input color to change based on selection state (Jan 29, 4:35 AM)
-- c46c1ae: fix(typescript): resolve all lint errors with proper type annotations (Jan 29, 4:25 AM)
-   └─ Async/await handling
-```
-
-**Commits:**
-- c46c1ae: fix(typescript): resolve all lint errors with proper type annotations
-- c4d0c5e: feat(sales): implement daily sales CRUD operations (Week 3)
-- 1ab3903: fix: Repository update method now returns updated entry instead of void
-- 5d39949: feat: Complete Daily Sales API endpoints implementation (Week 3)
-- 453cf26: docs: Add comprehensive integration test scenarios
-
-**Feature Branch Status:**
-- Primary Branch: `feature/week3-daily-sales-crud`
-  - Status: ✅ MERGED INTO DEVELOP (Jan 29, 2026 4:25 AM)
-  - Branch deleted: Ready for cleanup
-- UI Refinement Branch: `feature/search-date-input-styling`
-  - Status: 🔄 IN REVIEW (Created Jan 29, 2026 4:35 AM)
-  - Latest commit: 7cf6309
-  - Changes: Dynamic date input color based on selection state
-  - PR Status: Ready for merge to develop
-
-### ✅ All Deliverables Complete
+**PRs**: #57, #58, #59, #60, #61, #62
 
 ```
-✅ Architecture: Repository Pattern (100%)
-✅ Types: DailySalesEntry with full documentation (100%)
-✅ Store: useSalesStore with all actions/getters (100%)
-✅ API: 4 CRUD endpoints with validation & auto-calculation (100%)
-✅ Components: Table, Modal, Page (100%)
-✅ Integration: Components → Store → API → Repository (100%)
-✅ Documentation: 1300+ lines with examples & guides (100%)
-✅ Tests: 50+ test cases for all components (100%)
-✅ Quality: 0 TypeScript errors, all endpoints tested (100%)
-✅ CRUD Operations: All 4 tested and verified (100%)
-   ├─ CREATE: POST endpoint working, data saves to JSON ✅
-   ├─ READ: GET endpoint returning entries with formatting ✅
-   ├─ UPDATE: PUT endpoint updating entries and repository ✅
-   └─ DELETE: DELETE endpoint removing entries from JSON ✅
-✅ Feature Branch: Created, pushed, and merged to develop (100%)
-✅ PR Status: Successfully merged on Jan 29, 2026
-✅ Ready for: Week 4 - Expenses & Audit Implementation (100%)
+✅ Money Transfer Service — Phase 1-8
+   ├─ Transaction recording (deposit, withdrawal, transfer, owner_deposit)
+   ├─ Balance tracking with carryover logic
+   ├─ Favorite transfers system
+   ├─ TransactionForm modal (unified for all types)
+   ├─ ChannelSelector, PromptPayFields, BankAccountFields components
+   ├─ Commission tracking (cash/transfer)
+   ├─ Daily record settings page + fee config
+   └─ UI Component System (design system)
+       ├─ BaseButton, ActionButton, BaseBadge, BaseModal
+       ├─ BaseInput, FormField, BaseSelect, BaseTextarea
+       ├─ BaseAlert, ConfirmDialog, EmptyState, LoadingState
+       ├─ BaseCard, BaseTable, DataTable, PaginationControl
+       └─ PageWrapper, PageHeader
+```
 
-✅ Manual Testing (COMPLETED)
-    ✅ Create entries via form (verified)
-    ✅ Edit entries (verified)
-    ✅ Delete entries (verified, with confirmation)
-    ✅ Verify filtering/sorting (verified)
-    ✅ Check calculations (verified)
+### Week 6 (Mar 4-5): Bug Fixes & Page Consolidation
 
-✅ Component Testing (COMPLETED)
-    ✅ Test with sample data (6 entries in JSON)
-    ✅ Test error states (handled)
-    ✅ Test loading states (working)
-    ✅ Responsive design (responsive)
+**PRs**: #64, #65, #66
+
+```
+✅ Bug Fixes
+   ├─ Fix carryover balance lookup and number type consistency
+   └─ Merge transaction-recording & cash-counting into single index.vue
+       └─ Deleted separate step pages (simpler navigation)
+```
+
+### Week 7 (Mar 9-13): Auditor/Owner Workflow
+
+**PRs**: #67, #68, #69
+
+```
+✅ WF 2.0-2.3 Complete Workflow
+   ├─ WF 2.0: History Page as entry point (money-transfer-history.vue)
+   ├─ WF 2.1: Manager transaction recording + cash counting (index.vue)
+   ├─ WF 2.2: Auditor review (per-txn checklist + bank balance + findings)
+   ├─ WF 2.3: Owner approval (summary + decision radios)
+   ├─ Shared components: BalanceSnapshot, CashVerificationTable, TransactionTable
+   └─ All roles consolidated into single index.vue page
+```
+
+### Week 8 (Mar 16): UI Components & Layout Overhaul
+
+**PRs**: #72, #73, #74, #75, #76, #77, #78, #79
+
+```
+✅ New Components
+   ├─ CollapsibleSection — expandable/collapsible content sections
+   ├─ WorkflowProgressBar — step indicator for workflow status
+   ├─ QuickGlanceSummary — at-a-glance transaction/status summary
+   └─ CompactBalanceSummary — condensed balance display
+
+✅ Layout Improvements
+   ├─ Integrated new components into money-transfer index page
+   ├─ Wrapped Transaction, Cash Verification, Audit Result in CollapsibleSection
+   ├─ Moved Owner Approval section up + added Status Banner
+   ├─ Mobile responsive design + sticky action buttons
+   └─ Compact View bugfixes (totalCommission field, balance refresh)
+```
+
+### Week 9 (Mar 23-25): Layout Consistency & Polish
+
+**PRs**: #80, #81, #82, #83, #84, #85
+
+```
+✅ Approved State Layout (PR #80)
+   └─ All roles (Manager, Auditor, Owner) see consistent layout when approved
+
+✅ Non-Approved States Consistency (PR #82, #83)
+   ├─ Task 1: Status banners for step1_in_progress & step1_completed
+   │  ├─ Auditor/Owner see blue "waiting" banner during step1
+   │  └─ showStatusBanner + statusBannerContent computed fixed
+   ├─ Task 2: Cash Count visibility + txnSectionBadge
+   │  ├─ Owner can now see Cash Count results at step2_completed
+   │  └─ txnSectionBadge shows "กำลังบันทึก" instead of false "สำเร็จ"
+   └─ All 4 issues from PLAN_CONSISTENT_LAYOUT_NON_APPROVED resolved
+
+✅ Verification & merge to main (PR #84, #85)
 ```
 
 ---
 
-## 🏗️ Week 3: Repository Pattern Architecture (COMPLETE)
-
-## ✅ Completed (Week 1-2)
-
-**Week 1:**
-```
-[x] Project Setup (Nuxt 3, TypeScript, Tailwind)
-[x] Firebase Integration (Auth, Firestore, Storage)
-[x] Authentication System (Login/Logout/Auth state)
-[x] User Management (Full CRUD)
-[x] Dashboard Page (Protected route)
-[x] Login Page (Thai UI, validation)
-[x] Admin Panel (User management)
-[x] Route Protection (Middleware)
-[x] Test Users (3 users created)
-[x] Testing (All flows verified)
-[x] Documentation (Comprehensive)
-[x] Edit Form Population (User data display)
-```
-
-**Week 2:**
-```
-[x] Sidebar Navigation Component
-[x] Mobile Menu Toggle
-[x] Role-Based Menu Items (Owner, Manager, Auditor)
-[x] Breadcrumb Navigation Component
-[x] Logger Composable (Structured logging)
-[x] Thai Language Labels (24+ translations)
-[x] Route Structure Refactoring (/user/settings → /user/account-settings)
-[x] Responsive Layout (Mobile 375px, Tablet 768px, Desktop 1920px)
-[x] TypeScript Strict Mode (All errors resolved)
-[x] Type-check (✅ PASS)
-[x] Linting (✅ PASS)
-[x] Testing (3 viewports verified)
-[x] Documentation (BREADCRUMB_TESTING.md, WEEK_02.md)
-```
-
----
-
-## ⏳ In Progress / Queued
-
-```
-Week 3: Daily Sales Feature (Architecture Phase Complete ✅)
-[x] Repository Pattern (JSON/Firestore abstraction)
-[x] Type definitions (DailySalesEntry interface)
-[x] Documentation (Complete)
-[x] Lint/TypeScript checks (All passing)
-[ ] Daily Sales Store (stores/sales.ts)
-[ ] Daily Sales Components (Form, Table, Modal)
-[ ] API Endpoints (/api/daily-sales/*)
-[ ] Integration Testing
-```
-
----
-
-## ⏳ Queued for Week 4
-
-```
-### Week 4: Expenses & Audit (Starting Feb 5)
-[ ] Daily Expenses form
-[ ] Expense record model
-[ ] Expense repository (JSON + Firestore)
-[ ] Expense store (Pinia)
-[ ] Audit system
-[ ] Audit check page
-[ ] System logs
-
-### Week 5-6: Dashboard & Reports
-[ ] Analytics dashboard
-[ ] Reports page
-[ ] Cash flow reports
-[ ] Charts & graphs
-[ ] Export functionality
-
-### Phase 2: Google Sheets
-[ ] Google Sheets API integration
-[ ] Export to Sheets
-[ ] Looker Studio connection
-
-### Phase 3: Monthly/Yearly
-[ ] Monthly expenses form
-[ ] Yearly expenses form
-[ ] Monthly reports
-[ ] Profit/loss calculation
-
-### Phase 4: HR
-[ ] Schedule/shift management
-[ ] Leave management
-[ ] Overtime calculation
-[ ] Fingerprint scanner integration
-```
-
----
-
-## 📊 Key Metrics
-
-| Metric | Current | Target | Status |
-|--------|---------|--------|--------|
-| **Timeline** | Week 3/6 Complete | On schedule | ✅ |
-| **Phase 1 Progress** | 85% | 100% | On Track |
-| **Architecture Complete** | 100% | 100% | ✅ |
-| **Lines of Code** | ~7,200+ | - | ✅ |
-| **Files Created** | 35+ | - | ✅ |
-| **Components** | 13 (added 3 for sales) | - | ✅ |
-| **Repositories** | 3 (interface + 2 impl) + Store | - | ✅ |
-| **API Endpoints** | 9 (5 base + 4 sales CRUD) | - | ✅ |
-| **Test Users** | 3 | - | ✅ |
-| **Critical Errors** | 0 | 0 | ✅ |
-| **Test Coverage** | 100% | 100% | ✅ |
-| **Code Quality** | High | High | ✅ |
-
----
-
-## 🏗️ Architecture Status
+## Architecture Status
 
 ```
 Frontend ✅
-  ├─ Nuxt 3 with Vue 3: READY
-  ├─ TypeScript: CONFIGURED
-  ├─ Tailwind CSS: READY
-  ├─ Pinia store: READY
-  └─ Components structure: READY
+  ├─ Nuxt 3 + Vue 3 Composition API (<script setup lang="ts">)
+  ├─ TypeScript (strict, @ts-nocheck only on money-transfer store)
+  ├─ Tailwind CSS (BigT Red #EF3340)
+  ├─ Pinia stores (sales, money-transfer, auth)
+  ├─ Design System: 18+ reusable UI components (auto-imported)
+  └─ Composables: useLogger, usePermissions
 
 Backend ✅
-  ├─ Nuxt Server API: READY
-  ├─ Firebase Admin SDK: READY
-  ├─ API routes (5): READY
-  ├─ Error handling: READY
-  └─ Validation: READY
+  ├─ Nuxt Server API
+  ├─ Firebase Admin SDK
+  ├─ Repository Pattern (JSON + Firestore abstraction)
+  └─ Zod validation
 
-Database ✅
-  ├─ Firestore: CONNECTED
-  ├─ Collections (users): CREATED
-  ├─ Security rules: BASIC
-  ├─ Schema: DEFINED
-  └─ Indexes: READY
+Auth & RBAC ✅
+  ├─ Firebase Auth (email/password)
+  ├─ 3 roles: Owner, Manager/AM, Auditor
+  ├─ Permission-gated ActionButton component
+  ├─ middleware/auth on all finance pages
+  └─ PERMISSIONS.EDIT_FINANCE / VIEW_FINANCE
 
-Authentication ✅
-  ├─ Firebase Auth: WORKING
-  ├─ Email/Password: READY
-  ├─ Session: PERSISTENT
-  ├─ RBAC: FOUNDATION
-  └─ Middleware: IMPLEMENTED
-
-UI/UX ✅
-  ├─ Brand colors: APPLIED
-  ├─ Responsive: IMPLEMENTED
-  ├─ Thai language: WORKING
-  ├─ Forms: READY
-  └─ Layout: BASIC
+Money Transfer Workflow ✅
+  ├─ step1_in_progress → Manager records transactions
+  ├─ step1_completed → Manager verifies cash count (Step 2)
+  ├─ step2_completed → Auditor reviews (checklist + findings)
+  ├─ audited → Owner approves/rejects
+  ├─ approved → All roles see consistent read-only layout
+  └─ needs_correction → (planned, not yet implemented)
 ```
 
 ---
 
-## 🚨 Blockers / Issues
-
-**Current**: None  
-**Status**: 🟢 Clear
-
----
-
-## 🎯 Upcoming Milestones
+## Key Pages & Components
 
 ```
-Week 3 (Jan 29-Feb 4):
-  ✅ Repository Pattern architecture (COMPLETE - Jan 29)
-  ✅ Daily Sales implementation (COMPLETE - Jan 29)
-  ✅ Feature branch created (COMPLETE - Jan 29)
-  └─ ETA: Ahead of schedule!
+Pages (25 total):
+  ├─ finance/money-transfer-service/index.vue  — Main workflow page (~2200 lines)
+  ├─ finance/money-transfer-history.vue        — History & entry point
+  ├─ sales/daily-sales.vue                     — Daily sales CRUD
+  ├─ admin/access-control.vue                  — User permissions
+  ├─ admin/users.vue                           — User management
+  └─ settings/daily-record-settings.vue        — Fee/config settings
 
-Week 4 (Feb 5-11):
-  └─ Expenses + Audit implementation
-  └─ Finance store + repository
-  └─ ETA: Feb 11, 2026
-
-Week 5-6 (Feb 12-Feb 25):
-  └─ Dashboard implementation
-  └─ Reports & cross-store queries
-  └─ ETA: Feb 25, 2026
-
-Phase 1 Launch:
-  └─ Target: Mar 1, 2026 (On schedule!)
-  └─ Testing: Feb 25 - Mar 1
-  └─ Go-live: Mar 5, 2026
+Components (38 total):
+  ├─ money-transfer/ (10)  — Domain-specific components
+  ├─ ui/ (14)              — Design system components
+  ├─ layout/ (4)           — Page layout components
+  └─ shared (10)           — Sidebar, Header, Breadcrumb, etc.
 ```
 
 ---
 
-## 🔄 Continuous Metrics
+## Key Metrics
 
-| Metric | Week 1 | Target | Trend |
-|--------|--------|--------|-------|
-| Bugs Found | 0 | <5/week | ✅ |
-| Code Quality | High | High | ✅ |
-| Test Pass Rate | 100% | >95% | ✅ |
-| Documentation | 100% | >80% | ✅ |
-| Timeline Adherence | On-time | On-time | ✅ |
-
----
-
-## 📝 Notes
-
-### What's Working Well
-- Rapid development pace maintained
-- Zero critical issues
-- Documentation comprehensive
-- Team collaboration excellent
-- Testing thorough
-
-### Observations
-- Firebase integration smoother than expected
-- Authentication system design solid
-- User management flexible and scalable
-- Code quality high from start
-- Ready to scale to Phase 2
-
-### Recommendations
-- Continue current development pace
-- Maintain documentation standards
-- Keep testing thoroughness
-- Plan Phase 2 in parallel
+| Metric | Value | Status |
+|--------|-------|--------|
+| Pages | 25 | ✅ |
+| Components | 38 | ✅ |
+| PRs merged to main | 85 | ✅ |
+| TypeScript errors | 0 | ✅ |
+| Money Transfer workflow | 5/6 statuses | ✅ (needs_correction pending) |
+| Design System components | 18+ | ✅ |
+| Mobile responsive | Yes | ✅ |
 
 ---
 
-## 👥 Team Status
-
-| Role | Status | Notes |
-|------|--------|-------|
-| Claude Code | ✅ | Developing, high productivity |
-| Claude.ai | ✅ | Planning, documenting, tracking |
-| นพ (Owner) | ✅ | Reviewing, approving, directing |
-
-**Collaboration**: Excellent ✅   + UI Refinements) Summary
+## Remaining / Not Started
 
 ```
-✅ CORE IMPLEMENTATION (COMPLETE)
-   ✅ Repository Pattern fully implemented & tested
-   ✅ Type definitions complete (DailySalesEntry interface)
-   ✅ Pinia store with full CRUD actions (stores/sales.ts)
-   ✅ All 4 CRUD API endpoints implemented & tested
-      ├─ CREATE (POST) ✅ - Data saves to JSON
-      ├─ READ (GET) ✅ - Entries display with formatting
-      ├─ UPDATE (PUT) ✅ - Changes persist to file
-      └─ DELETE (DELETE) ✅ - Entries removed from JSON
-   ✅ Vue components fully integrated (Table, Modal, Page)
-   ✅ Form validation with Thai error messages
-   ✅ TypeScript: 0 errors in production code
-   ✅ Feature branch merged to develop
+❌ Dashboard & Reports (original Week 5-6 plan)
+   ├─ Analytics dashboard
+   ├─ Reports page / cash flow reports
+   ├─ Charts & graphs
+   └─ Export functionality
 
-✅ UI/UX REFINEMENTS (IN PROGRESS)
-   ✅ Search functionality refactored
-      ├─ Split into separate fields (cashier name + date)
-      ├─ Removed ID search field (UX improvement - users don't remember IDs)
-      ├─ Added reset button with handleReset() function
-      └─ Positioned inline with search inputs (3-column grid layout)
-   ✅ Date input styling improvements
-      ├─ Dynamic color based on selection state
-      ├─ Gray (text-gray-500) when empty (placeholder)
-      ├─ Black (text-gray-900) when date selected
-      └─ Provides visual feedback for input state
-   ✅ Button styling
-      ├─ Reset button: Blue color (blue-500/blue-600)
-      ├─ Hover state: blue-600 with white text
-      ├─ Compact sizing: px-4 py-2 padding
-      └─ Matches form element styling
+❌ needs_correction workflow status
+   └─ Planned as separate PR (UX considerations)
 
-✅ TESTING & QUA1  
-**Status**: CURRENT  
-**Last Updated**: Jan 29, 2026, 4:35 AM (Week 3 Complete + UI Refinements)  
-**Next Update**: Feb 5, 2026 (Week 4 Implementation Start
-   ✅ Cashier auto-fill on selection
-   ✅ Repository.update() returns updated entry
-   ✅ Integration tests: 50+ test cases
-   ✅ Documentation: 1300+ lines
-   ✅ npm run lint: 0 errors
+❌ Dead code cleanup
+   └─ ~200 lines v-if="false" in index.vue (deferred)
 
-📊 CURRENT STATUS
-   ✅ Feature branch 1: Merged to develop
-   🔄 Feature branch 2: feature/search-date-input-styling (Ready for PR)
-   ✅ All core CRUD functionality working
-   ✅ UI fully polished and refined
-
-🏗️ Status: COMPLETE & PRODUCTION-READY
-🚀 Momentum: ACCELERATING
-💪 Team: EXECUTING EXCELLENTLY
-📦 Week 3 Implementation: 100% DELIVERED
-📱 UI/UX Refinements: 100% COMPLETED (ADDITIONAL WORK)remote
-✅ Ready for code review and merge
-
-🏗️ Status: COMPLETE & PRODUCTION-READY
-🚀 Momentum: ACCELERATING
-💪 Team: EXECUTING EXCELLENTLY
-📦 Week 3 Implementation: 100% DELIVERED
-🏗️ Timeline: AHEAD OF SCHEDULE
+Phase 2: Google Sheets integration
+Phase 3: Monthly/Yearly expenses
+Phase 4: HR (schedule, leave, overtime)
 ```
 
 ---
 
-**Created by**: Claude Code + Claude.ai  
-**Version**: 2.0  
-**Status**: CURRENT  
-**Last Updated**: Jan 29, 2026 (End of Week 3 Architecture Phase)  
-**Next Update**: Feb 5, 2026 (Mid Week 4 Implementation)
+## Test Data Reference
+
+| Date | Status | Transactions |
+|------|--------|-------------|
+| 2026-03-09 | `step1_in_progress` | 0 txns |
+| 2026-03-08 | `step1_completed` | 5 txns |
+| 2026-03-04 | `step2_completed` | 2 txns |
+| 2026-02-27 | `approved` | 6 txns (full workflow) |
+| — | `audited` | No test data |
+| — | `needs_correction` | No test data |
