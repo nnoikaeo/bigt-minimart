@@ -164,6 +164,7 @@ const workflowStatus = computed(() => store.getCurrentWorkflowStatus)
 /** Transaction table collapsed by default for Owner (always) and Auditor (when step2 complete — they have their own txn list in audit form) */
 const shouldCollapseTxnTable = computed(() => isOwner.value || (isAuditor.value && store.isStep2Complete))
 const isStep1InProgress = computed(() => workflowStatus.value === 'step1_in_progress')
+const isNeedsCorrection = computed(() => workflowStatus.value === 'needs_correction')
 
 /** Quick Actions: เฉพาะ Manager/AM ขณะ step1_in_progress */
 const showQuickActions = computed(() => isManagerOrAsst.value && isStep1InProgress.value)
@@ -432,16 +433,27 @@ const cashVerificationSummary = computed(() => {
 })
 
 const auditResultSummary = computed(() => {
-  const issues = store.currentSummary?.auditorVerification?.transactionsWithIssues ?? 0
-  return issues > 0 ? `${issues} รายการมีปัญหา` : 'ไม่พบปัญหา · ยอดตรงกัน'
+  const audit = store.currentSummary?.auditorVerification
+  const issues = audit?.transactionsWithIssues ?? 0
+  const expected = store.currentSummary?.step2?.expectedCash?.total ?? 0
+  const auditorTotal = audit?.auditorCash?.total ?? expected
+  const hasCashDiff = auditorTotal !== expected
+
+  const parts: string[] = []
+  parts.push(issues > 0 ? `${issues} รายการมีปัญหา` : 'ไม่พบปัญหา')
+  parts.push(hasCashDiff ? `ยอดไม่ตรงกัน` : 'ยอดตรงกัน')
+  return parts.join(' · ')
 })
 
 // ─── Status Banner Computed ──────────────────────────────────────────────────
 const showStatusBanner = computed(() => {
   if (isApproved.value) return false
+  // Auditor sees correction banner inside the audit form, not a top-level banner
+  if (isAuditor.value && isNeedsCorrection.value) return false
   if (isManagerOrAsst.value && !isStep1InProgress.value && !canEditCashCount.value) return true
   if (isAuditor.value && (store.isAudited || !store.isStep2Complete)) return true
   if (isOwner.value && !store.isAudited) return true
+  if (isNeedsCorrection.value) return true
   return false
 })
 
@@ -471,6 +483,14 @@ const statusBannerContent = computed(() => {
     classes: 'border-yellow-200 bg-yellow-50 text-yellow-800',
     icon: ClockIcon,
   }
+  if (ws === 'needs_correction') return {
+    title: '🔄 รอแก้ไข',
+    description: isAuditor.value
+      ? 'Owner ส่งคืนให้ตรวจสอบใหม่ — กรุณาตรวจสอบและส่งผลอีกครั้ง'
+      : 'Owner ส่งคืนให้ Auditor ตรวจสอบใหม่ — รอ Auditor ดำเนินการ',
+    classes: 'border-red-200 bg-red-50 text-red-800',
+    icon: XCircleIcon,
+  }
   if (ws === 'approved') return {
     title: '✅ อนุมัติแล้ว',
     description: 'อนุมัติโดย Owner',
@@ -482,10 +502,10 @@ const statusBannerContent = computed(() => {
 
 // ─── Sticky Action Bar (mobile) ─────────────────────────────────────────────
 const showStickyAuditorActions = computed(() =>
-  isAuditor.value && store.isStep2Complete && !store.isAudited && !isAuditorActionsVisible.value
+  isAuditor.value && store.isStep2Complete && (!store.isAudited || isNeedsCorrection.value) && !isAuditorActionsVisible.value
 )
 const showStickyOwnerActions = computed(() =>
-  isOwner.value && store.isAudited && !store.isApproved && !isOwnerActionsVisible.value
+  isOwner.value && store.isAudited && !store.isApproved && !isNeedsCorrection.value && !isOwnerActionsVisible.value
 )
 
 function canCompleteDraft(draft: any): boolean {
@@ -963,8 +983,9 @@ async function handleSubmitApproval() {
   try {
     await store.submitOwnerApproval(selectedDate.value, {
       decision: decision.value,
-      ownerNotes: ownerNotes.value,
-      correctionReason: correctionReason.value,
+      ownerNotes: decision.value === 'request_correction'
+        ? (correctionReason.value || 'ขอให้แก้ไข')
+        : ownerNotes.value,
     })
     successMessage.value = decision.value === 'request_correction' ? 'ส่งคืนแก้ไขเรียบร้อย' : 'อนุมัติเรียบร้อยแล้ว ✅'
     showOwnerApproveConfirm.value = false
@@ -982,8 +1003,7 @@ async function handleRequestCorrection() {
   try {
     await store.submitOwnerApproval(selectedDate.value, {
       decision: 'request_correction',
-      correctionReason: correctionReason.value || 'ขอให้แก้ไข',
-      ownerNotes: ownerNotes.value,
+      ownerNotes: correctionReason.value || 'ขอให้แก้ไข',
     })
     successMessage.value = 'ส่งคืนแก้ไขเรียบร้อย'
     showOwnerRejectConfirm.value = false
@@ -1031,6 +1051,27 @@ watch([auditorActionsRef, ownerActionsRef], ([auditorEl, ownerEl], [oldAuditorEl
   if (auditorEl) stickyObserver?.observe(auditorEl)
   if (ownerEl) stickyObserver?.observe(ownerEl)
 })
+
+// Pre-fill owner decision when returning to a needs_correction summary
+watch(() => store.currentSummary, (summary) => {
+  if (summary?.workflowStatus === 'needs_correction' && summary.ownerApproval) {
+    decision.value = 'request_correction'
+    correctionReason.value = summary.ownerApproval.ownerNotes || ''
+  }
+  // Pre-fill auditor form when returning to a needs_correction summary
+  if (summary?.workflowStatus === 'needs_correction' && summary.auditorVerification) {
+    const audit = summary.auditorVerification
+    if (audit.auditorCash) {
+      auditorCashTransferWithdrawal.value = audit.auditorCash.transferWithdrawal ?? null
+      auditorCashServiceFee.value = audit.auditorCash.serviceFee ?? null
+    }
+    bankStatementAmount.value = audit.bankStatementAmount ?? 0
+    issueDetails.value = audit.auditNotes || ''
+    if (audit.txnIssueStatus) {
+      txnIssueStatus.value = { ...audit.txnIssueStatus }
+    }
+  }
+}, { immediate: true })
 
 onBeforeUnmount(() => {
   stickyObserver?.disconnect()
@@ -1433,31 +1474,40 @@ onBeforeUnmount(() => {
         <div class="p-4 space-y-3">
           <div class="grid grid-cols-3 gap-2">
             <label
-              class="flex flex-col gap-1 p-3 rounded-lg border cursor-pointer transition-colors"
-              :class="decision === 'approve' ? 'border-green-400 bg-green-50' : 'border-gray-200 hover:border-gray-300'"
+              class="flex flex-col gap-1 p-3 rounded-lg border transition-colors"
+              :class="[
+                decision === 'approve' ? 'border-green-400 bg-green-50' : 'border-gray-200 hover:border-gray-300',
+                isNeedsCorrection ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+              ]"
             >
               <div class="flex items-center gap-2">
-                <input v-model="decision" type="radio" value="approve" class="accent-green-600 shrink-0" />
+                <input v-model="decision" type="radio" value="approve" class="accent-green-600 shrink-0" :disabled="isNeedsCorrection" />
                 <p class="font-medium text-sm text-gray-900">อนุมัติ ✅</p>
               </div>
               <p class="text-xs text-gray-500 pl-5">บันทึกเป็นที่สิ้นสุด</p>
             </label>
             <label
-              class="flex flex-col gap-1 p-3 rounded-lg border cursor-pointer transition-colors"
-              :class="decision === 'approve_with_notes' ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:border-gray-300'"
+              class="flex flex-col gap-1 p-3 rounded-lg border transition-colors"
+              :class="[
+                decision === 'approve_with_notes' ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:border-gray-300',
+                isNeedsCorrection ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+              ]"
             >
               <div class="flex items-center gap-2">
-                <input v-model="decision" type="radio" value="approve_with_notes" class="accent-blue-600 shrink-0" />
+                <input v-model="decision" type="radio" value="approve_with_notes" class="accent-blue-600 shrink-0" :disabled="isNeedsCorrection" />
                 <p class="font-medium text-sm text-gray-900">อนุมัติพร้อมหมายเหตุ</p>
               </div>
               <p class="text-xs text-gray-500 pl-5">มีข้อสังเกตเพิ่มเติม</p>
             </label>
             <label
-              class="flex flex-col gap-1 p-3 rounded-lg border cursor-pointer transition-colors"
-              :class="decision === 'request_correction' ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-gray-300'"
+              class="flex flex-col gap-1 p-3 rounded-lg border transition-colors"
+              :class="[
+                decision === 'request_correction' ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-gray-300',
+                isNeedsCorrection ? 'cursor-not-allowed' : 'cursor-pointer',
+              ]"
             >
               <div class="flex items-center gap-2">
-                <input v-model="decision" type="radio" value="request_correction" class="accent-red-600 shrink-0" />
+                <input v-model="decision" type="radio" value="request_correction" class="accent-red-600 shrink-0" :disabled="isNeedsCorrection" />
                 <p class="font-medium text-sm text-gray-900">ขอให้แก้ไข</p>
               </div>
               <p class="text-xs text-gray-500 pl-5">ส่งคืน Auditor/Manager</p>
@@ -1467,13 +1517,13 @@ onBeforeUnmount(() => {
             <BaseTextarea v-model="ownerNotes" placeholder="ระบุหมายเหตุหรือข้อสังเกต..." :rows="2" />
           </div>
           <div v-if="decision === 'request_correction'">
-            <BaseTextarea v-model="correctionReason" placeholder="ระบุสิ่งที่ต้องแก้ไข..." :rows="2" />
+            <BaseTextarea v-model="correctionReason" placeholder="ระบุสิ่งที่ต้องแก้ไข..." :rows="2" :disabled="isNeedsCorrection" />
           </div>
         </div>
       </section>
 
-      <!-- Owner Action Buttons -->
-      <div v-if="!store.isApproved" ref="ownerActionsRef" class="flex flex-col sm:flex-row items-center justify-between gap-3 py-4">
+      <!-- Owner Action Buttons (hidden when already sent for correction) -->
+      <div v-if="!store.isApproved && !isNeedsCorrection" ref="ownerActionsRef" class="flex flex-col sm:flex-row items-center justify-between gap-3 py-4">
         <BaseButton variant="danger" :disabled="isSubmittingAction" @click="showOwnerRejectConfirm = true">
           <XCircleIcon class="w-4 h-4" />
           ส่งคืนแก้ไข
@@ -2067,8 +2117,9 @@ onBeforeUnmount(() => {
     </section>
 
     <!-- CASE B: Read-only → CollapsibleSection (collapsed) -->
+    <!-- Hidden for Owner when audited (Auditor result section is a superset) -->
     <CollapsibleSection
-      v-if="showCashCountSection && store.isStep2Complete && !canEditCashCount && !isAuditor && !isApproved"
+      v-if="showCashCountSection && store.isStep2Complete && !canEditCashCount && !isAuditor && !isApproved && !(isOwner && store.isAudited)"
       icon="💵"
       title="ผลการตรวจนับเงินสด"
       :badge="{ label: '✅ เสร็จสมบูรณ์', variant: 'success' }"
@@ -2088,12 +2139,24 @@ onBeforeUnmount(() => {
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <!-- Section 6B: Auditor Review — Active Form                          -->
-    <!-- Visible: Auditor role + step2 complete + NOT yet audited          -->
+    <!-- Visible: Auditor + (step2 complete & NOT audited) OR needs_correction -->
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <section v-if="isAuditor && store.isStep2Complete && !store.isAudited" class="mt-6">
+    <section v-if="isAuditor && ((store.isStep2Complete && !store.isAudited) || isNeedsCorrection)" class="mt-6">
+      <!-- Owner correction reason banner -->
+      <div v-if="isNeedsCorrection && store.currentSummary?.ownerApproval?.ownerNotes" class="mb-4 p-4 rounded-xl border border-red-200 bg-red-50">
+        <div class="flex items-start gap-3">
+          <ExclamationTriangleIcon class="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+          <div>
+            <p class="font-semibold text-red-800 text-sm">Owner ขอให้แก้ไข</p>
+            <p class="text-sm text-red-700 mt-1">{{ store.currentSummary.ownerApproval.ownerNotes }}</p>
+          </div>
+        </div>
+      </div>
+
       <div class="flex items-center gap-3 mb-4">
         <h2 class="text-base font-semibold text-gray-700">🔍 ตรวจสอบบริการโอนเงิน</h2>
-        <BaseBadge variant="warning" size="sm">⏳ รอตรวจสอบ</BaseBadge>
+        <BaseBadge v-if="isNeedsCorrection" variant="error" size="sm">🔄 ตรวจสอบใหม่</BaseBadge>
+        <BaseBadge v-else variant="warning" size="sm">⏳ รอตรวจสอบ</BaseBadge>
       </div>
 
       <!-- Balance Snapshot + Bank Statement input -->
@@ -2263,22 +2326,23 @@ onBeforeUnmount(() => {
         ⚠️ พบ {{ txnsWithIssues }} รายการมีปัญหาในรายการธุรกรรม
       </div>
       <div ref="auditorActionsRef" class="flex flex-col sm:flex-row items-center justify-between gap-4 py-4">
-        <BaseButton variant="danger" @click="showAuditRejectConfirm = true">
+        <BaseButton variant="danger" :disabled="isNeedsCorrection" @click="showAuditRejectConfirm = true">
           <XCircleIcon class="w-4 h-4" />
           ส่งคืนแก้ไข
         </BaseButton>
         <BaseButton variant="success" :disabled="!canSubmitAudit" @click="showAuditApproveConfirm = true">
           <CheckCircleIcon class="w-4 h-4" />
-          ยืนยันการตรวจสอบ
+          {{ isNeedsCorrection ? 'ส่งตรวจสอบใหม่' : 'ยืนยันการตรวจสอบ' }}
         </BaseButton>
       </div>
     </section>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <!-- Section 6B: Audit Result — Read-only (ALL roles when audited)     -->
+    <!-- Hidden for Auditor when needs_correction (they see active form)   -->
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <CollapsibleSection
-      v-if="store.isAudited"
+      v-if="store.isAudited && !(isAuditor && isNeedsCorrection)"
       icon="🔍"
       title="ผลตรวจสอบ Auditor"
       :badge="{ label: '✅ ตรวจสอบแล้ว', variant: 'success' }"
@@ -2383,13 +2447,13 @@ onBeforeUnmount(() => {
         v-if="showStickyAuditorActions"
         class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg px-4 py-3 flex items-center justify-between z-50 sm:hidden"
       >
-        <BaseButton variant="danger" size="sm" @click="showAuditRejectConfirm = true">
+        <BaseButton variant="danger" size="sm" :disabled="isNeedsCorrection" @click="showAuditRejectConfirm = true">
           <XCircleIcon class="w-4 h-4" />
           ส่งคืนแก้ไข
         </BaseButton>
         <BaseButton variant="success" size="sm" :disabled="!canSubmitAudit" @click="showAuditApproveConfirm = true">
           <CheckCircleIcon class="w-4 h-4" />
-          ยืนยันการตรวจสอบ
+          {{ isNeedsCorrection ? 'ส่งตรวจสอบใหม่' : 'ยืนยันการตรวจสอบ' }}
         </BaseButton>
       </div>
       <!-- Owner sticky actions -->
@@ -3221,9 +3285,8 @@ onBeforeUnmount(() => {
       :open="showOwnerApproveConfirm"
       :title="decision === 'request_correction' ? 'ยืนยันส่งคืนแก้ไข?' : 'ยืนยันการอนุมัติ?'"
       :message="decision === 'request_correction' ? 'ต้องการส่งคืนให้ Auditor/Manager แก้ไขใช่หรือไม่?' : 'ต้องการอนุมัติรายการประจำวันนี้ใช่หรือไม่? การดำเนินการนี้ไม่สามารถยกเลิกได้'"
-      :confirm-label="decision === 'request_correction' ? 'ส่งคืนแก้ไข' : 'ยืนยันอนุมัติ'"
-      :confirm-variant="decision === 'request_correction' ? 'danger' : 'primary'"
-      :loading="isSubmittingAction"
+      :confirm-text="decision === 'request_correction' ? 'ส่งคืนแก้ไข' : 'ยืนยันอนุมัติ'"
+      :variant="decision === 'request_correction' ? 'danger' : 'warning'"
       @confirm="handleSubmitApproval"
       @cancel="showOwnerApproveConfirm = false"
     />
@@ -3233,9 +3296,8 @@ onBeforeUnmount(() => {
       :open="showOwnerRejectConfirm"
       title="ยืนยันส่งคืนแก้ไข?"
       message="ต้องการส่งคืนให้ Auditor/Manager แก้ไขใช่หรือไม่?"
-      confirm-label="ส่งคืน"
-      confirm-variant="danger"
-      :loading="isSubmittingAction"
+      confirm-text="ส่งคืน"
+      variant="danger"
       @confirm="handleRequestCorrection"
       @cancel="showOwnerRejectConfirm = false"
     />

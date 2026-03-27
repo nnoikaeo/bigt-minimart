@@ -30,18 +30,16 @@ const stepStates = computed<Record<(typeof steps)[number]['key'], StepState>>(()
     step1:
       s === 'step1_in_progress'
         ? 'active'
-        : s === 'needs_correction'
-          ? 'error'
-          : 'completed',
+        : 'completed',
     step2:
-      s === 'step1_in_progress' || s === 'needs_correction'
+      s === 'step1_in_progress'
         ? 'pending'
         : s === 'step1_completed'
           ? 'active'
           : 'completed',
-    auditor: (['step1_in_progress', 'step1_completed', 'needs_correction'] as string[]).includes(s)
+    auditor: (['step1_in_progress', 'step1_completed'] as string[]).includes(s)
       ? 'pending'
-      : s === 'step2_completed'
+      : s === 'step2_completed' || s === 'needs_correction'
         ? 'active'
         : 'completed',
     owner:
