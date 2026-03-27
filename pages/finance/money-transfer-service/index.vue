@@ -2155,7 +2155,7 @@ onBeforeUnmount(() => {
 
       <div class="flex items-center gap-3 mb-4">
         <h2 class="text-base font-semibold text-gray-700">🔍 ตรวจสอบบริการโอนเงิน</h2>
-        <BaseBadge v-if="isNeedsCorrection" variant="danger" size="sm">🔄 ตรวจสอบใหม่</BaseBadge>
+        <BaseBadge v-if="isNeedsCorrection" variant="error" size="sm">🔄 ตรวจสอบใหม่</BaseBadge>
         <BaseBadge v-else variant="warning" size="sm">⏳ รอตรวจสอบ</BaseBadge>
       </div>
 

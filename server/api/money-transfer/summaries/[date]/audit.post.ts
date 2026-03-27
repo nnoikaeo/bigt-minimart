@@ -38,7 +38,7 @@ const auditSchema = z.object({
   auditResult: z.enum(['no_issues', 'minor_issues', 'major_issues', 'rejected']),
   auditNotes: z.string().optional().default(''),
   issuesFound: z.string().optional(),
-  txnIssueStatus: z.record(z.literal(true)).optional(),
+  txnIssueStatus: z.record(z.string(), z.literal(true)).optional(),
   completedBy: z.string().optional(),
   completedByName: z.string().optional(),
 })
