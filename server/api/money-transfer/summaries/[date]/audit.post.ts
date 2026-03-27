@@ -38,6 +38,7 @@ const auditSchema = z.object({
   auditResult: z.enum(['no_issues', 'minor_issues', 'major_issues', 'rejected']),
   auditNotes: z.string().optional().default(''),
   issuesFound: z.string().optional(),
+  txnIssueStatus: z.record(z.string(), z.literal(true)).optional(),
   completedBy: z.string().optional(),
   completedByName: z.string().optional(),
 })
@@ -98,9 +99,10 @@ export default defineEventHandler(async (event) => {
     )
 
     const isRejected = validated.auditResult === 'rejected'
+    const isResubmission = summary.workflowStatus === 'needs_correction'
 
-    // Update summary with auditor verification data
-    const updatedSummary = await moneyTransferJsonRepository.updateDailySummary(date, {
+    // Build update payload
+    const updatePayload: Record<string, any> = {
       auditorVerification: {
         status: 'completed',
         completedAt: new Date().toISOString(),
@@ -115,9 +117,18 @@ export default defineEventHandler(async (event) => {
         auditNotes: validated.auditNotes,
         issuesFound: validated.issuesFound ? [validated.issuesFound] : undefined,
         auditResult: (isRejected ? 'major_issues' : validated.auditResult) as 'no_issues' | 'minor_issues' | 'major_issues',
+        txnIssueStatus: validated.txnIssueStatus,
       },
       workflowStatus: isRejected ? 'needs_correction' : 'audited',
-    })
+    }
+
+    // Clear previous owner approval when auditor re-submits after correction
+    if (isResubmission) {
+      updatePayload.ownerApproval = null
+    }
+
+    // Update summary with auditor verification data
+    const updatedSummary = await moneyTransferJsonRepository.updateDailySummary(date, updatePayload)
 
     console.log(`[POST /api/money-transfer/summaries/[date]/audit] Completed audit for ${date}`)
 

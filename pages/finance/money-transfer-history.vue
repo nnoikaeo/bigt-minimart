@@ -31,11 +31,11 @@ const isOwner = computed(() => hasAnyRole([ROLES.OWNER]))
 /** Pending Inbox counts by role */
 const pendingForManager = computed(() =>
   store.summaries.filter(
-    (s: any) => s.workflowStatus === 'step1_in_progress' || s.workflowStatus === 'needs_correction'
+    (s: any) => s.workflowStatus === 'step1_in_progress'
   ).length
 )
 const pendingForAuditor = computed(() =>
-  store.summaries.filter((s: any) => s.workflowStatus === 'step2_completed').length
+  store.summaries.filter((s: any) => s.workflowStatus === 'step2_completed' || s.workflowStatus === 'needs_correction').length
 )
 const pendingForOwner = computed(() =>
   store.summaries.filter((s: any) => s.workflowStatus === 'audited').length
@@ -58,12 +58,12 @@ function getActionButton(summary: any): { label: string; route: string; variant:
 
   if (role === ROLES.MANAGER || role === ROLES.ASSISTANT_MANAGER) {
     if (status === 'step1_in_progress') return { label: 'ทำงาน', route: `/finance/money-transfer-service?date=${date}`, variant: 'primary' }
-    if (status === 'needs_correction') return { label: 'แก้ไข', route: `/finance/money-transfer-service?date=${date}`, variant: 'danger' }
     return { label: 'ดูรายละเอียด', route: `/finance/money-transfer-service?date=${date}`, variant: 'secondary' }
   }
 
   if (role === ROLES.AUDITOR) {
     if (status === 'step2_completed') return { label: 'ตรวจสอบ', route: `/finance/money-transfer-service?date=${date}`, variant: 'primary' }
+    if (status === 'needs_correction') return { label: 'ตรวจสอบใหม่', route: `/finance/money-transfer-service?date=${date}`, variant: 'danger' }
     if (status === 'audited') return { label: 'ดูการตรวจสอบ', route: `/finance/money-transfer-service?date=${date}`, variant: 'secondary' }
     return { label: 'ดูรายละเอียด', route: `/finance/money-transfer-service?date=${date}`, variant: 'secondary' }
   }
