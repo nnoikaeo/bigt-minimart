@@ -130,7 +130,7 @@
 
       <!-- ค่าบริการ (ซ่อนถ้าฝากเงิน) -->
       <div v-if="formData.transactionType !== 'owner_deposit'">
-        <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+        <label class="flex text-sm font-medium text-gray-700 mb-1 items-center gap-1">
           ค่าบริการ (บาท)
           <button
             type="button"
