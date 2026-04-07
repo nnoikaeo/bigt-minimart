@@ -1025,60 +1025,189 @@ auditedBy: auditor-001
 
 # 💰 FLOW 3: Daily Bill Payment Service Income (นับและตรวจสอบเงินจากบริการรับชำระบิล)
 
-## Workflow 3.1: นับเงินจากบริการรับชำระบิล (Manager - Count Bill Payment Service Income)
+## 🗂️ Workflow Structure Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ WORKFLOW 3.0: Bill Payment History Page (Entry Point)          │
+│   ├─ ทุก Role เข้ามาที่หน้านี้ก่อนเสมอ                          │
+│   ├─ Pending Inbox: แต่ละ Role เห็น pending count ของตน        │
+│   └─ Smart Navigation: ปุ่ม Action นำไปยัง WF step ที่ถูกต้อง │
+├─────────────────────────────────────────────────────────────────┤
+│ WORKFLOW 3.1: Manager/Assistant Manager บันทึก & ตรวจสอบ      │
+│                                                                 │
+│ Step 1: Record Bill Payment Transactions                       │
+│   ├─ Manager/AM บันทึกรายการรับชำระบิล throughout the day      │
+│   ├─ System auto-calculates all 3 balance accounts             │
+│   └─ ไม่ต้องมีการบันทึกเพิ่มเติมแล้ว                             │
+│                                                                 │
+│ Step 2: Verify Recorded Transactions & Count Actual Cash       │
+│   ├─ Manager/AM นับเงินสดจริง ณ วันท้ายวัน                      │
+│   ├─ System แสดง expected amounts จาก Step 1                   │
+│   ├─ Manager/AM verify match or note discrepancies             │
+│   └─ ยืนยันข้อมูล (ไม่ใช่บันทึกใหม่)                           │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│ WORKFLOW 3.2: Auditor ตรวจสอบเงินจากบริการรับชำระบิล           │
+│   └─ มาจาก History Page (คลิก "ตรวจสอบ" บนแถว step2_completed) │
+│   └─ Cross-check กับ bank statement                            │
+│   └─ Verify all transactions & amounts                         │
+│   └─ ส่งกลับ Manager (needs_correction) ได้ ถ้าเจอปัญหา        │
+│                                                                 │
+│ WORKFLOW 3.3: Owner อนุมัติการตรวจสอบ                          │
+│   └─ มาจาก History Page (คลิก "อนุมัติ" บนแถว audited)         │
+│   └─ Final approval ของ Manager & Auditor records              │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Workflow 3.0: หน้าประวัติบริการรับชำระบิล (History Page — Entry Point)
+
+**บริบท**: ทุก Role เข้าสู่ระบบผ่านหน้านี้ก่อนเสมอ ทำหน้าที่เป็น "Pending Inbox" ที่แสดงรายการทุกวันพร้อม Smart Navigation พาแต่ละ Role ไปยัง WF step ที่ถูกต้องโดยอัตโนมัติ
+
+### Process Flow
+```
+[User เข้าเมนู "บริการรับชำระบิล"]
+        ↓
+[Landing: /finance/bill-payment-history]
+        ↓
+เห็น list รายการทุกวัน (เรียงล่าสุดก่อน)
++ Summary Cards: pending count แต่ละ Role
+        ↓
+┌─ Manager/Assistant Manager ─────────────────────────────┐
+│ คลิก [เพิ่มรายการ] → date picker                        │
+│   ↓ เลือกวันที่ (วันนี้หรือย้อนหลัง)                     │
+│   ↓ navigate to /finance/bill-payment-service?date=      │
+│                                                          │
+│ คลิก [ทำงาน] (step1_in_progress) → WF 3.1              │
+│ คลิก [แก้ไข] (needs_correction)  → WF 3.1              │
+│ คลิก [ดูรายละเอียด] (อื่นๆ)      → index.vue read-only  │
+└──────────────────────────────────────────────────────────┘
+        ↓
+┌─ Auditor ───────────────────────────────────────────────┐
+│ คลิก [ตรวจสอบ] (step2_completed) → WF 3.2              │
+│ คลิก [ดูรายละเอียด] (step1_*)    → index.vue read-only  │
+└──────────────────────────────────────────────────────────┘
+        ↓
+┌─ Owner ─────────────────────────────────────────────────┐
+│ คลิก [อนุมัติ] (audited)         → WF 3.3              │
+│ คลิก [ดูรายละเอียด] (step1_*/step2_*) → index.vue read-only│
+└──────────────────────────────────────────────────────────┘
+```
+
+### Details
+- **Role**: ทุก Role — owner, manager, assistant_manager, auditor
+- **Page**: `/finance/bill-payment-history`
+- **Sidebar route**: เมนู "บริการรับชำระบิล" ชี้มาที่หน้านี้
+- **Pending Inbox (Summary Cards)**:
+  - Manager/AM: นับ `step1_in_progress` + `needs_correction`
+  - Auditor: นับ `step2_completed`
+  - Owner: นับ `audited`
+- **Smart Action Button** — label + destination เปลี่ยนตาม Role × workflowStatus:
+
+  | Role | workflowStatus | ปุ่ม | ปลายทาง |
+  |------|----------------|------|---------|
+  | manager/AM | step1_in_progress | "ทำงาน" | `bill-payment-service?date=` |
+  | manager/AM | needs_correction | "แก้ไข" | `bill-payment-service?date=` |
+  | manager/AM | step2_completed/audited/approved | "ดูรายละเอียด" | `bill-payment-service?date=` |
+  | auditor | step2_completed | "ตรวจสอบ" | `auditor-review?date=` |
+  | auditor | audited | "ดูการตรวจสอบ" | `auditor-review?date=` |
+  | auditor | step1_* | "ดูรายละเอียด" | `bill-payment-service?date=` |
+  | owner | audited | "อนุมัติ" | `owner-approval?date=` |
+  | owner | approved | "ดูรายละเอียด" | `owner-approval?date=` |
+  | owner | step1_*/step2_* | "ดูรายละเอียด" | `bill-payment-service?date=` |
+
+- **ปุ่ม "เพิ่มรายการ"**: กั้นด้วย `EDIT_FINANCE` permission → manager, assistant_manager, owner เห็นเท่านั้น
+- **Backdated Entry**: ปุ่ม "เพิ่มรายการ" ให้เลือกวันที่ได้อิสระ รวมถึงวันในอดีต (กรณีระบบมีปัญหา ให้บันทึกลงกระดาษแล้วนำมาบันทึกระบบภายหลัง)
+- **Back Navigation**: ทุก WF page (3.1, 3.2, 3.3) มีปุ่ม "← ประวัติ" กลับมาที่หน้านี้
+
+---
+
+## Workflow 3.1: บันทึก & ตรวจสอบเงินจากบริการรับชำระบิล (Manager - Record Bill Payment & Verification)
 
 ### Real-World Example
 
-**Scenario**: Manager counts daily bill payment service income and records in app
+**Scenario**: Manager/Assistant Manager records daily bill payment service transactions in app (replacing paper-based records)
 
-**Step 1: Record Transaction Records (บันทึก transaction)**
+**Step 1: Record Bill Payment Transactions (Manager/Assistant Manager บันทึกรายการรับชำระบิล)**
+
+**บริบท**: ก่อนหน้านี้บันทึกลงกระดาษ ตอนนี้จะบันทึกผ่านแอพเพื่อให้ระบบคำนวณ balance อัตโนมัติ
+
 ```
-Recorded in /finance/bill-payment-service:
+Manager/Assistant Manager บันทึกใน /finance/bill-payment-service:
 
 DATE: 2026-01-29
 
-INITIAL BALANCES:
+INITIAL BALANCES (วันเริ่มต้น):
 1) เงินในบัญชี (Bank Account Balance): 3,000 บาท
-2) เงินสดจากบริการรับชำระบิล (Cash from Bill Payment Service): 0 บาท
+2) เงินสดจากบริการรับชำระบิล (Bill Payment Cash): 0 บาท
 3) เงินสดค่าบริการรับชำระบิล (Service Fee Cash): 0 บาท
 
-TRANSACTION RECORDS (รายการชำระบิล):
+═════════════════════════════════════════════════════════════
+Manager/Assistant Manager บันทึกลงแอพ (ระบบคำนวณ Balance อัตโนมัติ)
+═════════════════════════════════════════════════════════════
 
-Transaction 1: Bill Payment - Utility Bill
+MANAGER RECORDED TRANSACTION RECORDS (รายการที่ Manager บันทึก):
+
+Transaction 1: Utility Bill Payment (ค่าน้ำ/ค่าไฟ)
+   📝 Manager บันทึก:
    - Date: 2026-01-29 11:30 AM
-   - Amount: 2,000 บาท (customer pays)
+   - Type: Bill Payment
+   - Bill Type: Utility (สาธารณูปโภค)
+   - Amount: 2,000 บาท (customer pays cash)
    - Commission: 20 บาท (paid in cash)
-   - Result:
-     1) 3,000 - 2,000 = 1,000 บาท (bill out)
-     2) 0 + 2,000 = 2,000 บาท (cash in)
-     3) 0 + 20 = 20 บาท (service fee cash)
 
-Transaction 2: Bill Payment - Telecom Bill (FAILED)
+   🤖 System auto-calculates Balance Changes:
+     1) Bank Account: 3,000 - 2,000 = 1,000 บาท (transfer to biller)
+     2) Bill Payment Cash: 0 + 2,000 = 2,000 บาท (cash in)
+     3) Service Fee Cash: 0 + 20 = 20 บาท
+
+Transaction 2: Telecom Bill Payment (FAILED)
+   📝 Manager บันทึก:
    - Date: 2026-01-29 01:45 PM
+   - Type: Bill Payment
+   - Bill Type: Telecom (ค่าโทรศัพท์)
    - Amount: 1,200 บาท (requested)
    - Status: ❌ FAILED - Insufficient funds in account (1,000 < 1,200)
-   - Result: No change to any balance (transaction rejected)
-     1) 1,000 บาท (no change)
-     2) 2,000 บาท (no change)
-     3) 20 บาท (no change)
+   - Notes: Transaction was rejected
 
-Transaction 3: Owner Deposit (ฝากเงิน)
+   🤖 System auto-calculates Balance Changes:
+     ✗ No balance changes (transaction rejected)
+     1) Bank Account: 1,000 บาท (no change)
+     2) Bill Payment Cash: 2,000 บาท (no change)
+     3) Service Fee Cash: 20 บาท (no change)
+
+Transaction 3: Owner Deposit (เจ้าของร้านฝากเงิน)
+   📝 Manager บันทึก:
    - Date: 2026-01-29 02:15 PM
+   - Type: Owner Deposit
    - Amount: 5,000 บาท (Owner deposits to business account)
    - Commission: 0 บาท (no fee for owner deposit)
-   - Result:
-     1) 1,000 + 5,000 = 6,000 บาท (deposit in)
-     2) 2,000 บาท (no change)
-     3) 20 บาท (no change)
 
-Transaction 4: Bill Payment - Telecom Bill (RETRY - SUCCESS)
+   🤖 System auto-calculates Balance Changes:
+     1) Bank Account: 1,000 + 5,000 = 6,000 บาท (deposit in)
+     2) Bill Payment Cash: 2,000 บาท (no change)
+     3) Service Fee Cash: 20 บาท (no change)
+
+Transaction 4: Telecom Bill Payment (RETRY - SUCCESS)
+   📝 Manager บันทึก:
    - Date: 2026-01-29 02:30 PM
-   - Amount: 1,200 บาท (now succeeds)
+   - Type: Bill Payment
+   - Bill Type: Telecom (ค่าโทรศัพท์)
+   - Amount: 1,200 บาท (retry succeeds)
    - Commission: 20 บาท (paid in cash)
-   - Result:
-     1) 6,000 - 1,200 = 4,800 บาท (bill out)
-     2) 2,000 + 1,200 = 3,200 บาท (cash in)
-     3) 20 + 20 = 40 บาท (service fee cash)
+   - Status: ✅ SUCCESS
+
+   🤖 System auto-calculates Balance Changes:
+     1) Bank Account: 6,000 - 1,200 = 4,800 บาท (transfer to biller)
+     2) Bill Payment Cash: 2,000 + 1,200 = 3,200 บาท (cash in)
+     3) Service Fee Cash: 20 + 20 = 40 บาท
+
+═════════════════════════════════════════════════════════════
+🤖 SYSTEM AUTO-CALCULATED FINAL BALANCES (after all transactions)
+═════════════════════════════════════════════════════════════
 
 FINAL BALANCES SUMMARY:
 1) เงินในบัญชี (Bank Account): 4,800 บาท
@@ -1086,7 +1215,7 @@ FINAL BALANCES SUMMARY:
    - Out: 2,000 + 1,200 = 3,200 บาท (bill payments)
    - Calc: 3,000 + 5,000 - 3,200 = 4,800 บาท ✓
 
-2) เงินสดจากบริการรับชำระบิล (Cash from Bill Payment): 3,200 บาท
+2) เงินสดจากบริการรับชำระบิล (Bill Payment Cash): 3,200 บาท
    - In: 2,000 + 1,200 = 3,200 บาท (bill payments received)
    - Calc: 0 + 3,200 = 3,200 บาท ✓
 
@@ -1100,225 +1229,394 @@ TOTAL SERVICE FEES: 40 บาท (all commissions in cash)
 TOTAL BANK BALANCE: 4,800 บาท
 ```
 
-**Step 2: Count All Cash & Record in App (นับเงินสด)**
+---
+
+### Process Flow - Step 1: Record Bill Payment Transactions
 ```
-Manager counts cash from bill payment service:
-
-A. CASH FROM BILL PAYMENT SECTION (เงินสดจากการชำระบิล):
-   Cash from utility bills: 2,000 บาท
-   - Record in app: ✓ Bill payment amount 2,000 บาท
-   
-   Cash from telecom bills: 800 บาท
-   - Record in app: ✓ Bill payment amount 800 บาท
-
-B. SERVICE FEE SECTION (เงินสดจากค่าบริการรับชำระบิล):
-   Service fees from bill payments: 30 บาท
-   - Record in app: ✓ Service fee 30 บาท
-
-TOTAL CASH COUNTED: 2,000 + 800 + 30 = 2,830 บาท
+[มาจาก History Page (WF 3.0)]
+        ↓
+[คลิก "เพิ่มรายการ" → เลือกวันที่ หรือ คลิก "ทำงาน"/"แก้ไข" บน existing row]
+        ↓
+navigate to /finance/bill-payment-service?date=YYYY-MM-DD
+        ↓
+[ถ้า date เป็นวันในอดีต: แสดง warning banner "⚠️ กำลังบันทึกย้อนหลัง: วันที่ DD/MM/YYYY"]
+        ↓
+[Throughout the day - each bill payment happens]
+        ↓
+Manager/Assistant Manager บันทึกลงแอพ:
+     คลิก "รายการใหม่" หรือ Quick Action บนหน้า
+        ↓
+     Fill in transaction details:
+     - Date & Time of transaction
+     - Type: Bill Payment / Owner Deposit
+     - Bill type: Utility / Telecom / Insurance / Other (เฉพาะ bill_payment)
+     - Amount: เงินที่ลูกค้าจ่าย หรือ owner ฝาก
+     - Commission: ค่าบริการ (เป็นเงินสด)
+     - Customer name (optional, for reference)
+        ↓
+     [Save] → System auto-calculates all balance changes
+        ↓
+     ✅ Transaction recorded
+     ✅ All 3 balances updated automatically:
+        1) Bank Account Balance
+        2) Bill Payment Cash
+        3) Service Fee Cash
+        ↓
+[End of day - proceed to Step 2]
 ```
 
-**Step 3: Record in System**
-```
-/finance/bill-payment-service → New Record:
-- date: 2026-01-29
-- managerId: manager-001
-- managerName: วีระ
-
-ACCOUNT BALANCE TRACKING:
-- initialBankBalance: 5,000 บาท
-- finalBankBalance: 2,200 บาท
-- bankBalanceChange: -2,800 บาท (net outflow for bills)
-
-BILL PAYMENT DATA:
-- totalBillPaymentsOut: 2,000 + 800 = 2,800 บาท
-- billPaymentTypes:
-  * Utility bills: 2,000 บาท
-  * Telecom bills: 800 บาท
-  * Insurance/Other: 0 บาท
-
-CASH ACCOUNTS:
-- billPaymentCash: 2,800 บาท
-  * Bill payments received in cash: 2,000 + 800 = 2,800 บาท
-  
-- serviceFeeCash: 30 บาท
-  * Commission from all cash transactions: 20 + 10 = 30 บาท
-
-TRANSACTION RECORDS:
-- numberOfTransactions: 2
-  * Utility bills: 1
-  * Telecom bills: 1
-- totalCommissionCollected: 30 บาท (all in cash)
-
-SUMMARY:
-- totalCashOnHand: 2,800 + 30 = 2,830 บาท
-- accountBalance: 2,200 บาท
-- totalMoneyManaged: 2,830 + 2,200 = 5,030 บาท
-  (includes all cash and bank balance)
-
-managerNotes: "2 bill payment transactions processed. Bank balance 2,200 บาท. Cash on hand 2,830 บาท."
-status: "submitted" (auto-set)
-submittedAt: 2026-01-29 16:00:00
-submittedBy: manager-001
-
-[Send notification to Auditor]
-Auditor → Verify & Check (Workflow 3.2)
-```
+### Details - Step 1
+- **Role**: ผู้จัดการหรือผู้ช่วยผู้จัดการ (Manager/Assistant Manager)
+- **Entry**: มาจาก History Page (WF 3.0) → คลิก "เพิ่มรายการ" หรือ "ทำงาน"
+- **Page**: `/finance/bill-payment-service?date=YYYY-MM-DD`
+- **Note**: ถ้า date เป็นวันในอดีต → แสดง warning banner (Backdated Entry)
+- **Timing**: Throughout the day, as each transaction occurs
+- **Time Required**: ~2-3 minutes per transaction
+- **Success Criteria**:
+  - ✅ Each transaction recorded immediately
+  - ✅ All details filled correctly
+  - ✅ System calculates balances automatically
+  - ✅ No manual balance calculations needed
+- **Data Recorded Per Transaction**:
+  - transactionType: "bill_payment" or "owner_deposit"
+  - billType: "utility" / "telecom" / "insurance" / "other" (เฉพาะ bill_payment)
+  - amount: เงินที่ลูกค้าจ่ายหรือ owner ฝาก
+  - commission: ค่าบริการ (เงินสดเท่านั้น)
+  - timestamp: เวลาที่บันทึก
+  - recordedBy: Manager/Assistant Manager ID
+- **Auto-calculated by System**:
+  - bankAccountBalance: updated
+  - billPaymentCash: updated
+  - serviceFeeCash: updated
+- **Next Step**: Step 2 (Count actual cash at end of day)
 
 ---
 
-### Process Flow
+**Step 2: Verify Recorded Transactions & Count Actual Cash (ตรวจสอบรายการบันทึก และนับเงินสดจริง)**
+
+**บริบท**: Manager ตรวจสอบว่าการบันทึก Step 1 ตรงกับเงินสดจริงหรือไม่
+
 ```
-[Start] → Go to bill payment transaction log
-        ↓
-     Check bill payment service transactions:
-     - Review all bill payments received
-     - Sum up total from bill payment services
-        ↓
-     Count actual amount:
-     - Amount collected from bill payments: XXX บาท
-     - Cross-check with transaction log
-        ↓
-     Count by transaction type:
-     - Utility bill payments (water, electricity): X บาท
-     - Telecom bill payments: Y บาท
-     - Insurance payments: Z บาท
-     - Other bill types: W บาท
-        ↓
-     [Calculate total]:
-     - Total bill payment service income: (X + Y + Z + W) บาท
-        ↓
-     Add manager notes (if needed):
-     - Any discrepancies?
-     - Any failed transactions?
-        ↓
-     Record in system:
-     - Go to /finance/bill-payment-service
-     - Click "บันทึกใหม่"
-     - Enter date, amounts, notes
-     - Status = "submitted"
-        ↓
-     [Submit] → Data recorded in system
-        ↓
-     Send summary to Auditor
-        ↓
-     [Complete]
+═════════════════════════════════════════════════════════════
+SYSTEM DATA FROM STEP 1 (ระบบสะสมจากการบันทึก)
+═════════════════════════════════════════════════════════════
+
+EXPECTED BALANCES (from Step 1 recorded transactions):
+1) Bank Account Balance: 4,800 บาท
+2) Bill Payment Cash: 3,200 บาท
+3) Service Fee Cash: 40 บาท
+
+TOTAL TRANSACTIONS RECORDED: 4 (3 successful, 1 failed)
+EXPECTED TOTAL CASH ON HAND: 3,200 + 40 = 3,240 บาท
+
+═════════════════════════════════════════════════════════════
+MANAGER VERIFICATION (ผู้จัดการตรวจสอบเงินสดจริง)
+═════════════════════════════════════════════════════════════
+
+A. PHYSICAL CASH COUNT (นับเงินสดจริง):
+
+   Bill Payment Cash Section:
+   📝 Manager counts: 3,200 บาท
+   📊 System expected: 3,200 บาท
+   ✅ MATCH: 0 บาท discrepancy
+
+   Service Fee Cash Section:
+   📝 Manager counts: 40 บาท
+   📊 System expected: 40 บาท
+   ✅ MATCH: 0 บาท discrepancy
+
+   TOTAL CASH COUNTED: 3,200 + 40 = 3,240 บาท
+   TOTAL EXPECTED: 3,240 บาท
+   ✅ MATCH: Cash count accurate
+
+B. VERIFICATION NOTES:
+   ✅ All 4 transactions from Step 1 verified
+   ✅ Cash count matches system records
+   ✅ No discrepancies found
+
+   managerVerificationNotes: "All transactions recorded in Step 1 verified. Cash count matches system expected amounts. Ready for Auditor review."
+
+═════════════════════════════════════════════════════════════
+STEP 2 CONFIRMATION (ยืนยันข้อมูล)
+═════════════════════════════════════════════════════════════
+
+Status: "step2_completed" (auto-set after manager confirms)
+verifiedAt: 2026-01-29 17:00:00
+verifiedBy: manager-001
+
+✅ Step 1 records confirmed
+✅ Physical cash verified
 ```
 
-### Details
+### Process Flow - Step 2: Verify & Count Actual Cash
+```
+[End of Day - Manager performs Step 2]
+        ↓
+[Go to /finance/bill-payment-service → View "pending verification"]
+        ↓
+Review System Data from Step 1:
+     - System shows all recorded transactions
+     - System shows expected balances
+     - System shows expected cash amounts
+        ↓
+     PHYSICAL CASH VERIFICATION:
+     Manager counts actual cash:
+        ↓
+     1. Count Bill Payment Cash:
+        - Count all cash received from bill payments
+        - Compare with system expected amount
+        - Note any discrepancies
+        ↓
+     2. Count Service Fee Cash:
+        - Count all commission received in cash
+        - Compare with system expected amount
+        - Note any discrepancies
+        ↓
+     RECONCILIATION CHECK:
+     Actual Cash Count vs System Expected:
+        - Bill Payment Cash: Actual ↔ System Expected
+        - Service Fee Cash: Actual ↔ System Expected
+        - Total Cash: Actual ↔ System Expected
+        ↓
+     [Status]
+        ├─ If MATCH ✅: [Confirm Verification]
+        │   ↓
+        │   Click [ยืนยันข้อมูล]
+        │   → Status = "step2_completed"
+        │   → verifiedBy: Manager
+        │   → verifiedAt: timestamp
+        │
+        └─ If DISCREPANCY ⚠️: [Add Verification Notes]
+            ↓
+            Fill in discrepancy details:
+            - Amount difference
+            - Possible cause
+            - Follow-up action
+            ↓
+            Click [ยืนยันพร้อมหมายเหตุ]
+            → Status = "step2_completed_with_notes"
+            → verificationNotes: detailed notes
+        ↓
+     [Complete] → Ready for Auditor (Workflow 3.2)
+     → กลับ History Page (/finance/bill-payment-history) อัตโนมัติ
+```
+
+### Details - Step 2
 - **Role**: ผู้จัดการหรือผู้ช่วยผู้จัดการ (Manager/Assistant Manager)
-- **Page**: /finance/bill-payment-service (Bill Payment Service Income Recording)
+- **Page**: `/finance/bill-payment-service?date=YYYY-MM-DD` (same page, Step 2 section)
+- **Timing**: End of day, after all transactions in Step 1 are recorded
 - **Time Required**: ~5-10 minutes
 - **Success Criteria**:
-  - ✅ All bill payment transactions reviewed
-  - ✅ Actual amounts verified with transaction log
-  - ✅ Data recorded with clear breakdown
-  - ✅ Notes added (if any discrepancies)
-- **Data Recorded**:
-  - Date: วันที่นับ (e.g., 2026-01-29)
-  - Manager: ชื่อผู้จัดการ
-  - **billPaymentServiceIncome**:
-    - utilityBillPayments: ชำระบิลสาธารณูปโภค (e.g., 1,500 บาท)
-    - telecomBillPayments: ชำระบิลโทรศัพท์ (e.g., 800 บาท)
-    - insurancePayments: ชำระบิลประกันภัย (e.g., 600 บาท)
-    - otherBillTypes: ชำระบิลอื่น (if any)
-    - totalBillPaymentIncome: รวมเงินบริการรับชำระบิล (e.g., 2,900 บาท)
-  - managerNotes: (if any discrepancies or failed transactions)
-  - status: "submitted" (ระบบตั้งอัตโนมัติ)
-  - submittedAt: timestamp
-  - submittedBy: Manager ID
-- **Next Step**: Auditor verify and approve
+  - ✅ All Step 1 transactions reviewed
+  - ✅ Physical cash counted
+  - ✅ Cash amount compared with system expected
+  - ✅ Verification completed (match or discrepancies noted)
+  - ✅ Data marked as "step2_completed"
+- **Data Verified (NOT Recorded - Already in Step 1)**:
+  - Compare System Expected vs Actual Count:
+    - billPaymentCash: expected vs actual
+    - serviceFeeCash: expected vs actual
+    - bankAccountBalance: expected vs actual
+- **Verification Outcome**:
+  - **If Match**: ✅ Status = "step2_completed"
+  - **If Discrepancy**: ⚠️ Status = "step2_completed_with_notes"
+    - discrepancyAmount: difference found
+    - discrepancyReason: possible cause
+    - verificationNotes: detailed explanation
+- **Data Fields Updated**:
+  - workflowStatus: "step2_completed" or "step2_completed_with_notes"
+  - verifiedAt: timestamp
+  - verifiedBy: Manager ID
+  - verificationNotes: (if needed)
+- **Next Step**: Auditor final review & approval (Workflow 3.2) — Auditor เห็น row ที่ `step2_completed` ใน History Page แล้วคลิก "ตรวจสอบ"
 
 ---
 
 ## Workflow 3.2: ตรวจสอบเงินจากบริการรับชำระบิล (Auditor - Verify Bill Payment Service Income)
 
+**บริบท**: Auditor ตรวจสอบข้อมูลจาก Step 1 & Step 2 ของ Manager โดยเทียบกับ bank statement และสูตรคำนวณ
+
 ### Process Flow
 ```
-[Start] → Receive Manager's submitted record
+[Auditor เข้า History Page → เห็น row ที่ workflowStatus = "step2_completed"]
         ↓
-     Go to /finance/bill-payment-service
+คลิก [ตรวจสอบ] → navigate to /finance/bill-payment-service/auditor-review?date=YYYY-MM-DD
         ↓
-     Verify bill payment amounts:
-     - Cross-check with transaction log
-     - Verify each type of bill payment
-     - Check for failed or pending transactions
+     VERIFY MANAGER'S STEP 1 RECORDS:
+     - Review all recorded transactions
+     - Check transaction types, amounts, dates
+     - Verify commission amounts
+     - Check bill type breakdown (utility/telecom/insurance/other)
         ↓
-     Verify actual amount:
-     - Total should match transaction log
-     - No discrepancies? ✓
+     VERIFY AGAINST BANK STATEMENT:
+     1. Cross-check each bill payment transaction:
+        - Each successful bill payment: -amount in bank account
+        - Owner deposit: +amount in bank account
+        - Failed transactions: no change
         ↓
-     If everything correct:
-     - Add verification notes
-     - Change status: submitted → "audited"
+     2. Verify final bank balance:
+        - System expected vs Bank statement
+        - Match? ✅ YES / NO
         ↓
-     If discrepancy found:
-     - Add notes explaining issues
-     - Return to Manager for correction
+     VERIFY MANAGER'S STEP 2 RESULTS:
+     - Physical cash verification: All amounts match? ✓
+     - No discrepancies noted? ✓
+     - Cash count accurate? ✓
         ↓
-     [Update] → Status = "audited"
+     [Status]
+        ├─ If ALL CORRECT ✅: [Confirm Audit]
+        │   ↓
+        │   Add verification notes
+        │   Click [ยืนยันการตรวจสอบ]
+        │   → Status = "audited"
+        │   → auditedBy: Auditor
+        │   → auditedAt: timestamp
+        │
+        ├─ If MINOR ISSUE ⚠️: [Add Audit Notes]
+        │   ↓
+        │   Fill in discrepancy details
+        │   → Status = "audited_with_issues"
+        │   → auditNotes: detailed issues
+        │
+        └─ If NEEDS CORRECTION ⚠️: [ส่งกลับให้ Manager ปรับแก้]
+            ↓
+            Specify which Step 1/2 records need fixing
+            → Status = "needs_correction"
+            → auditNotes: specific corrections required
+            → Manager เห็น row ใน History Page → คลิก "แก้ไข" → กลับไป Step 1
+            → After Manager fixes → re-submit → Auditor re-audits (approach C)
         ↓
-     Send report to Owner
-        ↓
-     [Complete]
+     [Complete] → Ready for Owner approval (Workflow 3.3)
 ```
 
-### Details
+### Details - Auditor Verification
 - **Role**: ผู้ตรวจสอบ (Auditor)
-- **Page**: /finance/bill-payment-service (Bill Payment Service Review)
-- **Time Required**: ~10 minutes
+- **Entry**: มาจาก History Page (WF 3.0) → คลิก "ตรวจสอบ" บน row ที่ `step2_completed`
+- **Page**: `/finance/bill-payment-service/auditor-review?date=YYYY-MM-DD`
+- **Back Navigation**: ปุ่ม "← ประวัติ" กลับ History Page
+- **Timing**: After Manager completes Step 1 & 2 (Status: "step2_completed")
+- **Time Required**: ~10-15 minutes
 - **Success Criteria**:
-  - ✅ All bill payments verified with transaction log
-  - ✅ Total amount matches
-  - ✅ No missing or failed transactions
-  - ✅ Clear verification notes
-- **Data Updated**:
-  - status: "audited"
+  - ✅ All Step 1 transactions verified with bank statement
+  - ✅ All Step 2 cash verification confirmed
+  - ✅ Bank balance matches expected amount
+  - ✅ No missing or duplicate transactions
+  - ✅ Clear audit notes (if needed)
+- **Data Verified**:
+  - **Step 1 Records**:
+    - Each transaction type, bill type, amount, commission
+    - Transaction status (success/failed)
+    - Balance changes correctness
+  - **Step 2 Results**:
+    - Cash count accuracy
+    - Discrepancies (if any)
+    - Verification status
+  - **Bank Statement Match**:
+    - Each transaction against bank records
+    - Final balance accuracy
+    - No missing transactions
+- **Audit Outcome**:
+  - **If OK**: ✅ Status = "audited"
+  - **If Minor Issues**: ⚠️ Status = "audited_with_issues"
+  - **If Needs Correction**: ⚠️ Status = "needs_correction" → ส่งกลับ Manager
+    - auditNotes: detailed explanation of what needs fixing
+    - Manager fixes Step 1/2 records → re-submits → Auditor re-audits (approach C)
+- **Data Fields Updated**:
+  - workflowStatus: "audited" / "audited_with_issues" / "needs_correction"
   - auditedAt: timestamp
   - auditedBy: Auditor ID
   - auditNotes: verification details
-- **Next Step**: Owner final approval
+- **Next Step**: Owner final approval (Workflow 3.3) — Owner เห็น row ที่ `audited` ใน History Page แล้วคลิก "อนุมัติ"
 
 ---
 
 ## Workflow 3.3: อนุมัติการตรวจสอบเงินจากบริการรับชำระบิล (Owner - Approve Bill Payment Service Income)
 
+**บริบท**: Owner อนุมัติข้อมูลที่ Auditor ได้ตรวจสอบแล้ว (Step 1, Step 2, และ Audit)
+
 ### Process Flow
 ```
-[Start] → Review Auditor's report
+[Owner เข้า History Page → เห็น row ที่ workflowStatus = "audited"]
         ↓
-     Check /finance/bill-payment-service → "audited" entries
+คลิก [อนุมัติ] → navigate to /finance/bill-payment-service/owner-approval?date=YYYY-MM-DD
         ↓
-     Review:
-     - Bill payment amounts breakdown
-     - Total bill payment service income
-     - Audit verification notes
+     REVIEW ALL RECORDS:
+
+     Step 1: Manager's Recorded Transactions
+     - All transactions (types, bill types, amounts, commissions)
+     - Balance changes calculation
+
+     Step 2: Manager's Verification
+     - Physical cash count results
+     - Any discrepancies noted
+
+     Step 3 (Workflow 3.2): Auditor's Verification
+     - Bank statement cross-check
+     - Transaction verification
+     - Audit notes
         ↓
-     Verify everything correct?
+     [Status Check]
+        ├─ If "audited" (No Issues) ✅:
+        │   ↓
+        │   Everything OK - Ready to approve
+        │   ↓
+        │   Click [อนุมัติ]
+        │   → Status = "approved"
+        │   → approvedAt: timestamp
+        │   → approvedBy: Owner ID
+        │   ↓
+        │   [Complete] ✅
+        │
+        └─ If "audited_with_issues" ⚠️:
+            ↓
+            Review Auditor's notes about issues
+            ↓
+            [Decision]
+            ├─ Approve anyway:
+            │   → Click [อนุมัติแม้มีปัญหา]
+            │   → Status = "approved_with_notes"
+            │   → approvalNotes: "Approved despite issues: ..."
+            │
+            └─ Request correction:
+                → Click [ส่งกลับให้ Manager ปรับแก้]
+                → Status = "needs_correction"
+                → Notes: specific issues to fix
+                → Manager revises Step 1/2
         ↓
-     Click [✏️ Edit]
-        ↓
-     Change status: audited → "approved"
-        ↓
-     Click [อัปเดต]
-        ↓
-     [Complete] → Status = "approved"
+     [Complete]
         ↓
      Bill payment service income recorded ✓
 ```
 
-### Details
+### Details - Owner Final Approval
 - **Role**: เจ้าของร้าน (Owner)
-- **Page**: /finance/bill-payment-service (Bill Payment Service Review)
-- **Time Required**: ~5 minutes
+- **Entry**: มาจาก History Page (WF 3.0) → คลิก "อนุมัติ" บน row ที่ `audited`
+- **Page**: `/finance/bill-payment-service/owner-approval?date=YYYY-MM-DD`
+- **Back Navigation**: ปุ่ม "← ประวัติ" กลับ History Page
+- **Timing**: After Auditor completes verification (Status: "audited")
+- **Time Required**: ~5-10 minutes
 - **Success Criteria**:
-  - ✅ All data reviewed and verified by Auditor
-  - ✅ Final decision documented
-- **Data Updated**:
-  - status: "approved"
+  - ✅ All records reviewed (Step 1, Step 2, Audit)
+  - ✅ Final approval decision made
+  - ✅ Clear documentation of approval status
+- **Data Reviewed**:
+  - **Step 1 Records**: All transactions with bill types, amounts, and commissions
+  - **Step 2 Results**: Manager's cash verification (match or discrepancies)
+  - **Audit Notes**: Auditor's verification against bank statement
+  - **Status**: "audited" ✅ or "audited_with_issues" ⚠️
+- **Approval Decision**:
+  - **If "audited"** (No issues): ✅ Approve directly
+    - workflowStatus: "approved"
+  - **If "audited_with_issues"**: Owner decides:
+    - **Approve anyway**: workflowStatus = "approved_with_notes"
+    - **Request correction**: workflowStatus = "needs_correction"
+- **Data Fields Updated**:
+  - workflowStatus: "approved" / "approved_with_notes" / "needs_correction"
   - approvedAt: timestamp
   - approvedBy: Owner ID
-- **Result**: ✅ Bill payment service income recorded
+  - approvalNotes: (if needed)
+- **Result**: ✅ Bill payment service income finalized
+  - Ready for accounting/financial reporting
 
 ---
 
