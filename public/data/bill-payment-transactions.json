@@ -1,0 +1,56 @@
+[
+  {
+    "id": "bptxn-2026-01-29-001",
+    "date": "2026-01-29",
+    "timestamp": "2026-01-29T11:30:00.000Z",
+    "transactionType": "bill_payment",
+    "billType": "utility",
+    "amount": 2000,
+    "commission": 20,
+    "customerName": "สมชาย ใจดี",
+    "status": "success",
+    "notes": "",
+    "recordedBy": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2",
+    "recordedAt": "2026-01-29T11:30:00.000Z"
+  },
+  {
+    "id": "bptxn-2026-01-29-002",
+    "date": "2026-01-29",
+    "timestamp": "2026-01-29T13:45:00.000Z",
+    "transactionType": "bill_payment",
+    "billType": "telecom",
+    "amount": 1200,
+    "commission": 0,
+    "customerName": "มาลี รักดี",
+    "status": "failed",
+    "notes": "ยอดไม่พอ ลองใหม่ภายหลัง",
+    "recordedBy": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2",
+    "recordedAt": "2026-01-29T13:45:00.000Z"
+  },
+  {
+    "id": "bptxn-2026-01-29-003",
+    "date": "2026-01-29",
+    "timestamp": "2026-01-29T14:00:00.000Z",
+    "transactionType": "owner_deposit",
+    "amount": 5000,
+    "commission": 0,
+    "status": "success",
+    "notes": "เจ้าของร้านฝากเงินเพิ่ม",
+    "recordedBy": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2",
+    "recordedAt": "2026-01-29T14:00:00.000Z"
+  },
+  {
+    "id": "bptxn-2026-01-29-004",
+    "date": "2026-01-29",
+    "timestamp": "2026-01-29T14:30:00.000Z",
+    "transactionType": "bill_payment",
+    "billType": "telecom",
+    "amount": 1200,
+    "commission": 20,
+    "customerName": "มาลี รักดี",
+    "status": "success",
+    "notes": "ลองใหม่สำเร็จ",
+    "recordedBy": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2",
+    "recordedAt": "2026-01-29T14:30:00.000Z"
+  }
+]
