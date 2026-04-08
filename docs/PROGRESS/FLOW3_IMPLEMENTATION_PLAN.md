@@ -134,6 +134,7 @@
 ---
 
 ## Task 6 — Service Page Step 2 (Verify Cash Count)
+**Status: ✅ Complete**
 **Skill**: `/refactor` (reuse Step 2 pattern from money-transfer-service/index.vue).
 
 **Scope**:
@@ -148,9 +149,9 @@
 7. Auto-navigate back to history page on success
 
 **Acceptance**:
-- [ ] Diff calc matches (expected − actual) with correct sign
-- [ ] Discrepancy requires notes before submit
-- [ ] Read-only mode shown for step2_completed and later states
+- [x] Diff calc matches (expected − actual) with correct sign
+- [x] Discrepancy requires notes before submit
+- [x] Read-only mode shown for step2_completed and later states
 
 ---
 
@@ -293,7 +294,7 @@
 | 3 | Helpers Composable | `/refactor` | ✅ | #101 |
 | 4 | History Page (WF 3.0) | `/refactor` | ✅ | #102 |
 | 5 | Service Shell + Step 1 | `/breakdown-feature-implementation` | ✅ | #feature/bill-payment-service-step1 |
-| 6 | Step 2 Verify Cash | `/refactor` | ☐ | — |
+| 6 | Step 2 Verify Cash | `/refactor` | ✅ | #feature/bill-payment-service-step2 |
 | 7 | Auditor Review (WF 3.2) | `/refactor` | ☐ | — |
 | 8 | Owner Approval (WF 3.3) | `/refactor` | ☐ | — |
 | 9 | Unit Tests | `/unit-test-vue-pinia` | ☐ | — |
