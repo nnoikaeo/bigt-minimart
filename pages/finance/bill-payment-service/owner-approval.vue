@@ -280,7 +280,7 @@ onMounted(async () => {
             <ChevronDownIcon v-else class="w-4 h-4 text-gray-500" />
           </button>
           <div v-if="expandStep1" class="px-6 pb-4">
-            <EmptyState v-if="billPaymentTransactions.length === 0" message="ไม่มีรายการ" />
+            <EmptyState v-if="billPaymentTransactions.length === 0" title="ไม่มีรายการ" />
             <table v-else class="w-full text-sm">
               <thead>
                 <tr class="border-b border-gray-200 text-gray-500 text-xs">
