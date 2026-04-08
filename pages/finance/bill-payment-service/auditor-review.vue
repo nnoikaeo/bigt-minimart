@@ -139,8 +139,8 @@ async function handleAuditSubmit(outcome: 'audited' | 'audited_with_issues' | 'n
       audited_with_issues: 'ยืนยันพร้อมหมายเหตุเรียบร้อย',
       needs_correction: 'ส่งกลับให้ Manager แก้ไขแล้ว',
     }
-    successMessage.value = labels[outcome]
-    logger.log('Audit submitted', outcome, selectedDate.value)
+    successMessage.value = labels[outcome] ?? ''
+    logger.log(`Audit submitted: ${outcome} for ${selectedDate.value}`)
 
     if (outcome === 'needs_correction') {
       setTimeout(() => router.push('/finance/bill-payment-history'), 1500)
