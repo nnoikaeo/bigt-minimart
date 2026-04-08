@@ -25,7 +25,7 @@ const logger = useLogger('BillPaymentStep1')
 const store = useBillPaymentStore()
 const router = useRouter()
 const route = useRoute()
-const { can } = usePermissions()
+usePermissions()
 const {
   formatAmount,
   formatTime,
@@ -137,7 +137,7 @@ async function handleFormSubmit() {
   try {
     const payload = {
       date: selectedDate.value,
-      transactionType: form.transactionType,
+      transactionType: form.transactionType as 'bill_payment' | 'owner_deposit',
       billType: form.transactionType === 'bill_payment' ? form.billType || undefined : undefined,
       amount: Number(form.amount),
       commission: form.transactionType === 'bill_payment' ? Number(form.commission) : 0,
@@ -428,7 +428,7 @@ onMounted(async () => {
                     <ActionButton
                       :permission="PERMISSIONS.EDIT_FINANCE"
                       variant="ghost"
-                      size="xs"
+                      size="sm"
                       title="แก้ไข"
                       @click="openEditTransaction(txn)"
                     >
@@ -437,7 +437,7 @@ onMounted(async () => {
                     <ActionButton
                       :permission="PERMISSIONS.EDIT_FINANCE"
                       variant="ghost"
-                      size="xs"
+                      size="sm"
                       title="ลบ"
                       class="text-red-500 hover:text-red-700"
                       @click="promptDelete(txn.id)"
@@ -542,7 +542,7 @@ onMounted(async () => {
          MODAL: Add / Edit Transaction
     ════════════════════════════════════════════════════════════════════════════ -->
     <BaseModal
-      :show="showTransactionModal"
+      :open="showTransactionModal"
       :title="editingTransaction ? 'แก้ไขรายการ' : 'เพิ่มรายการใหม่'"
       @close="closeModal"
     >
@@ -585,12 +585,16 @@ onMounted(async () => {
           label="ประเภทบิล"
           required
         >
-          <BaseSelect v-model="form.billType" placeholder="เลือกประเภทบิล">
-            <option value="utility">สาธารณูปโภค</option>
-            <option value="telecom">โทรคมนาคม</option>
-            <option value="insurance">ประกันภัย</option>
-            <option value="other">อื่นๆ</option>
-          </BaseSelect>
+          <BaseSelect
+            v-model="form.billType"
+            placeholder="เลือกประเภทบิล"
+            :options="[
+              { value: 'utility', label: 'สาธารณูปโภค' },
+              { value: 'telecom', label: 'โทรคมนาคม' },
+              { value: 'insurance', label: 'ประกันภัย' },
+              { value: 'other', label: 'อื่นๆ' },
+            ]"
+          />
         </FormField>
 
         <!-- Amount -->
@@ -659,7 +663,7 @@ onMounted(async () => {
           <BaseTextarea
             v-model="form.notes"
             placeholder="หมายเหตุเพิ่มเติม..."
-            rows="2"
+            :rows="2"
           />
         </FormField>
 
@@ -684,11 +688,11 @@ onMounted(async () => {
          CONFIRM DIALOG: Delete Transaction
     ════════════════════════════════════════════════════════════════════════════ -->
     <ConfirmDialog
-      :show="showDeleteConfirm"
+      :open="showDeleteConfirm"
       title="ลบรายการ"
       message="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้? การกระทำนี้ไม่สามารถย้อนกลับได้"
-      confirm-label="ลบ"
-      confirm-variant="danger"
+      confirm-text="ลบ"
+      variant="danger"
       @confirm="handleDeleteExecute"
       @cancel="showDeleteConfirm = false"
     />
