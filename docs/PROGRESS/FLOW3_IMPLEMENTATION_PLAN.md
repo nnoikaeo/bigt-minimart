@@ -171,8 +171,10 @@
 7. Uses `store.submitAudit(date, auditData)` — make sure Task 2 store action supports all three outcomes
 
 **Acceptance**:
-- [ ] All 3 audit outcomes tested manually
-- [ ] needs_correction round-trip: Auditor sends back → Manager sees banner → edits → resubmits → Auditor re-audits
+- [x] All 3 audit outcomes tested manually
+- [x] needs_correction round-trip: Auditor sends back → Manager sees banner → edits → resubmits → Auditor re-audits
+
+**Completed**: 2026-04-08 — PR #105 merged into develop
 
 ---
 
