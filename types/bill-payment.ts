@@ -1,12 +1,6 @@
-export type BillPaymentWorkflowStatus =
-  | 'step1_in_progress'
-  | 'step2_completed'
-  | 'step2_completed_with_notes'
-  | 'audited'
-  | 'audited_with_issues'
-  | 'approved'
-  | 'approved_with_notes'
-  | 'needs_correction'
+import type { UnifiedWorkflowStatus } from './shared-workflow'
+
+export type BillPaymentWorkflowStatus = UnifiedWorkflowStatus
 
 export interface BillPaymentTransaction {
   id: string
