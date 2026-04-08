@@ -175,6 +175,7 @@
 - [x] needs_correction round-trip: Auditor sends back → Manager sees banner → edits → resubmits → Auditor re-audits
 
 **Completed**: 2026-04-08 — PR #105 merged into develop
+**Status: ✅ Complete**
 
 ---
 
@@ -224,6 +225,7 @@
 ---
 
 ## Task 10 — E2E Walkthrough & Polish
+**Status: ✅ Complete**
 **Skill**: `/webapp-testing` (Playwright skill to drive the app).
 
 **Scope**:
@@ -243,9 +245,17 @@
 5. Fix any layout/label issues found; do NOT expand scope beyond polish
 
 **Acceptance**:
-- [ ] Happy path screenshot set captured
-- [ ] needs_correction loop screenshot set captured
-- [ ] No console errors during walkthrough
+- [x] Happy path screenshot set captured
+- [x] needs_correction loop screenshot set captured
+- [x] No console errors during walkthrough
+
+**Completed**: 2026-04-08 — PR #108 merged into develop
+
+**Bugs Fixed During Walkthrough**:
+- Deleted `pages/finance/bill-payment-service.vue` (placeholder shadowing Task 5 impl)
+- Added Thai breadcrumb labels for `bill-payment-history`, `auditor-review`, `owner-approval`
+- Fixed `BaseInput.vue` to emit `Number` for `type="number"` inputs (Zod validation was rejecting strings)
+- Fixed `stores/bill-payment.ts` `submitOwnerApproval` to include `approvedBy`/`approvedByName` from authStore
 
 ---
 
@@ -263,9 +273,19 @@
    - No leaked user input in logs
 
 **Acceptance**:
-- [ ] `nuxi typecheck` clean
-- [ ] No security findings above "info" level
-- [ ] LOC reduction report from /simplify
+- [x] `nuxi typecheck` clean
+- [x] No security findings above "info" level
+- [x] LOC reduction report from /simplify
+
+**Changes made**:
+- `stores/bill-payment.ts`: `initializeStore` → `Promise.all`; `fetchDailySummary` adds `isLoading`; uses `getApiFetch()` (auto-injects Firebase token); removes `approvedBy`/`auditedBy` from request body
+- `bill-payment-history.vue`: removed unused `canEdit`, redundant `isOwner`; merged duplicate pending cards; `getActionButton` 4x/row → `actionButtonMap` computed; fixed `role === ('unknown' as any)`
+- `auditor-review.vue`: simplified `=== false && !== undefined` → `=== false`
+- `owner-approval.vue`: removed `step1Summary` alias; imported and used `formatDiff`; fixed sign convention
+- `index.vue` (service): `handleCompleteStep1` + `BaseButton` → `ActionButton` with `PERMISSIONS.EDIT_FINANCE` guard
+- `server/utils/serverAuth.ts` (new): `requireServerAuth()` with Firebase ID token verification and dev bypass
+- `plugins/apiFetch.client.ts` (new): `$apiFetch` plugin with auto Firebase token injection
+- All 7 bill-payment mutation endpoints: `requireServerAuth` applied; identity derived from token not request body
 
 ---
 
@@ -302,11 +322,11 @@
 | 4 | History Page (WF 3.0) | `/refactor` | ✅ | #102 |
 | 5 | Service Shell + Step 1 | `/breakdown-feature-implementation` | ✅ | #feature/bill-payment-service-step1 |
 | 6 | Step 2 Verify Cash | `/refactor` | ✅ | #feature/bill-payment-service-step2 |
-| 7 | Auditor Review (WF 3.2) | `/refactor` | ☐ | — |
-| 8 | Owner Approval (WF 3.3) | `/refactor` | ☐ | — |
+| 7 | Auditor Review (WF 3.2) | `/refactor` | ✅ | #105 |
+| 8 | Owner Approval (WF 3.3) | `/refactor` | ✅ | #106 |
 | 9 | Unit Tests | `/unit-test-vue-pinia` | ✅ | #107 |
-| 10 | E2E Walkthrough | `/webapp-testing` | ☐ | — |
-| 11 | Simplify + Security Review | `/simplify` + `/security-review` | ☐ | — |
+| 10 | E2E Walkthrough | `/webapp-testing` | ✅ | #108 |
+| 11 | Simplify + Security Review | `/simplify` + `/security-review` | ✅ | #feature/bill-payment-simplify-security |
 | 12 | Commit & PR | `/conventional-commit` | ☐ | — |
 
 ---

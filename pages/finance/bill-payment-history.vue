@@ -13,7 +13,7 @@ definePageMeta({
 const logger = useLogger('BillPaymentHistory')
 const store = useBillPaymentStore()
 const router = useRouter()
-const { can, hasAnyRole, userRole } = usePermissions()
+const { hasAnyRole, userRole } = usePermissions()
 const { getSmartActionButton, formatWorkflowStatus, formatAmount } = useBillPaymentHelpers()
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -22,13 +22,10 @@ const showAddModal = ref(false)
 const newRecordDate = ref<string>(new Date().toISOString().split('T')[0] ?? '')
 
 // ─── Computed ─────────────────────────────────────────────────────────────────
-const canEdit = computed(() => can(PERMISSIONS.EDIT_FINANCE))
-
 const isManagerOrAM = computed(() =>
   hasAnyRole([ROLES.MANAGER, ROLES.ASSISTANT_MANAGER, ROLES.OWNER])
 )
 const isAuditor = computed(() => hasAnyRole([ROLES.AUDITOR]))
-const isOwner = computed(() => hasAnyRole([ROLES.OWNER]))
 
 const today = new Date().toISOString().split('T')[0] ?? ''
 
@@ -60,15 +57,20 @@ const pendingForOwner = computed(() =>
 
 // ─── Smart Action Button ───────────────────────────────────────────────────────
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'success' | 'ghost'
+type ValidRole = 'manager' | 'assistant_manager' | 'auditor' | 'owner'
 
-function getActionButton(summary: any): { label: string; route: string; variant: ButtonVariant } | null {
-  const role = userRole.value as 'manager' | 'assistant_manager' | 'auditor' | 'owner'
-  if (!role || role === ('unknown' as any)) return null
-  const btn = getSmartActionButton(role, summary.workflowStatus, summary.date)
-  // SmartActionVariant includes 'outline' which BaseButton doesn't support — map to 'secondary'
-  const variant: ButtonVariant = btn.variant === 'outline' ? 'secondary' : btn.variant
-  return { ...btn, variant }
-}
+const actionButtonMap = computed(() => {
+  const role = userRole.value
+  const map = new Map<string, { label: string; route: string; variant: ButtonVariant }>()
+  if (!role || role === 'unknown') return map
+  for (const summary of store.summaries) {
+    const btn = getSmartActionButton(role as ValidRole, summary.workflowStatus, summary.date)
+    // SmartActionVariant includes 'outline' which BaseButton doesn't support — map to 'secondary'
+    const variant: ButtonVariant = btn.variant === 'outline' ? 'secondary' : btn.variant
+    map.set(summary.date, { ...btn, variant })
+  }
+  return map
+})
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 function getStatusBadgeClass(status: string): string {
@@ -174,9 +176,9 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- Owner card -->
+      <!-- Owner card (visible to managers, owners, and auditors) -->
       <div
-        v-if="isOwner || isManagerOrAM"
+        v-if="isManagerOrAM || isAuditor"
         class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4"
       >
         <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 text-lg font-bold flex-shrink-0">
@@ -185,20 +187,6 @@ onMounted(async () => {
         <div>
           <div class="text-sm font-semibold text-gray-800">รออนุมัติ</div>
           <div class="text-xs text-gray-500">รายการที่รอการอนุมัติ</div>
-        </div>
-      </div>
-
-      <!-- Auditor-only: pending owner approval card -->
-      <div
-        v-if="isAuditor && !isManagerOrAM"
-        class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4"
-      >
-        <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 text-lg font-bold flex-shrink-0">
-          {{ pendingForOwner }}
-        </div>
-        <div>
-          <div class="text-sm font-semibold text-gray-800">รออนุมัติ</div>
-          <div class="text-xs text-gray-500">รายการที่รออนุมัติ</div>
         </div>
       </div>
     </section>
@@ -268,13 +256,13 @@ onMounted(async () => {
 
               <!-- Action button -->
               <td class="px-5 py-3.5 text-center">
-                <template v-if="getActionButton(summary)">
+                <template v-if="actionButtonMap.get(summary.date)">
                   <BaseButton
-                    :variant="getActionButton(summary)!.variant"
+                    :variant="actionButtonMap.get(summary.date)!.variant"
                     size="sm"
-                    @click="router.push(getActionButton(summary)!.route)"
+                    @click="router.push(actionButtonMap.get(summary.date)!.route)"
                   >
-                    {{ getActionButton(summary)!.label }}
+                    {{ actionButtonMap.get(summary.date)!.label }}
                   </BaseButton>
                 </template>
               </td>

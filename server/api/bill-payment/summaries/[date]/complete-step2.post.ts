@@ -1,12 +1,11 @@
 import { z } from 'zod'
 import { billPaymentJsonRepository } from '~/server/repositories/bill-payment-json.repository'
+import { requireServerAuth } from '~/server/utils/serverAuth'
 
 const schema = z.object({
   step2ActualBillPaymentCash: z.number().nonnegative(),
   step2ActualServiceFeeCash: z.number().nonnegative(),
   step2VerificationNotes: z.string().optional(),
-  step2CompletedBy: z.string().optional(),
-  step2CompletedByName: z.string().optional(),
 })
 
 /**
@@ -15,6 +14,8 @@ const schema = z.object({
  */
 export default defineEventHandler(async (event) => {
   try {
+    const authUser = await requireServerAuth(event)
+
     await billPaymentJsonRepository.init()
 
     const date = event.context.params?.date
@@ -45,8 +46,8 @@ export default defineEventHandler(async (event) => {
     const updatedSummary = await billPaymentJsonRepository.updateDailySummary(date, {
       workflowStatus: hasDiscrepancies ? 'step2_completed_with_notes' : 'step2_completed',
       step2CompletedAt: now,
-      step2CompletedBy: validated.step2CompletedBy || 'manager',
-      step2CompletedByName: validated.step2CompletedByName || 'Manager',
+      step2CompletedBy: authUser.uid,
+      step2CompletedByName: authUser.name ?? 'Manager',
       step2ExpectedBillPaymentCash: expectedBillPaymentCash,
       step2ActualBillPaymentCash: validated.step2ActualBillPaymentCash,
       step2ExpectedServiceFeeCash: expectedServiceFeeCash,

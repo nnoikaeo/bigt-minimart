@@ -1,10 +1,9 @@
 import { z } from 'zod'
 import { billPaymentJsonRepository } from '~/server/repositories/bill-payment-json.repository'
+import { requireServerAuth } from '~/server/utils/serverAuth'
 
 const schema = z.object({
   decision: z.enum(['approved', 'approved_with_notes', 'needs_correction']),
-  approvedBy: z.string().optional(),
-  approvedByName: z.string().optional(),
   approvalNotes: z.string().optional(),
 })
 
@@ -14,6 +13,8 @@ const schema = z.object({
  */
 export default defineEventHandler(async (event) => {
   try {
+    const authUser = await requireServerAuth(event)
+
     await billPaymentJsonRepository.init()
 
     const date = event.context.params?.date
@@ -25,7 +26,11 @@ export default defineEventHandler(async (event) => {
     const summary = await billPaymentJsonRepository.getDailySummary(date)
     if (!summary) throw createError({ statusCode: 404, message: `No summary for ${date}` })
 
-    const updatedSummary = await billPaymentJsonRepository.submitOwnerApproval(date, validated)
+    const updatedSummary = await billPaymentJsonRepository.submitOwnerApproval(date, {
+      ...validated,
+      approvedBy: authUser.uid,
+      approvedByName: authUser.name ?? 'Owner',
+    })
 
     return { success: true, data: updatedSummary, message: 'Approval submitted.' }
   } catch (error: any) {

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { billPaymentJsonRepository } from '~/server/repositories/bill-payment-json.repository'
+import { requireServerAuth } from '~/server/utils/serverAuth'
 
 const schema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -20,6 +21,8 @@ const schema = z.object({
  */
 export default defineEventHandler(async (event) => {
   try {
+    const authUser = await requireServerAuth(event)
+
     await billPaymentJsonRepository.init()
 
     const body = await readBody(event)
@@ -30,6 +33,7 @@ export default defineEventHandler(async (event) => {
       ...validated,
       timestamp: validated.timestamp ?? now,
       recordedAt: validated.recordedAt ?? now,
+      recordedBy: authUser.uid, // server-verified identity overrides client-supplied value
     })
 
     setResponseStatus(event, 201)

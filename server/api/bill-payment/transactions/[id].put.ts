@@ -1,10 +1,13 @@
 import { billPaymentJsonRepository } from '~/server/repositories/bill-payment-json.repository'
+import { requireServerAuth } from '~/server/utils/serverAuth'
 
 /**
  * PUT /api/bill-payment/transactions/[id]
  */
 export default defineEventHandler(async (event) => {
   try {
+    await requireServerAuth(event)
+
     await billPaymentJsonRepository.init()
 
     const id = event.context.params?.id
