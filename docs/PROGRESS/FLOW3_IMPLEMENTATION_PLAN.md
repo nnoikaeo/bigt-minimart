@@ -193,8 +193,10 @@
 6. Uses `store.submitOwnerApproval(date, approvalData)`
 
 **Acceptance**:
-- [ ] All 3 decisions routed to correct status
-- [ ] Read-only view for already-approved records
+- [x] All 3 decisions routed to correct status
+- [x] Read-only view for already-approved records
+
+**Completed**: 2026-04-08 — PR #106 merged into develop
 
 ---
 
