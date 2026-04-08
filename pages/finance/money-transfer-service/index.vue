@@ -7,6 +7,7 @@ import { PERMISSIONS, ROLES } from '~/types/permissions'
 import { BANK_LIST } from '~/constants/banks'
 import type { UnifiedWorkflowStatus } from '~/types/shared-workflow'
 import type { WorkflowStep } from '~/components/shared/WorkflowProgressBar.vue'
+import type { BalanceCardItem } from '~/components/shared/CompactBalanceSummary.vue'
 import {
   PlusIcon,
   StarIcon,
@@ -362,6 +363,67 @@ const canSubmitAudit = computed(() =>
   auditorCashTransferWithdrawal.value !== null && auditorCashServiceFee.value !== null
 )
 const openingBalance = computed(() => store.currentBalance?.openingBalance ?? 0)
+
+const openingSourceLabel = computed(() => {
+  const map: Record<string, string> = {
+    carryover: 'จากเมื่อวาน',
+    manual: 'กำหนดเอง',
+  }
+  return map[store.currentBalance?.openingBalanceSource ?? ''] || ''
+})
+
+const mtPrimaryCards = computed<BalanceCardItem[]>(() => [
+  {
+    label: 'เงินในบัญชีเริ่มต้น',
+    value: openingBalance.value,
+    colorClass: 'text-gray-700',
+    subtitle: openingSourceLabel.value || undefined,
+  },
+  {
+    label: 'รวมเงินโอน',
+    value: totalTransfers.value,
+    colorClass: 'text-red-600',
+  },
+  {
+    label: 'เงินในบัญชีคงเหลือ',
+    value: store.currentBalance?.bankAccount ?? 0,
+    colorClass: 'text-gray-900',
+    valueSize: 'text-xl',
+    cardClass: 'border-gray-300 bg-gray-50',
+    labelClass: 'text-gray-600 font-medium',
+  },
+  {
+    label: 'เงินสดคงเหลือ',
+    value: totalCash.value,
+    colorClass: 'text-blue-800',
+    cardClass: 'border-blue-200 bg-blue-50/40',
+    labelClass: 'text-blue-600 font-medium',
+  },
+])
+
+const mtSecondaryCards = computed<BalanceCardItem[]>(() => [
+  {
+    label: 'รวมเงินฝาก',
+    value: totalDeposits.value,
+    colorClass: 'text-blue-700',
+  },
+  {
+    label: 'รวมเงินถอน',
+    value: totalWithdrawals.value,
+    colorClass: 'text-purple-700',
+  },
+  {
+    label: 'รวมค่าบริการ (เงินสด)',
+    value: store.currentBalance?.serviceFeeCash ?? 0,
+    colorClass: 'text-green-700',
+  },
+  {
+    label: 'รวมค่าบริการ (เงินโอน)',
+    value: store.currentBalance?.serviceFeeTransfer ?? 0,
+    colorClass: 'text-green-700',
+  },
+])
+
 const closingBalance = computed(() =>
   store.currentSummary?.step1?.finalBalances?.bankAccount ?? store.currentBalance?.bankAccount ?? 0
 )
@@ -1242,15 +1304,8 @@ onBeforeUnmount(() => {
     <!-- ── Balance Cards — compact 4 cards + expandable (ทุกกรณีอื่น) ──── -->
     <CompactBalanceSummary
       v-else
-      :opening-balance="openingBalance"
-      :total-deposit="totalDeposits"
-      :total-transfer="totalTransfers"
-      :total-withdrawal="totalWithdrawals"
-      :service-fee-cash="store.currentBalance?.serviceFeeCash ?? 0"
-      :service-fee-transfer="store.currentBalance?.serviceFeeTransfer ?? 0"
-      :bank-account-balance="store.currentBalance?.bankAccount ?? 0"
-      :cash-balance="totalCash"
-      :opening-source="store.currentBalance?.openingBalanceSource ?? ''"
+      :primary-cards="mtPrimaryCards"
+      :secondary-cards="mtSecondaryCards"
       class="mb-6"
     />
 
