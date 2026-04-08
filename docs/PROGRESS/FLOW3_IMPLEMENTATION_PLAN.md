@@ -289,7 +289,7 @@
 | # | Task | Skill | Status | Chat Link |
 |---|---|---|---|---|
 | 1 | Types & Seed Data | `/create-implementation-plan` | ✅ | #99 |
-| 2 | Pinia Store | `/refactor` | ☐ | — |
+| 2 | Pinia Store | `/refactor` | ✅ | #feature/bill-payment-store |
 | 3 | Helpers Composable | `/refactor` | ☐ | — |
 | 4 | History Page (WF 3.0) | `/refactor` | ☐ | — |
 | 5 | Service Shell + Step 1 | `/breakdown-feature-implementation` | ☐ | — |
