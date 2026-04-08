@@ -59,10 +59,15 @@ const pendingForOwner = computed(() =>
 )
 
 // ─── Smart Action Button ───────────────────────────────────────────────────────
-function getActionButton(summary: any) {
+type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'success' | 'ghost'
+
+function getActionButton(summary: any): { label: string; route: string; variant: ButtonVariant } | null {
   const role = userRole.value as 'manager' | 'assistant_manager' | 'auditor' | 'owner'
   if (!role || role === ('unknown' as any)) return null
-  return getSmartActionButton(role, summary.workflowStatus, summary.date)
+  const btn = getSmartActionButton(role, summary.workflowStatus, summary.date)
+  // SmartActionVariant includes 'outline' which BaseButton doesn't support — map to 'secondary'
+  const variant: ButtonVariant = btn.variant === 'outline' ? 'secondary' : btn.variant
+  return { ...btn, variant }
 }
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
