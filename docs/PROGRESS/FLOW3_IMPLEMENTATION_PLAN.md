@@ -100,9 +100,9 @@
 7. Verify sidebar menu item "บริการรับชำระบิล" already points here (per user's note); if not, update `public/data/sidebar-menu.json`
 
 **Acceptance**:
-- [ ] Each role sees correct pending counts
-- [ ] Action button label/destination matches WF 3.0 table
-- [ ] Backdated entry warning shows when past date selected
+- [x] Each role sees correct pending counts
+- [x] Action button label/destination matches WF 3.0 table
+- [x] Backdated entry warning shows when past date selected
 
 ---
 
@@ -127,13 +127,14 @@
 6. **If `needs_correction`**: show audit notes banner at top explaining what to fix
 
 **Acceptance**:
-- [ ] Creating a bill_payment updates all 3 balances correctly in real time
-- [ ] Draft transactions can be edited/deleted before Step 1 completion
-- [ ] Transitioning to Step 2 requires at least 1 transaction
+- [x] Creating a bill_payment updates all 3 balances correctly in real time
+- [x] Draft transactions can be edited/deleted before Step 1 completion
+- [x] Transitioning to Step 2 requires at least 1 transaction
 
 ---
 
 ## Task 6 — Service Page Step 2 (Verify Cash Count)
+**Status: ✅ Complete**
 **Skill**: `/refactor` (reuse Step 2 pattern from money-transfer-service/index.vue).
 
 **Scope**:
@@ -148,9 +149,9 @@
 7. Auto-navigate back to history page on success
 
 **Acceptance**:
-- [ ] Diff calc matches (expected − actual) with correct sign
-- [ ] Discrepancy requires notes before submit
-- [ ] Read-only mode shown for step2_completed and later states
+- [x] Diff calc matches (expected − actual) with correct sign
+- [x] Discrepancy requires notes before submit
+- [x] Read-only mode shown for step2_completed and later states
 
 ---
 
@@ -170,8 +171,11 @@
 7. Uses `store.submitAudit(date, auditData)` — make sure Task 2 store action supports all three outcomes
 
 **Acceptance**:
-- [ ] All 3 audit outcomes tested manually
-- [ ] needs_correction round-trip: Auditor sends back → Manager sees banner → edits → resubmits → Auditor re-audits
+- [x] All 3 audit outcomes tested manually
+- [x] needs_correction round-trip: Auditor sends back → Manager sees banner → edits → resubmits → Auditor re-audits
+
+**Completed**: 2026-04-08 — PR #105 merged into develop
+**Status: ✅ Complete**
 
 ---
 
@@ -190,13 +194,16 @@
 6. Uses `store.submitOwnerApproval(date, approvalData)`
 
 **Acceptance**:
-- [ ] All 3 decisions routed to correct status
-- [ ] Read-only view for already-approved records
+- [x] All 3 decisions routed to correct status
+- [x] Read-only view for already-approved records
+
+**Completed**: 2026-04-08 — PR #106 merged into develop
 
 ---
 
 ## Task 9 — Unit Tests for Store & Helpers
-**Skill**: `/unit-test-vue-pinia` (dedicated skill for this stack).
+**Status: ✅ Complete**
+**Skill**: `/unit-test-vue-pinia`
 
 **Scope**:
 1. Test `stores/bill-payment.ts` with `createTestingPinia`:
@@ -210,12 +217,15 @@
    - Validators reject invalid forms
 
 **Acceptance**:
-- [ ] All tests pass (`npm run test` or project-specific command)
-- [ ] Coverage of all 3 store transitions + needs_correction loop
+- [x] All tests pass (`npm run test`)
+- [x] Coverage of all 3 store transitions + needs_correction loop
+
+**Completed**: 2026-04-08 — PR #107 merged into develop
 
 ---
 
 ## Task 10 — E2E Walkthrough & Polish
+**Status: ✅ Complete**
 **Skill**: `/webapp-testing` (Playwright skill to drive the app).
 
 **Scope**:
@@ -235,9 +245,17 @@
 5. Fix any layout/label issues found; do NOT expand scope beyond polish
 
 **Acceptance**:
-- [ ] Happy path screenshot set captured
-- [ ] needs_correction loop screenshot set captured
-- [ ] No console errors during walkthrough
+- [x] Happy path screenshot set captured
+- [x] needs_correction loop screenshot set captured
+- [x] No console errors during walkthrough
+
+**Completed**: 2026-04-08 — PR #108 merged into develop
+
+**Bugs Fixed During Walkthrough**:
+- Deleted `pages/finance/bill-payment-service.vue` (placeholder shadowing Task 5 impl)
+- Added Thai breadcrumb labels for `bill-payment-history`, `auditor-review`, `owner-approval`
+- Fixed `BaseInput.vue` to emit `Number` for `type="number"` inputs (Zod validation was rejecting strings)
+- Fixed `stores/bill-payment.ts` `submitOwnerApproval` to include `approvedBy`/`approvedByName` from authStore
 
 ---
 
@@ -255,9 +273,19 @@
    - No leaked user input in logs
 
 **Acceptance**:
-- [ ] `nuxi typecheck` clean
-- [ ] No security findings above "info" level
-- [ ] LOC reduction report from /simplify
+- [x] `nuxi typecheck` clean
+- [x] No security findings above "info" level
+- [x] LOC reduction report from /simplify
+
+**Changes made**:
+- `stores/bill-payment.ts`: `initializeStore` → `Promise.all`; `fetchDailySummary` adds `isLoading`; uses `getApiFetch()` (auto-injects Firebase token); removes `approvedBy`/`auditedBy` from request body
+- `bill-payment-history.vue`: removed unused `canEdit`, redundant `isOwner`; merged duplicate pending cards; `getActionButton` 4x/row → `actionButtonMap` computed; fixed `role === ('unknown' as any)`
+- `auditor-review.vue`: simplified `=== false && !== undefined` → `=== false`
+- `owner-approval.vue`: removed `step1Summary` alias; imported and used `formatDiff`; fixed sign convention
+- `index.vue` (service): `handleCompleteStep1` + `BaseButton` → `ActionButton` with `PERMISSIONS.EDIT_FINANCE` guard
+- `server/utils/serverAuth.ts` (new): `requireServerAuth()` with Firebase ID token verification and dev bypass
+- `plugins/apiFetch.client.ts` (new): `$apiFetch` plugin with auto Firebase token injection
+- All 7 bill-payment mutation endpoints: `requireServerAuth` applied; identity derived from token not request body
 
 ---
 
@@ -279,8 +307,11 @@
 3. Update `MEMORY.md` with any new conventions learned during FLOW 3 (e.g., if a new pattern emerged that differs from FLOW 2)
 
 **Acceptance**:
-- [ ] PR opened and linked here
-- [ ] MEMORY.md updated if needed
+- [x] PR opened and linked here — #110
+- [x] MEMORY.md updated if needed
+
+**Completed**: 2026-04-08 — PR #110 merged into develop
+**Status: ✅ Complete**
 
 ---
 
@@ -288,18 +319,18 @@
 
 | # | Task | Skill | Status | Chat Link |
 |---|---|---|---|---|
-| 1 | Types & Seed Data | `/create-implementation-plan` | ☐ | — |
-| 2 | Pinia Store | `/refactor` | ☐ | — |
-| 3 | Helpers Composable | `/refactor` | ☐ | — |
-| 4 | History Page (WF 3.0) | `/refactor` | ☐ | — |
-| 5 | Service Shell + Step 1 | `/breakdown-feature-implementation` | ☐ | — |
-| 6 | Step 2 Verify Cash | `/refactor` | ☐ | — |
-| 7 | Auditor Review (WF 3.2) | `/refactor` | ☐ | — |
-| 8 | Owner Approval (WF 3.3) | `/refactor` | ☐ | — |
-| 9 | Unit Tests | `/unit-test-vue-pinia` | ☐ | — |
-| 10 | E2E Walkthrough | `/webapp-testing` | ☐ | — |
-| 11 | Simplify + Security Review | `/simplify` + `/security-review` | ☐ | — |
-| 12 | Commit & PR | `/conventional-commit` | ☐ | — |
+| 1 | Types & Seed Data | `/create-implementation-plan` | ✅ | #99 |
+| 2 | Pinia Store | `/refactor` | ✅ | #feature/bill-payment-store |
+| 3 | Helpers Composable | `/refactor` | ✅ | #101 |
+| 4 | History Page (WF 3.0) | `/refactor` | ✅ | #102 |
+| 5 | Service Shell + Step 1 | `/breakdown-feature-implementation` | ✅ | #feature/bill-payment-service-step1 |
+| 6 | Step 2 Verify Cash | `/refactor` | ✅ | #feature/bill-payment-service-step2 |
+| 7 | Auditor Review (WF 3.2) | `/refactor` | ✅ | #105 |
+| 8 | Owner Approval (WF 3.3) | `/refactor` | ✅ | #106 |
+| 9 | Unit Tests | `/unit-test-vue-pinia` | ✅ | #107 |
+| 10 | E2E Walkthrough | `/webapp-testing` | ✅ | #108 |
+| 11 | Simplify + Security Review | `/simplify` + `/security-review` | ✅ | #feature/bill-payment-simplify-security |
+| 12 | Commit & PR | `/conventional-commit` | ✅ | #110 |
 
 ---
 
