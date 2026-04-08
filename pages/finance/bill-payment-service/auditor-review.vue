@@ -77,7 +77,7 @@ function initChecklist() {
 
 const checkedCount = computed(() => Object.values(txnChecked.value).filter(Boolean).length)
 const txnsWithIssues = computed(() =>
-  billPaymentTransactions.value.filter((txn: any) => txnChecked.value[txn.id] === false && txnChecked.value[txn.id] !== undefined).length
+  billPaymentTransactions.value.filter((txn: any) => txnChecked.value[txn.id] === false).length
 )
 const allChecked = computed(() => {
   const ids = billPaymentTransactions.value.map((t: any) => t.id)

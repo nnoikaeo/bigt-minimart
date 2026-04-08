@@ -15,6 +15,18 @@ import type {
 } from '~/types/bill-payment'
 
 /**
+ * Returns $apiFetch (with Authorization header) when running in browser,
+ * falls back to $fetch for any SSR context (bill-payment APIs are client-only).
+ */
+function getApiFetch(): typeof $fetch {
+  if (process.client) {
+    const { $apiFetch } = useNuxtApp()
+    if ($apiFetch) return $apiFetch as typeof $fetch
+  }
+  return $fetch
+}
+
+/**
  * Bill Payment Service Store
  *
  * Manages all bill payment transaction state and operations.
@@ -128,9 +140,11 @@ export const useBillPaymentStore = defineStore('billPayment', {
 
       try {
         const today = new Date().toISOString().split('T')[0]
-        await this.fetchTransactionsByDate(today)
-        await this.fetchCurrentBalanceAction()
-        await this.fetchDailySummary(today)
+        await Promise.all([
+          this.fetchTransactionsByDate(today),
+          this.fetchCurrentBalanceAction(),
+          this.fetchDailySummary(today),
+        ])
       } catch (error: any) {
         this.error = `Failed to initialize store: ${error.message}`
         console.error('[billPayment/initializeStore]', error)
@@ -146,7 +160,7 @@ export const useBillPaymentStore = defineStore('billPayment', {
       this.isLoading = true
 
       try {
-        const response = await $fetch('/api/bill-payment/transactions', { params: { date } })
+        const response = await getApiFetch()('/api/bill-payment/transactions', { params: { date } })
         this.transactions = response.data || []
         console.log(`[billPayment/fetchTransactionsByDate] ${this.transactions.length} txns for ${date}`)
       } catch (error: any) {
@@ -162,13 +176,16 @@ export const useBillPaymentStore = defineStore('billPayment', {
      * Fetch daily summary for a date
      */
     async fetchDailySummary(date: string): Promise<void> {
+      this.isLoading = true
       try {
-        const response = await $fetch(`/api/bill-payment/summaries/${date}`)
+        const response = await getApiFetch()(`/api/bill-payment/summaries/${date}`)
         this.currentSummary = response.data
         console.log('[billPayment/fetchDailySummary] Fetched summary for', date)
       } catch {
         // Summary doesn't exist yet — that's OK for new dates
         this.currentSummary = null
+      } finally {
+        this.isLoading = false
       }
     },
 
@@ -177,7 +194,7 @@ export const useBillPaymentStore = defineStore('billPayment', {
      */
     async fetchAllSummaries(): Promise<void> {
       try {
-        const response = await $fetch('/api/bill-payment/summaries')
+        const response = await getApiFetch()('/api/bill-payment/summaries')
         this.summaries = response.data || []
       } catch (error: any) {
         this.error = `Failed to fetch summaries: ${error.message}`
@@ -190,7 +207,7 @@ export const useBillPaymentStore = defineStore('billPayment', {
      */
     async initDailySummary(date: string): Promise<void> {
       try {
-        const response = await $fetch(`/api/bill-payment/summaries/${date}/init`, { method: 'POST' })
+        const response = await getApiFetch()(`/api/bill-payment/summaries/${date}/init`, { method: 'POST' })
         this.currentSummary = response.data
         console.log('[billPayment/initDailySummary]', response.created ? 'Created' : 'Already exists', date)
       } catch (error: any) {
@@ -205,7 +222,7 @@ export const useBillPaymentStore = defineStore('billPayment', {
       this.isLoading = true
 
       try {
-        const response = await $fetch('/api/bill-payment/transactions', {
+        const response = await getApiFetch()('/api/bill-payment/transactions', {
           method: 'POST',
           body: transactionData,
         })
@@ -237,7 +254,7 @@ export const useBillPaymentStore = defineStore('billPayment', {
       this.isLoading = true
 
       try {
-        const response = await $fetch(`/api/bill-payment/transactions/${id}`, {
+        const response = await getApiFetch()(`/api/bill-payment/transactions/${id}`, {
           method: 'PUT',
           body: updates,
         })
@@ -269,7 +286,7 @@ export const useBillPaymentStore = defineStore('billPayment', {
         const txn = this.transactions.find((t: any) => t.id === id)
         const date = txn?.date
 
-        await $fetch(`/api/bill-payment/transactions/${id}`, { method: 'DELETE' })
+        await getApiFetch()(`/api/bill-payment/transactions/${id}`, { method: 'DELETE' })
 
         this.transactions = this.transactions.filter((t: any) => t.id !== id)
 
@@ -290,7 +307,7 @@ export const useBillPaymentStore = defineStore('billPayment', {
      */
     async fetchCurrentBalanceAction(): Promise<void> {
       try {
-        const response = await $fetch('/api/bill-payment/balances/current')
+        const response = await getApiFetch()('/api/bill-payment/balances/current')
         this.currentBalance = response.data
         console.log('[billPayment/fetchCurrentBalanceAction]', this.currentBalance)
       } catch (error: any) {
@@ -305,7 +322,7 @@ export const useBillPaymentStore = defineStore('billPayment', {
      */
     async fetchBalanceByDate(date: string): Promise<void> {
       try {
-        const response = await $fetch(`/api/bill-payment/balances/${date}`)
+        const response = await getApiFetch()(`/api/bill-payment/balances/${date}`)
         this.currentBalance = response.data
         console.log('[billPayment/fetchBalanceByDate]', date, this.currentBalance)
       } catch (error: any) {
@@ -324,7 +341,7 @@ export const useBillPaymentStore = defineStore('billPayment', {
       userId?: string
     ): Promise<void> {
       try {
-        const response = await $fetch('/api/bill-payment/balances/opening', {
+        const response = await getApiFetch()('/api/bill-payment/balances/opening', {
           method: 'POST',
           body: { date, amount, source, userId },
         })
@@ -345,13 +362,9 @@ export const useBillPaymentStore = defineStore('billPayment', {
       this.isLoading = true
 
       try {
-        const authStore = useAuthStore()
-        const response = await $fetch(`/api/bill-payment/summaries/${date}/complete-step1`, {
+        // userId/userName are derived server-side from the verified token
+        const response = await getApiFetch()(`/api/bill-payment/summaries/${date}/complete-step1`, {
           method: 'POST',
-          body: {
-            userId: authStore.user?.uid || 'system',
-            userName: authStore.user?.displayName || 'Manager',
-          },
         })
 
         this.currentSummary = response.data
@@ -374,7 +387,7 @@ export const useBillPaymentStore = defineStore('billPayment', {
       this.isLoading = true
 
       try {
-        const response = await $fetch(`/api/bill-payment/summaries/${date}/complete-step2`, {
+        const response = await getApiFetch()(`/api/bill-payment/summaries/${date}/complete-step2`, {
           method: 'POST',
           body: step2Data,
         })
@@ -404,14 +417,10 @@ export const useBillPaymentStore = defineStore('billPayment', {
       this.isLoading = true
 
       try {
-        const authStore = useAuthStore()
-        const response = await $fetch(`/api/bill-payment/summaries/${date}/audit`, {
+        // auditedBy/auditedByName are derived server-side from the verified token
+        const response = await getApiFetch()(`/api/bill-payment/summaries/${date}/audit`, {
           method: 'POST',
-          body: {
-            ...auditData,
-            auditedBy: authStore.user?.uid || 'auditor',
-            auditedByName: authStore.user?.displayName || 'Auditor',
-          },
+          body: auditData,
         })
 
         this.currentSummary = response.data
@@ -434,14 +443,10 @@ export const useBillPaymentStore = defineStore('billPayment', {
       this.isLoading = true
 
       try {
-        const authStore = useAuthStore()
-        const response = await $fetch(`/api/bill-payment/summaries/${date}/approve`, {
+        // approvedBy/approvedByName are derived server-side from the verified token
+        const response = await getApiFetch()(`/api/bill-payment/summaries/${date}/approve`, {
           method: 'POST',
-          body: {
-            ...approvalData,
-            approvedBy: authStore.user?.uid || 'owner',
-            approvedByName: authStore.user?.displayName || 'Owner',
-          },
+          body: approvalData,
         })
 
         this.currentSummary = response.data

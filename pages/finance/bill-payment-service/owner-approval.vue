@@ -33,6 +33,7 @@ const {
   getStatusLabel,
   getStatusBadgeVariant,
   formatWorkflowStatus,
+  formatDiff,
 } = useBillPaymentHelpers()
 
 // ─── Access control ───────────────────────────────────────────────────────────
@@ -79,18 +80,17 @@ const canSubmit = computed(() =>
 )
 
 // ─── Summary computed ─────────────────────────────────────────────────────────
-const step1Summary = computed(() => store.currentSummary)
-
+// expected - actual convention: positive = shortage (matches formatDiff / other pages)
 const step2BillPaymentDiff = computed(() => {
   const expected = store.currentSummary?.step2ExpectedBillPaymentCash ?? 0
   const actual = store.currentSummary?.step2ActualBillPaymentCash ?? 0
-  return actual - expected
+  return expected - actual
 })
 
 const step2ServiceFeeDiff = computed(() => {
   const expected = store.currentSummary?.step2ExpectedServiceFeeCash ?? 0
   const actual = store.currentSummary?.step2ActualServiceFeeCash ?? 0
-  return actual - expected
+  return expected - actual
 })
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
@@ -244,8 +244,8 @@ onMounted(async () => {
           <span class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">1</span>
           <h3 class="font-semibold text-gray-900">Step 1 — Manager บันทึกรายการ</h3>
           <span class="ml-auto text-sm text-gray-500">
-            {{ step1Summary?.step1TotalTransactions ?? 0 }} รายการ
-            · {{ step1Summary?.step1SuccessTransactions ?? 0 }} สำเร็จ
+            {{ store.currentSummary?.step1TotalTransactions ?? 0 }} รายการ
+            · {{ store.currentSummary?.step1SuccessTransactions ?? 0 }} สำเร็จ
           </span>
         </div>
 
@@ -253,15 +253,15 @@ onMounted(async () => {
         <div class="px-6 py-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
           <div class="bg-blue-50 rounded-lg p-3 text-center">
             <p class="text-xs text-blue-600 mb-1">ยอดรับชำระทั้งหมด</p>
-            <p class="font-semibold text-blue-900">{{ formatAmount(step1Summary?.step1TotalAmount ?? 0) }}</p>
+            <p class="font-semibold text-blue-900">{{ formatAmount(store.currentSummary?.step1TotalAmount ?? 0) }}</p>
           </div>
           <div class="bg-green-50 rounded-lg p-3 text-center">
             <p class="text-xs text-green-600 mb-1">ค่าธรรมเนียมสะสม</p>
-            <p class="font-semibold text-green-900">{{ formatAmount(step1Summary?.step1TotalCommission ?? 0) }}</p>
+            <p class="font-semibold text-green-900">{{ formatAmount(store.currentSummary?.step1TotalCommission ?? 0) }}</p>
           </div>
           <div class="bg-red-50 rounded-lg p-3 text-center">
             <p class="text-xs text-red-600 mb-1">รายการล้มเหลว</p>
-            <p class="font-semibold text-red-900">{{ step1Summary?.step1FailedTransactions ?? 0 }} รายการ</p>
+            <p class="font-semibold text-red-900">{{ store.currentSummary?.step1FailedTransactions ?? 0 }} รายการ</p>
           </div>
         </div>
 
@@ -322,11 +322,11 @@ onMounted(async () => {
           <h3 class="font-semibold text-gray-900">Step 2 — Manager ตรวจนับเงิน</h3>
           <BaseBadge
             v-if="store.isStep2Complete"
-            :variant="step1Summary?.step2HasDiscrepancies ? 'warning' : 'success'"
+            :variant="store.currentSummary?.step2HasDiscrepancies ? 'warning' : 'success'"
             size="sm"
             class="ml-auto"
           >
-            {{ step1Summary?.step2HasDiscrepancies ? 'มีส่วนต่าง ⚠️' : 'ตรงกัน ✅' }}
+            {{ store.currentSummary?.step2HasDiscrepancies ? 'มีส่วนต่าง ⚠️' : 'ตรงกัน ✅' }}
           </BaseBadge>
         </div>
 
@@ -347,11 +347,11 @@ onMounted(async () => {
           <div class="grid grid-cols-3 gap-2">
             <div class="bg-gray-50 rounded-lg p-3">
               <p class="text-xs text-gray-500 mb-1">ยอดที่ควรมี (บิล)</p>
-              <p class="font-medium text-gray-900">{{ formatAmount(step1Summary?.step2ExpectedBillPaymentCash ?? 0) }}</p>
+              <p class="font-medium text-gray-900">{{ formatAmount(store.currentSummary?.step2ExpectedBillPaymentCash ?? 0) }}</p>
             </div>
             <div class="bg-gray-50 rounded-lg p-3">
               <p class="text-xs text-gray-500 mb-1">นับจริง (บิล)</p>
-              <p class="font-medium text-gray-900">{{ formatAmount(step1Summary?.step2ActualBillPaymentCash ?? 0) }}</p>
+              <p class="font-medium text-gray-900">{{ formatAmount(store.currentSummary?.step2ActualBillPaymentCash ?? 0) }}</p>
             </div>
             <div
               class="rounded-lg p-3"
@@ -362,7 +362,7 @@ onMounted(async () => {
                 class="font-medium"
                 :class="step2BillPaymentDiff === 0 ? 'text-green-700' : 'text-yellow-700'"
               >
-                {{ step2BillPaymentDiff === 0 ? '✅ ตรงกัน' : (step2BillPaymentDiff > 0 ? '+' : '') + formatAmount(step2BillPaymentDiff) }}
+                {{ formatDiff(step2BillPaymentDiff) }}
               </p>
             </div>
           </div>
@@ -370,11 +370,11 @@ onMounted(async () => {
           <div class="grid grid-cols-3 gap-2">
             <div class="bg-gray-50 rounded-lg p-3">
               <p class="text-xs text-gray-500 mb-1">ยอดที่ควรมี (ค่าธรรมเนียม)</p>
-              <p class="font-medium text-gray-900">{{ formatAmount(step1Summary?.step2ExpectedServiceFeeCash ?? 0) }}</p>
+              <p class="font-medium text-gray-900">{{ formatAmount(store.currentSummary?.step2ExpectedServiceFeeCash ?? 0) }}</p>
             </div>
             <div class="bg-gray-50 rounded-lg p-3">
               <p class="text-xs text-gray-500 mb-1">นับจริง (ค่าธรรมเนียม)</p>
-              <p class="font-medium text-gray-900">{{ formatAmount(step1Summary?.step2ActualServiceFeeCash ?? 0) }}</p>
+              <p class="font-medium text-gray-900">{{ formatAmount(store.currentSummary?.step2ActualServiceFeeCash ?? 0) }}</p>
             </div>
             <div
               class="rounded-lg p-3"
@@ -385,13 +385,13 @@ onMounted(async () => {
                 class="font-medium"
                 :class="step2ServiceFeeDiff === 0 ? 'text-green-700' : 'text-yellow-700'"
               >
-                {{ step2ServiceFeeDiff === 0 ? '✅ ตรงกัน' : (step2ServiceFeeDiff > 0 ? '+' : '') + formatAmount(step2ServiceFeeDiff) }}
+                {{ formatDiff(step2ServiceFeeDiff) }}
               </p>
             </div>
           </div>
-          <div v-if="step1Summary?.step2VerificationNotes" class="bg-gray-50 rounded-lg p-3">
+          <div v-if="store.currentSummary?.step2VerificationNotes" class="bg-gray-50 rounded-lg p-3">
             <p class="text-xs text-gray-500 mb-1">หมายเหตุ</p>
-            <p class="text-gray-700 whitespace-pre-wrap">{{ step1Summary.step2VerificationNotes }}</p>
+            <p class="text-gray-700 whitespace-pre-wrap">{{ store.currentSummary.step2VerificationNotes }}</p>
           </div>
         </div>
       </section>
@@ -428,38 +428,38 @@ onMounted(async () => {
           <div class="bg-gray-50 rounded-lg p-3 space-y-2">
             <div class="flex justify-between">
               <span class="text-gray-500">ตรวจสอบโดย</span>
-              <span class="font-medium text-gray-900">{{ step1Summary?.auditedByName ?? '-' }}</span>
+              <span class="font-medium text-gray-900">{{ store.currentSummary?.auditedByName ?? '-' }}</span>
             </div>
-            <div v-if="step1Summary?.auditedAt" class="flex justify-between">
+            <div v-if="store.currentSummary?.auditedAt" class="flex justify-between">
               <span class="text-gray-500">เวลาตรวจสอบ</span>
-              <span class="text-gray-700">{{ formatDatetime(step1Summary.auditedAt) }}</span>
+              <span class="text-gray-700">{{ formatDatetime(store.currentSummary.auditedAt) }}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-gray-500">ยอด Bank Statement</span>
-              <span class="font-medium text-blue-800">{{ formatAmount(step1Summary?.auditBankStatementAmount ?? 0) }}</span>
+              <span class="font-medium text-blue-800">{{ formatAmount(store.currentSummary?.auditBankStatementAmount ?? 0) }}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-gray-500">ตรวจสอบ Bank Statement</span>
-              <BaseBadge :variant="step1Summary?.auditBankBalanceMatches ? 'success' : 'warning'" size="sm">
-                {{ step1Summary?.auditBankBalanceMatches ? '✅ ตรงกัน' : '⚠️ ไม่ตรงกัน' }}
+              <BaseBadge :variant="store.currentSummary?.auditBankBalanceMatches ? 'success' : 'warning'" size="sm">
+                {{ store.currentSummary?.auditBankBalanceMatches ? '✅ ตรงกัน' : '⚠️ ไม่ตรงกัน' }}
               </BaseBadge>
             </div>
             <div class="flex justify-between">
               <span class="text-gray-500">รายการที่ตรวจ</span>
-              <span>{{ step1Summary?.auditTransactionsVerified ?? 0 }} รายการ</span>
+              <span>{{ store.currentSummary?.auditTransactionsVerified ?? 0 }} รายการ</span>
             </div>
-            <div v-if="(step1Summary?.auditTransactionsWithIssues ?? 0) > 0" class="flex justify-between">
+            <div v-if="(store.currentSummary?.auditTransactionsWithIssues ?? 0) > 0" class="flex justify-between">
               <span class="text-gray-500">รายการที่มีปัญหา</span>
-              <span class="text-orange-600 font-medium">{{ step1Summary?.auditTransactionsWithIssues }} รายการ</span>
+              <span class="text-orange-600 font-medium">{{ store.currentSummary?.auditTransactionsWithIssues }} รายการ</span>
             </div>
           </div>
-          <div v-if="step1Summary?.auditFindings" class="bg-orange-50 rounded-lg p-3">
+          <div v-if="store.currentSummary?.auditFindings" class="bg-orange-50 rounded-lg p-3">
             <p class="text-xs text-orange-600 mb-1 font-medium">ปัญหาที่พบ</p>
-            <p class="text-gray-700 whitespace-pre-wrap">{{ step1Summary.auditFindings }}</p>
+            <p class="text-gray-700 whitespace-pre-wrap">{{ store.currentSummary.auditFindings }}</p>
           </div>
-          <div v-if="step1Summary?.correctionNotes" class="bg-red-50 rounded-lg p-3">
+          <div v-if="store.currentSummary?.correctionNotes" class="bg-red-50 rounded-lg p-3">
             <p class="text-xs text-red-600 mb-1 font-medium">หมายเหตุการส่งกลับแก้ไข</p>
-            <p class="text-gray-700 whitespace-pre-wrap">{{ step1Summary.correctionNotes }}</p>
+            <p class="text-gray-700 whitespace-pre-wrap">{{ store.currentSummary.correctionNotes }}</p>
           </div>
         </div>
       </section>

@@ -1,10 +1,9 @@
 import { z } from 'zod'
 import { billPaymentJsonRepository } from '~/server/repositories/bill-payment-json.repository'
+import { requireServerAuth } from '~/server/utils/serverAuth'
 
 const schema = z.object({
   outcome: z.enum(['audited', 'audited_with_issues', 'needs_correction']),
-  auditedBy: z.string().optional(),
-  auditedByName: z.string().optional(),
   auditBankStatementAmount: z.number().nonnegative().optional(),
   auditBankBalanceMatches: z.boolean().optional(),
   auditFindings: z.string().optional(),
@@ -23,6 +22,8 @@ const schema = z.object({
  */
 export default defineEventHandler(async (event) => {
   try {
+    const authUser = await requireServerAuth(event)
+
     await billPaymentJsonRepository.init()
 
     const date = event.context.params?.date
@@ -37,7 +38,11 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: 'Step 2 must be completed before audit' })
     }
 
-    const updatedSummary = await billPaymentJsonRepository.submitAudit(date, validated)
+    const updatedSummary = await billPaymentJsonRepository.submitAudit(date, {
+      ...validated,
+      auditedBy: authUser.uid,
+      auditedByName: authUser.name ?? 'Auditor',
+    })
 
     return { success: true, data: updatedSummary, message: 'Audit submitted.' }
   } catch (error: any) {

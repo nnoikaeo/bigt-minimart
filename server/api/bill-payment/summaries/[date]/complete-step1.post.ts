@@ -1,4 +1,5 @@
 import { billPaymentJsonRepository } from '~/server/repositories/bill-payment-json.repository'
+import { requireServerAuth } from '~/server/utils/serverAuth'
 
 /**
  * POST /api/bill-payment/summaries/[date]/complete-step1
@@ -6,14 +7,16 @@ import { billPaymentJsonRepository } from '~/server/repositories/bill-payment-js
  */
 export default defineEventHandler(async (event) => {
   try {
+    const authUser = await requireServerAuth(event)
+
     await billPaymentJsonRepository.init()
 
     const date = event.context.params?.date
     if (!date) throw createError({ statusCode: 400, message: 'Date required' })
 
-    const body = (await readBody(event).catch(() => ({}))) ?? {}
-    const userId = body.userId || 'system'
-    const userName = body.userName || 'Manager'
+    // Identity derived from server-verified token, not client-supplied body
+    const userId = authUser.uid
+    const userName = authUser.name ?? 'Manager'
 
     const txns = await billPaymentJsonRepository.getTransactionsByDate(date)
     if (txns.length === 0) {

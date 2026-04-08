@@ -26,7 +26,7 @@ const logger = useLogger('BillPaymentStep1')
 const store = useBillPaymentStore()
 const router = useRouter()
 const route = useRoute()
-usePermissions()
+const { can } = usePermissions()
 const {
   formatAmount,
   formatTime,
@@ -241,7 +241,7 @@ async function handleDeleteExecute() {
 
 // ─── Complete Step 1 ──────────────────────────────────────────────────────────
 async function handleCompleteStep1() {
-  if (!canCompleteStep1.value) return
+  if (!canCompleteStep1.value || !can(PERMISSIONS.EDIT_FINANCE)) return
   isCompletingStep1.value = true
   errorMessage.value = ''
   try {
@@ -534,14 +534,15 @@ onMounted(async () => {
         >
           ต้องมีอย่างน้อย 1 รายการก่อนดำเนินการต่อ
         </div>
-        <BaseButton
+        <ActionButton
+          :permission="PERMISSIONS.EDIT_FINANCE"
           variant="primary"
           :disabled="!canCompleteStep1"
           :loading="isCompletingStep1"
           @click="handleCompleteStep1"
         >
           ไปขั้นตอนที่ 2 →
-        </BaseButton>
+        </ActionButton>
       </section>
     </template>
 
