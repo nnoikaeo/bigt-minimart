@@ -434,9 +434,14 @@ export const useBillPaymentStore = defineStore('billPayment', {
       this.isLoading = true
 
       try {
+        const authStore = useAuthStore()
         const response = await $fetch(`/api/bill-payment/summaries/${date}/approve`, {
           method: 'POST',
-          body: approvalData,
+          body: {
+            ...approvalData,
+            approvedBy: authStore.user?.uid || 'owner',
+            approvedByName: authStore.user?.displayName || 'Owner',
+          },
         })
 
         this.currentSummary = response.data

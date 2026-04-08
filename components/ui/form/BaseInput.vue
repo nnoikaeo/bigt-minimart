@@ -44,7 +44,7 @@ const inputClasses = computed(() => {
     :disabled="disabled"
     :readonly="readonly"
     :class="inputClasses"
-    @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+    @input="emit('update:modelValue', type === 'number' ? Number(($event.target as HTMLInputElement).value) : ($event.target as HTMLInputElement).value)"
     @focus="emit('focus', $event)"
     @blur="emit('blur', $event)"
   />
