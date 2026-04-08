@@ -127,9 +127,9 @@
 6. **If `needs_correction`**: show audit notes banner at top explaining what to fix
 
 **Acceptance**:
-- [ ] Creating a bill_payment updates all 3 balances correctly in real time
-- [ ] Draft transactions can be edited/deleted before Step 1 completion
-- [ ] Transitioning to Step 2 requires at least 1 transaction
+- [x] Creating a bill_payment updates all 3 balances correctly in real time
+- [x] Draft transactions can be edited/deleted before Step 1 completion
+- [x] Transitioning to Step 2 requires at least 1 transaction
 
 ---
 
@@ -291,8 +291,8 @@
 | 1 | Types & Seed Data | `/create-implementation-plan` | ✅ | #99 |
 | 2 | Pinia Store | `/refactor` | ✅ | #feature/bill-payment-store |
 | 3 | Helpers Composable | `/refactor` | ✅ | #101 |
-| 4 | History Page (WF 3.0) | `/refactor` | ☐ | — |
-| 5 | Service Shell + Step 1 | `/breakdown-feature-implementation` | ☐ | — |
+| 4 | History Page (WF 3.0) | `/refactor` | ✅ | #102 |
+| 5 | Service Shell + Step 1 | `/breakdown-feature-implementation` | ✅ | #feature/bill-payment-service-step1 |
 | 6 | Step 2 Verify Cash | `/refactor` | ☐ | — |
 | 7 | Auditor Review (WF 3.2) | `/refactor` | ☐ | — |
 | 8 | Owner Approval (WF 3.3) | `/refactor` | ☐ | — |
