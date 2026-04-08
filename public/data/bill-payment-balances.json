@@ -33,5 +33,14 @@
     "serviceFeeCash": 40,
     "history": [],
     "updatedAt": "2026-04-08T13:07:23.429Z"
+  },
+  {
+    "id": "bpbal-2026-02-01",
+    "date": "2026-02-01",
+    "bankAccount": 0,
+    "billPaymentCash": 0,
+    "serviceFeeCash": 0,
+    "history": [],
+    "updatedAt": "2026-04-08T16:57:11.012Z"
   }
 ]
