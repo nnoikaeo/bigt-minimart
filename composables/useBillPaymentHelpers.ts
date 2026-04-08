@@ -61,6 +61,7 @@ export function useBillPaymentHelpers() {
   } {
     const map: Record<BillPaymentWorkflowStatus, { label: string; colorClass: string }> = {
       step1_in_progress: { label: 'กำลังบันทึก', colorClass: 'text-yellow-600' },
+      step1_completed: { label: 'รอตรวจนับ', colorClass: 'text-blue-600' },
       step2_completed: { label: 'รอตรวจสอบ', colorClass: 'text-blue-600' },
       step2_completed_with_notes: { label: 'รอตรวจสอบ (มีหมายเหตุ)', colorClass: 'text-blue-500' },
       audited: { label: 'ตรวจสอบแล้ว', colorClass: 'text-indigo-600' },
