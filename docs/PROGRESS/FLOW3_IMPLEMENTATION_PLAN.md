@@ -219,7 +219,7 @@
 - [x] All tests pass (`npm run test`)
 - [x] Coverage of all 3 store transitions + needs_correction loop
 
-**Completed**: 2026-04-08 — branch `feature/bill-payment-unit-tests`
+**Completed**: 2026-04-08 — PR #107 merged into develop
 
 ---
 
@@ -304,7 +304,7 @@
 | 6 | Step 2 Verify Cash | `/refactor` | ✅ | #feature/bill-payment-service-step2 |
 | 7 | Auditor Review (WF 3.2) | `/refactor` | ☐ | — |
 | 8 | Owner Approval (WF 3.3) | `/refactor` | ☐ | — |
-| 9 | Unit Tests | `/unit-test-vue-pinia` | ✅ | feature/bill-payment-unit-tests |
+| 9 | Unit Tests | `/unit-test-vue-pinia` | ✅ | #107 |
 | 10 | E2E Walkthrough | `/webapp-testing` | ☐ | — |
 | 11 | Simplify + Security Review | `/simplify` + `/security-review` | ☐ | — |
 | 12 | Commit & PR | `/conventional-commit` | ☐ | — |
