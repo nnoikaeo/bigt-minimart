@@ -307,8 +307,11 @@
 3. Update `MEMORY.md` with any new conventions learned during FLOW 3 (e.g., if a new pattern emerged that differs from FLOW 2)
 
 **Acceptance**:
-- [ ] PR opened and linked here
-- [ ] MEMORY.md updated if needed
+- [x] PR opened and linked here — #110
+- [x] MEMORY.md updated if needed
+
+**Completed**: 2026-04-08 — PR #110 merged into develop
+**Status: ✅ Complete**
 
 ---
 
@@ -327,7 +330,7 @@
 | 9 | Unit Tests | `/unit-test-vue-pinia` | ✅ | #107 |
 | 10 | E2E Walkthrough | `/webapp-testing` | ✅ | #108 |
 | 11 | Simplify + Security Review | `/simplify` + `/security-review` | ✅ | #feature/bill-payment-simplify-security |
-| 12 | Commit & PR | `/conventional-commit` | ☐ | — |
+| 12 | Commit & PR | `/conventional-commit` | ✅ | #110 |
 
 ---
 
