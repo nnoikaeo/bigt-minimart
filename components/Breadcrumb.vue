@@ -62,7 +62,10 @@ const labelMap: Record<string, string> = {
   'monthly-report': 'รายงานประจำเดือน',
   'money-transfer-history': 'บริการโอนเงิน',
   'money-transfer-service': 'บริการโอนเงิน',
+  'bill-payment-history': 'ประวัติบริการรับชำระบิล',
   'bill-payment-service': 'บริการรับชำระบิล',
+  'auditor-review': 'ตรวจสอบ (Auditor)',
+  'owner-approval': 'อนุมัติ (Owner)',
   // HR pages
   hr: 'บุคคล',
   attendance: 'เวลาเข้าออก',
