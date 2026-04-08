@@ -201,7 +201,8 @@
 ---
 
 ## Task 9 — Unit Tests for Store & Helpers
-**Skill**: `/unit-test-vue-pinia` (dedicated skill for this stack).
+**Status: ✅ Complete**
+**Skill**: `/unit-test-vue-pinia`
 
 **Scope**:
 1. Test `stores/bill-payment.ts` with `createTestingPinia`:
@@ -215,8 +216,10 @@
    - Validators reject invalid forms
 
 **Acceptance**:
-- [ ] All tests pass (`npm run test` or project-specific command)
-- [ ] Coverage of all 3 store transitions + needs_correction loop
+- [x] All tests pass (`npm run test`)
+- [x] Coverage of all 3 store transitions + needs_correction loop
+
+**Completed**: 2026-04-08 — branch `feature/bill-payment-unit-tests`
 
 ---
 
@@ -301,7 +304,7 @@
 | 6 | Step 2 Verify Cash | `/refactor` | ✅ | #feature/bill-payment-service-step2 |
 | 7 | Auditor Review (WF 3.2) | `/refactor` | ☐ | — |
 | 8 | Owner Approval (WF 3.3) | `/refactor` | ☐ | — |
-| 9 | Unit Tests | `/unit-test-vue-pinia` | ☐ | — |
+| 9 | Unit Tests | `/unit-test-vue-pinia` | ✅ | feature/bill-payment-unit-tests |
 | 10 | E2E Walkthrough | `/webapp-testing` | ☐ | — |
 | 11 | Simplify + Security Review | `/simplify` + `/security-review` | ☐ | — |
 | 12 | Commit & PR | `/conventional-commit` | ☐ | — |
