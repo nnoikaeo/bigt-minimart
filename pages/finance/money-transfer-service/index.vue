@@ -1343,12 +1343,12 @@ onBeforeUnmount(() => {
           <!-- Balance Snapshot -->
           <div>
             <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">ยอดเงินในบัญชี Bank</h4>
-            <MoneyTransferBalanceSnapshot :opening-balance="openingBalance" :closing-balance="closingBalance">
+            <BalanceSnapshot :opening-balance="openingBalance" :closing-balance="closingBalance">
               <div class="flex gap-6 text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
                 <span>เงินสดในมือ (โอน/ถอน): <strong>{{ formatCurrency(step1FinalBalances?.transferCash ?? 0) }}</strong></span>
                 <span>ค่าบริการสะสม: <strong class="text-green-700">{{ formatCurrency(step1FinalBalances?.serviceFeeCash ?? 0) }}</strong></span>
               </div>
-            </MoneyTransferBalanceSnapshot>
+            </BalanceSnapshot>
           </div>
           <hr class="border-gray-100" />
 
@@ -2241,7 +2241,7 @@ onBeforeUnmount(() => {
       <!-- Balance Snapshot + Bank Statement input -->
       <div class="mb-5">
         <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">ยอดเงินในบัญชี Bank</h3>
-        <MoneyTransferBalanceSnapshot :opening-balance="openingBalance" :closing-balance="closingBalance">
+        <BalanceSnapshot :opening-balance="openingBalance" :closing-balance="closingBalance">
           <div class="grid grid-cols-2 gap-4 text-sm">
             <FormField label="Bank Statement แสดง">
               <div class="relative">
@@ -2258,7 +2258,7 @@ onBeforeUnmount(() => {
               </div>
             </div>
           </div>
-        </MoneyTransferBalanceSnapshot>
+        </BalanceSnapshot>
       </div>
 
       <!-- Transaction List (Collapsible) -->
@@ -2433,7 +2433,7 @@ onBeforeUnmount(() => {
       <!-- Balance Snapshot read-only -->
       <div class="mb-5">
         <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">ยอดเงินในบัญชี Bank</h3>
-        <MoneyTransferBalanceSnapshot :opening-balance="openingBalance" :closing-balance="closingBalance">
+        <BalanceSnapshot :opening-balance="openingBalance" :closing-balance="closingBalance">
           <div class="flex items-center gap-3 mb-3 p-3 bg-gray-50 rounded-lg flex-wrap">
             <span class="text-sm text-gray-600">รายการเดินบัญชี:</span>
             <template v-if="auditData?.bankStatementAmount">
@@ -2444,7 +2444,7 @@ onBeforeUnmount(() => {
               {{ auditData?.bankStatementVerified ? '✅ ตรวจสอบแล้ว' : '⚠️ ไม่ได้ตรวจสอบ' }}
             </BaseBadge>
           </div>
-        </MoneyTransferBalanceSnapshot>
+        </BalanceSnapshot>
       </div>
 
       <!-- Transaction List (read-only, with Auditor issue flags + summary footer) -->
