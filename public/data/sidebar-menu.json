@@ -45,10 +45,10 @@
           ]
         },
         {
-          "pageKey": "bill-payment-service",
+          "pageKey": "bill-payment-history",
           "icon": "💳",
           "pageName": "บริการรับชำระบิล",
-          "route": "/finance/bill-payment-service",
+          "route": "/finance/bill-payment-history",
           "requiredRoles": [
             "owner",
             "manager",

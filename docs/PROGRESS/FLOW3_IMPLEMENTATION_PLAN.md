@@ -100,9 +100,9 @@
 7. Verify sidebar menu item "บริการรับชำระบิล" already points here (per user's note); if not, update `public/data/sidebar-menu.json`
 
 **Acceptance**:
-- [ ] Each role sees correct pending counts
-- [ ] Action button label/destination matches WF 3.0 table
-- [ ] Backdated entry warning shows when past date selected
+- [x] Each role sees correct pending counts
+- [x] Action button label/destination matches WF 3.0 table
+- [x] Backdated entry warning shows when past date selected
 
 ---
 
