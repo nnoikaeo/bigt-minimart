@@ -5,6 +5,8 @@ import { useLogger } from '~/composables/useLogger'
 import { usePermissions } from '~/composables/usePermissions'
 import { PERMISSIONS, ROLES } from '~/types/permissions'
 import { BANK_LIST } from '~/constants/banks'
+import type { UnifiedWorkflowStatus } from '~/types/shared-workflow'
+import type { WorkflowStep } from '~/components/shared/WorkflowProgressBar.vue'
 import {
   PlusIcon,
   StarIcon,
@@ -161,6 +163,26 @@ const isAuditor = computed(() => hasAnyRole([ROLES.AUDITOR]))
 const isOwner = computed(() => hasAnyRole([ROLES.OWNER]))
 const isApproved = computed(() => store.isApproved)
 const workflowStatus = computed(() => store.getCurrentWorkflowStatus)
+
+// ── Money Transfer workflow step config (shared WorkflowProgressBar) ──
+const MT_WORKFLOW_STEPS: WorkflowStep[] = [
+  { label: 'บันทึก', shortLabel: 'บันทึก', key: 'record' },
+  { label: 'ตรวจนับ', shortLabel: 'นับ', key: 'verify' },
+  { label: 'Auditor', shortLabel: 'Audit', key: 'audit' },
+  { label: 'Owner', shortLabel: 'Owner', key: 'approve' },
+]
+
+const MT_STATUS_TO_STEP_MAP: Record<UnifiedWorkflowStatus, number> = {
+  step1_in_progress: 0,
+  step1_completed: 1,
+  step2_completed: 2,
+  step2_completed_with_notes: 2,
+  audited: 3,
+  audited_with_issues: 3,
+  approved: 3,
+  approved_with_notes: 3,
+  needs_correction: 2,
+}
 /** Transaction table collapsed by default for Owner (always) and Auditor (when step2 complete — they have their own txn list in audit form) */
 const shouldCollapseTxnTable = computed(() => isOwner.value || (isAuditor.value && store.isStep2Complete))
 const isStep1InProgress = computed(() => workflowStatus.value === 'step1_in_progress')
@@ -1124,7 +1146,9 @@ onBeforeUnmount(() => {
     <!-- ── Workflow Progress Bar ────────────────────────────────────────── -->
     <WorkflowProgressBar
       v-if="!(isManagerOrAsst && isStep1InProgress) && !isApproved"
-      :status="workflowStatus"
+      :steps="MT_WORKFLOW_STEPS"
+      :current-status="workflowStatus"
+      :status-to-step-map="MT_STATUS_TO_STEP_MAP"
       class="mb-4"
     />
 
