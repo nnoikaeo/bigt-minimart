@@ -310,6 +310,26 @@ const diffServiceFee = computed(() => Number(actualServiceFee.value) - expectedS
 const diffTotal = computed(() => actualTotal.value - expectedTotal.value)
 const hasDiscrepancy = computed(() => diffTotal.value !== 0)
 
+// --- CashVerificationTable row adapters (shared component) ---
+import type { CashVerificationRow } from '~/components/shared/CashVerificationTable.vue'
+
+const mtCashVerificationRows = computed<CashVerificationRow[]>(() => {
+  const actualCash = store.currentSummary?.step2?.actualCash
+  return [
+    { label: 'A. เงินสดจากโอน/ถอนเงิน', expected: expectedTransferWithdrawal.value, managerActual: actualCash?.transferWithdrawal ?? null },
+    { label: 'B. ค่าบริการ (เงินสด)', expected: expectedServiceFee.value, managerActual: actualCash?.serviceFee ?? null },
+  ]
+})
+
+const mtAuditCashVerificationRows = computed<CashVerificationRow[]>(() => {
+  const s2 = step2Data.value?.actualCash
+  const aud = auditData.value?.auditorCash
+  return [
+    { label: 'A. เงินสดจากโอน/ถอนเงิน', expected: expectedTransferWithdrawal.value, managerActual: s2?.transferWithdrawal ?? null, auditorActual: aud?.transferWithdrawal ?? null },
+    { label: 'B. ค่าบริการ (เงินสด)', expected: expectedServiceFee.value, managerActual: s2?.serviceFee ?? null, auditorActual: aud?.serviceFee ?? null },
+  ]
+})
+
 const isStep2FormValid = computed(() =>
   Number(actualTransferWithdrawal.value) >= 0 &&
   Number(actualServiceFee.value) >= 0 &&
@@ -2206,11 +2226,9 @@ onBeforeUnmount(() => {
       class="mt-2"
     >
       <div class="-mx-6 -my-4">
-        <MoneyTransferCashVerificationTable
-          :expected-transfer-withdrawal="expectedTransferWithdrawal"
-          :expected-service-fee="expectedServiceFee"
-          :manager-actual="store.currentSummary?.step2?.actualCash ?? null"
-          :has-discrepancies="store.currentSummary?.step2?.hasDiscrepancies"
+        <CashVerificationTable
+          :rows="mtCashVerificationRows"
+          mode="manager-readonly"
           :verification-notes="store.currentSummary?.step2?.verificationNotes"
         />
       </div>
@@ -2493,11 +2511,9 @@ onBeforeUnmount(() => {
       <!-- Cash Verification (Manager + Auditor columns) -->
       <div class="mb-5">
         <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">ตรวจสอบยอดเงินสด</h3>
-        <MoneyTransferCashVerificationTable
-          :expected-transfer-withdrawal="expectedTransferWithdrawal"
-          :expected-service-fee="expectedServiceFee"
-          :manager-actual="step2Data?.actualCash ?? null"
-          :auditor-actual="auditData?.auditorCash ?? null"
+        <CashVerificationTable
+          :rows="mtAuditCashVerificationRows"
+          mode="full-readonly"
         />
       </div>
     </CollapsibleSection>
