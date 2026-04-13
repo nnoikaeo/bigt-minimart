@@ -241,7 +241,7 @@ onMounted(async () => {
     <!-- ══════════════════════════════════════════════════════════════════════ -->
     <!-- Owner Approval Section (placed first — most important for Owner role)  -->
     <!-- ══════════════════════════════════════════════════════════════════════ -->
-    <OwnerApprovalSection
+    <MoneyTransferOwnerApprovalSection
       v-if="(isOwner && store.isAudited) || isApproved"
       :date="selectedDate"
       :is-needs-correction="isNeedsCorrection"
@@ -250,7 +250,7 @@ onMounted(async () => {
     <!-- ══════════════════════════════════════════════════════════════════════ -->
     <!-- Manager Recording Section                                              -->
     <!-- ══════════════════════════════════════════════════════════════════════ -->
-    <ManagerRecordingSection
+    <MoneyTransferManagerRecordingSection
       v-if="isManagerOrAsst"
       :date="selectedDate"
       :current-user="currentUser"
@@ -259,7 +259,7 @@ onMounted(async () => {
     <!-- ══════════════════════════════════════════════════════════════════════ -->
     <!-- Cash Verification Section (Step 2)                                     -->
     <!-- ══════════════════════════════════════════════════════════════════════ -->
-    <CashVerificationSection
+    <MoneyTransferCashVerificationSection
       v-if="isManagerOrAsst && store.isStep1Complete"
       :date="selectedDate"
     />
@@ -267,7 +267,7 @@ onMounted(async () => {
     <!-- ══════════════════════════════════════════════════════════════════════ -->
     <!-- Auditor Review Section                                                  -->
     <!-- ══════════════════════════════════════════════════════════════════════ -->
-    <AuditorReviewSection
+    <MoneyTransferAuditorReviewSection
       v-if="isAuditor"
       :date="selectedDate"
       :is-needs-correction="isNeedsCorrection"

@@ -207,8 +207,6 @@ export function useBillPaymentHelpers() {
     date: string,
   ): SmartActionButton {
     const serviceRoute = `/finance/bill-payment-service?date=${date}`
-    const auditorRoute = `/finance/bill-payment-service/auditor-review?date=${date}`
-    const ownerRoute = `/finance/bill-payment-service/owner-approval?date=${date}`
 
     if (role === 'manager' || role === 'assistant_manager') {
       if (workflowStatus === 'step1_in_progress') {
@@ -217,29 +215,29 @@ export function useBillPaymentHelpers() {
       if (workflowStatus === 'needs_correction') {
         return { label: 'แก้ไข', route: serviceRoute, variant: 'secondary' }
       }
-      // step2_completed / step2_completed_with_notes / audited / audited_with_issues / approved / approved_with_notes
       return { label: 'ดูรายละเอียด', route: serviceRoute, variant: 'outline' }
     }
 
     if (role === 'auditor') {
       if (workflowStatus === 'step2_completed' || workflowStatus === 'step2_completed_with_notes') {
-        return { label: 'ตรวจสอบ', route: auditorRoute, variant: 'primary' }
+        return { label: 'ตรวจสอบ', route: serviceRoute, variant: 'primary' }
+      }
+      if (workflowStatus === 'needs_correction') {
+        return { label: 'ตรวจสอบใหม่', route: serviceRoute, variant: 'primary' }
       }
       if (workflowStatus === 'audited' || workflowStatus === 'audited_with_issues') {
-        return { label: 'ดูการตรวจสอบ', route: auditorRoute, variant: 'outline' }
+        return { label: 'ดูการตรวจสอบ', route: serviceRoute, variant: 'outline' }
       }
-      // step1_* / needs_correction / approved*
       return { label: 'ดูรายละเอียด', route: serviceRoute, variant: 'outline' }
     }
 
     // role === 'owner'
     if (workflowStatus === 'audited' || workflowStatus === 'audited_with_issues') {
-      return { label: 'อนุมัติ', route: ownerRoute, variant: 'primary' }
+      return { label: 'อนุมัติ', route: serviceRoute, variant: 'primary' }
     }
     if (workflowStatus === 'approved' || workflowStatus === 'approved_with_notes') {
-      return { label: 'ดูรายละเอียด', route: ownerRoute, variant: 'outline' }
+      return { label: 'ดูรายละเอียด', route: serviceRoute, variant: 'outline' }
     }
-    // step1_* / step2_* / needs_correction
     return { label: 'ดูรายละเอียด', route: serviceRoute, variant: 'outline' }
   }
 
