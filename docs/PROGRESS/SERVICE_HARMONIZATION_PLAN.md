@@ -1209,8 +1209,9 @@ index.vue เหลือแค่:
 
 ---
 
-#### Task 3.1: BP — สร้าง Sub-Components (แยกจากหน้าเดิม)
+#### Task 3.1: BP — สร้าง Sub-Components (แยกจากหน้าเดิม) ✅
 
+**Branch:** `feature/bp-sub-components` | **Status:** Done (14 Apr 2026)  
 **Skill:** `refactor`
 
 ```
