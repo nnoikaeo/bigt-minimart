@@ -1,0 +1,51 @@
+/**
+ * Global setup: expose Vue Composition API functions as globals
+ * to replicate Nuxt's auto-import behaviour in the Vitest environment.
+ */
+import {
+  ref,
+  computed,
+  reactive,
+  watch,
+  watchEffect,
+  onMounted,
+  onUnmounted,
+  onBeforeMount,
+  onBeforeUnmount,
+  nextTick,
+  toRef,
+  toRefs,
+  readonly,
+  shallowRef,
+  shallowReactive,
+  triggerRef,
+  markRaw,
+  provide,
+  inject,
+  useSlots,
+  useAttrs,
+} from 'vue'
+
+Object.assign(globalThis, {
+  ref,
+  computed,
+  reactive,
+  watch,
+  watchEffect,
+  onMounted,
+  onUnmounted,
+  onBeforeMount,
+  onBeforeUnmount,
+  nextTick,
+  toRef,
+  toRefs,
+  readonly,
+  shallowRef,
+  shallowReactive,
+  triggerRef,
+  markRaw,
+  provide,
+  inject,
+  useSlots,
+  useAttrs,
+})
