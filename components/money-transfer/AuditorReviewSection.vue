@@ -38,6 +38,7 @@ const issueDetails = ref('')
 const showAuditorTransactions = ref(false)
 const showAuditorTxnsReadonly = ref(false)
 const showAuditApproveConfirm = ref(false)
+const showAuditWithIssuesConfirm = ref(false)
 const showAuditRejectConfirm = ref(false)
 const isSubmittingAction = ref(false)
 
@@ -92,6 +93,9 @@ const expectedServiceFee = computed(() =>
 const txnsWithIssues = computed(() => Object.keys(txnIssueStatus.value).length)
 const canSubmitAudit = computed(
   () => auditorCashTransferWithdrawal.value !== null && auditorCashServiceFee.value !== null
+)
+const canSubmitAuditWithIssues = computed(
+  () => canSubmitAudit.value && issueDetails.value.trim() !== ''
 )
 const openingBalance = computed(() => store.currentBalance?.openingBalance ?? 0)
 const closingBalance = computed(
@@ -235,6 +239,39 @@ async function handleApproveAudit() {
   } catch (err: any) {
     errorMessage.value = err.message || 'เกิดข้อผิดพลาด'
     logger.error('Failed to complete audit', err)
+  } finally {
+    isSubmittingAction.value = false
+  }
+}
+
+async function handleAuditWithIssues() {
+  if (!canSubmitAuditWithIssues.value) return
+  isSubmittingAction.value = true
+  try {
+    await store.submitAudit(props.date, {
+      transactionsVerified: auditTransactionList.value.length,
+      transactionsWithIssues: txnsWithIssues.value,
+      bankStatementVerified: bankStatementAmount.value > 0,
+      bankStatementAmount: bankStatementAmount.value || undefined,
+      auditorCash: (auditorCashTransferWithdrawal.value !== null && auditorCashServiceFee.value !== null)
+        ? {
+            transferWithdrawal: auditorCashTransferWithdrawal.value,
+            serviceFee: auditorCashServiceFee.value,
+            total: auditorCashTransferWithdrawal.value + auditorCashServiceFee.value,
+          }
+        : undefined,
+      outcome: 'audited_with_issues',
+      auditResult: 'minor_issues',
+      auditNotes: issueDetails.value,
+      issuesFound: issueDetails.value,
+      txnIssueStatus: Object.keys(txnIssueStatus.value).length > 0 ? { ...txnIssueStatus.value } : undefined,
+    })
+    successMessage.value = 'ส่งให้ Owner อนุมัติแล้ว (มีหมายเหตุ)'
+    showAuditWithIssuesConfirm.value = false
+    logger.log('Audit completed with issues')
+  } catch (err: any) {
+    errorMessage.value = err.message || 'เกิดข้อผิดพลาด'
+    logger.error('Failed to complete audit with issues', err)
   } finally {
     isSubmittingAction.value = false
   }
@@ -456,10 +493,22 @@ async function handleRejectAudit() {
           <XCircleIcon class="w-4 h-4" />
           ส่งคืนแก้ไข
         </BaseButton>
-        <BaseButton variant="success" :disabled="!canSubmitAudit" @click="showAuditApproveConfirm = true">
-          <CheckCircleIcon class="w-4 h-4" />
-          {{ isNeedsCorrection ? 'ส่งตรวจสอบใหม่' : 'ยืนยันการตรวจสอบ' }}
-        </BaseButton>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <BaseButton
+            variant="secondary"
+            class="border-amber-400 text-amber-700 hover:bg-amber-50"
+            :disabled="!canSubmitAuditWithIssues"
+            :title="!canSubmitAuditWithIssues ? 'กรอกรายละเอียดปัญหาก่อน' : ''"
+            @click="showAuditWithIssuesConfirm = true"
+          >
+            <ExclamationTriangleIcon class="w-4 h-4" />
+            ยืนยันพร้อมหมายเหตุ
+          </BaseButton>
+          <BaseButton variant="success" :disabled="!canSubmitAudit" @click="showAuditApproveConfirm = true">
+            <CheckCircleIcon class="w-4 h-4" />
+            {{ isNeedsCorrection ? 'ส่งตรวจสอบใหม่' : 'ยืนยันการตรวจสอบ' }}
+          </BaseButton>
+        </div>
       </div>
     </section>
 
@@ -565,15 +614,25 @@ async function handleRejectAudit() {
     <Teleport to="body">
       <div
         v-if="showStickyAuditorActions"
-        class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg px-4 py-3 flex items-center justify-between z-50 sm:hidden"
+        class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg px-4 py-3 flex items-center justify-between gap-2 z-50 sm:hidden"
       >
         <BaseButton variant="danger" size="sm" :disabled="isNeedsCorrection" @click="showAuditRejectConfirm = true">
           <XCircleIcon class="w-4 h-4" />
           ส่งคืนแก้ไข
         </BaseButton>
+        <BaseButton
+          variant="secondary"
+          size="sm"
+          class="border-amber-400 text-amber-700 hover:bg-amber-50"
+          :disabled="!canSubmitAuditWithIssues"
+          @click="showAuditWithIssuesConfirm = true"
+        >
+          <ExclamationTriangleIcon class="w-4 h-4" />
+          ยืนยัน+หมายเหตุ
+        </BaseButton>
         <BaseButton variant="success" size="sm" :disabled="!canSubmitAudit" @click="showAuditApproveConfirm = true">
           <CheckCircleIcon class="w-4 h-4" />
-          {{ isNeedsCorrection ? 'ส่งตรวจสอบใหม่' : 'ยืนยันการตรวจสอบ' }}
+          {{ isNeedsCorrection ? 'ส่งใหม่' : 'ยืนยัน' }}
         </BaseButton>
       </div>
     </Teleport>
@@ -666,6 +725,18 @@ async function handleRejectAudit() {
       :loading="isSubmittingAction"
       @confirm="handleApproveAudit"
       @cancel="showAuditApproveConfirm = false"
+    />
+
+    <!-- Audit With Issues Confirm -->
+    <ConfirmDialog
+      :open="showAuditWithIssuesConfirm"
+      title="ยืนยันพร้อมหมายเหตุ"
+      message="ยืนยันผลการ Audit (มีปัญหา/หมายเหตุ) และส่งให้ Owner อนุมัติหรือไม่? Owner จะเห็นหมายเหตุที่ระบุไว้"
+      confirm-label="ยืนยัน"
+      variant="warning"
+      :loading="isSubmittingAction"
+      @confirm="handleAuditWithIssues"
+      @cancel="showAuditWithIssuesConfirm = false"
     />
 
     <!-- Audit Reject Confirm -->
