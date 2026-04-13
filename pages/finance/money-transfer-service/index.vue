@@ -8,6 +8,7 @@ import { BANK_LIST } from '~/constants/banks'
 import type { UnifiedWorkflowStatus } from '~/types/shared-workflow'
 import type { WorkflowStep } from '~/components/shared/WorkflowProgressBar.vue'
 import type { BalanceCardItem } from '~/components/shared/CompactBalanceSummary.vue'
+import type { TableColumn } from '~/components/shared/TransactionTable.vue'
 import {
   PlusIcon,
   StarIcon,
@@ -515,6 +516,16 @@ const {
   getChannelSubtitle,
   formatDiff,
 } = useMoneyTransferHelpers()
+
+// ─── Money Transfer column definitions for TransactionTable ──────────────────
+const mtColumns: TableColumn[] = [
+  { key: 'datetime', label: 'เวลา', formatter: (_v, row) => formatTime(row.datetime) },
+  { key: 'transactionType', label: 'ประเภท', tdClass: 'font-medium text-gray-900', formatter: (v) => getTransactionTypeLabel(v) },
+  { key: 'accountName', label: 'ชื่อบัญชี', component: 'account-name', hideOnMobile: true },
+  { key: 'amount', label: 'จำนวนเงิน', align: 'right', tdClass: 'font-semibold text-gray-900', formatter: (v) => formatCurrency(v) },
+  { key: 'commission', label: 'ค่าบริการ', align: 'right', component: 'commission' },
+  { key: 'status', label: 'สถานะ', align: 'center', component: 'status' },
+]
 
 // ─── CollapsibleSection Summary Computed ──────────────────────────────────────
 const txnSectionBadge = computed(() => ({
@@ -1485,13 +1496,34 @@ onBeforeUnmount(() => {
             <ChevronDownIcon v-else class="w-4 h-4 text-gray-500" />
           </button>
           <div v-if="expandStep1Owner" class="px-6 pb-4">
-            <MoneyTransferTransactionTable
+            <TransactionTable
               :transactions="dateTransactions"
+              :columns="mtColumns"
               empty-message="ไม่มีรายการ"
               @row-click="openDetailModal"
             >
               <template #action-header>ดู</template>
-            </MoneyTransferTransactionTable>
+              <template #col-account-name="{ row }">
+                <div class="text-gray-900 text-sm">{{ getAccountName(row) }}</div>
+                <div v-if="getChannelSubtitle(row)" class="text-xs text-gray-400 mt-0.5">{{ getChannelSubtitle(row) }}</div>
+              </template>
+              <template #col-commission="{ row }">
+                <template v-if="row.transactionType !== 'owner_deposit'">
+                  {{ row.commission ? formatCurrency(row.commission) : '-' }}
+                  <span v-if="row.commissionType" class="text-xs text-gray-400 ml-1">
+                    {{ row.commissionType === 'cash' ? 'C' : 'T' }}
+                  </span>
+                </template>
+                <template v-else>-</template>
+              </template>
+              <template #col-status="{ row }">
+                <div class="flex flex-col items-center gap-1">
+                  <BaseBadge :variant="getStatusBadgeVariant(row.status)" size="sm" dot>
+                    {{ getStatusLabel(row.status) }}
+                  </BaseBadge>
+                </div>
+              </template>
+            </TransactionTable>
           </div>
         </div>
         <!-- Step 2 Detail -->
@@ -1823,12 +1855,33 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Table -->
-        <MoneyTransferTransactionTable
+        <TransactionTable
           :transactions="paginatedTransactions"
+          :columns="mtColumns"
           :index-offset="(currentPage - 1) * PAGE_SIZE"
           :empty-message="activeFilter === 'all' ? 'กด Quick Actions หรือ [รายการใหม่] เพื่อเริ่มบันทึก' : `ไม่มีรายการที่มีสถานะ ${filterTabs.find(t => t.value === activeFilter)?.label}`"
           @row-click="openDetailModal"
         >
+          <template #col-account-name="{ row }">
+            <div class="text-gray-900 text-sm">{{ getAccountName(row) }}</div>
+            <div v-if="getChannelSubtitle(row)" class="text-xs text-gray-400 mt-0.5">{{ getChannelSubtitle(row) }}</div>
+          </template>
+          <template #col-commission="{ row }">
+            <template v-if="row.transactionType !== 'owner_deposit'">
+              {{ row.commission ? formatCurrency(row.commission) : '-' }}
+              <span v-if="row.commissionType" class="text-xs text-gray-400 ml-1">
+                {{ row.commissionType === 'cash' ? 'C' : 'T' }}
+              </span>
+            </template>
+            <template v-else>-</template>
+          </template>
+          <template #col-status="{ row }">
+            <div class="flex flex-col items-center gap-1">
+              <BaseBadge :variant="getStatusBadgeVariant(row.status)" size="sm" dot>
+                {{ getStatusLabel(row.status) }}
+              </BaseBadge>
+            </div>
+          </template>
           <template #actions="{ txn }">
             <button
               aria-label="ดูรายละเอียด"
@@ -1870,7 +1923,7 @@ onBeforeUnmount(() => {
               <TrashIcon class="w-4 h-4" />
             </ActionButton>
           </template>
-        </MoneyTransferTransactionTable>
+        </TransactionTable>
 
         <!-- Pagination -->
         <div v-if="totalPages > 1" class="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
@@ -1939,12 +1992,33 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Table -->
-        <MoneyTransferTransactionTable
+        <TransactionTable
           :transactions="paginatedTransactions"
+          :columns="mtColumns"
           :index-offset="(currentPage - 1) * PAGE_SIZE"
           :empty-message="activeFilter === 'all' ? 'กด Quick Actions หรือ [รายการใหม่] เพื่อเริ่มบันทึก' : `ไม่มีรายการที่มีสถานะ ${filterTabs.find(t => t.value === activeFilter)?.label}`"
           @row-click="openDetailModal"
         >
+          <template #col-account-name="{ row }">
+            <div class="text-gray-900 text-sm">{{ getAccountName(row) }}</div>
+            <div v-if="getChannelSubtitle(row)" class="text-xs text-gray-400 mt-0.5">{{ getChannelSubtitle(row) }}</div>
+          </template>
+          <template #col-commission="{ row }">
+            <template v-if="row.transactionType !== 'owner_deposit'">
+              {{ row.commission ? formatCurrency(row.commission) : '-' }}
+              <span v-if="row.commissionType" class="text-xs text-gray-400 ml-1">
+                {{ row.commissionType === 'cash' ? 'C' : 'T' }}
+              </span>
+            </template>
+            <template v-else>-</template>
+          </template>
+          <template #col-status="{ row }">
+            <div class="flex flex-col items-center gap-1">
+              <BaseBadge :variant="getStatusBadgeVariant(row.status)" size="sm" dot>
+                {{ getStatusLabel(row.status) }}
+              </BaseBadge>
+            </div>
+          </template>
           <template #actions="{ txn }">
             <button
               aria-label="ดูรายละเอียด"
@@ -1986,7 +2060,7 @@ onBeforeUnmount(() => {
               <TrashIcon class="w-4 h-4" />
             </ActionButton>
           </template>
-        </MoneyTransferTransactionTable>
+        </TransactionTable>
 
         <!-- Pagination -->
         <div v-if="totalPages > 1" class="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
@@ -2296,13 +2370,35 @@ onBeforeUnmount(() => {
           </BaseBadge>
         </button>
         <div v-if="showAuditorTransactions" class="bg-white border border-gray-200 border-t-0 rounded-b-xl overflow-hidden">
-          <MoneyTransferTransactionTable
+          <TransactionTable
             :transactions="auditTransactionList"
+            :columns="mtColumns"
             :issued-ids="txnIssueStatus"
             empty-message="ยังไม่มีรายการธุรกรรมสำหรับวันนี้"
             @row-click="openVerifyModal"
           >
             <template #action-header>จัดการ</template>
+            <template #col-account-name="{ row }">
+              <div class="text-gray-900 text-sm">{{ getAccountName(row) }}</div>
+              <div v-if="getChannelSubtitle(row)" class="text-xs text-gray-400 mt-0.5">{{ getChannelSubtitle(row) }}</div>
+            </template>
+            <template #col-commission="{ row }">
+              <template v-if="row.transactionType !== 'owner_deposit'">
+                {{ row.commission ? formatCurrency(row.commission) : '-' }}
+                <span v-if="row.commissionType" class="text-xs text-gray-400 ml-1">
+                  {{ row.commissionType === 'cash' ? 'C' : 'T' }}
+                </span>
+              </template>
+              <template v-else>-</template>
+            </template>
+            <template #col-status="{ row }">
+              <div class="flex flex-col items-center gap-1">
+                <BaseBadge :variant="getStatusBadgeVariant(row.status)" size="sm" dot>
+                  {{ getStatusLabel(row.status) }}
+                </BaseBadge>
+                <BaseBadge v-if="txnIssueStatus[row.id]" variant="warning" size="sm">พบปัญหา</BaseBadge>
+              </div>
+            </template>
             <template #actions="{ txn }">
               <button
                 class="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -2327,7 +2423,7 @@ onBeforeUnmount(() => {
                 </template>
               </button>
             </template>
-          </MoneyTransferTransactionTable>
+          </TransactionTable>
           <div v-if="auditTransactionList.length > 0" class="px-4 py-3 bg-gray-50 border-t border-gray-100 flex flex-wrap gap-4 text-sm text-gray-600">
             <span>รวม {{ auditTransactionList.length }} รายการ</span>
             <span v-if="txnsWithIssues > 0" class="text-amber-700 font-medium">⚠️ พบปัญหา {{ txnsWithIssues }} รายการ</span>
@@ -2482,12 +2578,35 @@ onBeforeUnmount(() => {
           </BaseBadge>
         </button>
         <div v-if="showAuditorTxnsReadonly" class="bg-white border border-gray-200 border-t-0 rounded-b-xl overflow-hidden">
-          <MoneyTransferTransactionTable
+          <TransactionTable
             :transactions="auditTransactionList"
+            :columns="mtColumns"
             :issued-ids="auditData?.txnIssueStatus"
             empty-message="ยังไม่มีรายการธุรกรรมสำหรับวันนี้"
             @row-click="openDetailModal"
-          />
+          >
+            <template #col-account-name="{ row }">
+              <div class="text-gray-900 text-sm">{{ getAccountName(row) }}</div>
+              <div v-if="getChannelSubtitle(row)" class="text-xs text-gray-400 mt-0.5">{{ getChannelSubtitle(row) }}</div>
+            </template>
+            <template #col-commission="{ row }">
+              <template v-if="row.transactionType !== 'owner_deposit'">
+                {{ row.commission ? formatCurrency(row.commission) : '-' }}
+                <span v-if="row.commissionType" class="text-xs text-gray-400 ml-1">
+                  {{ row.commissionType === 'cash' ? 'C' : 'T' }}
+                </span>
+              </template>
+              <template v-else>-</template>
+            </template>
+            <template #col-status="{ row }">
+              <div class="flex flex-col items-center gap-1">
+                <BaseBadge :variant="getStatusBadgeVariant(row.status)" size="sm" dot>
+                  {{ getStatusLabel(row.status) }}
+                </BaseBadge>
+                <BaseBadge v-if="auditData?.txnIssueStatus?.[row.id]" variant="warning" size="sm">พบปัญหา</BaseBadge>
+              </div>
+            </template>
+          </TransactionTable>
           <!-- Summary footer -->
           <div class="px-4 py-3 bg-gray-50 border-t border-gray-100 space-y-2">
             <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
