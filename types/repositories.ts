@@ -345,6 +345,11 @@ export interface MoneyTransferDailySummary {
   // Overall workflow status
   workflowStatus: UnifiedWorkflowStatus
 
+  // Correction tracking (set when auditor or owner sends back for correction)
+  correctionNotes?: string
+  correctionRequestedAt?: string | Date
+  correctionRequestedBy?: string
+
   // System timestamps
   createdAt?: string | Date
   updatedAt?: string | Date

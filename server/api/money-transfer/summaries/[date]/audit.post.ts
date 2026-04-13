@@ -36,6 +36,8 @@ const auditSchema = z.object({
     total: z.number().nonnegative(),
   }).optional(),
   auditResult: z.enum(['no_issues', 'minor_issues', 'major_issues', 'rejected']),
+  /** Explicit outcome overrides auditResult-derived workflowStatus */
+  outcome: z.enum(['audited', 'audited_with_issues', 'needs_correction']).optional(),
   auditNotes: z.string().optional().default(''),
   issuesFound: z.string().optional(),
   txnIssueStatus: z.record(z.string(), z.literal(true)).optional(),
@@ -101,11 +103,21 @@ export default defineEventHandler(async (event) => {
     const isRejected = validated.auditResult === 'rejected'
     const isResubmission = summary.workflowStatus === 'needs_correction'
 
+    // Determine workflow status: explicit outcome takes priority
+    let newWorkflowStatus: 'audited' | 'audited_with_issues' | 'needs_correction'
+    if (validated.outcome) {
+      newWorkflowStatus = validated.outcome
+    } else {
+      newWorkflowStatus = isRejected ? 'needs_correction' : 'audited'
+    }
+
+    const now = new Date().toISOString()
+
     // Build update payload
     const updatePayload: Record<string, any> = {
       auditorVerification: {
         status: 'completed',
-        completedAt: new Date().toISOString(),
+        completedAt: now,
         completedBy: validated.completedBy || 'auditor',
         completedByName: validated.completedByName || 'Auditor',
         transactionsVerified: validated.transactionsVerified,
@@ -119,7 +131,14 @@ export default defineEventHandler(async (event) => {
         auditResult: (isRejected ? 'major_issues' : validated.auditResult) as 'no_issues' | 'minor_issues' | 'major_issues',
         txnIssueStatus: validated.txnIssueStatus,
       },
-      workflowStatus: isRejected ? 'needs_correction' : 'audited',
+      workflowStatus: newWorkflowStatus,
+    }
+
+    // Track correction request metadata
+    if (newWorkflowStatus === 'needs_correction') {
+      updatePayload.correctionNotes = validated.auditNotes || validated.issuesFound || ''
+      updatePayload.correctionRequestedAt = now
+      updatePayload.correctionRequestedBy = validated.completedBy || 'auditor'
     }
 
     // Clear previous owner approval when auditor re-submits after correction

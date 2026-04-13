@@ -91,14 +91,22 @@ export default defineEventHandler(async (event) => {
     }
 
     // Determine workflow status based on decision
-    const workflowStatus: 'needs_correction' | 'approved' = validated.decision === 'request_correction' ? 'needs_correction' : 'approved'
+    let workflowStatus: 'needs_correction' | 'approved' | 'approved_with_notes'
+    if (validated.decision === 'request_correction') {
+      workflowStatus = 'needs_correction'
+    } else if (validated.decision === 'approve_with_notes') {
+      workflowStatus = 'approved_with_notes'
+    } else {
+      workflowStatus = 'approved'
+    }
 
     console.log(
       `[POST /api/money-transfer/summaries/[date]/approve] Owner decision: ${validated.decision}`
     )
 
-    // Update summary with owner approval data
-    const updatedSummary = await moneyTransferJsonRepository.updateDailySummary(date, {
+    const now = new Date().toISOString()
+
+    const updatePayload: Record<string, any> = {
       ownerApproval: {
         status:
           validated.decision === 'approve'
@@ -106,14 +114,24 @@ export default defineEventHandler(async (event) => {
             : validated.decision === 'approve_with_notes'
               ? 'approved_with_notes'
               : 'correction_requested',
-        completedAt: new Date().toISOString(),
+        completedAt: now,
         completedBy: 'owner', // TODO: Get from auth context
         completedByName: 'Owner', // TODO: Get from auth context
         decision: validated.decision,
         ownerNotes: validated.ownerNotes,
       },
       workflowStatus,
-    })
+    }
+
+    // Track correction request metadata
+    if (workflowStatus === 'needs_correction') {
+      updatePayload.correctionNotes = validated.ownerNotes || ''
+      updatePayload.correctionRequestedAt = now
+      updatePayload.correctionRequestedBy = 'owner'
+    }
+
+    // Update summary with owner approval data
+    const updatedSummary = await moneyTransferJsonRepository.updateDailySummary(date, updatePayload)
 
     console.log(
       `[POST /api/money-transfer/summaries/[date]/approve] Completed owner approval for ${date}`
