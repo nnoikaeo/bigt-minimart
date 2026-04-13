@@ -28,10 +28,18 @@ const isManagerOrAM = computed(() =>
 const isAuditor = computed(() => hasAnyRole([ROLES.AUDITOR]))
 const isOwner = computed(() => hasAnyRole([ROLES.OWNER]))
 
+const today = new Date().toISOString().split('T')[0] ?? ''
+
+const isBackdated = computed(() =>
+  !!newRecordDate.value && newRecordDate.value < today
+)
+
 /** Pending Inbox counts by role */
 const pendingForManager = computed(() =>
   store.summaries.filter(
-    (s: any) => s.workflowStatus === 'step1_in_progress'
+    (s: any) =>
+      s.workflowStatus === 'step1_in_progress' ||
+      s.workflowStatus === 'needs_correction'
   ).length
 )
 const pendingForAuditor = computed(() =>
@@ -314,6 +322,13 @@ onMounted(async () => {
   >
     <div class="space-y-4">
       <p class="text-sm text-gray-600">เลือกวันที่ที่ต้องการบันทึกรายการ (สามารถเลือกย้อนหลังได้)</p>
+
+      <!-- Backdated warning -->
+      <BaseAlert
+        v-if="isBackdated"
+        variant="warning"
+        message="คุณกำลังบันทึกรายการย้อนหลัง กรุณาตรวจสอบวันที่ให้ถูกต้อง"
+      />
 
       <FormField label="วันที่">
         <div class="relative">
