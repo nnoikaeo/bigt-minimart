@@ -49,15 +49,52 @@ const errorMessage = ref('')
 
 // ─── Step 1 completion ────────────────────────────────────────────────────────
 const isCompletingStep1 = ref(false)
+
+// ─── Opening Balance ──────────────────────────────────────────────────────────
+const showOpeningBalanceModal = ref(false)
+const openingSource = ref<'carryover' | 'manual'>('carryover')
+const manualOpeningAmount = ref<number>(0)
+const isSettingOpeningBalance = ref(false)
+
+const isOpeningSet = computed(() => store.currentBalance?.openingBalanceSource != null)
+const carryoverAmount = computed(() => store.previousDayBalance?.bankAccount ?? 0)
 const canCompleteStep1 = computed(
-  () => dateTransactions.value.length > 0 && !isCompletingStep1.value
+  () => isOpeningSet.value && dateTransactions.value.length > 0 && !isCompletingStep1.value
 )
+
+function openOpeningBalanceModal() {
+  openingSource.value = 'carryover'
+  manualOpeningAmount.value = 0
+  showOpeningBalanceModal.value = true
+}
+
+async function handleSetOpeningBalance() {
+  const amount = Number(
+    openingSource.value === 'carryover' ? carryoverAmount.value : manualOpeningAmount.value
+  )
+  isSettingOpeningBalance.value = true
+  try {
+    await store.setOpeningBalance(props.date, amount, openingSource.value, props.currentUser.uid)
+    showOpeningBalanceModal.value = false
+    successMessage.value = `กำหนดยอดเงินเริ่มต้น ${formatAmount(amount)} สำเร็จ`
+    logger.log('Opening balance set', { amount, source: openingSource.value })
+  } catch (err: any) {
+    errorMessage.value = err.message || 'เกิดข้อผิดพลาด'
+    logger.error('Failed to set opening balance', err)
+  } finally {
+    isSettingOpeningBalance.value = false
+  }
+}
 
 // ─── Transaction modal ────────────────────────────────────────────────────────
 const showTransactionModal = ref(false)
 const editingTransaction = ref<BillPaymentTransaction | null>(null)
 
 function openNewTransaction() {
+  if (!isOpeningSet.value) {
+    openOpeningBalanceModal()
+    return
+  }
   editingTransaction.value = null
   showTransactionModal.value = true
 }
@@ -148,6 +185,11 @@ async function handleCompleteStep1() {
     isCompletingStep1.value = false
   }
 }
+
+// ─── Lifecycle ────────────────────────────────────────────────────────────────
+onMounted(async () => {
+  await store.fetchPreviousDayBalance(props.date)
+})
 </script>
 
 <template>
@@ -182,6 +224,19 @@ async function handleCompleteStep1() {
         </div>
       </div>
     </div>
+
+    <!-- ── Opening Balance prompt ──────────────────────────────────────────── -->
+    <section v-if="!isOpeningSet" class="mb-4">
+      <div class="flex items-center justify-between gap-4 rounded-xl border border-blue-300 bg-blue-50 px-5 py-4">
+        <div>
+          <div class="font-semibold text-blue-900">💳 กำหนดยอดเงินในบัญชีเริ่มต้น</div>
+          <div class="mt-0.5 text-sm text-blue-700">กรุณากำหนดยอดเงินก่อนเริ่มบันทึกรายการ</div>
+        </div>
+        <ActionButton :permission="PERMISSIONS.EDIT_FINANCE" variant="primary" @click="openOpeningBalanceModal">
+          กำหนดยอดเงินเริ่มต้น
+        </ActionButton>
+      </div>
+    </section>
 
     <!-- ── Balance Cards ──────────────────────────────────────────────────── -->
     <section class="mb-6">
@@ -321,8 +376,22 @@ async function handleCompleteStep1() {
 
     <!-- ── Step 1 Complete Button ─────────────────────────────────────────── -->
     <section class="flex flex-col items-end gap-3 border-t border-gray-100 pt-4">
-      <div v-if="dateTransactions.length === 0" class="text-sm text-gray-400">
-        ต้องมีอย่างน้อย 1 รายการก่อนดำเนินการต่อ
+      <!-- Checklist -->
+      <div class="w-full rounded-xl border border-gray-200 bg-gray-50 px-5 py-4">
+        <h3 class="mb-3 text-sm font-semibold text-gray-700">
+          {{ canCompleteStep1 ? '✅ พร้อมยืนยันบันทึกรายการแล้ว' : '📋 เงื่อนไขก่อนยืนยันบันทึกรายการ' }}
+        </h3>
+        <ul class="space-y-2 text-sm">
+          <li class="flex items-center gap-2" :class="isOpeningSet ? 'text-green-700' : 'text-gray-500'">
+            <span class="text-base">{{ isOpeningSet ? '✅' : '⬜' }}</span>
+            ตั้ง Opening Balance แล้ว
+          </li>
+          <li class="flex items-center gap-2" :class="dateTransactions.length > 0 ? 'text-green-700' : 'text-gray-500'">
+            <span class="text-base">{{ dateTransactions.length > 0 ? '✅' : '⬜' }}</span>
+            มีรายการอย่างน้อย 1 รายการ
+            <span class="text-gray-400">(ปัจจุบัน: {{ dateTransactions.length }} รายการ)</span>
+          </li>
+        </ul>
       </div>
       <ActionButton
         :permission="PERMISSIONS.EDIT_FINANCE"
@@ -348,6 +417,51 @@ async function handleCompleteStep1() {
         @submit="handleFormSubmit"
         @cancel="closeModal"
       />
+    </BaseModal>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         MODAL: Opening Balance
+    ════════════════════════════════════════════════════════════════════════════ -->
+    <BaseModal :open="showOpeningBalanceModal" title="💳 กำหนดยอดเงินในบัญชีเริ่มต้น" size="md" @close="showOpeningBalanceModal = false">
+      <div class="space-y-4">
+        <label :class="['flex cursor-pointer items-start gap-3 rounded-xl border-2 p-4 transition-colors', openingSource === 'carryover' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300']">
+          <input v-model="openingSource" type="radio" value="carryover" class="mt-0.5 accent-blue-600" />
+          <div class="flex-1">
+            <div class="font-semibold text-gray-900">🔄 ใช้ยอดคงเหลือจากเมื่อวาน (Carry-over)</div>
+            <div class="mt-0.5 text-sm text-gray-500">ยอดเงินคงเหลือ ณ สิ้นวันเมื่อวาน</div>
+            <div class="mt-2 text-lg font-bold text-blue-700">
+              <span v-if="store.previousDayBalance">{{ formatAmount(carryoverAmount) }}</span>
+              <span v-else class="text-sm font-normal text-gray-400">ไม่พบข้อมูลวันก่อนหน้า</span>
+            </div>
+          </div>
+        </label>
+        <label :class="['flex cursor-pointer items-start gap-3 rounded-xl border-2 p-4 transition-colors', openingSource === 'manual' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300']">
+          <input v-model="openingSource" type="radio" value="manual" class="mt-0.5 accent-blue-600" />
+          <div class="flex-1">
+            <div class="font-semibold text-gray-900">✏️ กำหนดเอง</div>
+            <div class="mt-0.5 text-sm text-gray-500">ระบุยอดเงินเริ่มต้นด้วยตนเอง</div>
+            <div v-if="openingSource === 'manual'" class="mt-3" @click.stop>
+              <div class="relative">
+                <BaseInput v-model="manualOpeningAmount" type="number" placeholder="0" min="0" />
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">บาท</span>
+              </div>
+            </div>
+          </div>
+        </label>
+      </div>
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <BaseButton variant="secondary" @click="showOpeningBalanceModal = false">ยกเลิก</BaseButton>
+          <BaseButton
+            variant="primary"
+            :disabled="openingSource === 'manual' && manualOpeningAmount < 0"
+            :loading="isSettingOpeningBalance"
+            @click="handleSetOpeningBalance"
+          >
+            💾 ยืนยันยอดเงินเริ่มต้น
+          </BaseButton>
+        </div>
+      </template>
     </BaseModal>
 
     <!-- ═══════════════════════════════════════════════════════════════════════

@@ -66,6 +66,11 @@ export const useBillPaymentStore = defineStore('billPayment', {
     currentBalance: null as BillPaymentBalance | null,
 
     /**
+     * Previous day balance (used for carry-over opening balance)
+     */
+    previousDayBalance: null as BillPaymentBalance | null,
+
+    /**
      * Loading and error state
      */
     isLoading: false,
@@ -128,6 +133,11 @@ export const useBillPaymentStore = defineStore('billPayment', {
     getCurrentWorkflowStatus: (state: any) => {
       return state.currentSummary?.workflowStatus || 'step1_in_progress'
     },
+
+    /**
+     * Check if opening balance has been set for today
+     */
+    isOpeningBalanceSet: (state: any) => state.currentBalance?.openingBalanceSource != null,
   },
 
   actions: {
@@ -328,6 +338,21 @@ export const useBillPaymentStore = defineStore('billPayment', {
       } catch (error: any) {
         this.error = `Failed to fetch balance for ${date}: ${error.message}`
         console.error('[billPayment/fetchBalanceByDate]', error)
+      }
+    },
+
+    /**
+     * Fetch previous day balance (for carry-over display in opening balance modal)
+     */
+    async fetchPreviousDayBalance(date: string): Promise<void> {
+      try {
+        const response = await getApiFetch()('/api/bill-payment/balances/previous', {
+          params: { date },
+        })
+        this.previousDayBalance = response.data
+        console.log('[billPayment/fetchPreviousDayBalance] Previous day balance:', this.previousDayBalance?.bankAccount ?? 'none')
+      } catch {
+        this.previousDayBalance = null
       }
     },
 
