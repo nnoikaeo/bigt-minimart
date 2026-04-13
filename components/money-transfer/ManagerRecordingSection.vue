@@ -1090,7 +1090,7 @@ async function handleCompleteStep1() {
       size="xl"
       @close="showTransactionModal = false; statusChangeMode = undefined"
     >
-      <TransactionForm
+      <MoneyTransferTransactionForm
         v-if="showTransactionModal && store.currentBalance"
         :current-balance="store.currentBalance"
         :recorded-by="currentUser.uid"
