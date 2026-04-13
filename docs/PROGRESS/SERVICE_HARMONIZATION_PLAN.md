@@ -1332,7 +1332,7 @@ Emits: approval-submitted(approvalData)
 
 ---
 
-#### Task 4.1: BP — เพิ่ม Opening Balance System
+#### Task 4.1: BP — เพิ่ม Opening Balance System ✅
 
 **Skill:** `create-implementation-plan`
 
