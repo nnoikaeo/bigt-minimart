@@ -30,7 +30,7 @@ const billTypeConfigSchema = z.object({
 })
 
 const bodySchema = z.object({
-  billTypes: z.record(billTypeConfigSchema),
+  billTypes: z.record(z.string(), billTypeConfigSchema),
   updatedBy: z.string().min(1),
 })
 
