@@ -1677,16 +1677,16 @@ UI:
 
 ---
 
-#### Task 5.2: BP — ปรับ Owner + เพิ่ม step1_completed + ลบเงื่อนไข ✅ DONE (PR #135)
+#### Task 5.2: BP — ปรับ Owner + เพิ่ม step1_completed + ลบเงื่อนไข ✅ DONE (PR #135, #137)
 
-**Branch:** `feature/bp-owner-step1completed`  
+**Branch:** `feature/bp-owner-step1completed`, `feature/bp-owner-workflow-step-summary-cards`  
 **Status:** Completed (14 เม.ย. 2569)
 
 **สิ่งที่ทำเสร็จแล้ว:**
 - ✅ `types/bill-payment.ts` — เพิ่ม `step1_completed` ใน `BillPaymentWorkflowStatus`
 - ✅ `stores/bill-payment.ts` — `completeStep1()` set status → `step1_completed`, `completeStep2()` transition ถูกต้อง
 - ✅ `server/api/bill-payment/` — endpoint `complete-step1` ส่ง `step1_completed` status
-- ✅ `components/bill-payment/OwnerApprovalSection.vue` — ใช้ `WorkflowStepSummaryCard` + `OwnerDecisionCard` (shared)
+- ✅ `components/bill-payment/OwnerApprovalSection.vue` — refactor 3 sections ใช้ `WorkflowStepSummaryCard` (Step 1/2/Audit) + `OwnerDecisionCard` (PR #137)
 - ✅ `components/shared/OwnerDecisionCard.vue` — `disableCorrection = false` เสมอ (Owner สั่ง needs_correction ได้ทุกกรณี)
 - ✅ `composables/useBillPaymentHelpers.ts` — เพิ่ม `step1_completed` ใน `formatWorkflowStatus()` + `getSmartActionButton()`
 - ✅ History Page — Pending Inbox รับรู้ `step1_completed`, Status Badge = "รอตรวจนับ" (blue)
