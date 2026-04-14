@@ -1616,7 +1616,17 @@ UI:
 
 ---
 
-#### Task 5.1: BP — เพิ่ม Balance Snapshot + Auditor Cash Count + Bank Statement
+#### Task 5.1: BP — เพิ่ม Balance Snapshot + Auditor Cash Count + Bank Statement ✅
+
+**Branch:** `feature/bp-auditor-enhancements`  
+**Status:** Completed (14 เม.ย. 2569)
+
+**สิ่งที่ทำเสร็จแล้ว:**
+- ✅ `types/bill-payment.ts` — เพิ่ม `auditorActualBillPaymentCash`, `auditorActualServiceFeeCash`, `auditExpectedClosingBalance`, `auditBankStatementVsClosingDiff`, `auditBankStatementVsClosingMatches`, `auditTxnIssueStatus`
+- ✅ `components/bill-payment/AuditorReviewSection.vue` — เพิ่ม BalanceSnapshot + Bank Statement vs Closing Balance, CashVerificationTable (auditor-input mode), Transaction toggle (มีปัญหา per row), Transaction Detail Modal
+- ✅ `server/api/bill-payment/summaries/[date]/audit.post.ts` — เพิ่ม Zod schema สำหรับ fields ใหม่
+- ✅ `server/repositories/bill-payment-json.repository.ts` — persist auditor cash fields + clear on needs_correction
+- ✅ Step 2 read-only summary เปลี่ยนใช้ `<CashVerificationTable mode="manager-readonly">`
 
 **Skill:** `create-implementation-plan`
 
