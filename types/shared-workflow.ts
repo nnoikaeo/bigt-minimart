@@ -106,6 +106,34 @@ export const WORKFLOW_STATUS_MAP: Record<UnifiedWorkflowStatus, WorkflowStatusCo
 }
 
 // ---------------------------------------------------------------------------
+// Workflow Status Badge CSS Classes (for History pages)
+// ---------------------------------------------------------------------------
+
+/** Tailwind CSS classes for workflow status badges */
+export const WORKFLOW_STATUS_BADGE_CLASSES: Record<UnifiedWorkflowStatus, string> = {
+  step1_in_progress: 'bg-yellow-100 text-yellow-800',
+  step1_completed: 'bg-blue-100 text-blue-800',
+  step2_completed: 'bg-blue-100 text-blue-800',
+  step2_completed_with_notes: 'bg-blue-100 text-blue-800',
+  audited: 'bg-indigo-100 text-indigo-800',
+  audited_with_issues: 'bg-orange-100 text-orange-800',
+  approved: 'bg-green-100 text-green-800',
+  approved_with_notes: 'bg-green-100 text-green-800',
+  needs_correction: 'bg-red-100 text-red-800',
+}
+
+/** Get label + badge CSS class for a workflow status */
+export function getWorkflowStatusBadge(status: string): { label: string; cssClass: string } {
+  const s = status as UnifiedWorkflowStatus
+  const config = WORKFLOW_STATUS_MAP[s]
+  const cssClass = WORKFLOW_STATUS_BADGE_CLASSES[s]
+  if (config && cssClass) {
+    return { label: config.label, cssClass }
+  }
+  return { label: status, cssClass: 'bg-gray-100 text-gray-700' }
+}
+
+// ---------------------------------------------------------------------------
 // Transaction Status Map
 // ---------------------------------------------------------------------------
 
