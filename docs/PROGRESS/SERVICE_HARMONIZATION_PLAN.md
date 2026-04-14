@@ -1803,7 +1803,7 @@ Component ที่ต้องเขียน test:
 
 ---
 
-#### Task 6.2: Integration Testing — ทั้งสอง Service
+#### Task 6.2: Integration Testing — ทั้งสอง Service ✅ Done (PR #139)
 
 **Skill:** `unit-test-vue-pinia`
 
@@ -1927,7 +1927,7 @@ Component ที่ต้องเขียน test:
 | **5** | 5.2 | BP — Owner + step1_completed + ลบเงื่อนไข | `create-implementation-plan` | BP |
 | **5** | 5.3 | BP — Cash Verification UI + Notes | `refactor` | BP |
 | **6** | 6.1 ✅ | Unit Tests — BP Sub-Components | `unit-test-vue-pinia` | Tests |
-| **6** | 6.2 | Integration Tests — ทั้งสอง Service | `unit-test-vue-pinia` | Tests |
+| **6** | 6.2 ✅ | Integration Tests — ทั้งสอง Service | `unit-test-vue-pinia` | Tests |
 | **6** | 6.3 | Data Migration + Final Review | `review-and-refactor` | All |
 
 **รวม: 27 Tasks ใน 6 Phases**
