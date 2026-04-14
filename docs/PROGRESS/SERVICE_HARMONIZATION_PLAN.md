@@ -1845,7 +1845,7 @@ Component ที่ต้องเขียน test:
 
 ---
 
-#### Task 6.3: Data Migration Script + Final Review ✅ Done (PR #TBD)
+#### Task 6.3: Data Migration Script + Final Review ✅ Done (PR #140)
 
 **Skill:** `review-and-refactor`
 

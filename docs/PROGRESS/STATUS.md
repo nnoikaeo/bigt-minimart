@@ -2,7 +2,7 @@
 
 **Last Updated**: Apr 14, 2026
 **Updated By**: Claude Code (Copilot)
-**Current Branch**: feature/bp-data-migration-final-review
+**Current Branch**: develop (latest merge: PR #140 — 874ccef)
 
 ---
 
@@ -117,7 +117,7 @@ Timeline Status: Money Transfer feature fully shipped ✓
    │     └─ OwnerApprovalSection → WorkflowStepSummaryCard ทั้ง 3 sections
    └─ Task 5.3: Cash Verification UI → shared CashVerificationTable + Notes always visible
 
-✅ Phase 6: Testing + Migration (PRs #138, #139, #TBD)
+✅ Phase 6: Testing + Migration (PRs #138, #139, #140)
    ├─ Task 6.1: Unit Tests — BP Sub-Components (PR #138)
    ├─ Task 6.2: Integration Tests — ทั้งสอง Service (PR #139)
    └─ Task 6.3: Data Migration Script + Final Review
