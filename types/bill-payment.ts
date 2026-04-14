@@ -81,6 +81,18 @@ export interface BillPaymentDailySummary {
   auditedByName?: string
   auditBankStatementAmount?: number
   auditBankBalanceMatches?: boolean
+  /** Auditor's cash count for bill payment receipts */
+  auditorActualBillPaymentCash?: number
+  /** Auditor's cash count for service fees */
+  auditorActualServiceFeeCash?: number
+  /** Expected closing balance used for bank statement comparison */
+  auditExpectedClosingBalance?: number
+  /** Diff: bankStatementAmount − expectedClosingBalance */
+  auditBankStatementVsClosingDiff?: number
+  /** Whether bank statement matches expected closing balance */
+  auditBankStatementVsClosingMatches?: boolean
+  /** Per-transaction issue flags: { [txnId]: true } */
+  auditTxnIssueStatus?: Record<string, true>
   auditFindings?: string
   auditTransactionsVerified?: number
   auditTransactionsWithIssues?: number

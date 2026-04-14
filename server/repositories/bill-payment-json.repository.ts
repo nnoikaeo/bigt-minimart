@@ -377,6 +377,12 @@ export class BillPaymentJsonRepository {
       auditedByName: auditData.auditedByName,
       auditBankStatementAmount: auditData.auditBankStatementAmount,
       auditBankBalanceMatches: auditData.auditBankBalanceMatches,
+      auditorActualBillPaymentCash: auditData.auditorActualBillPaymentCash,
+      auditorActualServiceFeeCash: auditData.auditorActualServiceFeeCash,
+      auditExpectedClosingBalance: auditData.auditExpectedClosingBalance,
+      auditBankStatementVsClosingDiff: auditData.auditBankStatementVsClosingDiff,
+      auditBankStatementVsClosingMatches: auditData.auditBankStatementVsClosingMatches,
+      auditTxnIssueStatus: auditData.auditTxnIssueStatus,
       auditFindings: auditData.auditFindings,
       auditTransactionsVerified: auditData.auditTransactionsVerified,
       auditTransactionsWithIssues: auditData.auditTransactionsWithIssues,
@@ -408,6 +414,12 @@ export class BillPaymentJsonRepository {
       updates.auditedBy = undefined
       updates.auditedByName = undefined
       updates.auditFindings = undefined
+      updates.auditorActualBillPaymentCash = undefined
+      updates.auditorActualServiceFeeCash = undefined
+      updates.auditExpectedClosingBalance = undefined
+      updates.auditBankStatementVsClosingDiff = undefined
+      updates.auditBankStatementVsClosingMatches = undefined
+      updates.auditTxnIssueStatus = undefined
     }
 
     return this.updateDailySummary(date, updates)
