@@ -9,9 +9,6 @@ import {
   PlusIcon,
   PencilIcon,
   TrashIcon,
-  BanknotesIcon,
-  CreditCardIcon,
-  CurrencyDollarIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
   EllipsisVerticalIcon,
@@ -41,9 +38,16 @@ const {
 // ─── Workflow ─────────────────────────────────────────────────────────────────
 const workflowStatus = computed(() => store.getCurrentWorkflowStatus)
 const isNeedsCorrection = computed(() => workflowStatus.value === 'needs_correction')
+const isStep1InProgress = computed(() => workflowStatus.value === 'step1_in_progress')
 
 // ─── Transactions ─────────────────────────────────────────────────────────────
 const dateTransactions = computed(() => store.getTransactionsByDate(props.date))
+
+const totalOwnerDeposit = computed(() =>
+  dateTransactions.value
+    .filter((t: any) => t.transactionType === 'owner_deposit' && t.status === 'completed')
+    .reduce((sum: number, t: any) => sum + (t.amount ?? 0), 0)
+)
 
 // ─── Alerts ───────────────────────────────────────────────────────────────────
 const successMessage = ref('')
@@ -350,42 +354,22 @@ onMounted(async () => {
     </section>
 
     <!-- ── Balance Cards ──────────────────────────────────────────────────── -->
-    <section class="mb-6">
-      <h2 class="mb-3 text-base font-semibold text-gray-700">📊 ยอดเงินปัจจุบัน</h2>
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-
-        <div class="rounded-xl border border-gray-200 bg-white p-4 text-center shadow-sm">
-          <div class="mb-2 flex justify-center">
-            <BanknotesIcon class="h-7 w-7 text-blue-500" />
-          </div>
-          <div class="text-xs text-gray-500">บัญชีธนาคาร</div>
-          <div class="mt-1 text-xl font-bold text-blue-700">
-            {{ formatAmount(store.currentBalance?.bankAccount ?? 0) }}
-          </div>
-        </div>
-
-        <div class="rounded-xl border border-gray-200 bg-white p-4 text-center shadow-sm">
-          <div class="mb-2 flex justify-center">
-            <CreditCardIcon class="h-7 w-7 text-green-500" />
-          </div>
-          <div class="text-xs text-gray-500">เงินสดรับชำระบิล</div>
-          <div class="mt-1 text-xl font-bold text-green-700">
-            {{ formatAmount(store.currentBalance?.billPaymentCash ?? 0) }}
-          </div>
-        </div>
-
-        <div class="rounded-xl border border-gray-200 bg-white p-4 text-center shadow-sm">
-          <div class="mb-2 flex justify-center">
-            <CurrencyDollarIcon class="h-7 w-7 text-yellow-500" />
-          </div>
-          <div class="text-xs text-gray-500">ค่าธรรมเนียมสะสม</div>
-          <div class="mt-1 text-xl font-bold text-yellow-700">
-            {{ formatAmount(store.currentBalance?.serviceFeeCash ?? 0) }}
-          </div>
-        </div>
-
-      </div>
-    </section>
+    <CompactBalanceSummary
+      :primary-cards="[
+        { label: 'เงินเริ่มต้น', value: store.currentBalance?.openingBalance ?? 0, colorClass: 'text-gray-700' },
+        { label: 'รวมรับชำระ', value: store.currentBalance?.billPaymentCash ?? 0, colorClass: 'text-green-700' },
+        { label: 'เงินในบัญชีคงเหลือ', value: store.currentBalance?.bankAccount ?? 0, colorClass: 'text-blue-700' },
+        { label: 'เงินสดคงเหลือ', value: (store.currentBalance?.billPaymentCash ?? 0) + (store.currentBalance?.serviceFeeCash ?? 0), colorClass: 'text-emerald-700' },
+      ]"
+      :secondary-cards="[
+        { label: 'รวมฝากเงิน', value: totalOwnerDeposit, colorClass: 'text-purple-700' },
+        { label: 'ค่าธรรมเนียม', value: store.currentBalance?.serviceFeeCash ?? 0, colorClass: 'text-yellow-700' },
+      ]"
+      :collapsible="!isStep1InProgress"
+      :default-expanded="isStep1InProgress"
+      title="📊 ยอดเงินปัจจุบัน"
+      class="mb-6"
+    />
 
     <!-- ── Transaction List ───────────────────────────────────────────────── -->
     <section class="mb-6">
