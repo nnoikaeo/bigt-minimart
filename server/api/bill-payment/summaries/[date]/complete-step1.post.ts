@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
 
     const now = new Date().toISOString()
     const updatedSummary = await billPaymentJsonRepository.updateDailySummary(date, {
-      workflowStatus: 'step1_in_progress', // stays here; step2 page changes to step2_completed
+      workflowStatus: 'step1_completed',
       step1CompletedAt: now,
       step1CompletedBy: userId,
       step1CompletedByName: userName,
@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       data: updatedSummary,
-      message: 'Step 1 complete. Ready for Step 2.',
+      message: 'Step 1 complete. Status: step1_completed.',
     }
   } catch (error: any) {
     if (error.statusCode) throw error

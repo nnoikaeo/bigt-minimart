@@ -209,6 +209,9 @@ export function useBillPaymentHelpers() {
       if (workflowStatus === 'step1_in_progress') {
         return { label: 'ทำงาน', route: serviceRoute, variant: 'primary' }
       }
+      if (workflowStatus === 'step1_completed') {
+        return { label: 'ตรวจนับเงิน', route: serviceRoute, variant: 'primary' }
+      }
       if (workflowStatus === 'needs_correction') {
         return { label: 'แก้ไข', route: serviceRoute, variant: 'secondary' }
       }

@@ -38,6 +38,7 @@ const pendingForManager = computed(() =>
   store.summaries.filter(
     (s: any) =>
       s.workflowStatus === 'step1_in_progress' ||
+      s.workflowStatus === 'step1_completed' ||
       s.workflowStatus === 'needs_correction'
   ).length
 )
@@ -76,6 +77,7 @@ const actionButtonMap = computed(() => {
 function getStatusBadgeClass(status: string): string {
   const map: Record<string, string> = {
     step1_in_progress:          'bg-blue-100 text-blue-800',
+    step1_completed:            'bg-blue-100 text-blue-700',
     step2_completed:            'bg-orange-100 text-orange-800',
     step2_completed_with_notes: 'bg-orange-100 text-orange-800',
     audited:                    'bg-yellow-100 text-yellow-800',
