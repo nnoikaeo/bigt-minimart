@@ -3,6 +3,7 @@ import { useMoneyTransferStore } from '~/stores/money-transfer'
 import { useLogger } from '~/composables/useLogger'
 import { usePermissions } from '~/composables/usePermissions'
 import { PERMISSIONS, ROLES } from '~/types/permissions'
+import { getWorkflowStatusBadge } from '~/types/shared-workflow'
 import { PlusIcon, CalendarIcon } from '@heroicons/vue/24/outline'
 
 definePageMeta({
@@ -34,6 +35,13 @@ const isBackdated = computed(() =>
   !!newRecordDate.value && newRecordDate.value < today
 )
 
+/** Active inbox filter (click card to filter table) */
+const activeFilter = ref<'manager' | 'auditor' | 'owner' | null>(null)
+
+function toggleFilter(role: 'manager' | 'auditor' | 'owner') {
+  activeFilter.value = activeFilter.value === role ? null : role
+}
+
 /** Pending Inbox counts by role */
 const pendingForManager = computed(() =>
   store.summaries.filter(
@@ -55,6 +63,18 @@ const pendingForOwner = computed(() =>
     s.workflowStatus === 'audited_with_issues'
   ).length
 )
+
+/** Filtered summaries based on active inbox filter */
+const filteredSummaries = computed(() => {
+  if (!activeFilter.value) return store.summaries
+  const statusSets: Record<string, string[]> = {
+    manager: ['step1_in_progress', 'needs_correction'],
+    auditor: ['step2_completed', 'step2_completed_with_notes', 'needs_correction'],
+    owner: ['audited', 'audited_with_issues'],
+  }
+  const allowed = statusSets[activeFilter.value] ?? []
+  return store.summaries.filter((s: any) => allowed.includes(s.workflowStatus))
+})
 
 /** Pending count relevant to current user's role */
 const myPendingCount = computed(() => {
@@ -94,20 +114,10 @@ function getActionButton(summary: any): { label: string; route: string; variant:
   return { label: 'ดูรายละเอียด', route: `/finance/money-transfer-service?date=${date}`, variant: 'secondary' }
 }
 
-// ─── Status Badge ─────────────────────────────────────────────────────────────
+// ─── Status Badge (uses shared WORKFLOW_STATUS_MAP) ──────────────────────────
 function getStatusBadge(status: string): { label: string; class: string } {
-  const map: Record<string, { label: string; class: string }> = {
-    step1_in_progress:           { label: 'กำลังทำงาน',           class: 'bg-blue-100 text-blue-800' },
-    step1_completed:             { label: 'รอตรวจนับเงิน',          class: 'bg-blue-100 text-blue-800' },
-    step2_completed:             { label: 'รอตรวจสอบ',             class: 'bg-orange-100 text-orange-800' },
-    step2_completed_with_notes:  { label: 'รอตรวจสอบ (มีหมายเหตุ)',  class: 'bg-orange-100 text-orange-800' },
-    audited:                     { label: 'รออนุมัติ',              class: 'bg-yellow-100 text-yellow-800' },
-    audited_with_issues:         { label: 'รออนุมัติ (มีปัญหา)',    class: 'bg-amber-100 text-amber-800' },
-    approved:                    { label: 'อนุมัติแล้ว',             class: 'bg-green-100 text-green-800' },
-    approved_with_notes:         { label: 'อนุมัติแล้ว (มีหมายเหตุ)', class: 'bg-green-100 text-green-800' },
-    needs_correction:            { label: 'รอแก้ไข',                class: 'bg-red-100 text-red-800' },
-  }
-  return map[status] ?? { label: status, class: 'bg-gray-100 text-gray-700' }
+  const badge = getWorkflowStatusBadge(status)
+  return { label: badge.label, class: badge.cssClass }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -178,64 +188,81 @@ onMounted(async () => {
       <!-- Manager/AM card -->
       <div
         v-if="isManagerOrAM"
-        class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4"
+        class="bg-white border rounded-xl p-4 flex items-center gap-4 cursor-pointer transition-all"
+        :class="activeFilter === 'manager' ? 'border-blue-400 ring-2 ring-blue-100' : 'border-gray-200 hover:border-gray-300'"
+        @click="toggleFilter('manager')"
       >
         <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-lg font-bold flex-shrink-0">
           {{ pendingForManager }}
         </div>
         <div>
           <div class="text-sm font-semibold text-gray-800">รอดำเนินการ</div>
-          <div class="text-xs text-gray-500">รายการที่รอบันทึก/แก้ไข</div>
+          <div class="text-xs text-gray-500">กำลังบันทึก / ส่งกลับแก้ไข</div>
         </div>
       </div>
 
       <!-- Auditor card -->
       <div
         v-if="isAuditor || isManagerOrAM"
-        class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4"
+        class="bg-white border rounded-xl p-4 flex items-center gap-4 cursor-pointer transition-all"
+        :class="activeFilter === 'auditor' ? 'border-orange-400 ring-2 ring-orange-100' : 'border-gray-200 hover:border-gray-300'"
+        @click="toggleFilter('auditor')"
       >
         <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-700 text-lg font-bold flex-shrink-0">
           {{ pendingForAuditor }}
         </div>
         <div>
           <div class="text-sm font-semibold text-gray-800">รอตรวจสอบ</div>
-          <div class="text-xs text-gray-500">รายการที่รอตรวจสอบ</div>
+          <div class="text-xs text-gray-500">รอตรวจสอบ / ส่งกลับแก้ไข</div>
         </div>
       </div>
 
       <!-- Owner card -->
       <div
         v-if="isOwner || isManagerOrAM"
-        class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4"
+        class="bg-white border rounded-xl p-4 flex items-center gap-4 cursor-pointer transition-all"
+        :class="activeFilter === 'owner' ? 'border-yellow-400 ring-2 ring-yellow-100' : 'border-gray-200 hover:border-gray-300'"
+        @click="toggleFilter('owner')"
       >
         <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 text-lg font-bold flex-shrink-0">
           {{ pendingForOwner }}
         </div>
         <div>
           <div class="text-sm font-semibold text-gray-800">รออนุมัติ</div>
-          <div class="text-xs text-gray-500">รายการที่รอการอนุมัติ</div>
+          <div class="text-xs text-gray-500">ตรวจสอบแล้ว / มีปัญหา</div>
         </div>
       </div>
 
       <!-- Auditor-only: pending owner approval card -->
       <div
         v-if="isAuditor && !isManagerOrAM"
-        class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4"
+        class="bg-white border rounded-xl p-4 flex items-center gap-4 cursor-pointer transition-all"
+        :class="activeFilter === 'owner' ? 'border-yellow-400 ring-2 ring-yellow-100' : 'border-gray-200 hover:border-gray-300'"
+        @click="toggleFilter('owner')"
       >
         <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 text-lg font-bold flex-shrink-0">
           {{ pendingForOwner }}
         </div>
         <div>
           <div class="text-sm font-semibold text-gray-800">รออนุมัติ</div>
-          <div class="text-xs text-gray-500">รายการที่รออนุมัติ</div>
+          <div class="text-xs text-gray-500">ตรวจสอบแล้ว / มีปัญหา</div>
         </div>
       </div>
     </section>
 
     <!-- ── History List ───────────────────────────────────────────────────────── -->
     <section class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-      <div class="px-5 py-4 border-b border-gray-100">
-        <h2 class="text-sm font-semibold text-gray-700">ประวัติทั้งหมด</h2>
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-gray-700">
+          {{ activeFilter ? 'รายการที่กรอง' : 'ประวัติทั้งหมด' }}
+        </h2>
+        <button
+          v-if="activeFilter"
+          class="text-xs text-blue-600 hover:text-blue-800 font-medium"
+          @click="activeFilter = null"
+        >
+          ดูทั้งหมด ✕
+        </button>
       </div>
 
       <!-- Empty state -->
@@ -246,14 +273,21 @@ onMounted(async () => {
         class="py-12"
       />
 
+      <EmptyState
+        v-else-if="filteredSummaries.length === 0"
+        title="ไม่มีรายการที่ตรงกัน"
+        description="ไม่พบรายการในตัวกรองที่เลือก"
+        class="py-12"
+      />
+
       <!-- Table -->
-      <div v-else class="overflow-x-auto">
+      <div v-else-if="filteredSummaries.length > 0" class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
             <tr>
               <th class="px-5 py-3 text-left">วันที่</th>
               <th class="px-5 py-3 text-left">สถานะ</th>
-              <th class="px-5 py-3 text-right">รายการ</th>
+              <th class="px-5 py-3 text-right">จำนวนรายการ</th>
               <th class="px-5 py-3 text-right">ยอดรวม</th>
               <th class="px-5 py-3 text-right">ค่าบริการ</th>
               <th class="px-5 py-3 text-center">จัดการ</th>
@@ -261,7 +295,7 @@ onMounted(async () => {
           </thead>
           <tbody class="divide-y divide-gray-100">
             <tr
-              v-for="summary in store.summaries"
+              v-for="summary in filteredSummaries"
               :key="summary.date"
               class="hover:bg-gray-50 transition-colors"
             >
