@@ -98,3 +98,19 @@ export interface BillPaymentDailySummary {
   createdAt: string
   updatedAt: string
 }
+
+/**
+ * Bill Payment Favorite
+ * Stored per tab (1–5), up to 10 per tab
+ */
+export interface BillPaymentFavorite {
+  id: string
+  tab: 1 | 2 | 3 | 4 | 5
+  order: number
+  label: string
+  customerName?: string
+  billType?: 'utility' | 'telecom' | 'insurance' | 'other'
+  defaultAmount?: number
+  defaultCommission?: number
+  createdAt: string
+}
