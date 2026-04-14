@@ -17,7 +17,7 @@ const schema = z.object({
   /** Whether bank statement matches expected closing balance */
   auditBankStatementVsClosingMatches: z.boolean().optional(),
   /** Per-transaction issue flags: { [txnId]: true } */
-  auditTxnIssueStatus: z.record(z.literal(true)).optional(),
+  auditTxnIssueStatus: z.record(z.string(), z.literal(true)).optional(),
   auditFindings: z.string().optional(),
   auditTransactionsVerified: z.number().nonnegative().default(0),
   auditTransactionsWithIssues: z.number().nonnegative().default(0),
