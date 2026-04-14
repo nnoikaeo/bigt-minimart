@@ -1,6 +1,7 @@
-import type { UnifiedWorkflowStatus } from './shared-workflow'
+import type { UnifiedWorkflowStatus, UnifiedTransactionStatus } from './shared-workflow'
 
 export type BillPaymentWorkflowStatus = UnifiedWorkflowStatus
+export type BillPaymentTransactionStatus = UnifiedTransactionStatus
 
 export interface BillPaymentTransaction {
   id: string
@@ -11,7 +12,13 @@ export interface BillPaymentTransaction {
   amount: number
   commission: number
   customerName?: string
-  status: 'success' | 'failed'
+  status: BillPaymentTransactionStatus
+  /** Reason for draft status, e.g. 'insufficient_balance' */
+  draftReason?: string
+  /** Human-readable note for the current status (e.g. cancellation reason) */
+  statusNote?: string
+  /** Whether this transaction affects balances: 'debit' | 'credit' | 'none' */
+  balanceImpact?: 'debit' | 'credit' | 'none'
   notes?: string
   recordedBy: string
   recordedAt: string

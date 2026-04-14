@@ -1,4 +1,5 @@
-import type { BillPaymentWorkflowStatus } from '~/types/bill-payment'
+import type { BillPaymentWorkflowStatus, BillPaymentTransactionStatus } from '~/types/bill-payment'
+import { TRANSACTION_STATUS_MAP } from '~/types/shared-workflow'
 
 /**
  * Shared formatting, validation, and navigation helpers for the bill payment service.
@@ -74,17 +75,13 @@ export function useBillPaymentHelpers() {
   }
 
   function getStatusLabel(status: string): string {
-    const map: Record<string, string> = {
-      success: 'สำเร็จ',
-      failed: 'ล้มเหลว',
-    }
-    return map[status] ?? status
+    const config = TRANSACTION_STATUS_MAP[status as BillPaymentTransactionStatus]
+    return config?.label ?? status
   }
 
-  function getStatusBadgeVariant(status: string): 'success' | 'error' | 'default' {
-    if (status === 'success') return 'success'
-    if (status === 'failed') return 'error'
-    return 'default'
+  function getStatusBadgeVariant(status: string): 'success' | 'warning' | 'error' | 'info' | 'default' {
+    const config = TRANSACTION_STATUS_MAP[status as BillPaymentTransactionStatus]
+    return config?.badgeVariant ?? 'default'
   }
 
   /**
@@ -104,7 +101,7 @@ export function useBillPaymentHelpers() {
     billType?: string
     amount: number | ''
     commission: number | ''
-    status: 'success' | 'failed' | ''
+    status: BillPaymentTransactionStatus | ''
     customerName?: string
     notes?: string
   }
@@ -147,14 +144,14 @@ export function useBillPaymentHelpers() {
     transactionType: 'bill_payment' | 'owner_deposit'
     amount: number
     commission: number
-    status: 'success' | 'failed'
+    status: BillPaymentTransactionStatus
   }
 
   /**
    * Calculate expected cash balances from a list of transactions.
-   * bill_payment (success): billPaymentCash += amount, serviceFeeCash += commission
-   * owner_deposit (success): no effect on cash balances tracked here
-   * failed: no balance change
+   * bill_payment (completed): billPaymentCash += amount, serviceFeeCash += commission
+   * owner_deposit (completed): no effect on cash balances tracked here
+   * draft / on_hold / cancelled: no balance change
    */
   function calculateExpectedCash(transactions: TxnForCash[]): {
     billPaymentCash: number
@@ -163,7 +160,7 @@ export function useBillPaymentHelpers() {
     let billPaymentCash = 0
     let serviceFeeCash = 0
     for (const txn of transactions) {
-      if (txn.status !== 'success') continue
+      if (txn.status !== 'completed') continue
       if (txn.transactionType === 'bill_payment') {
         billPaymentCash += txn.amount
         serviceFeeCash += txn.commission

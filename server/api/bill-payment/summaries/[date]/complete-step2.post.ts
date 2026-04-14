@@ -32,11 +32,11 @@ export default defineEventHandler(async (event) => {
 
     // Calculate expected from transactions
     const txns = await billPaymentJsonRepository.getTransactionsByDate(date)
-    const successTxns = txns.filter(t => t.status === 'success')
-    const expectedBillPaymentCash = successTxns
+    const completedTxns = txns.filter(t => t.status === 'completed')
+    const expectedBillPaymentCash = completedTxns
       .filter(t => t.transactionType === 'bill_payment')
       .reduce((s, t) => s + t.amount, 0)
-    const expectedServiceFeeCash = successTxns.reduce((s, t) => s + (t.commission ?? 0), 0)
+    const expectedServiceFeeCash = completedTxns.reduce((s, t) => s + (t.commission ?? 0), 0)
 
     const hasDiscrepancies =
       validated.step2ActualBillPaymentCash !== expectedBillPaymentCash ||

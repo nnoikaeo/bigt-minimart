@@ -86,14 +86,24 @@ export const useBillPaymentStore = defineStore('billPayment', {
     },
 
     /**
-     * "Draft" transactions — those editable before Step 1 completion.
-     * In bill-payment, all currently-loaded transactions are editable
-     * while the workflow is still in step1_in_progress or needs_correction.
+     * Transactions with status 'draft' (pending action before being completed or cancelled)
      */
     getDraftTransactions: (state: any) => {
-      const editableStatuses = ['step1_in_progress', 'needs_correction']
-      if (!editableStatuses.includes(state.currentSummary?.workflowStatus)) return []
-      return state.transactions
+      return state.transactions.filter((t: any) => t.status === 'draft')
+    },
+
+    /**
+     * Transactions with status 'on_hold'
+     */
+    getOnHoldTransactions: (state: any) => {
+      return state.transactions.filter((t: any) => t.status === 'on_hold')
+    },
+
+    /**
+     * Transactions with status 'completed'
+     */
+    getCompletedTransactions: (state: any) => {
+      return state.transactions.filter((t: any) => t.status === 'completed')
     },
 
     /**
@@ -480,6 +490,59 @@ export const useBillPaymentStore = defineStore('billPayment', {
       } catch (error: any) {
         this.error = `Failed to submit approval: ${error.message}`
         console.error('[billPayment/submitOwnerApproval]', error)
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    /**
+     * Complete a draft transaction (status: 'draft' → 'completed')
+     */
+    async completeDraftTransaction(id: string): Promise<BillPaymentTransaction> {
+      this.isLoading = true
+      try {
+        const response = await getApiFetch()(`/api/bill-payment/transactions/${id}/complete`, {
+          method: 'POST',
+        })
+        const updated = response.data
+        const index = this.transactions.findIndex((t: any) => t.id === id)
+        if (index !== -1) this.transactions[index] = updated
+        if (updated.date) await this.fetchBalanceByDate(updated.date)
+        console.log('[billPayment/completeDraftTransaction] Completed draft:', id)
+        return updated
+      } catch (error: any) {
+        this.error = `Failed to complete draft transaction: ${error.message}`
+        console.error('[billPayment/completeDraftTransaction]', error)
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    /**
+     * Change a transaction's status (e.g. completed↔on_hold, →cancelled)
+     */
+    async changeTransactionStatus(
+      id: string,
+      status: 'completed' | 'draft' | 'on_hold' | 'cancelled',
+      note?: string
+    ): Promise<BillPaymentTransaction> {
+      this.isLoading = true
+      try {
+        const response = await getApiFetch()(`/api/bill-payment/transactions/${id}/status`, {
+          method: 'PUT',
+          body: { status, statusNote: note },
+        })
+        const updated = response.data
+        const index = this.transactions.findIndex((t: any) => t.id === id)
+        if (index !== -1) this.transactions[index] = updated
+        if (updated.date) await this.fetchBalanceByDate(updated.date)
+        console.log('[billPayment/changeTransactionStatus]', id, '→', status)
+        return updated
+      } catch (error: any) {
+        this.error = `Failed to change transaction status: ${error.message}`
+        console.error('[billPayment/changeTransactionStatus]', error)
         throw error
       } finally {
         this.isLoading = false

@@ -155,10 +155,10 @@ export class BillPaymentJsonRepository {
   // ─── Balance ──────────────────────────────────────────────────────────────────
 
   /**
-   * Recalculate balance for a date from opening balance + all success transactions.
-   * bill_payment success: bankAccount -= amount, billPaymentCash += amount, serviceFeeCash += commission
-   * owner_deposit success: bankAccount += amount
-   * failed: no change
+   * Recalculate balance for a date from opening balance + all completed transactions.
+   * bill_payment completed: bankAccount -= amount, billPaymentCash += amount, serviceFeeCash += commission
+   * owner_deposit completed: bankAccount += amount
+   * draft / on_hold / cancelled: no change
    */
   private async recalculateBalance(date: string): Promise<void> {
     let balance = this.balances.find(b => b.date === date)
@@ -173,7 +173,7 @@ export class BillPaymentJsonRepository {
     let serviceFeeCash = 0
 
     const dayTxns = this.transactions
-      .filter(t => t.date === date && t.status === 'success')
+      .filter(t => t.date === date && t.status === 'completed')
       .sort((a, b) => a.timestamp.localeCompare(b.timestamp))
 
     for (const txn of dayTxns) {
@@ -319,8 +319,8 @@ export class BillPaymentJsonRepository {
     if (!summary) summary = await this.createDailySummary(date)
 
     const txns = await this.getTransactionsByDate(date)
-    const successTxns = txns.filter(t => t.status === 'success')
-    const failedTxns = txns.filter(t => t.status === 'failed')
+    const completedTxns = txns.filter(t => t.status === 'completed')
+    const cancelledTxns = txns.filter(t => t.status === 'cancelled')
 
     return this.updateDailySummary(date, {
       workflowStatus: 'step2_completed', // temporarily; page decides step2 starts
@@ -328,10 +328,10 @@ export class BillPaymentJsonRepository {
       step1CompletedBy: userId,
       step1CompletedByName: userName,
       step1TotalTransactions: txns.length,
-      step1SuccessTransactions: successTxns.length,
-      step1FailedTransactions: failedTxns.length,
-      step1TotalAmount: successTxns.reduce((s, t) => s + t.amount, 0),
-      step1TotalCommission: successTxns.reduce((s, t) => s + (t.commission ?? 0), 0),
+      step1SuccessTransactions: completedTxns.length,
+      step1FailedTransactions: cancelledTxns.length,
+      step1TotalAmount: completedTxns.reduce((s, t) => s + t.amount, 0),
+      step1TotalCommission: completedTxns.reduce((s, t) => s + (t.commission ?? 0), 0),
     })
   }
 
