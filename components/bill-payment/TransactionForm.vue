@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useBillPaymentHelpers } from '~/composables/useBillPaymentHelpers'
-import type { BillPaymentTransaction } from '~/types/bill-payment'
-import { CheckCircleIcon, XCircleIcon } from '@heroicons/vue/24/outline'
+import type { BillPaymentTransaction, BillPaymentTransactionStatus } from '~/types/bill-payment'
+import { CheckCircleIcon, ClockIcon, PauseCircleIcon, XCircleIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
   editingData?: BillPaymentTransaction | null
@@ -15,7 +15,8 @@ const emit = defineEmits<{
     amount: number
     commission: number
     customerName?: string
-    status: 'success' | 'failed'
+    status: BillPaymentTransactionStatus
+    statusNote?: string
     notes?: string
   }]
   cancel: []
@@ -30,7 +31,8 @@ const form = reactive({
   amount: '' as number | '',
   commission: '' as number | '',
   customerName: '',
-  status: 'success' as 'success' | 'failed',
+  status: 'completed' as BillPaymentTransactionStatus,
+  statusNote: '',
   notes: '',
 })
 
@@ -46,6 +48,7 @@ function init() {
     form.commission = props.editingData.commission
     form.customerName = props.editingData.customerName ?? ''
     form.status = props.editingData.status
+    form.statusNote = props.editingData.statusNote ?? ''
     form.notes = props.editingData.notes ?? ''
   } else {
     form.transactionType = props.presetType ?? ''
@@ -53,7 +56,8 @@ function init() {
     form.amount = ''
     form.commission = ''
     form.customerName = ''
-    form.status = 'success'
+    form.status = 'completed'
+    form.statusNote = ''
     form.notes = ''
   }
   formErrors.value = []
@@ -88,6 +92,7 @@ async function handleSubmit() {
       commission: form.transactionType === 'bill_payment' ? Number(form.commission) : 0,
       customerName: form.customerName || undefined,
       status: form.status,
+      statusNote: form.statusNote || undefined,
       notes: form.notes || undefined,
     })
   } finally {
@@ -185,12 +190,12 @@ async function handleSubmit() {
 
     <!-- ── สถานะรายการ ─────────────────────────────────────────────────── -->
     <FormField label="สถานะรายการ" required>
-      <div class="flex gap-4">
+      <div class="flex flex-wrap gap-4">
         <label class="flex cursor-pointer items-center gap-2">
           <input
             v-model="form.status"
             type="radio"
-            value="success"
+            value="completed"
             class="accent-green-600"
           />
           <CheckCircleIcon class="h-4 w-4 text-green-600" />
@@ -200,13 +205,45 @@ async function handleSubmit() {
           <input
             v-model="form.status"
             type="radio"
-            value="failed"
-            class="accent-red-600"
+            value="draft"
+            class="accent-yellow-500"
           />
-          <XCircleIcon class="h-4 w-4 text-red-500" />
-          <span class="text-sm">ล้มเหลว</span>
+          <ClockIcon class="h-4 w-4 text-yellow-500" />
+          <span class="text-sm">รอดำเนินการ</span>
+        </label>
+        <label class="flex cursor-pointer items-center gap-2">
+          <input
+            v-model="form.status"
+            type="radio"
+            value="on_hold"
+            class="accent-orange-500"
+          />
+          <PauseCircleIcon class="h-4 w-4 text-orange-500" />
+          <span class="text-sm">พักรายการ</span>
+        </label>
+        <label class="flex cursor-pointer items-center gap-2">
+          <input
+            v-model="form.status"
+            type="radio"
+            value="cancelled"
+            class="accent-gray-500"
+          />
+          <XCircleIcon class="h-4 w-4 text-gray-500" />
+          <span class="text-sm">ยกเลิก</span>
         </label>
       </div>
+    </FormField>
+
+    <!-- ── หมายเหตุสถานะ (เฉพาะ draft / on_hold / cancelled) ──────────── -->
+    <FormField
+      v-if="form.status !== 'completed'"
+      label="เหตุผล / หมายเหตุสถานะ"
+    >
+      <BaseInput
+        v-model="form.statusNote"
+        type="text"
+        :placeholder="form.status === 'draft' ? 'เช่น ยอดในระบบไม่พอ รอตรวจสอบ' : form.status === 'on_hold' ? 'เช่น รอเอกสารเพิ่มเติม' : 'เช่น ลูกค้ายกเลิก'"
+      />
     </FormField>
 
     <!-- ── หมายเหตุ ────────────────────────────────────────────────────── -->

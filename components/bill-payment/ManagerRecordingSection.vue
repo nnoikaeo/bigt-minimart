@@ -4,7 +4,7 @@ import { useLogger } from '~/composables/useLogger'
 import { usePermissions } from '~/composables/usePermissions'
 import { useBillPaymentHelpers } from '~/composables/useBillPaymentHelpers'
 import { PERMISSIONS } from '~/types/permissions'
-import type { BillPaymentTransaction } from '~/types/bill-payment'
+import type { BillPaymentTransaction, BillPaymentTransactionStatus } from '~/types/bill-payment'
 import {
   PlusIcon,
   PencilIcon,
@@ -13,6 +13,8 @@ import {
   CreditCardIcon,
   CurrencyDollarIcon,
   ExclamationTriangleIcon,
+  CheckCircleIcon,
+  EllipsisVerticalIcon,
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
@@ -115,7 +117,8 @@ async function handleFormSubmit(formData: {
   amount: number
   commission: number
   customerName?: string
-  status: 'success' | 'failed'
+  status: BillPaymentTransactionStatus
+  statusNote?: string
   notes?: string
 }) {
   errorMessage.value = ''
@@ -164,6 +167,53 @@ async function handleDeleteExecute() {
   } finally {
     showDeleteConfirm.value = false
     deletingTransactionId.value = ''
+  }
+}
+
+// ─── Status change ────────────────────────────────────────────────────────────
+const showStatusModal = ref(false)
+const statusChangeTarget = ref<{ id: string; currentStatus: BillPaymentTransactionStatus } | null>(null)
+const newStatus = ref<BillPaymentTransactionStatus>('completed')
+const statusChangeNote = ref('')
+const isChangingStatus = ref(false)
+
+function openStatusModal(txnId: string, currentStatus: BillPaymentTransactionStatus) {
+  statusChangeTarget.value = { id: txnId, currentStatus }
+  newStatus.value = currentStatus
+  statusChangeNote.value = ''
+  showStatusModal.value = true
+}
+
+async function handleStatusChange() {
+  if (!statusChangeTarget.value) return
+  isChangingStatus.value = true
+  errorMessage.value = ''
+  try {
+    await store.changeTransactionStatus(
+      statusChangeTarget.value.id,
+      newStatus.value,
+      statusChangeNote.value || undefined
+    )
+    successMessage.value = 'เปลี่ยนสถานะรายการสำเร็จ'
+    showStatusModal.value = false
+    logger.log(`Status changed ${statusChangeTarget.value.id} → ${newStatus.value}`)
+  } catch (err: any) {
+    errorMessage.value = err.message ?? 'เกิดข้อผิดพลาด'
+    logger.error('handleStatusChange', err)
+  } finally {
+    isChangingStatus.value = false
+  }
+}
+
+async function handleCompleteDraft(txnId: string) {
+  errorMessage.value = ''
+  try {
+    await store.completeDraftTransaction(txnId)
+    successMessage.value = 'ดำเนินการรายการสำเร็จ'
+    logger.log('Draft completed', txnId)
+  } catch (err: any) {
+    errorMessage.value = err.message ?? 'เกิดข้อผิดพลาด'
+    logger.error('handleCompleteDraft', err)
   }
 }
 
@@ -223,6 +273,67 @@ onMounted(async () => {
           <p class="mt-1 text-sm text-red-700">{{ store.currentSummary.correctionNotes }}</p>
         </div>
       </div>
+    </div>
+
+    <!-- ── Draft / On-Hold Alert ─────────────────────────────────────────── -->
+    <div
+      v-if="store.getDraftTransactions.length > 0 || store.getOnHoldTransactions.length > 0"
+      class="mb-4 rounded-xl border border-yellow-300 bg-yellow-50 px-5 py-4"
+    >
+      <div class="mb-2 flex items-center gap-2">
+        <ExclamationTriangleIcon class="h-5 w-5 text-yellow-600" />
+        <p class="font-semibold text-yellow-800">มีรายการที่รอดำเนินการ</p>
+      </div>
+      <ul class="space-y-2">
+        <li
+          v-for="txn in [...store.getDraftTransactions, ...store.getOnHoldTransactions]"
+          :key="txn.id"
+          class="flex items-center justify-between gap-3 rounded-lg border border-yellow-200 bg-white px-4 py-2 text-sm"
+        >
+          <div class="flex items-center gap-2 min-w-0">
+            <BaseBadge :variant="getStatusBadgeVariant(txn.status)" size="sm">
+              {{ getStatusLabel(txn.status) }}
+            </BaseBadge>
+            <span class="truncate text-gray-700">
+              {{ formatTransactionType(txn.transactionType) }}
+              {{ txn.customerName ? `— ${txn.customerName}` : '' }}
+              · {{ formatAmount(txn.amount) }}
+            </span>
+            <span v-if="txn.statusNote" class="text-xs text-gray-400">({{ txn.statusNote }})</span>
+          </div>
+          <div class="flex shrink-0 gap-2">
+            <ActionButton
+              v-if="txn.status === 'draft'"
+              :permission="PERMISSIONS.EDIT_FINANCE"
+              variant="primary"
+              size="sm"
+              @click="handleCompleteDraft(txn.id)"
+            >
+              <template #icon><CheckCircleIcon class="h-4 w-4" /></template>
+              ดำเนินการ
+            </ActionButton>
+            <ActionButton
+              :permission="PERMISSIONS.EDIT_FINANCE"
+              variant="ghost"
+              size="sm"
+              title="เปลี่ยนสถานะ"
+              @click="openStatusModal(txn.id, txn.status)"
+            >
+              <EllipsisVerticalIcon class="h-4 w-4" />
+            </ActionButton>
+            <ActionButton
+              :permission="PERMISSIONS.EDIT_FINANCE"
+              variant="ghost"
+              size="sm"
+              title="ลบ"
+              class="text-red-500 hover:text-red-700"
+              @click="promptDelete(txn.id)"
+            >
+              <TrashIcon class="h-4 w-4" />
+            </ActionButton>
+          </div>
+        </li>
+      </ul>
     </div>
 
     <!-- ── Opening Balance prompt ──────────────────────────────────────────── -->
@@ -360,6 +471,15 @@ onMounted(async () => {
                     :permission="PERMISSIONS.EDIT_FINANCE"
                     variant="ghost"
                     size="sm"
+                    title="เปลี่ยนสถานะ"
+                    @click="openStatusModal(txn.id, txn.status)"
+                  >
+                    <EllipsisVerticalIcon class="h-4 w-4" />
+                  </ActionButton>
+                  <ActionButton
+                    :permission="PERMISSIONS.EDIT_FINANCE"
+                    variant="ghost"
+                    size="sm"
                     title="ลบ"
                     class="text-red-500 hover:text-red-700"
                     @click="promptDelete(txn.id)"
@@ -459,6 +579,60 @@ onMounted(async () => {
             @click="handleSetOpeningBalance"
           >
             💾 ยืนยันยอดเงินเริ่มต้น
+          </BaseButton>
+        </div>
+      </template>
+    </BaseModal>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         MODAL: Status Change
+    ════════════════════════════════════════════════════════════════════════════ -->
+    <BaseModal
+      :open="showStatusModal"
+      title="เปลี่ยนสถานะรายการ"
+      size="sm"
+      @close="showStatusModal = false"
+    >
+      <div class="space-y-4">
+        <FormField label="สถานะใหม่" required>
+          <div class="flex flex-wrap gap-3">
+            <label
+              v-for="opt in [
+                { value: 'completed', label: 'สำเร็จ', color: 'text-green-700' },
+                { value: 'on_hold',   label: 'พักรายการ', color: 'text-orange-600' },
+                { value: 'cancelled', label: 'ยกเลิก', color: 'text-gray-600' },
+              ]"
+              :key="opt.value"
+              class="flex cursor-pointer items-center gap-2"
+            >
+              <input
+                v-model="newStatus"
+                type="radio"
+                :value="opt.value"
+                class="accent-red-600"
+              />
+              <span class="text-sm" :class="opt.color">{{ opt.label }}</span>
+            </label>
+          </div>
+        </FormField>
+        <FormField label="หมายเหตุ (ไม่บังคับ)">
+          <BaseInput
+            v-model="statusChangeNote"
+            type="text"
+            placeholder="เหตุผลในการเปลี่ยนสถานะ"
+          />
+        </FormField>
+      </div>
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <BaseButton variant="secondary" @click="showStatusModal = false">ยกเลิก</BaseButton>
+          <BaseButton
+            variant="primary"
+            :loading="isChangingStatus"
+            :disabled="!newStatus || newStatus === statusChangeTarget?.currentStatus"
+            @click="handleStatusChange"
+          >
+            บันทึก
           </BaseButton>
         </div>
       </template>

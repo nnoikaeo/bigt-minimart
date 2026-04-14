@@ -23,8 +23,8 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: 'ต้องมีรายการอย่างน้อย 1 รายการก่อนไปขั้นตอนที่ 2' })
     }
 
-    const successTxns = txns.filter(t => t.status === 'success')
-    const failedTxns = txns.filter(t => t.status === 'failed')
+    const successTxns = txns.filter(t => t.status === 'completed')
+    const failedTxns = txns.filter(t => t.status === 'cancelled')
 
     let summary = await billPaymentJsonRepository.getDailySummary(date)
     if (!summary) summary = await billPaymentJsonRepository.createDailySummary(date)
