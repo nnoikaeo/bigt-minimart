@@ -29,7 +29,6 @@ const form = reactive({
   transactionType: '' as 'bill_payment' | 'owner_deposit' | '',
   billType: '' as 'utility' | 'telecom' | 'insurance' | 'other' | '',
   amount: '' as number | '',
-  commission: '' as number | '',
   customerName: '',
   status: 'completed' as BillPaymentTransactionStatus,
   statusNote: '',
@@ -39,26 +38,56 @@ const form = reactive({
 const formErrors = ref<string[]>([])
 const isSubmitting = ref(false)
 
+// ─── Auto Commission ──────────────────────────────────────────────────────────
+const amountAsNumber = computed(() => Number(form.amount) || 0)
+const billTypeRef = computed(() => form.billType || 'other')
+
+const {
+  isManual: isCommissionManual,
+  manualValue: commissionManualValue,
+  autoCommission,
+  effectiveCommission,
+  reset: resetCommission,
+} = useCommission(amountAsNumber, { serviceType: 'bill-payment', billType: billTypeRef })
+
+/** Toggle between auto and manual commission mode */
+function toggleCommissionMode() {
+  if (!isCommissionManual.value) {
+    // Switch to manual: seed with current auto value
+    commissionManualValue.value = autoCommission.value
+    isCommissionManual.value = true
+  } else {
+    // Switch back to auto
+    resetCommission()
+  }
+}
+
 // ─── Initialize from props ────────────────────────────────────────────────────
 function init() {
   if (props.editingData) {
     form.transactionType = props.editingData.transactionType
     form.billType = props.editingData.billType ?? ''
     form.amount = props.editingData.amount
-    form.commission = props.editingData.commission
     form.customerName = props.editingData.customerName ?? ''
     form.status = props.editingData.status
     form.statusNote = props.editingData.statusNote ?? ''
     form.notes = props.editingData.notes ?? ''
+    // Pre-fill commission when editing: always treat as manual to preserve saved value
+    if (props.editingData.commission != null && props.editingData.commission > 0) {
+      commissionManualValue.value = props.editingData.commission
+      isCommissionManual.value = true
+    } else {
+      resetCommission()
+    }
   } else {
     form.transactionType = props.presetType ?? ''
     form.billType = ''
     form.amount = ''
-    form.commission = ''
     form.customerName = ''
     form.status = 'completed'
     form.statusNote = ''
     form.notes = ''
+    resetCommission()
   }
   formErrors.value = []
 }
@@ -69,11 +98,13 @@ watch(() => props.presetType, init)
 
 // ─── Submit ───────────────────────────────────────────────────────────────────
 async function handleSubmit() {
+  const commissionValue = form.transactionType === 'bill_payment' ? effectiveCommission.value : 0
+
   const { valid, errors } = validateTransactionForm({
     transactionType: form.transactionType,
     billType: form.billType || undefined,
     amount: form.amount,
-    commission: form.commission,
+    commission: commissionValue,
     status: form.status,
     customerName: form.customerName || undefined,
     notes: form.notes || undefined,
@@ -89,7 +120,7 @@ async function handleSubmit() {
       transactionType: form.transactionType as 'bill_payment' | 'owner_deposit',
       billType: form.transactionType === 'bill_payment' ? (form.billType as any) || undefined : undefined,
       amount: Number(form.amount),
-      commission: form.transactionType === 'bill_payment' ? Number(form.commission) : 0,
+      commission: commissionValue,
       customerName: form.customerName || undefined,
       status: form.status,
       statusNote: form.statusNote || undefined,
@@ -170,13 +201,32 @@ async function handleSubmit() {
       label="ค่าธรรมเนียม (฿)"
       required
     >
-      <BaseInput
-        v-model="form.commission"
-        type="number"
-        min="0"
-        step="0.01"
-        placeholder="0"
-      />
+      <div
+        class="flex rounded-lg border overflow-hidden focus-within:ring-2 focus-within:ring-primary"
+        :class="isCommissionManual ? 'border-amber-400' : 'border-gray-300'"
+      >
+        <input
+          :value="effectiveCommission"
+          type="number"
+          min="0"
+          step="1"
+          placeholder="0"
+          :disabled="!isCommissionManual"
+          class="flex-1 px-3 py-2 text-sm outline-none min-w-0 bg-white disabled:bg-gray-50 disabled:text-gray-500"
+          @input="e => { commissionManualValue = Number((e.target as HTMLInputElement).value); isCommissionManual = true }"
+        />
+        <button
+          type="button"
+          class="px-3 py-2 text-xs font-medium border-l whitespace-nowrap transition-colors"
+          :class="isCommissionManual
+            ? 'border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100'
+            : 'border-gray-300 bg-blue-50 text-blue-700 hover:bg-blue-100'"
+          :title="isCommissionManual ? 'คลิกเพื่อรีเซ็ตเป็นอัตโนมัติ' : 'คำนวณจากอัตราค่าธรรมเนียมอัตโนมัติ'"
+          @click="toggleCommissionMode"
+        >
+          {{ isCommissionManual ? 'กำหนดเอง ✏️' : 'อัตโนมัติ ✅' }}
+        </button>
+      </div>
     </FormField>
 
     <!-- ── ชื่อลูกค้า ──────────────────────────────────────────────────── -->
