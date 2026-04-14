@@ -3,7 +3,7 @@
 > Files moved here are either outdated, superseded by merged docs, or describe completed work.
 > They are preserved for historical reference.
 
-**Last Updated**: Mar 25, 2026
+**Last Updated**: Apr 14, 2026
 
 ---
 
@@ -55,6 +55,9 @@ Replaced by single `docs/PROGRESS/STATUS.md`:
 |------|--------|
 | README.md | Old progress overview (Week 4) |
 | CHANGELOG.md | v1.0-v1.7 (Jan 7 - Feb 9, 2026) |
+| FLOW3_IMPLEMENTATION_PLAN.md | Bill Payment initial plan (superseded by harmonization) |
+| SERVICE_COMPARISON_ANALYSIS.md | MT vs BP comparison analysis (Apr 2026, implemented) |
+| SERVICE_HARMONIZATION_PLAN.md | Full harmonization plan — 27 Tasks in 6 Phases (Apr 7-14, All COMPLETE) |
 | WEEK_SUMMARIES/WEEK_01.md | Jan 7-12, 2026 |
 | WEEK_SUMMARIES/WEEK_02.md | Jan 7-13, 2026 |
 | WEEK_SUMMARIES/WEEK_03.md | Jan 14-20, 2026 |

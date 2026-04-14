@@ -1,8 +1,9 @@
 # Project Status Dashboard
 
 **Last Updated**: Apr 14, 2026
-**Updated By**: Claude Code (Copilot)
-**Current Branch**: feature/bp-data-migration-final-review
+**Updated By**: GitHub Copilot
+**Current Branch**: develop (latest merge: PR #140 — 874ccef)
+**Current Phase**: Testing — Service Harmonization (Manual Test → Bug Fix → E2E)
 
 ---
 
@@ -21,7 +22,8 @@ PHASE 1: Core Features
 ├─ Week 9: Layout Consistency & Polish            ✅ COMPLETE (100%)
 ├─ Week 5-6 (original plan): Dashboard + Reports ❌ NOT STARTED (0%)
 ├─ Week 10+: Bill Payment Service Harmonization               ✅ COMPLETE (100%)
-└─ Overall: PHASE 1 CORE COMPLETE — BP Harmonization COMPLETE ✓
+├─ Testing: Service Harmonization Testing Plan                 🔄 IN PROGRESS
+└─ Overall: PHASE 1 CORE COMPLETE — Harmonization COMPLETE — Testing IN PROGRESS
 
 Timeline Status: Money Transfer feature fully shipped ✓
 ```
@@ -117,7 +119,7 @@ Timeline Status: Money Transfer feature fully shipped ✓
    │     └─ OwnerApprovalSection → WorkflowStepSummaryCard ทั้ง 3 sections
    └─ Task 5.3: Cash Verification UI → shared CashVerificationTable + Notes always visible
 
-✅ Phase 6: Testing + Migration (PRs #138, #139, #TBD)
+✅ Phase 6: Testing + Migration (PRs #138, #139, #140)
    ├─ Task 6.1: Unit Tests — BP Sub-Components (PR #138)
    ├─ Task 6.2: Integration Tests — ทั้งสอง Service (PR #139)
    └─ Task 6.3: Data Migration Script + Final Review
@@ -182,13 +184,13 @@ Money Transfer Workflow ✅
   ├─ approved → All roles see consistent read-only layout
   └─ needs_correction → implemented ✅
 
-Bill Payment Workflow 🔄 IN PROGRESS
+Bill Payment Workflow ✅ COMPLETE
   ├─ step1_in_progress → Manager records bill payment transactions
-  ├─ step1_completed → Manager verifies cash count (Step 2) ✅ Task 5.2
-  ├─ step2_completed → Auditor reviews + bank statement ✅ Task 5.1
-  ├─ audited / audited_with_issues → Owner approves ✅ Task 5.2
-  ├─ approved / approved_with_notes → Done
-  └─ needs_correction → Owner can request anytime ✅ Task 5.2
+  ├─ step1_completed → Manager verifies cash count (Step 2) ✅
+  ├─ step2_completed → Auditor reviews + bank statement ✅
+  ├─ audited / audited_with_issues → Owner approves ✅
+  ├─ approved / approved_with_notes → Done ✅
+  └─ needs_correction → Owner can request anytime ✅
 ```
 
 ---
@@ -204,11 +206,12 @@ Pages (25 total):
   ├─ admin/users.vue                           — User management
   └─ settings/daily-record-settings.vue        — Fee/config settings
 
-Components (38 total):
+Components (38+ total):
   ├─ money-transfer/ (10)  — Domain-specific components
+  ├─ bill-payment/ (5)     — Domain-specific components (new)
   ├─ ui/ (14)              — Design system components
   ├─ layout/ (4)           — Page layout components
-  └─ shared (10)           — Sidebar, Header, Breadcrumb, etc.
+  └─ shared/ (10+)         — Shared workflow components (WorkflowProgressBar, etc.)
 ```
 
 ---
@@ -219,10 +222,11 @@ Components (38 total):
 |--------|-------|--------|
 | Pages | 25 | ✅ |
 | Components | 38 | ✅ |
-| PRs merged to develop | 139 | ✅ |
+| PRs merged to develop | 140 | ✅ |
 | TypeScript errors | 0 | ✅ |
-| Money Transfer workflow | 6/6 statuses | ✅ |
-| Bill Payment workflow | Phase 6 Task 6.1 ✅ Task 6.2 ✅ | 🔄 Task 6.3 pending |
+| Money Transfer workflow | 9/9 statuses (unified) | ✅ |
+| Bill Payment workflow | Phase 1-6 Complete (27 Tasks) | ✅ |
+| Service Harmonization Testing | 0/17 tasks | 🔄 |
 | Design System components | 18+ | ✅ |
 | Mobile responsive | Yes | ✅ |
 
@@ -231,6 +235,12 @@ Components (38 total):
 ## Remaining / Not Started
 
 ```
+🔄 Service Harmonization Testing (17 Tasks)
+   ├─ Manual Test: 10 tasks (MT-1~4, BP-1~4, SHARED-1~2) ☐ NOT STARTED
+   ├─ Bug Fix: 2 tasks (BugFix-1, BugFix-2)              ☐ WAITING FOR MANUAL TEST
+   ├─ E2E Playwright: 5 tasks (E2E-1~5)                   ☐ WAITING FOR BUG FIX
+   └─ Testing Plan: docs/PROGRESS/TESTING_PLAN.md ✅ CREATED
+
 ❌ Dashboard & Reports (original Week 5-6 plan)
    ├─ Analytics dashboard
    ├─ Reports page / cash flow reports
