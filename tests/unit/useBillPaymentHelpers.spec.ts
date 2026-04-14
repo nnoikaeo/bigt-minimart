@@ -182,10 +182,10 @@ describe('calculateExpectedCash', () => {
    * Expected: billPaymentCash=3200, serviceFeeCash=40
    */
   const workflowsExampleTransactions = [
-    { transactionType: 'bill_payment', amount: 2000, commission: 20, status: 'success' },
-    { transactionType: 'bill_payment', amount: 1200, commission: 0, status: 'failed' },
-    { transactionType: 'owner_deposit', amount: 5000, commission: 0, status: 'success' },
-    { transactionType: 'bill_payment', amount: 1200, commission: 20, status: 'success' },
+    { transactionType: 'bill_payment', amount: 2000, commission: 20, status: 'completed' },
+    { transactionType: 'bill_payment', amount: 1200, commission: 0, status: 'cancelled' },
+    { transactionType: 'owner_deposit', amount: 5000, commission: 0, status: 'completed' },
+    { transactionType: 'bill_payment', amount: 1200, commission: 20, status: 'completed' },
   ]
 
   it('calculates billPaymentCash=3200 and serviceFeeCash=40 from WORKFLOWS.md example', () => {
@@ -194,9 +194,9 @@ describe('calculateExpectedCash', () => {
     expect(result.serviceFeeCash).toBe(40)
   })
 
-  it('does not count failed transactions', () => {
+  it('does not count cancelled transactions', () => {
     const result = calculateExpectedCash([
-      { transactionType: 'bill_payment', amount: 1200, commission: 10, status: 'failed' },
+      { transactionType: 'bill_payment', amount: 1200, commission: 10, status: 'cancelled' },
     ])
     expect(result.billPaymentCash).toBe(0)
     expect(result.serviceFeeCash).toBe(0)
@@ -204,7 +204,7 @@ describe('calculateExpectedCash', () => {
 
   it('does not count owner_deposit into cash balances', () => {
     const result = calculateExpectedCash([
-      { transactionType: 'owner_deposit', amount: 5000, commission: 0, status: 'success' },
+      { transactionType: 'owner_deposit', amount: 5000, commission: 0, status: 'completed' },
     ])
     expect(result.billPaymentCash).toBe(0)
     expect(result.serviceFeeCash).toBe(0)
@@ -256,8 +256,9 @@ describe('formatDiff', () => {
 describe('getSmartActionButton', () => {
   const date = '2026-01-29'
   const serviceRoute = `/finance/bill-payment-service?date=${date}`
-  const auditorRoute = `/finance/bill-payment-service/auditor-review?date=${date}`
-  const ownerRoute = `/finance/bill-payment-service/owner-approval?date=${date}`
+  // After single-page refactor, auditor and owner routes all point to the same service page
+  const auditorRoute = serviceRoute
+  const ownerRoute = serviceRoute
 
   // Row 1: manager + step1_in_progress
   it('manager/step1_in_progress → "ทำงาน" primary to service page', () => {
