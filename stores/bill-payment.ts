@@ -148,6 +148,25 @@ export const useBillPaymentStore = defineStore('billPayment', {
      * Check if opening balance has been set for today
      */
     isOpeningBalanceSet: (state: any) => state.currentBalance?.openingBalanceSource != null,
+
+    /**
+     * Total number of transactions currently loaded (current date)
+     */
+    totalTransactions: (state: any) => state.transactions.length,
+
+    /**
+     * Number of completed (successful) transactions
+     */
+    successCount: (state: any) =>
+      state.transactions.filter((t: any) => t.status === 'completed').length,
+
+    /**
+     * Total commission from completed bill_payment transactions
+     */
+    totalCommission: (state: any) =>
+      state.transactions
+        .filter((t: any) => t.transactionType === 'bill_payment' && t.status === 'completed')
+        .reduce((sum: number, t: any) => sum + (t.commission ?? 0), 0),
   },
 
   actions: {

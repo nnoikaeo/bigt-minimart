@@ -147,10 +147,22 @@ onMounted(async () => {
 
     <!-- ── Workflow Progress Bar ──────────────────────────────────────────────── -->
     <WorkflowProgressBar
-      v-if="!(isManagerOrAsst && isStep1InProgress) && !isApproved"
+      v-if="!isStep1InProgress && !isApproved"
       :steps="BP_WORKFLOW_STEPS"
       :current-status="workflowStatus"
       :status-to-step-map="BP_STATUS_TO_STEP_MAP"
+      class="mb-4"
+    />
+
+    <!-- ── Quick Glance Summary ─────────────────────────────────────────────── -->
+    <QuickGlanceSummary
+      v-if="!(isManagerOrAsst && isStep1InProgress)"
+      :date="selectedDate"
+      :total-transactions="store.totalTransactions"
+      :success-count="store.successCount"
+      :total-commission="store.totalCommission"
+      :workflow-status="workflowStatus"
+      custom-label="ค่าธรรมเนียม"
       class="mb-4"
     />
 
