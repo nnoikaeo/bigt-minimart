@@ -1,20 +1,32 @@
 <script setup lang="ts">
 /**
- * Shared 3-card balance snapshot (opening → net change → closing bank balance).
- * Used in: index.vue (Section 6B active audit form, Section 6B read-only).
+ * Shared 3-card balance snapshot (Opening → Net Change → Closing).
+ * Generic version — usable by Money Transfer, Bill Payment, or any service.
  *
- * Slot "below": content placed below the 3 cards (e.g. bank-statement input or cash detail row).
+ * Slot (default): content placed below the 3 cards (e.g. bank-statement input, cash detail row).
  */
-import { useMoneyTransferHelpers } from '~/composables/useMoneyTransferHelpers'
 
-const props = defineProps<{
-  openingBalance: number
-  closingBalance: number
-}>()
-
-const { formatCurrency } = useMoneyTransferHelpers()
+const props = withDefaults(
+  defineProps<{
+    openingBalance: number
+    closingBalance: number
+    netChangeLabel?: string
+  }>(),
+  {
+    netChangeLabel: 'สุทธิระหว่างวัน',
+  },
+)
 
 const netChange = computed(() => props.closingBalance - props.openingBalance)
+
+function formatCurrency(amount: number): string {
+  return (
+    new Intl.NumberFormat('th-TH', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount) + ' ฿'
+  )
+}
 </script>
 
 <template>
@@ -26,7 +38,7 @@ const netChange = computed(() => props.closingBalance - props.openingBalance)
         <div class="text-lg font-bold text-blue-900">{{ formatCurrency(openingBalance) }}</div>
       </div>
       <div :class="['rounded-lg p-3 text-center', netChange >= 0 ? 'bg-green-50' : 'bg-red-50']">
-        <div :class="['text-xs mb-1', netChange >= 0 ? 'text-green-600' : 'text-red-600']">สุทธิระหว่างวัน</div>
+        <div :class="['text-xs mb-1', netChange >= 0 ? 'text-green-600' : 'text-red-600']">{{ netChangeLabel }}</div>
         <div :class="['text-lg font-bold', netChange >= 0 ? 'text-green-800' : 'text-red-800']">
           {{ netChange >= 0 ? '+' : '' }}{{ formatCurrency(netChange) }}
         </div>

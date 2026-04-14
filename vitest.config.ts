@@ -7,7 +7,8 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     globals: true,
-    include: ['tests/unit/**/*.spec.ts'],
+    include: ['tests/unit/**/*.spec.ts', 'tests/integration/workflow/**/*.spec.ts'],
+    setupFiles: ['tests/setup/vue-globals.ts'],
   },
   resolve: {
     alias: {

@@ -28,17 +28,32 @@ const isManagerOrAM = computed(() =>
 const isAuditor = computed(() => hasAnyRole([ROLES.AUDITOR]))
 const isOwner = computed(() => hasAnyRole([ROLES.OWNER]))
 
+const today = new Date().toISOString().split('T')[0] ?? ''
+
+const isBackdated = computed(() =>
+  !!newRecordDate.value && newRecordDate.value < today
+)
+
 /** Pending Inbox counts by role */
 const pendingForManager = computed(() =>
   store.summaries.filter(
-    (s: any) => s.workflowStatus === 'step1_in_progress'
+    (s: any) =>
+      s.workflowStatus === 'step1_in_progress' ||
+      s.workflowStatus === 'needs_correction'
   ).length
 )
 const pendingForAuditor = computed(() =>
-  store.summaries.filter((s: any) => s.workflowStatus === 'step2_completed' || s.workflowStatus === 'needs_correction').length
+  store.summaries.filter((s: any) =>
+    s.workflowStatus === 'step2_completed' ||
+    s.workflowStatus === 'step2_completed_with_notes' ||
+    s.workflowStatus === 'needs_correction'
+  ).length
 )
 const pendingForOwner = computed(() =>
-  store.summaries.filter((s: any) => s.workflowStatus === 'audited').length
+  store.summaries.filter((s: any) =>
+    s.workflowStatus === 'audited' ||
+    s.workflowStatus === 'audited_with_issues'
+  ).length
 )
 
 /** Pending count relevant to current user's role */
@@ -63,14 +78,16 @@ function getActionButton(summary: any): { label: string; route: string; variant:
 
   if (role === ROLES.AUDITOR) {
     if (status === 'step2_completed') return { label: 'ตรวจสอบ', route: `/finance/money-transfer-service?date=${date}`, variant: 'primary' }
+    if (status === 'step2_completed_with_notes') return { label: 'ตรวจสอบ (มีหมายเหตุ)', route: `/finance/money-transfer-service?date=${date}`, variant: 'primary' }
     if (status === 'needs_correction') return { label: 'ตรวจสอบใหม่', route: `/finance/money-transfer-service?date=${date}`, variant: 'danger' }
-    if (status === 'audited') return { label: 'ดูการตรวจสอบ', route: `/finance/money-transfer-service?date=${date}`, variant: 'secondary' }
+    if (status === 'audited' || status === 'audited_with_issues') return { label: 'ดูการตรวจสอบ', route: `/finance/money-transfer-service?date=${date}`, variant: 'secondary' }
     return { label: 'ดูรายละเอียด', route: `/finance/money-transfer-service?date=${date}`, variant: 'secondary' }
   }
 
   if (role === ROLES.OWNER) {
     if (status === 'audited') return { label: 'อนุมัติ', route: `/finance/money-transfer-service?date=${date}`, variant: 'primary' }
-    if (status === 'approved') return { label: 'ดูรายละเอียด', route: `/finance/money-transfer-service?date=${date}`, variant: 'secondary' }
+    if (status === 'audited_with_issues') return { label: 'อนุมัติ (มีปัญหา)', route: `/finance/money-transfer-service?date=${date}`, variant: 'primary' }
+    if (status === 'approved' || status === 'approved_with_notes') return { label: 'ดูรายละเอียด', route: `/finance/money-transfer-service?date=${date}`, variant: 'secondary' }
     return { label: 'ดูรายละเอียด', route: `/finance/money-transfer-service?date=${date}`, variant: 'secondary' }
   }
 
@@ -80,12 +97,15 @@ function getActionButton(summary: any): { label: string; route: string; variant:
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 function getStatusBadge(status: string): { label: string; class: string } {
   const map: Record<string, { label: string; class: string }> = {
-    step1_in_progress:  { label: 'กำลังทำงาน',        class: 'bg-blue-100 text-blue-800' },
-    step1_completed:    { label: 'รอตรวจนับเงิน',       class: 'bg-blue-100 text-blue-800' },
-    step2_completed:    { label: 'รอตรวจสอบ',  class: 'bg-orange-100 text-orange-800' },
-    audited:            { label: 'รออนุมัติ',     class: 'bg-yellow-100 text-yellow-800' },
-    approved:           { label: 'อนุมัติแล้ว',          class: 'bg-green-100 text-green-800' },
-    needs_correction:   { label: 'รอแก้ไข',             class: 'bg-red-100 text-red-800' },
+    step1_in_progress:           { label: 'กำลังทำงาน',           class: 'bg-blue-100 text-blue-800' },
+    step1_completed:             { label: 'รอตรวจนับเงิน',          class: 'bg-blue-100 text-blue-800' },
+    step2_completed:             { label: 'รอตรวจสอบ',             class: 'bg-orange-100 text-orange-800' },
+    step2_completed_with_notes:  { label: 'รอตรวจสอบ (มีหมายเหตุ)',  class: 'bg-orange-100 text-orange-800' },
+    audited:                     { label: 'รออนุมัติ',              class: 'bg-yellow-100 text-yellow-800' },
+    audited_with_issues:         { label: 'รออนุมัติ (มีปัญหา)',    class: 'bg-amber-100 text-amber-800' },
+    approved:                    { label: 'อนุมัติแล้ว',             class: 'bg-green-100 text-green-800' },
+    approved_with_notes:         { label: 'อนุมัติแล้ว (มีหมายเหตุ)', class: 'bg-green-100 text-green-800' },
+    needs_correction:            { label: 'รอแก้ไข',                class: 'bg-red-100 text-red-800' },
   }
   return map[status] ?? { label: status, class: 'bg-gray-100 text-gray-700' }
 }
@@ -302,6 +322,13 @@ onMounted(async () => {
   >
     <div class="space-y-4">
       <p class="text-sm text-gray-600">เลือกวันที่ที่ต้องการบันทึกรายการ (สามารถเลือกย้อนหลังได้)</p>
+
+      <!-- Backdated warning -->
+      <BaseAlert
+        v-if="isBackdated"
+        variant="warning"
+        message="คุณกำลังบันทึกรายการย้อนหลัง กรุณาตรวจสอบวันที่ให้ถูกต้อง"
+      />
 
       <FormField label="วันที่">
         <div class="relative">

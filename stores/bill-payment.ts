@@ -12,6 +12,7 @@ import type {
   BillPaymentTransaction,
   BillPaymentDailySummary,
   BillPaymentBalance,
+  BillPaymentFavorite,
 } from '~/types/bill-payment'
 
 /**
@@ -66,10 +67,20 @@ export const useBillPaymentStore = defineStore('billPayment', {
     currentBalance: null as BillPaymentBalance | null,
 
     /**
+     * Previous day balance (used for carry-over opening balance)
+     */
+    previousDayBalance: null as BillPaymentBalance | null,
+
+    /**
      * Loading and error state
      */
     isLoading: false,
     error: null as string | null,
+
+    /**
+     * Favorite bill payment entries (5 tabs × up to 10 items each)
+     */
+    favorites: [] as BillPaymentFavorite[],
   }),
 
   getters: {
@@ -81,14 +92,24 @@ export const useBillPaymentStore = defineStore('billPayment', {
     },
 
     /**
-     * "Draft" transactions — those editable before Step 1 completion.
-     * In bill-payment, all currently-loaded transactions are editable
-     * while the workflow is still in step1_in_progress or needs_correction.
+     * Transactions with status 'draft' (pending action before being completed or cancelled)
      */
     getDraftTransactions: (state: any) => {
-      const editableStatuses = ['step1_in_progress', 'needs_correction']
-      if (!editableStatuses.includes(state.currentSummary?.workflowStatus)) return []
-      return state.transactions
+      return state.transactions.filter((t: any) => t.status === 'draft')
+    },
+
+    /**
+     * Transactions with status 'on_hold'
+     */
+    getOnHoldTransactions: (state: any) => {
+      return state.transactions.filter((t: any) => t.status === 'on_hold')
+    },
+
+    /**
+     * Transactions with status 'completed'
+     */
+    getCompletedTransactions: (state: any) => {
+      return state.transactions.filter((t: any) => t.status === 'completed')
     },
 
     /**
@@ -127,6 +148,39 @@ export const useBillPaymentStore = defineStore('billPayment', {
      */
     getCurrentWorkflowStatus: (state: any) => {
       return state.currentSummary?.workflowStatus || 'step1_in_progress'
+    },
+
+    /**
+     * Check if opening balance has been set for today
+     */
+    isOpeningBalanceSet: (state: any) => state.currentBalance?.openingBalanceSource != null,
+
+    /**
+     * Total number of transactions currently loaded (current date)
+     */
+    totalTransactions: (state: any) => state.transactions.length,
+
+    /**
+     * Number of completed (successful) transactions
+     */
+    successCount: (state: any) =>
+      state.transactions.filter((t: any) => t.status === 'completed').length,
+
+    /**
+     * Total commission from completed bill_payment transactions
+     */
+    totalCommission: (state: any) =>
+      state.transactions
+        .filter((t: any) => t.transactionType === 'bill_payment' && t.status === 'completed')
+        .reduce((sum: number, t: any) => sum + (t.commission ?? 0), 0),
+
+    /**
+     * Get favorites filtered by tab, sorted by order
+     */
+    getFavoritesByTab: (state: any) => (tab: 1 | 2 | 3 | 4 | 5) => {
+      return (state.favorites as BillPaymentFavorite[])
+        .filter(f => f.tab === tab)
+        .sort((a, b) => a.order - b.order)
     },
   },
 
@@ -332,6 +386,21 @@ export const useBillPaymentStore = defineStore('billPayment', {
     },
 
     /**
+     * Fetch previous day balance (for carry-over display in opening balance modal)
+     */
+    async fetchPreviousDayBalance(date: string): Promise<void> {
+      try {
+        const response = await getApiFetch()('/api/bill-payment/balances/previous', {
+          params: { date },
+        })
+        this.previousDayBalance = response.data
+        console.log('[billPayment/fetchPreviousDayBalance] Previous day balance:', this.previousDayBalance?.bankAccount ?? 'none')
+      } catch {
+        this.previousDayBalance = null
+      }
+    },
+
+    /**
      * Set opening balance for a date
      */
     async setOpeningBalance(
@@ -462,10 +531,104 @@ export const useBillPaymentStore = defineStore('billPayment', {
     },
 
     /**
+     * Complete a draft transaction (status: 'draft' → 'completed')
+     */
+    async completeDraftTransaction(id: string): Promise<BillPaymentTransaction> {
+      this.isLoading = true
+      try {
+        const response = await getApiFetch()(`/api/bill-payment/transactions/${id}/complete`, {
+          method: 'POST',
+        })
+        const updated = response.data
+        const index = this.transactions.findIndex((t: any) => t.id === id)
+        if (index !== -1) this.transactions[index] = updated
+        if (updated.date) await this.fetchBalanceByDate(updated.date)
+        console.log('[billPayment/completeDraftTransaction] Completed draft:', id)
+        return updated
+      } catch (error: any) {
+        this.error = `Failed to complete draft transaction: ${error.message}`
+        console.error('[billPayment/completeDraftTransaction]', error)
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    /**
+     * Change a transaction's status (e.g. completed↔on_hold, →cancelled)
+     */
+    async changeTransactionStatus(
+      id: string,
+      status: 'completed' | 'draft' | 'on_hold' | 'cancelled',
+      note?: string
+    ): Promise<BillPaymentTransaction> {
+      this.isLoading = true
+      try {
+        const response = await getApiFetch()(`/api/bill-payment/transactions/${id}/status`, {
+          method: 'PUT',
+          body: { status, statusNote: note },
+        })
+        const updated = response.data
+        const index = this.transactions.findIndex((t: any) => t.id === id)
+        if (index !== -1) this.transactions[index] = updated
+        if (updated.date) await this.fetchBalanceByDate(updated.date)
+        console.log('[billPayment/changeTransactionStatus]', id, '→', status)
+        return updated
+      } catch (error: any) {
+        this.error = `Failed to change transaction status: ${error.message}`
+        console.error('[billPayment/changeTransactionStatus]', error)
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    /**
      * Clear error message
      */
     clearError(): void {
       this.error = null
+    },
+
+    // ─── Favorites ────────────────────────────────────────────────────────────
+
+    async loadFavorites(): Promise<void> {
+      try {
+        const response = await getApiFetch()('/api/bill-payment/favorites')
+        this.favorites = response.data
+        console.log('[billPayment/loadFavorites] Loaded:', this.favorites.length)
+      } catch (error: any) {
+        console.error('[billPayment/loadFavorites]', error)
+      }
+    },
+
+    async addFavorite(
+      data: Omit<BillPaymentFavorite, 'id' | 'createdAt'>
+    ): Promise<BillPaymentFavorite> {
+      const response = await getApiFetch()('/api/bill-payment/favorites', {
+        method: 'POST',
+        body: data,
+      })
+      this.favorites.push(response.data)
+      return response.data
+    },
+
+    async updateFavorite(
+      id: string,
+      data: Partial<Omit<BillPaymentFavorite, 'id' | 'createdAt'>>
+    ): Promise<BillPaymentFavorite> {
+      const response = await getApiFetch()(`/api/bill-payment/favorites/${id}`, {
+        method: 'PUT',
+        body: data,
+      })
+      const idx = this.favorites.findIndex((f: any) => f.id === id)
+      if (idx !== -1) this.favorites[idx] = response.data
+      return response.data
+    },
+
+    async deleteFavorite(id: string): Promise<void> {
+      await getApiFetch()(`/api/bill-payment/favorites/${id}`, { method: 'DELETE' })
+      this.favorites = this.favorites.filter((f: any) => f.id !== id)
     },
   },
 })

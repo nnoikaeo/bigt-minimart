@@ -1,12 +1,7 @@
-export type BillPaymentWorkflowStatus =
-  | 'step1_in_progress'
-  | 'step2_completed'
-  | 'step2_completed_with_notes'
-  | 'audited'
-  | 'audited_with_issues'
-  | 'approved'
-  | 'approved_with_notes'
-  | 'needs_correction'
+import type { UnifiedWorkflowStatus, UnifiedTransactionStatus } from './shared-workflow'
+
+export type BillPaymentWorkflowStatus = UnifiedWorkflowStatus
+export type BillPaymentTransactionStatus = UnifiedTransactionStatus
 
 export interface BillPaymentTransaction {
   id: string
@@ -17,7 +12,13 @@ export interface BillPaymentTransaction {
   amount: number
   commission: number
   customerName?: string
-  status: 'success' | 'failed'
+  status: BillPaymentTransactionStatus
+  /** Reason for draft status, e.g. 'insufficient_balance' */
+  draftReason?: string
+  /** Human-readable note for the current status (e.g. cancellation reason) */
+  statusNote?: string
+  /** Whether this transaction affects balances: 'debit' | 'credit' | 'none' */
+  balanceImpact?: 'debit' | 'credit' | 'none'
   notes?: string
   recordedBy: string
   recordedAt: string
@@ -80,6 +81,18 @@ export interface BillPaymentDailySummary {
   auditedByName?: string
   auditBankStatementAmount?: number
   auditBankBalanceMatches?: boolean
+  /** Auditor's cash count for bill payment receipts */
+  auditorActualBillPaymentCash?: number
+  /** Auditor's cash count for service fees */
+  auditorActualServiceFeeCash?: number
+  /** Expected closing balance used for bank statement comparison */
+  auditExpectedClosingBalance?: number
+  /** Diff: bankStatementAmount − expectedClosingBalance */
+  auditBankStatementVsClosingDiff?: number
+  /** Whether bank statement matches expected closing balance */
+  auditBankStatementVsClosingMatches?: boolean
+  /** Per-transaction issue flags: { [txnId]: true } */
+  auditTxnIssueStatus?: Record<string, true>
   auditFindings?: string
   auditTransactionsVerified?: number
   auditTransactionsWithIssues?: number
@@ -96,4 +109,20 @@ export interface BillPaymentDailySummary {
 
   createdAt: string
   updatedAt: string
+}
+
+/**
+ * Bill Payment Favorite
+ * Stored per tab (1–5), up to 10 per tab
+ */
+export interface BillPaymentFavorite {
+  id: string
+  tab: 1 | 2 | 3 | 4 | 5
+  order: number
+  label: string
+  customerName?: string
+  billType?: 'utility' | 'telecom' | 'insurance' | 'other'
+  defaultAmount?: number
+  defaultCommission?: number
+  createdAt: string
 }

@@ -1,3 +1,5 @@
+import type { UnifiedWorkflowStatus } from './shared-workflow'
+
 /**
  * Repository Pattern - Data Abstraction Layer
  * 
@@ -341,7 +343,12 @@ export interface MoneyTransferDailySummary {
   }
 
   // Overall workflow status
-  workflowStatus: 'step1_in_progress' | 'step1_completed' | 'step2_completed' | 'audited' | 'approved' | 'needs_correction'
+  workflowStatus: UnifiedWorkflowStatus
+
+  // Correction tracking (set when auditor or owner sends back for correction)
+  correctionNotes?: string
+  correctionRequestedAt?: string | Date
+  correctionRequestedBy?: string
 
   // System timestamps
   createdAt?: string | Date

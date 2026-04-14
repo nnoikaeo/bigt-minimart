@@ -1,8 +1,9 @@
 # Project Status Dashboard
 
-**Last Updated**: Mar 25, 2026
-**Updated By**: Claude Code
-**Current Branch**: main (latest merge: PR #85 — dcf1214)
+**Last Updated**: Apr 14, 2026
+**Updated By**: GitHub Copilot
+**Current Branch**: develop (latest merge: PR #141)
+**Current Phase**: Testing — Service Harmonization (Manual Test → Bug Fix → E2E)
 
 ---
 
@@ -20,7 +21,9 @@ PHASE 1: Core Features
 ├─ Week 8: UI Components & Layout Overhaul        ✅ COMPLETE (100%)
 ├─ Week 9: Layout Consistency & Polish            ✅ COMPLETE (100%)
 ├─ Week 5-6 (original plan): Dashboard + Reports ❌ NOT STARTED (0%)
-└─ Overall: PHASE 1 CORE COMPLETE — Dashboard/Reports remaining
+├─ Week 10+: Bill Payment Service Harmonization               ✅ COMPLETE (100%)
+├─ Testing: Service Harmonization Testing Plan                 🔄 IN PROGRESS
+└─ Overall: PHASE 1 CORE COMPLETE — Harmonization COMPLETE — Testing IN PROGRESS
 
 Timeline Status: Money Transfer feature fully shipped ✓
 ```
@@ -94,6 +97,39 @@ Timeline Status: Money Transfer feature fully shipped ✓
    └─ Compact View bugfixes (totalCommission field, balance refresh)
 ```
 
+### Week 10+ (Apr 7-14): Bill Payment Service Harmonization
+
+**PRs**: #127–#136
+
+```
+✅ Phase 3: Single-Page Architecture (PR #127)
+   └─ รวม 3 หน้า BP เป็น single-page orchestrator
+
+✅ Phase 4: Bill Payment Feature Parity (PRs #128–#133)
+   ├─ Task 4.1: Opening Balance System
+   ├─ Task 4.2: Transaction Status Model + Data Migration
+   ├─ Task 4.3: Workflow Progress Bar + Quick Glance + Balance Cards
+   ├─ Task 4.4: Filter Tabs + Pagination + Step 1 Checklist
+   ├─ Task 4.5: Auto Commission (useCommission)
+   └─ Task 4.6: Quick Actions + Favorites System
+
+✅ Phase 5: Auditor + Owner Enhancements (PRs #134–#136)
+   ├─ Task 5.1: Balance Snapshot + Auditor Cash Count + Bank Statement
+   ├─ Task 5.2: step1_completed Status + Owner refactor (PR #135, #137)
+   │     └─ OwnerApprovalSection → WorkflowStepSummaryCard ทั้ง 3 sections
+   └─ Task 5.3: Cash Verification UI → shared CashVerificationTable + Notes always visible
+
+✅ Phase 6: Testing + Migration (PRs #138, #139, #140)
+   ├─ Task 6.1: Unit Tests — BP Sub-Components (PR #138)
+   ├─ Task 6.2: Integration Tests — ทั้งสอง Service (PR #139)
+   └─ Task 6.3: Data Migration Script + Final Review
+         ├─ Migration endpoint: POST /api/admin/migrate-bill-payment-status (dry-run + apply)
+         ├─ Fix outdated tests: legacy status values (success→completed, failed→cancelled)
+         ├─ Fix outdated tests: route expectations (single-page architecture)
+         ├─ Code Quality Review: 0 TypeScript errors, all imports verified
+         └─ UX Consistency: both services share shared components + patterns
+```
+
 ### Week 9 (Mar 23-25): Layout Consistency & Polish
 
 **PRs**: #80, #81, #82, #83, #84, #85
@@ -146,7 +182,15 @@ Money Transfer Workflow ✅
   ├─ step2_completed → Auditor reviews (checklist + findings)
   ├─ audited → Owner approves/rejects
   ├─ approved → All roles see consistent read-only layout
-  └─ needs_correction → (planned, not yet implemented)
+  └─ needs_correction → implemented ✅
+
+Bill Payment Workflow ✅ COMPLETE
+  ├─ step1_in_progress → Manager records bill payment transactions
+  ├─ step1_completed → Manager verifies cash count (Step 2) ✅
+  ├─ step2_completed → Auditor reviews + bank statement ✅
+  ├─ audited / audited_with_issues → Owner approves ✅
+  ├─ approved / approved_with_notes → Done ✅
+  └─ needs_correction → Owner can request anytime ✅
 ```
 
 ---
@@ -162,11 +206,12 @@ Pages (25 total):
   ├─ admin/users.vue                           — User management
   └─ settings/daily-record-settings.vue        — Fee/config settings
 
-Components (38 total):
+Components (38+ total):
   ├─ money-transfer/ (10)  — Domain-specific components
+  ├─ bill-payment/ (5)     — Domain-specific components (new)
   ├─ ui/ (14)              — Design system components
   ├─ layout/ (4)           — Page layout components
-  └─ shared (10)           — Sidebar, Header, Breadcrumb, etc.
+  └─ shared/ (10+)         — Shared workflow components (WorkflowProgressBar, etc.)
 ```
 
 ---
@@ -177,9 +222,11 @@ Components (38 total):
 |--------|-------|--------|
 | Pages | 25 | ✅ |
 | Components | 38 | ✅ |
-| PRs merged to main | 85 | ✅ |
+| PRs merged to develop | 140 | ✅ |
 | TypeScript errors | 0 | ✅ |
-| Money Transfer workflow | 5/6 statuses | ✅ (needs_correction pending) |
+| Money Transfer workflow | 9/9 statuses (unified) | ✅ |
+| Bill Payment workflow | Phase 1-6 Complete (27 Tasks) | ✅ |
+| Service Harmonization Testing | 0/17 tasks | 🔄 |
 | Design System components | 18+ | ✅ |
 | Mobile responsive | Yes | ✅ |
 
@@ -188,14 +235,19 @@ Components (38 total):
 ## Remaining / Not Started
 
 ```
+🔄 Service Harmonization Testing (17 Tasks)
+   ├─ Manual Test: 10 tasks (MT-1~4, BP-1~4, SHARED-1~2) ☐ NOT STARTED
+   ├─ Bug Fix: 2 tasks (BugFix-1, BugFix-2)              ☐ WAITING FOR MANUAL TEST
+   ├─ E2E Playwright: 5 tasks (E2E-1~5)                   ☐ WAITING FOR BUG FIX
+   └─ Testing Plan: docs/PROGRESS/TESTING_PLAN.md ✅ CREATED
+
 ❌ Dashboard & Reports (original Week 5-6 plan)
    ├─ Analytics dashboard
    ├─ Reports page / cash flow reports
    ├─ Charts & graphs
    └─ Export functionality
 
-❌ needs_correction workflow status
-   └─ Planned as separate PR (UX considerations)
+✅ needs_correction workflow status (implemented in BP + MT)
 
 ❌ Dead code cleanup
    └─ ~200 lines v-if="false" in index.vue (deferred)

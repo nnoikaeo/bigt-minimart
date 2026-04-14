@@ -1209,8 +1209,9 @@ index.vue เหลือแค่:
 
 ---
 
-#### Task 3.1: BP — สร้าง Sub-Components (แยกจากหน้าเดิม)
+#### Task 3.1: BP — สร้าง Sub-Components (แยกจากหน้าเดิม) ✅
 
+**Branch:** `feature/bp-sub-components` | **Status:** Done (14 Apr 2026)  
 **Skill:** `refactor`
 
 ```
@@ -1331,7 +1332,7 @@ Emits: approval-submitted(approvalData)
 
 ---
 
-#### Task 4.1: BP — เพิ่ม Opening Balance System
+#### Task 4.1: BP — เพิ่ม Opening Balance System ✅
 
 **Skill:** `create-implementation-plan`
 
@@ -1615,7 +1616,17 @@ UI:
 
 ---
 
-#### Task 5.1: BP — เพิ่ม Balance Snapshot + Auditor Cash Count + Bank Statement
+#### Task 5.1: BP — เพิ่ม Balance Snapshot + Auditor Cash Count + Bank Statement ✅
+
+**Branch:** `feature/bp-auditor-enhancements`  
+**Status:** Completed (14 เม.ย. 2569)
+
+**สิ่งที่ทำเสร็จแล้ว:**
+- ✅ `types/bill-payment.ts` — เพิ่ม `auditorActualBillPaymentCash`, `auditorActualServiceFeeCash`, `auditExpectedClosingBalance`, `auditBankStatementVsClosingDiff`, `auditBankStatementVsClosingMatches`, `auditTxnIssueStatus`
+- ✅ `components/bill-payment/AuditorReviewSection.vue` — เพิ่ม BalanceSnapshot + Bank Statement vs Closing Balance, CashVerificationTable (auditor-input mode), Transaction toggle (มีปัญหา per row), Transaction Detail Modal
+- ✅ `server/api/bill-payment/summaries/[date]/audit.post.ts` — เพิ่ม Zod schema สำหรับ fields ใหม่
+- ✅ `server/repositories/bill-payment-json.repository.ts` — persist auditor cash fields + clear on needs_correction
+- ✅ Step 2 read-only summary เปลี่ยนใช้ `<CashVerificationTable mode="manager-readonly">`
 
 **Skill:** `create-implementation-plan`
 
@@ -1666,60 +1677,23 @@ UI:
 
 ---
 
-#### Task 5.2: BP — ปรับ Owner + เพิ่ม step1_completed + ลบเงื่อนไข
+#### Task 5.2: BP — ปรับ Owner + เพิ่ม step1_completed + ลบเงื่อนไข ✅ DONE (PR #135, #137)
 
-**Skill:** `create-implementation-plan`
+**Branch:** `feature/bp-owner-step1completed`, `feature/bp-owner-workflow-step-summary-cards`  
+**Status:** Completed (14 เม.ย. 2569)
 
-```
-ฉันต้องการปรับปรุง Owner section และเพิ่ม step1_completed workflow status
-
-อ่านไฟล์:
-- components/bill-payment/OwnerApprovalSection.vue
-- components/shared/OwnerDecisionCard.vue
-- components/shared/WorkflowStepSummaryCard.vue
-- stores/bill-payment.ts
-- types/bill-payment.ts
-- server/api/bill-payment/ (workflow endpoints)
-
-สิ่งที่ต้องทำ:
-
-### 1. เพิ่ม step1_completed Workflow Status
-- ปรับ store: completeStep1() → workflow status เป็น 'step1_completed' (แทนที่จะข้ามไป step2 ทันที)
-- Manager ต้องกดเข้า Step 2 แยก (จาก step1_completed → step2 cash verification)
-- ปรับ API: complete-step1 endpoint → set status = 'step1_completed'
-
-### 2. ปรับ Owner UI
-- ตรวจสอบว่า OwnerApprovalSection ใช้ shared components (WorkflowStepSummaryCard + OwnerDecisionCard) ถูกต้อง
-- Step 1 Summary Card:
-  - summaryItems: [ยอดรับชำระ, ค่าธรรมเนียม, รายการล้มเหลว/cancelled]
-  - expandable: transaction table
-- Step 2 Summary Card:
-  - badge: ตรงกัน/มีส่วนต่าง
-  - summaryItems: [คาดหวังเงินสด, นับจริง, ส่วนต่าง, คาดหวังค่าธรรมเนียม, นับจริง, ส่วนต่าง]
-- Audit Summary Card:
-  - summaryItems: [Auditor name, Bank Statement, transactions verified, issues]
-
-### 3. ลบเงื่อนไข "ขอให้แก้ไข"
-- ปรับ OwnerDecisionCard: disableCorrection = false เสมอ
-- Owner สามารถสั่ง needs_correction ได้ทุกกรณี (ไม่จำกัดเฉพาะ audited_with_issues)
-- ปรับ store/API: submitOwnerApproval() รองรับ needs_correction จากทุก audited status
-
-### 4. ปรับ History Page
-- ปรับ Pending Inbox: เพิ่ม step1_completed ใน counts
-- ปรับ Status Badge: step1_completed → "รอตรวจนับ" (blue)
-
-### 5. ปรับ useBillPaymentHelpers.ts
-- เพิ่ม step1_completed ใน formatWorkflowStatus()
-- ปรับ getSmartActionButton() ให้รองรับ step1_completed
-
-ทดสอบ Owner flow + step1→step2 transition
-
-เอกสารอ้างอิง: docs/PROGRESS/SERVICE_HARMONIZATION_PLAN.md (หัวข้อ 6, 7)
-```
+**สิ่งที่ทำเสร็จแล้ว:**
+- ✅ `types/bill-payment.ts` — เพิ่ม `step1_completed` ใน `BillPaymentWorkflowStatus`
+- ✅ `stores/bill-payment.ts` — `completeStep1()` set status → `step1_completed`, `completeStep2()` transition ถูกต้อง
+- ✅ `server/api/bill-payment/` — endpoint `complete-step1` ส่ง `step1_completed` status
+- ✅ `components/bill-payment/OwnerApprovalSection.vue` — refactor 3 sections ใช้ `WorkflowStepSummaryCard` (Step 1/2/Audit) + `OwnerDecisionCard` (PR #137)
+- ✅ `components/shared/OwnerDecisionCard.vue` — `disableCorrection = false` เสมอ (Owner สั่ง needs_correction ได้ทุกกรณี)
+- ✅ `composables/useBillPaymentHelpers.ts` — เพิ่ม `step1_completed` ใน `formatWorkflowStatus()` + `getSmartActionButton()`
+- ✅ History Page — Pending Inbox รับรู้ `step1_completed`, Status Badge = "รอตรวจนับ" (blue)
 
 ---
 
-#### Task 5.3: BP — Cash Verification ปรับ UI + Notes
+#### Task 5.3: BP — Cash Verification ปรับ UI + Notes ✅ DONE (PR #136)
 
 **Skill:** `refactor`
 
@@ -1760,7 +1734,7 @@ UI:
 
 ---
 
-#### Task 6.1: Unit Tests — Bill Payment Sub-Components
+#### Task 6.1: Unit Tests — Bill Payment Sub-Components ✅ DONE (PR #138)
 
 **Skill:** `unit-test-vue-pinia`
 
@@ -1829,7 +1803,7 @@ Component ที่ต้องเขียน test:
 
 ---
 
-#### Task 6.2: Integration Testing — ทั้งสอง Service
+#### Task 6.2: Integration Testing — ทั้งสอง Service ✅ Done (PR #139)
 
 **Skill:** `unit-test-vue-pinia`
 
@@ -1871,7 +1845,7 @@ Component ที่ต้องเขียน test:
 
 ---
 
-#### Task 6.3: Data Migration Script + Final Review
+#### Task 6.3: Data Migration Script + Final Review ✅ Done (PR #140)
 
 **Skill:** `review-and-refactor`
 
@@ -1952,8 +1926,8 @@ Component ที่ต้องเขียน test:
 | **5** | 5.1 | BP — Balance Snapshot + Auditor Cash Count | `create-implementation-plan` | BP |
 | **5** | 5.2 | BP — Owner + step1_completed + ลบเงื่อนไข | `create-implementation-plan` | BP |
 | **5** | 5.3 | BP — Cash Verification UI + Notes | `refactor` | BP |
-| **6** | 6.1 | Unit Tests — BP Sub-Components | `unit-test-vue-pinia` | Tests |
-| **6** | 6.2 | Integration Tests — ทั้งสอง Service | `unit-test-vue-pinia` | Tests |
-| **6** | 6.3 | Data Migration + Final Review | `review-and-refactor` | All |
+| **6** | 6.1 ✅ | Unit Tests — BP Sub-Components | `unit-test-vue-pinia` | Tests |
+| **6** | 6.2 ✅ | Integration Tests — ทั้งสอง Service | `unit-test-vue-pinia` | Tests |
+| **6** | 6.3 ✅ | Data Migration + Final Review | `review-and-refactor` | All |
 
 **รวม: 27 Tasks ใน 6 Phases**

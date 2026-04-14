@@ -1,4 +1,5 @@
-import type { BillPaymentWorkflowStatus } from '~/types/bill-payment'
+import type { BillPaymentWorkflowStatus, BillPaymentTransactionStatus } from '~/types/bill-payment'
+import { TRANSACTION_STATUS_MAP } from '~/types/shared-workflow'
 
 /**
  * Shared formatting, validation, and navigation helpers for the bill payment service.
@@ -61,6 +62,7 @@ export function useBillPaymentHelpers() {
   } {
     const map: Record<BillPaymentWorkflowStatus, { label: string; colorClass: string }> = {
       step1_in_progress: { label: 'กำลังบันทึก', colorClass: 'text-yellow-600' },
+      step1_completed: { label: 'รอตรวจนับ', colorClass: 'text-blue-600' },
       step2_completed: { label: 'รอตรวจสอบ', colorClass: 'text-blue-600' },
       step2_completed_with_notes: { label: 'รอตรวจสอบ (มีหมายเหตุ)', colorClass: 'text-blue-500' },
       audited: { label: 'ตรวจสอบแล้ว', colorClass: 'text-indigo-600' },
@@ -73,17 +75,13 @@ export function useBillPaymentHelpers() {
   }
 
   function getStatusLabel(status: string): string {
-    const map: Record<string, string> = {
-      success: 'สำเร็จ',
-      failed: 'ล้มเหลว',
-    }
-    return map[status] ?? status
+    const config = TRANSACTION_STATUS_MAP[status as BillPaymentTransactionStatus]
+    return config?.label ?? status
   }
 
-  function getStatusBadgeVariant(status: string): 'success' | 'error' | 'default' {
-    if (status === 'success') return 'success'
-    if (status === 'failed') return 'error'
-    return 'default'
+  function getStatusBadgeVariant(status: string): 'success' | 'warning' | 'error' | 'info' | 'default' {
+    const config = TRANSACTION_STATUS_MAP[status as BillPaymentTransactionStatus]
+    return config?.badgeVariant ?? 'default'
   }
 
   /**
@@ -103,7 +101,7 @@ export function useBillPaymentHelpers() {
     billType?: string
     amount: number | ''
     commission: number | ''
-    status: 'success' | 'failed' | ''
+    status: BillPaymentTransactionStatus | ''
     customerName?: string
     notes?: string
   }
@@ -146,14 +144,14 @@ export function useBillPaymentHelpers() {
     transactionType: 'bill_payment' | 'owner_deposit'
     amount: number
     commission: number
-    status: 'success' | 'failed'
+    status: BillPaymentTransactionStatus
   }
 
   /**
    * Calculate expected cash balances from a list of transactions.
-   * bill_payment (success): billPaymentCash += amount, serviceFeeCash += commission
-   * owner_deposit (success): no effect on cash balances tracked here
-   * failed: no balance change
+   * bill_payment (completed): billPaymentCash += amount, serviceFeeCash += commission
+   * owner_deposit (completed): no effect on cash balances tracked here
+   * draft / on_hold / cancelled: no balance change
    */
   function calculateExpectedCash(transactions: TxnForCash[]): {
     billPaymentCash: number
@@ -162,7 +160,7 @@ export function useBillPaymentHelpers() {
     let billPaymentCash = 0
     let serviceFeeCash = 0
     for (const txn of transactions) {
-      if (txn.status !== 'success') continue
+      if (txn.status !== 'completed') continue
       if (txn.transactionType === 'bill_payment') {
         billPaymentCash += txn.amount
         serviceFeeCash += txn.commission
@@ -206,39 +204,40 @@ export function useBillPaymentHelpers() {
     date: string,
   ): SmartActionButton {
     const serviceRoute = `/finance/bill-payment-service?date=${date}`
-    const auditorRoute = `/finance/bill-payment-service/auditor-review?date=${date}`
-    const ownerRoute = `/finance/bill-payment-service/owner-approval?date=${date}`
 
     if (role === 'manager' || role === 'assistant_manager') {
       if (workflowStatus === 'step1_in_progress') {
         return { label: 'ทำงาน', route: serviceRoute, variant: 'primary' }
       }
+      if (workflowStatus === 'step1_completed') {
+        return { label: 'ตรวจนับเงิน', route: serviceRoute, variant: 'primary' }
+      }
       if (workflowStatus === 'needs_correction') {
         return { label: 'แก้ไข', route: serviceRoute, variant: 'secondary' }
       }
-      // step2_completed / step2_completed_with_notes / audited / audited_with_issues / approved / approved_with_notes
       return { label: 'ดูรายละเอียด', route: serviceRoute, variant: 'outline' }
     }
 
     if (role === 'auditor') {
       if (workflowStatus === 'step2_completed' || workflowStatus === 'step2_completed_with_notes') {
-        return { label: 'ตรวจสอบ', route: auditorRoute, variant: 'primary' }
+        return { label: 'ตรวจสอบ', route: serviceRoute, variant: 'primary' }
+      }
+      if (workflowStatus === 'needs_correction') {
+        return { label: 'ตรวจสอบใหม่', route: serviceRoute, variant: 'primary' }
       }
       if (workflowStatus === 'audited' || workflowStatus === 'audited_with_issues') {
-        return { label: 'ดูการตรวจสอบ', route: auditorRoute, variant: 'outline' }
+        return { label: 'ดูการตรวจสอบ', route: serviceRoute, variant: 'outline' }
       }
-      // step1_* / needs_correction / approved*
       return { label: 'ดูรายละเอียด', route: serviceRoute, variant: 'outline' }
     }
 
     // role === 'owner'
     if (workflowStatus === 'audited' || workflowStatus === 'audited_with_issues') {
-      return { label: 'อนุมัติ', route: ownerRoute, variant: 'primary' }
+      return { label: 'อนุมัติ', route: serviceRoute, variant: 'primary' }
     }
     if (workflowStatus === 'approved' || workflowStatus === 'approved_with_notes') {
-      return { label: 'ดูรายละเอียด', route: ownerRoute, variant: 'outline' }
+      return { label: 'ดูรายละเอียด', route: serviceRoute, variant: 'outline' }
     }
-    // step1_* / step2_* / needs_correction
     return { label: 'ดูรายละเอียด', route: serviceRoute, variant: 'outline' }
   }
 

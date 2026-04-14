@@ -6,6 +6,18 @@ const schema = z.object({
   outcome: z.enum(['audited', 'audited_with_issues', 'needs_correction']),
   auditBankStatementAmount: z.number().nonnegative().optional(),
   auditBankBalanceMatches: z.boolean().optional(),
+  /** Auditor's cash count for bill payment receipts */
+  auditorActualBillPaymentCash: z.number().nonnegative().optional(),
+  /** Auditor's cash count for service fees */
+  auditorActualServiceFeeCash: z.number().nonnegative().optional(),
+  /** Expected closing balance used for bank statement comparison */
+  auditExpectedClosingBalance: z.number().optional(),
+  /** Diff: bankStatementAmount − expectedClosingBalance */
+  auditBankStatementVsClosingDiff: z.number().optional(),
+  /** Whether bank statement matches expected closing balance */
+  auditBankStatementVsClosingMatches: z.boolean().optional(),
+  /** Per-transaction issue flags: { [txnId]: true } */
+  auditTxnIssueStatus: z.record(z.string(), z.literal(true)).optional(),
   auditFindings: z.string().optional(),
   auditTransactionsVerified: z.number().nonnegative().default(0),
   auditTransactionsWithIssues: z.number().nonnegative().default(0),

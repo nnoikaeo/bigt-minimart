@@ -123,7 +123,7 @@ export default defineEventHandler(async (event) => {
         verificationNotes: validated.verificationNotes,
         hasDiscrepancies: differences.total !== 0,
       },
-      workflowStatus: 'step2_completed',
+      workflowStatus: differences.total !== 0 ? 'step2_completed_with_notes' : 'step2_completed',
     })
 
     console.log(
