@@ -4,6 +4,7 @@ import { useLogger } from '~/composables/useLogger'
 import { usePermissions } from '~/composables/usePermissions'
 import { useBillPaymentHelpers } from '~/composables/useBillPaymentHelpers'
 import { PERMISSIONS } from '~/types/permissions'
+import type { CashVerificationRow } from '~/components/shared/CashVerificationTable.vue'
 import { CheckCircleIcon, ClipboardDocumentCheckIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
@@ -19,7 +20,6 @@ const logger = useLogger('BPCashVerificationSection')
 const store = useBillPaymentStore()
 const {
   formatAmount,
-  formatDiff,
   calculateExpectedCash,
   diffExpectedVsActual,
 } = useBillPaymentHelpers()
@@ -40,7 +40,7 @@ const isStep2ReadOnly = computed(() => !!store.currentSummary?.step2CompletedAt)
 // ─── Transactions ─────────────────────────────────────────────────────────────
 const dateTransactions = computed(() => store.getTransactionsByDate(props.date))
 
-// ─── Step 2 form state ─────────────────────────────────────────────────────────
+// ─── Step 2 form state ────────────────────────────────────────────────────────
 const actualBillPaymentCash = ref<number>(0)
 const actualServiceFeeCash = ref<number>(0)
 const verificationNotes = ref('')
@@ -66,8 +66,36 @@ const isStep2FormValid = computed(
     (!hasAnyDiscrepancy.value || verificationNotes.value.trim().length > 0)
 )
 
-function diffColorClass(hasDiscrepancy: boolean): string {
-  return hasDiscrepancy ? 'text-red-600' : 'text-green-600'
+// ─── CashVerificationTable rows ───────────────────────────────────────────────
+const cashVerificationRows = computed<CashVerificationRow[]>(() => [
+  {
+    label: 'A. เงินสดรับชำระบิล',
+    expected: expectedBillPaymentCash.value,
+    managerActual: actualBillPaymentCash.value,
+  },
+  {
+    label: 'B. ค่าธรรมเนียมสะสม',
+    expected: expectedServiceFeeCash.value,
+    managerActual: actualServiceFeeCash.value,
+  },
+])
+
+const readOnlyCashVerificationRows = computed<CashVerificationRow[]>(() => [
+  {
+    label: 'A. เงินสดรับชำระบิล',
+    expected: store.currentSummary?.step2ExpectedBillPaymentCash ?? 0,
+    managerActual: store.currentSummary?.step2ActualBillPaymentCash ?? 0,
+  },
+  {
+    label: 'B. ค่าธรรมเนียมสะสม',
+    expected: store.currentSummary?.step2ExpectedServiceFeeCash ?? 0,
+    managerActual: store.currentSummary?.step2ActualServiceFeeCash ?? 0,
+  },
+])
+
+function onUpdateManagerActual(rowIndex: number, value: number) {
+  if (rowIndex === 0) actualBillPaymentCash.value = value
+  else if (rowIndex === 1) actualServiceFeeCash.value = value
 }
 
 // ─── Load existing Step 2 data ─────────────────────────────────────────────────
@@ -126,87 +154,29 @@ async function handleCompleteStep2() {
         <BaseBadge variant="warning" size="sm">⏳ รอตรวจนับ</BaseBadge>
       </div>
 
-      <div class="mb-4 divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white">
-
-        <!-- Bank Account (read-only) -->
-        <div class="p-4">
-          <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <div class="flex-1">
-              <div class="font-medium text-gray-900">บัญชีธนาคาร</div>
-              <div class="text-sm text-gray-500">ยอดจากระบบ (ไม่ต้องนับ)</div>
-            </div>
-            <div class="text-right font-semibold text-blue-700">
-              {{ formatAmount(store.currentBalance?.bankAccount ?? 0) }}
-            </div>
+      <!-- Bank Account (read-only, not counted) -->
+      <div class="mb-4 rounded-xl border border-gray-200 bg-white p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="font-medium text-gray-900">บัญชีธนาคาร</div>
+            <div class="text-sm text-gray-500">ยอดจากระบบ (ไม่ต้องนับ)</div>
           </div>
-        </div>
-
-        <!-- A. เงินสดรับชำระบิล -->
-        <div class="p-4">
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div class="flex-1">
-              <div class="font-medium text-gray-900">A. เงินสดรับชำระบิล</div>
-              <div class="text-sm text-gray-500">
-                คาดหวัง: {{ formatAmount(expectedBillPaymentCash) }}
-              </div>
-            </div>
-            <div class="flex items-center gap-3">
-              <div class="relative w-40">
-                <BaseInput
-                  v-model="actualBillPaymentCash"
-                  type="number"
-                  min="0"
-                  step="1"
-                  placeholder="0"
-                />
-                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">บาท</span>
-              </div>
-              <div :class="['min-w-24 text-right text-sm font-semibold', diffColorClass(diffBillPayment.hasDiscrepancy)]">
-                {{ formatDiff(diffBillPayment.diff) }}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- B. ค่าธรรมเนียมสะสม -->
-        <div class="p-4">
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div class="flex-1">
-              <div class="font-medium text-gray-900">B. ค่าธรรมเนียมสะสม</div>
-              <div class="text-sm text-gray-500">
-                คาดหวัง: {{ formatAmount(expectedServiceFeeCash) }}
-              </div>
-            </div>
-            <div class="flex items-center gap-3">
-              <div class="relative w-40">
-                <BaseInput
-                  v-model="actualServiceFeeCash"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0"
-                />
-                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">บาท</span>
-              </div>
-              <div :class="['min-w-24 text-right text-sm font-semibold', diffColorClass(diffServiceFee.hasDiscrepancy)]">
-                {{ formatDiff(diffServiceFee.diff) }}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ผลการตรวจนับ -->
-        <div class="bg-gray-50 p-4">
-          <div class="flex items-center justify-between">
-            <span class="font-semibold text-gray-900">ผลการตรวจนับ</span>
-            <BaseBadge :variant="hasAnyDiscrepancy ? 'error' : 'success'">
-              {{ hasAnyDiscrepancy ? '⚠️ มีส่วนต่าง' : '✅ ตรงกัน' }}
-            </BaseBadge>
+          <div class="font-semibold text-blue-700">
+            {{ formatAmount(store.currentBalance?.bankAccount ?? 0) }}
           </div>
         </div>
       </div>
 
-      <!-- หมายเหตุ -->
+      <!-- Cash Verification Table (manager-input) -->
+      <div class="mb-4">
+        <CashVerificationTable
+          :rows="cashVerificationRows"
+          mode="manager-input"
+          @update:manager-actual="onUpdateManagerActual"
+        />
+      </div>
+
+      <!-- หมายเหตุ (always visible) -->
       <div class="mb-4 rounded-xl border border-gray-200 bg-white p-4">
         <FormField
           label="หมายเหตุ/สาเหตุ"
@@ -214,7 +184,7 @@ async function handleCompleteStep2() {
         >
           <BaseTextarea
             v-model="verificationNotes"
-            :placeholder="hasAnyDiscrepancy ? 'ระบุสาเหตุของส่วนต่าง เช่น เงินสดขาด X บาท เนื่องจาก...' : 'หมายเหตุเพิ่มเติม (ไม่บังคับ)'"
+            placeholder="ระบุสาเหตุของส่วนต่าง เช่น เงินสดขาด X บาท เนื่องจาก..."
             :rows="3"
           />
         </FormField>
@@ -248,54 +218,22 @@ async function handleCompleteStep2() {
         </BaseBadge>
       </div>
 
-      <div class="divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white">
-        <!-- Bank -->
-        <div class="flex items-center justify-between p-4">
+      <!-- Bank Account (read-only) -->
+      <div class="mb-4 rounded-xl border border-gray-200 bg-white p-4">
+        <div class="flex items-center justify-between">
           <span class="text-gray-700">บัญชีธนาคาร</span>
           <span class="font-semibold text-blue-700">
             {{ formatAmount(store.currentBalance?.bankAccount ?? 0) }}
           </span>
         </div>
-        <!-- เงินสดรับชำระบิล -->
-        <div class="grid grid-cols-3 gap-2 p-4 text-sm">
-          <div>
-            <div class="text-xs text-gray-500">เงินสดรับชำระบิล (คาดหวัง)</div>
-            <div class="font-medium">{{ formatAmount(store.currentSummary?.step2ExpectedBillPaymentCash ?? 0) }}</div>
-          </div>
-          <div>
-            <div class="text-xs text-gray-500">นับจริง</div>
-            <div class="font-medium">{{ formatAmount(store.currentSummary?.step2ActualBillPaymentCash ?? 0) }}</div>
-          </div>
-          <div>
-            <div class="text-xs text-gray-500">ส่วนต่าง</div>
-            <div :class="['font-semibold', diffColorClass((store.currentSummary?.step2ExpectedBillPaymentCash ?? 0) !== (store.currentSummary?.step2ActualBillPaymentCash ?? 0))]">
-              {{ formatDiff((store.currentSummary?.step2ExpectedBillPaymentCash ?? 0) - (store.currentSummary?.step2ActualBillPaymentCash ?? 0)) }}
-            </div>
-          </div>
-        </div>
-        <!-- ค่าธรรมเนียม -->
-        <div class="grid grid-cols-3 gap-2 p-4 text-sm">
-          <div>
-            <div class="text-xs text-gray-500">ค่าธรรมเนียม (คาดหวัง)</div>
-            <div class="font-medium">{{ formatAmount(store.currentSummary?.step2ExpectedServiceFeeCash ?? 0) }}</div>
-          </div>
-          <div>
-            <div class="text-xs text-gray-500">นับจริง</div>
-            <div class="font-medium">{{ formatAmount(store.currentSummary?.step2ActualServiceFeeCash ?? 0) }}</div>
-          </div>
-          <div>
-            <div class="text-xs text-gray-500">ส่วนต่าง</div>
-            <div :class="['font-semibold', diffColorClass((store.currentSummary?.step2ExpectedServiceFeeCash ?? 0) !== (store.currentSummary?.step2ActualServiceFeeCash ?? 0))]">
-              {{ formatDiff((store.currentSummary?.step2ExpectedServiceFeeCash ?? 0) - (store.currentSummary?.step2ActualServiceFeeCash ?? 0)) }}
-            </div>
-          </div>
-        </div>
-        <!-- หมายเหตุ -->
-        <div v-if="store.currentSummary?.step2VerificationNotes" class="p-4 text-sm">
-          <div class="text-xs text-gray-500">หมายเหตุ</div>
-          <div class="mt-1 text-gray-700">{{ store.currentSummary.step2VerificationNotes }}</div>
-        </div>
       </div>
+
+      <!-- Cash Verification Table (manager-readonly) with notes inside -->
+      <CashVerificationTable
+        :rows="readOnlyCashVerificationRows"
+        mode="manager-readonly"
+        :verification-notes="store.currentSummary?.step2VerificationNotes"
+      />
     </section>
   </div>
 </template>
