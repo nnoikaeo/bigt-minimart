@@ -1734,7 +1734,7 @@ UI:
 
 ---
 
-#### Task 6.1: Unit Tests — Bill Payment Sub-Components
+#### Task 6.1: Unit Tests — Bill Payment Sub-Components ✅ DONE (PR #138)
 
 **Skill:** `unit-test-vue-pinia`
 
@@ -1926,7 +1926,7 @@ Component ที่ต้องเขียน test:
 | **5** | 5.1 | BP — Balance Snapshot + Auditor Cash Count | `create-implementation-plan` | BP |
 | **5** | 5.2 | BP — Owner + step1_completed + ลบเงื่อนไข | `create-implementation-plan` | BP |
 | **5** | 5.3 | BP — Cash Verification UI + Notes | `refactor` | BP |
-| **6** | 6.1 | Unit Tests — BP Sub-Components | `unit-test-vue-pinia` | Tests |
+| **6** | 6.1 ✅ | Unit Tests — BP Sub-Components | `unit-test-vue-pinia` | Tests |
 | **6** | 6.2 | Integration Tests — ทั้งสอง Service | `unit-test-vue-pinia` | Tests |
 | **6** | 6.3 | Data Migration + Final Review | `review-and-refactor` | All |
 
