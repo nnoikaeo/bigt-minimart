@@ -684,7 +684,7 @@ Screenshots บันทึกที่: tests/e2e/screenshots/
 
 | # | Task ID | ชื่อ Task | ทำโดย | Skill | สถานะ |
 |---|---|---|---|---|---|
-| 1 | MT-1 | MT History Page Manual Test | คุณ | — | ☐ |
+| 1 | MT-1 | MT History Page Manual Test | คุณ | — | ✅ |
 | 2 | MT-2 | MT Service Manager Flow | คุณ | — | ☐ |
 | 3 | MT-3 | MT Auditor Flow | คุณ | — | ☐ |
 | 4 | MT-4 | MT Owner Flow | คุณ | — | ☐ |
@@ -712,7 +712,7 @@ Screenshots บันทึกที่: tests/e2e/screenshots/
 
 | Task | วันที่ทดสอบ | ผลลัพธ์ | จำนวน Bug | หมายเหตุ |
 |---|---|---|---|---|
-| MT-1 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
+| MT-1 | 15 เม.ย. 2569 | ✅ ผ่าน | 3 (แก้แล้ว) | PR #143, #144 — แก้ status labels/colors, เพิ่ม card filtering, แก้ column header |
 | MT-2 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
 | MT-3 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
 | MT-4 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
