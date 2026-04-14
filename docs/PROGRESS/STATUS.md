@@ -2,7 +2,7 @@
 
 **Last Updated**: Apr 14, 2026
 **Updated By**: Claude Code
-**Current Branch**: develop (latest merge: PR #136 — 09faf9d)
+**Current Branch**: develop (latest merge: PR #137 — d740a6d)
 
 ---
 
@@ -113,7 +113,8 @@ Timeline Status: Money Transfer feature fully shipped ✓
 
 ✅ Phase 5: Auditor + Owner Enhancements (PRs #134–#136)
    ├─ Task 5.1: Balance Snapshot + Auditor Cash Count + Bank Statement
-   ├─ Task 5.2: step1_completed Status + Owner OwnerDecisionCard refactor
+   ├─ Task 5.2: step1_completed Status + Owner refactor (PR #135, #137)
+   │     └─ OwnerApprovalSection → WorkflowStepSummaryCard ทั้ง 3 sections
    └─ Task 5.3: Cash Verification UI → shared CashVerificationTable + Notes always visible
 ```
 
@@ -208,7 +209,7 @@ Components (38 total):
 |--------|-------|--------|
 | Pages | 25 | ✅ |
 | Components | 38 | ✅ |
-| PRs merged to develop | 136 | ✅ |
+| PRs merged to develop | 137 | ✅ |
 | TypeScript errors | 0 | ✅ |
 | Money Transfer workflow | 6/6 statuses | ✅ |
 | Bill Payment workflow | Phase 5 complete | 🔄 Phase 6 pending |
