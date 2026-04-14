@@ -11,21 +11,25 @@ import type {
   BillPaymentTransaction,
   BillPaymentDailySummary,
   BillPaymentBalance,
+  BillPaymentFavorite,
 } from '~/types/bill-payment'
 
 export class BillPaymentJsonRepository {
   private transactions: BillPaymentTransaction[] = []
   private summaries: BillPaymentDailySummary[] = []
   private balances: BillPaymentBalance[] = []
+  private favorites: BillPaymentFavorite[] = []
 
   private transactionsFile: string
   private summariesFile: string
   private balancesFile: string
+  private favoritesFile: string
 
   constructor() {
     this.transactionsFile = join(process.cwd(), 'public', 'data', 'bill-payment-transactions.json')
     this.summariesFile = join(process.cwd(), 'public', 'data', 'bill-payment-summaries.json')
     this.balancesFile = join(process.cwd(), 'public', 'data', 'bill-payment-balances.json')
+    this.favoritesFile = join(process.cwd(), 'public', 'data', 'bill-payment-favorites.json')
   }
 
   // ─── Init & Persistence ──────────────────────────────────────────────────────
@@ -53,14 +57,23 @@ export class BillPaymentJsonRepository {
         this.balances = []
       }
 
+      try {
+        const content = await fs.readFile(this.favoritesFile, 'utf-8')
+        this.favorites = JSON.parse(content) as BillPaymentFavorite[]
+      } catch {
+        this.favorites = []
+      }
+
       console.log(`✅ [bill-payment] Loaded ${this.transactions.length} transactions`)
       console.log(`✅ [bill-payment] Loaded ${this.summaries.length} summaries`)
       console.log(`✅ [bill-payment] Loaded ${this.balances.length} balance records`)
+      console.log(`✅ [bill-payment] Loaded ${this.favorites.length} favorites`)
     } catch (error) {
       console.log('📝 [bill-payment] Starting with empty data')
       this.transactions = []
       this.summaries = []
       this.balances = []
+      this.favorites = []
     }
   }
 
@@ -75,6 +88,7 @@ export class BillPaymentJsonRepository {
       await fs.writeFile(this.transactionsFile, JSON.stringify(this.transactions, null, 2), 'utf-8')
       await fs.writeFile(this.summariesFile, JSON.stringify(this.summaries, null, 2), 'utf-8')
       await fs.writeFile(this.balancesFile, JSON.stringify(this.balances, null, 2), 'utf-8')
+      await fs.writeFile(this.favoritesFile, JSON.stringify(this.favorites, null, 2), 'utf-8')
     } catch (error) {
       console.error('❌ [bill-payment] Failed to save:', error)
       throw new Error('Failed to save bill payment data')
@@ -443,6 +457,51 @@ export class BillPaymentJsonRepository {
     }
 
     return this.updateDailySummary(date, updates)
+  }
+
+  // ─── Favorites ───────────────────────────────────────────────────────────────
+
+  async getFavorites(): Promise<BillPaymentFavorite[]> {
+    return [...this.favorites].sort((a, b) => a.tab - b.tab || a.order - b.order)
+  }
+
+  async getFavoritesByTab(tab: 1 | 2 | 3 | 4 | 5): Promise<BillPaymentFavorite[]> {
+    return this.favorites
+      .filter(f => f.tab === tab)
+      .sort((a, b) => a.order - b.order)
+  }
+
+  async addFavorite(data: Omit<BillPaymentFavorite, 'id' | 'createdAt'>): Promise<BillPaymentFavorite> {
+    const tabItems = this.favorites.filter(f => f.tab === data.tab)
+    if (tabItems.length >= 10) {
+      throw new Error(`Tab #${data.tab} is full (max 10 favorites)`)
+    }
+    const newFav: BillPaymentFavorite = {
+      ...data,
+      id: `bpfav-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      createdAt: new Date().toISOString(),
+    }
+    this.favorites.push(newFav)
+    await this.save()
+    return newFav
+  }
+
+  async updateFavorite(
+    id: string,
+    data: Partial<Omit<BillPaymentFavorite, 'id' | 'createdAt'>>
+  ): Promise<BillPaymentFavorite> {
+    const idx = this.favorites.findIndex(f => f.id === id)
+    if (idx === -1) throw new Error(`Favorite ${id} not found`)
+    this.favorites[idx] = { ...this.favorites[idx]!, ...data }
+    await this.save()
+    return this.favorites[idx]!
+  }
+
+  async deleteFavorite(id: string): Promise<void> {
+    const idx = this.favorites.findIndex(f => f.id === id)
+    if (idx === -1) throw new Error(`Favorite ${id} not found`)
+    this.favorites.splice(idx, 1)
+    await this.save()
   }
 }
 

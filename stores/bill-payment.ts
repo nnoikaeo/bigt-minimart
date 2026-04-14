@@ -12,6 +12,7 @@ import type {
   BillPaymentTransaction,
   BillPaymentDailySummary,
   BillPaymentBalance,
+  BillPaymentFavorite,
 } from '~/types/bill-payment'
 
 /**
@@ -75,6 +76,11 @@ export const useBillPaymentStore = defineStore('billPayment', {
      */
     isLoading: false,
     error: null as string | null,
+
+    /**
+     * Favorite bill payment entries (5 tabs × up to 10 items each)
+     */
+    favorites: [] as BillPaymentFavorite[],
   }),
 
   getters: {
@@ -167,6 +173,15 @@ export const useBillPaymentStore = defineStore('billPayment', {
       state.transactions
         .filter((t: any) => t.transactionType === 'bill_payment' && t.status === 'completed')
         .reduce((sum: number, t: any) => sum + (t.commission ?? 0), 0),
+
+    /**
+     * Get favorites filtered by tab, sorted by order
+     */
+    getFavoritesByTab: (state: any) => (tab: 1 | 2 | 3 | 4 | 5) => {
+      return (state.favorites as BillPaymentFavorite[])
+        .filter(f => f.tab === tab)
+        .sort((a, b) => a.order - b.order)
+    },
   },
 
   actions: {
@@ -573,6 +588,47 @@ export const useBillPaymentStore = defineStore('billPayment', {
      */
     clearError(): void {
       this.error = null
+    },
+
+    // ─── Favorites ────────────────────────────────────────────────────────────
+
+    async loadFavorites(): Promise<void> {
+      try {
+        const response = await getApiFetch()('/api/bill-payment/favorites')
+        this.favorites = response.data
+        console.log('[billPayment/loadFavorites] Loaded:', this.favorites.length)
+      } catch (error: any) {
+        console.error('[billPayment/loadFavorites]', error)
+      }
+    },
+
+    async addFavorite(
+      data: Omit<BillPaymentFavorite, 'id' | 'createdAt'>
+    ): Promise<BillPaymentFavorite> {
+      const response = await getApiFetch()('/api/bill-payment/favorites', {
+        method: 'POST',
+        body: data,
+      })
+      this.favorites.push(response.data)
+      return response.data
+    },
+
+    async updateFavorite(
+      id: string,
+      data: Partial<Omit<BillPaymentFavorite, 'id' | 'createdAt'>>
+    ): Promise<BillPaymentFavorite> {
+      const response = await getApiFetch()(`/api/bill-payment/favorites/${id}`, {
+        method: 'PUT',
+        body: data,
+      })
+      const idx = this.favorites.findIndex((f: any) => f.id === id)
+      if (idx !== -1) this.favorites[idx] = response.data
+      return response.data
+    },
+
+    async deleteFavorite(id: string): Promise<void> {
+      await getApiFetch()(`/api/bill-payment/favorites/${id}`, { method: 'DELETE' })
+      this.favorites = this.favorites.filter((f: any) => f.id !== id)
     },
   },
 })
