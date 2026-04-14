@@ -337,7 +337,7 @@ export class BillPaymentJsonRepository {
     const cancelledTxns = txns.filter(t => t.status === 'cancelled')
 
     return this.updateDailySummary(date, {
-      workflowStatus: 'step2_completed', // temporarily; page decides step2 starts
+      workflowStatus: 'step1_completed',
       step1CompletedAt: new Date().toISOString(),
       step1CompletedBy: userId,
       step1CompletedByName: userName,

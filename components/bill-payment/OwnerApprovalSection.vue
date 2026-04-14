@@ -2,7 +2,6 @@
 import { useBillPaymentStore } from '~/stores/bill-payment'
 import { useLogger } from '~/composables/useLogger'
 import { useBillPaymentHelpers } from '~/composables/useBillPaymentHelpers'
-import { PERMISSIONS } from '~/types/permissions'
 import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
@@ -57,16 +56,9 @@ const expandStep2 = ref(false)
 const expandAudit = ref(false)
 
 // ─── Decision form ────────────────────────────────────────────────────────────
-const decision = ref<'approved' | 'approved_with_notes' | 'needs_correction' | ''>('')
-const approvalNotes = ref('')
+type Decision = 'approved' | 'approved_with_notes' | 'needs_correction'
+const decisionCard = ref<Decision | null>(null)
 const isSubmitting = ref(false)
-
-const canSubmit = computed(
-  () =>
-    decision.value !== '' &&
-    (decision.value !== 'approved_with_notes' || approvalNotes.value.trim() !== '') &&
-    (decision.value !== 'needs_correction' || approvalNotes.value.trim() !== '')
-)
 
 // ─── Summary diffs ────────────────────────────────────────────────────────────
 const step2BillPaymentDiff = computed(() => {
@@ -82,26 +74,26 @@ const step2ServiceFeeDiff = computed(() => {
 })
 
 // ─── Submit ───────────────────────────────────────────────────────────────────
-async function handleSubmitApproval() {
-  if (!canSubmit.value) return
+async function handleDecisionSubmit(decisionValue: Decision, notes: string) {
   isSubmitting.value = true
   errorMessage.value = ''
   try {
     await store.submitOwnerApproval(props.date, {
-      decision: decision.value,
-      approvalNotes: approvalNotes.value.trim() || undefined,
+      decision: decisionValue,
+      approvalNotes: notes || undefined,
     })
-    const labels: Record<string, string> = {
+    const labels: Record<Decision, string> = {
       approved: 'อนุมัติเรียบร้อยแล้ว ✅',
       approved_with_notes: 'อนุมัติพร้อมหมายเหตุเรียบร้อยแล้ว ✅',
       needs_correction: 'ส่งกลับให้ Auditor แก้ไขแล้ว',
     }
-    successMessage.value = labels[decision.value as string] ?? ''
-    logger.log(`Owner approval submitted: ${decision.value} for ${props.date}`)
-    emit('approval-submitted', decision.value as 'approved' | 'approved_with_notes' | 'needs_correction')
+    successMessage.value = labels[decisionValue]
+    decisionCard.value = null
+    logger.log(`Owner approval submitted: ${decisionValue} for ${props.date}`)
+    emit('approval-submitted', decisionValue)
   } catch (err: any) {
     errorMessage.value = err.message ?? 'เกิดข้อผิดพลาด'
-    logger.error('handleSubmitApproval', err)
+    logger.error('handleDecisionSubmit', err)
   } finally {
     isSubmitting.value = false
   }
@@ -394,77 +386,13 @@ async function handleSubmitApproval() {
         <ExclamationTriangleIcon class="w-5 h-5 text-yellow-600" />
         <h3 class="font-semibold text-gray-900">การตัดสินใจของ Owner</h3>
       </div>
-      <div class="p-4 space-y-3">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-
-          <!-- อนุมัติ -->
-          <label
-            class="flex flex-col gap-1 p-3 rounded-lg border cursor-pointer transition-colors"
-            :class="decision === 'approved' ? 'border-green-400 bg-green-50' : 'border-gray-200 hover:border-gray-300'"
-          >
-            <div class="flex items-center gap-2">
-              <input v-model="decision" type="radio" value="approved" class="accent-green-600 shrink-0" />
-              <p class="font-medium text-sm text-gray-900">อนุมัติ ✅</p>
-            </div>
-            <p class="text-xs text-gray-500 pl-5">บันทึกเป็นที่สิ้นสุด</p>
-          </label>
-
-          <!-- อนุมัติพร้อมหมายเหตุ -->
-          <label
-            class="flex flex-col gap-1 p-3 rounded-lg border cursor-pointer transition-colors"
-            :class="decision === 'approved_with_notes' ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:border-gray-300'"
-          >
-            <div class="flex items-center gap-2">
-              <input v-model="decision" type="radio" value="approved_with_notes" class="accent-blue-600 shrink-0" />
-              <p class="font-medium text-sm text-gray-900">อนุมัติพร้อมหมายเหตุ</p>
-            </div>
-            <p class="text-xs text-gray-500 pl-5">มีข้อสังเกตเพิ่มเติม</p>
-          </label>
-
-          <!-- ขอให้แก้ไข -->
-          <label
-            class="flex flex-col gap-1 p-3 rounded-lg border transition-colors"
-            :class="[
-              decision === 'needs_correction' ? 'border-red-400 bg-red-50' : 'border-gray-200',
-              'cursor-pointer hover:border-gray-300',
-            ]"
-          >
-            <div class="flex items-center gap-2">
-              <input
-                v-model="decision"
-                type="radio"
-                value="needs_correction"
-                class="accent-red-600 shrink-0"
-              />
-              <p class="font-medium text-sm text-gray-900">ขอให้แก้ไข</p>
-            </div>
-            <p class="text-xs text-gray-500 pl-5">ส่งกลับ Auditor</p>
-          </label>
-        </div>
-
-        <!-- Notes field -->
-        <div v-if="decision === 'approved_with_notes' || decision === 'needs_correction'">
-          <BaseTextarea
-            v-model="approvalNotes"
-            :placeholder="decision === 'needs_correction' ? 'ระบุสิ่งที่ต้องแก้ไข...' : 'ระบุหมายเหตุหรือข้อสังเกต...'"
-            :rows="2"
-          />
-        </div>
+      <div class="p-4">
+        <OwnerDecisionCard
+          v-model="decisionCard"
+          :is-submitting="isSubmitting"
+          @submit="handleDecisionSubmit"
+        />
       </div>
     </section>
-
-    <!-- ── Action Button ───────────────────────────────────────────────────── -->
-    <div v-if="canSubmitApproval" class="flex justify-end py-4">
-      <ActionButton
-        :permission="PERMISSIONS.EDIT_FINANCE"
-        :variant="decision === 'needs_correction' ? 'danger' : 'primary'"
-        :loading="isSubmitting"
-        :disabled="!canSubmit || isSubmitting"
-        @click="handleSubmitApproval"
-      >
-        <CheckCircleIcon class="w-4 h-4" />
-        {{ decision === 'needs_correction' ? 'ส่งคืนแก้ไข' : decision === 'approved_with_notes' ? 'อนุมัติพร้อมหมายเหตุ ✅' : 'อนุมัติ ✅' }}
-      </ActionButton>
-    </div>
   </div>
 </template>
