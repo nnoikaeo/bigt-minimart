@@ -1,8 +1,8 @@
 # Project Status Dashboard
 
-**Last Updated**: Mar 25, 2026
+**Last Updated**: Apr 14, 2026
 **Updated By**: Claude Code
-**Current Branch**: main (latest merge: PR #85 — dcf1214)
+**Current Branch**: develop (latest merge: PR #136 — 09faf9d)
 
 ---
 
@@ -20,7 +20,8 @@ PHASE 1: Core Features
 ├─ Week 8: UI Components & Layout Overhaul        ✅ COMPLETE (100%)
 ├─ Week 9: Layout Consistency & Polish            ✅ COMPLETE (100%)
 ├─ Week 5-6 (original plan): Dashboard + Reports ❌ NOT STARTED (0%)
-└─ Overall: PHASE 1 CORE COMPLETE — Dashboard/Reports remaining
+├─ Week 10+: Bill Payment Service Harmonization               🔄 IN PROGRESS (~85%)
+└─ Overall: PHASE 1 CORE COMPLETE — BP Harmonization in progress
 
 Timeline Status: Money Transfer feature fully shipped ✓
 ```
@@ -94,6 +95,28 @@ Timeline Status: Money Transfer feature fully shipped ✓
    └─ Compact View bugfixes (totalCommission field, balance refresh)
 ```
 
+### Week 10+ (Apr 7-14): Bill Payment Service Harmonization
+
+**PRs**: #127–#136
+
+```
+✅ Phase 3: Single-Page Architecture (PR #127)
+   └─ รวม 3 หน้า BP เป็น single-page orchestrator
+
+✅ Phase 4: Bill Payment Feature Parity (PRs #128–#133)
+   ├─ Task 4.1: Opening Balance System
+   ├─ Task 4.2: Transaction Status Model + Data Migration
+   ├─ Task 4.3: Workflow Progress Bar + Quick Glance + Balance Cards
+   ├─ Task 4.4: Filter Tabs + Pagination + Step 1 Checklist
+   ├─ Task 4.5: Auto Commission (useCommission)
+   └─ Task 4.6: Quick Actions + Favorites System
+
+✅ Phase 5: Auditor + Owner Enhancements (PRs #134–#136)
+   ├─ Task 5.1: Balance Snapshot + Auditor Cash Count + Bank Statement
+   ├─ Task 5.2: step1_completed Status + Owner OwnerDecisionCard refactor
+   └─ Task 5.3: Cash Verification UI → shared CashVerificationTable + Notes always visible
+```
+
 ### Week 9 (Mar 23-25): Layout Consistency & Polish
 
 **PRs**: #80, #81, #82, #83, #84, #85
@@ -146,7 +169,15 @@ Money Transfer Workflow ✅
   ├─ step2_completed → Auditor reviews (checklist + findings)
   ├─ audited → Owner approves/rejects
   ├─ approved → All roles see consistent read-only layout
-  └─ needs_correction → (planned, not yet implemented)
+  └─ needs_correction → implemented ✅
+
+Bill Payment Workflow 🔄 IN PROGRESS
+  ├─ step1_in_progress → Manager records bill payment transactions
+  ├─ step1_completed → Manager verifies cash count (Step 2) ✅ Task 5.2
+  ├─ step2_completed → Auditor reviews + bank statement ✅ Task 5.1
+  ├─ audited / audited_with_issues → Owner approves ✅ Task 5.2
+  ├─ approved / approved_with_notes → Done
+  └─ needs_correction → Owner can request anytime ✅ Task 5.2
 ```
 
 ---
@@ -177,9 +208,10 @@ Components (38 total):
 |--------|-------|--------|
 | Pages | 25 | ✅ |
 | Components | 38 | ✅ |
-| PRs merged to main | 85 | ✅ |
+| PRs merged to develop | 136 | ✅ |
 | TypeScript errors | 0 | ✅ |
-| Money Transfer workflow | 5/6 statuses | ✅ (needs_correction pending) |
+| Money Transfer workflow | 6/6 statuses | ✅ |
+| Bill Payment workflow | Phase 5 complete | 🔄 Phase 6 pending |
 | Design System components | 18+ | ✅ |
 | Mobile responsive | Yes | ✅ |
 
@@ -194,8 +226,7 @@ Components (38 total):
    ├─ Charts & graphs
    └─ Export functionality
 
-❌ needs_correction workflow status
-   └─ Planned as separate PR (UX considerations)
+✅ needs_correction workflow status (implemented in BP + MT)
 
 ❌ Dead code cleanup
    └─ ~200 lines v-if="false" in index.vue (deferred)
