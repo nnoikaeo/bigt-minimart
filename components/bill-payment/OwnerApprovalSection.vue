@@ -5,11 +5,6 @@ import { useBillPaymentHelpers } from '~/composables/useBillPaymentHelpers'
 import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
-  BanknotesIcon,
-  DocumentTextIcon,
-  ShieldCheckIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
@@ -50,11 +45,6 @@ const billPaymentTransactions = computed(() =>
   dateTransactions.value.filter((t: any) => t.transactionType === 'bill_payment')
 )
 
-// ─── Expandable sections ──────────────────────────────────────────────────────
-const expandStep1 = ref(false)
-const expandStep2 = ref(false)
-const expandAudit = ref(false)
-
 // ─── Decision form ────────────────────────────────────────────────────────────
 type Decision = 'approved' | 'approved_with_notes' | 'needs_correction'
 const decisionCard = ref<Decision | null>(null)
@@ -72,6 +62,95 @@ const step2ServiceFeeDiff = computed(() => {
   const actual = store.currentSummary?.step2ActualServiceFeeCash ?? 0
   return expected - actual
 })
+
+// ─── WorkflowStepSummaryCard data ─────────────────────────────────────────────
+const step1SummaryItems = computed(() => [
+  {
+    label: 'ยอดรับชำระทั้งหมด',
+    value: formatAmount(store.currentSummary?.step1TotalAmount ?? 0),
+    colorClass: 'bg-blue-50',
+  },
+  {
+    label: 'ค่าธรรมเนียมสะสม',
+    value: formatAmount(store.currentSummary?.step1TotalCommission ?? 0),
+    colorClass: 'bg-green-50',
+  },
+  {
+    label: 'รายการล้มเหลว',
+    value: `${store.currentSummary?.step1FailedTransactions ?? 0} รายการ`,
+    colorClass: (store.currentSummary?.step1FailedTransactions ?? 0) > 0 ? 'bg-red-50' : 'bg-gray-50',
+  },
+])
+
+const step2Badge = computed(() => {
+  if (!store.isStep2Complete) return undefined
+  return store.currentSummary?.step2HasDiscrepancies
+    ? { label: 'มีส่วนต่าง ⚠️', variant: 'warning' as const }
+    : { label: 'ตรงกัน ✅', variant: 'success' as const }
+})
+
+const step2SummaryItems = computed(() => [
+  {
+    label: 'คาดหวังเงินสด (บิล)',
+    value: formatAmount(store.currentSummary?.step2ExpectedBillPaymentCash ?? 0),
+    colorClass: 'bg-gray-50',
+  },
+  {
+    label: 'นับจริง (บิล)',
+    value: formatAmount(store.currentSummary?.step2ActualBillPaymentCash ?? 0),
+    colorClass: 'bg-gray-50',
+  },
+  {
+    label: 'ส่วนต่าง (บิล)',
+    value: formatDiff(step2BillPaymentDiff.value),
+    colorClass: step2BillPaymentDiff.value === 0 ? 'bg-green-50' : 'bg-yellow-50',
+  },
+  {
+    label: 'คาดหวังค่าธรรมเนียม',
+    value: formatAmount(store.currentSummary?.step2ExpectedServiceFeeCash ?? 0),
+    colorClass: 'bg-gray-50',
+  },
+  {
+    label: 'นับจริง (ค่าธรรมเนียม)',
+    value: formatAmount(store.currentSummary?.step2ActualServiceFeeCash ?? 0),
+    colorClass: 'bg-gray-50',
+  },
+  {
+    label: 'ส่วนต่าง (ค่าธรรมเนียม)',
+    value: formatDiff(step2ServiceFeeDiff.value),
+    colorClass: step2ServiceFeeDiff.value === 0 ? 'bg-green-50' : 'bg-yellow-50',
+  },
+])
+
+const auditBadge = computed(() => {
+  if (!store.isAudited) return { label: 'ยังไม่ตรวจสอบ', variant: 'info' as const }
+  return isAuditedWithIssues.value
+    ? { label: 'พบปัญหา ⚠️', variant: 'warning' as const }
+    : { label: 'ผ่านการตรวจสอบ ✅', variant: 'success' as const }
+})
+
+const auditSummaryItems = computed(() => [
+  {
+    label: 'ตรวจสอบโดย',
+    value: store.currentSummary?.auditedByName ?? '-',
+    colorClass: 'bg-indigo-50',
+  },
+  {
+    label: 'Bank Statement',
+    value: formatAmount(store.currentSummary?.auditBankStatementAmount ?? 0),
+    colorClass: 'bg-blue-50',
+  },
+  {
+    label: 'รายการที่ตรวจ',
+    value: `${store.currentSummary?.auditTransactionsVerified ?? 0} รายการ`,
+    colorClass: 'bg-gray-50',
+  },
+  {
+    label: 'รายการที่มีปัญหา',
+    value: `${store.currentSummary?.auditTransactionsWithIssues ?? 0} รายการ`,
+    colorClass: (store.currentSummary?.auditTransactionsWithIssues ?? 0) > 0 ? 'bg-orange-50' : 'bg-gray-50',
+  },
+])
 
 // ─── Submit ───────────────────────────────────────────────────────────────────
 async function handleDecisionSubmit(decisionValue: Decision, notes: string) {
@@ -158,213 +237,88 @@ async function handleDecisionSubmit(decisionValue: Decision, notes: string) {
     <!-- ═══════════════════════════════════════════════════════════════════════
          STEP 1 Summary
     ════════════════════════════════════════════════════════════════════════════ -->
-    <section class="bg-white border border-gray-200 rounded-xl mb-4 overflow-hidden">
-      <div class="flex items-center gap-3 px-6 py-4 bg-gray-50 border-b border-gray-200">
-        <span class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">1</span>
-        <h3 class="font-semibold text-gray-900">Step 1 — Manager บันทึกรายการ</h3>
-        <span class="ml-auto text-sm text-gray-500">
+    <WorkflowStepSummaryCard
+      :step-number="1"
+      title="Manager บันทึกรายการ"
+      :summary-items="step1SummaryItems"
+      class="mb-4"
+    >
+      <template #header-right>
+        <span class="text-sm text-gray-500">
           {{ store.currentSummary?.step1TotalTransactions ?? 0 }} รายการ
           · {{ store.currentSummary?.step1SuccessTransactions ?? 0 }} สำเร็จ
         </span>
-      </div>
-
-      <div class="px-6 py-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <div class="bg-blue-50 rounded-lg p-3 text-center">
-          <p class="text-xs text-blue-600 mb-1">ยอดรับชำระทั้งหมด</p>
-          <p class="font-semibold text-blue-900">{{ formatAmount(store.currentSummary?.step1TotalAmount ?? 0) }}</p>
-        </div>
-        <div class="bg-green-50 rounded-lg p-3 text-center">
-          <p class="text-xs text-green-600 mb-1">ค่าธรรมเนียมสะสม</p>
-          <p class="font-semibold text-green-900">{{ formatAmount(store.currentSummary?.step1TotalCommission ?? 0) }}</p>
-        </div>
-        <div class="bg-red-50 rounded-lg p-3 text-center">
-          <p class="text-xs text-red-600 mb-1">รายการล้มเหลว</p>
-          <p class="font-semibold text-red-900">{{ store.currentSummary?.step1FailedTransactions ?? 0 }} รายการ</p>
-        </div>
-      </div>
-
-      <!-- Expandable transaction list -->
-      <div class="border-t border-gray-100">
-        <button
-          class="w-full flex items-center justify-between px-6 py-3 text-left hover:bg-gray-50 transition-colors"
-          @click="expandStep1 = !expandStep1"
-        >
-          <div class="flex items-center gap-2">
-            <DocumentTextIcon class="w-4 h-4 text-gray-500" />
-            <span class="text-sm font-medium text-gray-700">รายการธุรกรรมทั้งหมด</span>
-            <BaseBadge variant="default" size="sm">{{ dateTransactions.length }} รายการ</BaseBadge>
-          </div>
-          <ChevronUpIcon v-if="expandStep1" class="w-4 h-4 text-gray-500" />
-          <ChevronDownIcon v-else class="w-4 h-4 text-gray-500" />
-        </button>
-        <div v-if="expandStep1" class="px-6 pb-4">
-          <EmptyState v-if="billPaymentTransactions.length === 0" title="ไม่มีรายการ" />
-          <table v-else class="w-full text-sm">
-            <thead>
-              <tr class="border-b border-gray-200 text-gray-500 text-xs">
-                <th class="py-2 text-left font-medium">#</th>
-                <th class="py-2 text-left font-medium">เวลา</th>
-                <th class="py-2 text-left font-medium">ประเภทบิล</th>
-                <th class="py-2 text-right font-medium">ยอด</th>
-                <th class="py-2 text-right font-medium">ค่าธรรมเนียม</th>
-                <th class="py-2 text-center font-medium">สถานะ</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="(txn, idx) in billPaymentTransactions"
-                :key="txn.id"
-                class="border-b border-gray-100 last:border-0"
-              >
-                <td class="py-2 text-gray-400">{{ Number(idx) + 1 }}</td>
-                <td class="py-2 text-gray-600">{{ formatTime(txn.timestamp) }}</td>
-                <td class="py-2 text-gray-800">{{ formatBillType(txn.billType) }}</td>
-                <td class="py-2 text-right font-medium text-gray-900">{{ formatAmount(txn.amount) }}</td>
-                <td class="py-2 text-right text-green-700">{{ formatAmount(txn.commission) }}</td>
-                <td class="py-2 text-center">
-                  <BaseBadge :variant="getStatusBadgeVariant(txn.status)" size="sm">
-                    {{ getStatusLabel(txn.status) }}
-                  </BaseBadge>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
+      </template>
+      <EmptyState v-if="billPaymentTransactions.length === 0" title="ไม่มีรายการ" />
+      <table v-else class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-gray-200 text-gray-500 text-xs">
+            <th class="py-2 text-left font-medium">#</th>
+            <th class="py-2 text-left font-medium">เวลา</th>
+            <th class="py-2 text-left font-medium">ประเภทบิล</th>
+            <th class="py-2 text-right font-medium">ยอด</th>
+            <th class="py-2 text-right font-medium">ค่าธรรมเนียม</th>
+            <th class="py-2 text-center font-medium">สถานะ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="(txn, idx) in billPaymentTransactions"
+            :key="txn.id"
+            class="border-b border-gray-100 last:border-0"
+          >
+            <td class="py-2 text-gray-400">{{ Number(idx) + 1 }}</td>
+            <td class="py-2 text-gray-600">{{ formatTime(txn.timestamp) }}</td>
+            <td class="py-2 text-gray-800">{{ formatBillType(txn.billType) }}</td>
+            <td class="py-2 text-right font-medium text-gray-900">{{ formatAmount(txn.amount) }}</td>
+            <td class="py-2 text-right text-green-700">{{ formatAmount(txn.commission) }}</td>
+            <td class="py-2 text-center">
+              <BaseBadge :variant="getStatusBadgeVariant(txn.status)" size="sm">
+                {{ getStatusLabel(txn.status) }}
+              </BaseBadge>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </WorkflowStepSummaryCard>
 
     <!-- ═══════════════════════════════════════════════════════════════════════
          STEP 2 Summary
     ════════════════════════════════════════════════════════════════════════════ -->
-    <section class="bg-white border border-gray-200 rounded-xl mb-4 overflow-hidden">
-      <div class="flex items-center gap-3 px-6 py-4 bg-gray-50 border-b border-gray-200">
-        <span class="flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-700 text-xs font-bold">2</span>
-        <h3 class="font-semibold text-gray-900">Step 2 — Manager ตรวจนับเงิน</h3>
-        <BaseBadge
-          v-if="store.isStep2Complete"
-          :variant="store.currentSummary?.step2HasDiscrepancies ? 'warning' : 'success'"
-          size="sm"
-          class="ml-auto"
-        >
-          {{ store.currentSummary?.step2HasDiscrepancies ? 'มีส่วนต่าง ⚠️' : 'ตรงกัน ✅' }}
-        </BaseBadge>
+    <WorkflowStepSummaryCard
+      :step-number="2"
+      title="Manager ตรวจนับเงิน"
+      :badge="step2Badge"
+      :summary-items="step2SummaryItems"
+      class="mb-4"
+    >
+      <div v-if="store.currentSummary?.step2VerificationNotes" class="bg-gray-50 rounded-lg p-3">
+        <p class="text-xs text-gray-500 mb-1">หมายเหตุ</p>
+        <p class="text-gray-700 whitespace-pre-wrap">{{ store.currentSummary.step2VerificationNotes }}</p>
       </div>
-
-      <button
-        class="w-full flex items-center justify-between px-6 py-3 text-left hover:bg-gray-50 transition-colors"
-        @click="expandStep2 = !expandStep2"
-      >
-        <div class="flex items-center gap-2">
-          <BanknotesIcon class="w-4 h-4 text-gray-500" />
-          <span class="text-sm font-medium text-gray-700">รายละเอียดการตรวจนับ</span>
-        </div>
-        <ChevronUpIcon v-if="expandStep2" class="w-4 h-4 text-gray-500" />
-        <ChevronDownIcon v-else class="w-4 h-4 text-gray-500" />
-      </button>
-
-      <div v-if="expandStep2" class="px-6 pb-4 space-y-2 text-sm">
-        <div class="grid grid-cols-3 gap-2">
-          <div class="bg-gray-50 rounded-lg p-3">
-            <p class="text-xs text-gray-500 mb-1">ยอดที่ควรมี (บิล)</p>
-            <p class="font-medium text-gray-900">{{ formatAmount(store.currentSummary?.step2ExpectedBillPaymentCash ?? 0) }}</p>
-          </div>
-          <div class="bg-gray-50 rounded-lg p-3">
-            <p class="text-xs text-gray-500 mb-1">นับจริง (บิล)</p>
-            <p class="font-medium text-gray-900">{{ formatAmount(store.currentSummary?.step2ActualBillPaymentCash ?? 0) }}</p>
-          </div>
-          <div
-            class="rounded-lg p-3"
-            :class="step2BillPaymentDiff === 0 ? 'bg-green-50' : 'bg-yellow-50'"
-          >
-            <p class="text-xs text-gray-500 mb-1">ส่วนต่าง (บิล)</p>
-            <p class="font-medium" :class="step2BillPaymentDiff === 0 ? 'text-green-700' : 'text-yellow-700'">
-              {{ formatDiff(step2BillPaymentDiff) }}
-            </p>
-          </div>
-        </div>
-        <div class="grid grid-cols-3 gap-2">
-          <div class="bg-gray-50 rounded-lg p-3">
-            <p class="text-xs text-gray-500 mb-1">ยอดที่ควรมี (ค่าธรรมเนียม)</p>
-            <p class="font-medium text-gray-900">{{ formatAmount(store.currentSummary?.step2ExpectedServiceFeeCash ?? 0) }}</p>
-          </div>
-          <div class="bg-gray-50 rounded-lg p-3">
-            <p class="text-xs text-gray-500 mb-1">นับจริง (ค่าธรรมเนียม)</p>
-            <p class="font-medium text-gray-900">{{ formatAmount(store.currentSummary?.step2ActualServiceFeeCash ?? 0) }}</p>
-          </div>
-          <div
-            class="rounded-lg p-3"
-            :class="step2ServiceFeeDiff === 0 ? 'bg-green-50' : 'bg-yellow-50'"
-          >
-            <p class="text-xs text-gray-500 mb-1">ส่วนต่าง (ค่าธรรมเนียม)</p>
-            <p class="font-medium" :class="step2ServiceFeeDiff === 0 ? 'text-green-700' : 'text-yellow-700'">
-              {{ formatDiff(step2ServiceFeeDiff) }}
-            </p>
-          </div>
-        </div>
-        <div v-if="store.currentSummary?.step2VerificationNotes" class="bg-gray-50 rounded-lg p-3">
-          <p class="text-xs text-gray-500 mb-1">หมายเหตุ</p>
-          <p class="text-gray-700 whitespace-pre-wrap">{{ store.currentSummary.step2VerificationNotes }}</p>
-        </div>
-      </div>
-    </section>
+    </WorkflowStepSummaryCard>
 
     <!-- ═══════════════════════════════════════════════════════════════════════
          Auditor Findings Summary
     ════════════════════════════════════════════════════════════════════════════ -->
-    <section class="bg-white border border-gray-200 rounded-xl mb-4 overflow-hidden">
-      <div class="flex items-center gap-3 px-6 py-4 bg-gray-50 border-b border-gray-200">
-        <ShieldCheckIcon class="w-5 h-5 text-indigo-600" />
-        <h3 class="font-semibold text-gray-900">ผลการตรวจสอบ Auditor</h3>
-        <BaseBadge
-          v-if="store.isAudited"
-          :variant="isAuditedWithIssues ? 'warning' : 'success'"
-          size="sm"
-          class="ml-auto"
-        >
-          {{ isAuditedWithIssues ? 'พบปัญหา ⚠️' : 'ผ่านการตรวจสอบ ✅' }}
-        </BaseBadge>
-        <BaseBadge v-else variant="default" size="sm" class="ml-auto">ยังไม่ตรวจสอบ</BaseBadge>
-      </div>
-
-      <button
-        class="w-full flex items-center justify-between px-6 py-3 text-left hover:bg-gray-50 transition-colors"
-        @click="expandAudit = !expandAudit"
-      >
-        <div class="flex items-center gap-2">
-          <ShieldCheckIcon class="w-4 h-4 text-gray-500" />
-          <span class="text-sm font-medium text-gray-700">รายละเอียดการตรวจสอบ</span>
-        </div>
-        <ChevronUpIcon v-if="expandAudit" class="w-4 h-4 text-gray-500" />
-        <ChevronDownIcon v-else class="w-4 h-4 text-gray-500" />
-      </button>
-
-      <div v-if="expandAudit" class="px-6 pb-4 space-y-3 text-sm">
+    <WorkflowStepSummaryCard
+      :step-number="3"
+      title="ผลการตรวจสอบ Auditor"
+      :badge="auditBadge"
+      :summary-items="auditSummaryItems"
+      class="mb-4"
+    >
+      <div class="space-y-3 text-sm">
         <div class="bg-gray-50 rounded-lg p-3 space-y-2">
-          <div class="flex justify-between">
-            <span class="text-gray-500">ตรวจสอบโดย</span>
-            <span class="font-medium text-gray-900">{{ store.currentSummary?.auditedByName ?? '-' }}</span>
-          </div>
           <div v-if="store.currentSummary?.auditedAt" class="flex justify-between">
             <span class="text-gray-500">เวลาตรวจสอบ</span>
             <span class="text-gray-700">{{ formatDatetime(store.currentSummary.auditedAt) }}</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-gray-500">ยอด Bank Statement</span>
-            <span class="font-medium text-blue-800">{{ formatAmount(store.currentSummary?.auditBankStatementAmount ?? 0) }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-500">ตรวจสอบ Bank Statement</span>
+            <span class="text-gray-500">Bank Statement ตรงกัน</span>
             <BaseBadge :variant="store.currentSummary?.auditBankBalanceMatches ? 'success' : 'warning'" size="sm">
               {{ store.currentSummary?.auditBankBalanceMatches ? '✅ ตรงกัน' : '⚠️ ไม่ตรงกัน' }}
             </BaseBadge>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-500">รายการที่ตรวจ</span>
-            <span>{{ store.currentSummary?.auditTransactionsVerified ?? 0 }} รายการ</span>
-          </div>
-          <div v-if="(store.currentSummary?.auditTransactionsWithIssues ?? 0) > 0" class="flex justify-between">
-            <span class="text-gray-500">รายการที่มีปัญหา</span>
-            <span class="text-orange-600 font-medium">{{ store.currentSummary?.auditTransactionsWithIssues }} รายการ</span>
           </div>
         </div>
         <div v-if="store.currentSummary?.auditFindings" class="bg-orange-50 rounded-lg p-3">
@@ -376,7 +330,7 @@ async function handleDecisionSubmit(decisionValue: Decision, notes: string) {
           <p class="text-gray-700 whitespace-pre-wrap">{{ store.currentSummary.correctionNotes }}</p>
         </div>
       </div>
-    </section>
+    </WorkflowStepSummaryCard>
 
     <!-- ═══════════════════════════════════════════════════════════════════════
          Decision Card (only when audited and not yet approved)
