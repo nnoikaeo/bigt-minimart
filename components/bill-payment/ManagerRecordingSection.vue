@@ -5,6 +5,7 @@ import { usePermissions } from '~/composables/usePermissions'
 import { useBillPaymentHelpers } from '~/composables/useBillPaymentHelpers'
 import { PERMISSIONS } from '~/types/permissions'
 import type { BillPaymentTransaction, BillPaymentTransactionStatus } from '~/types/bill-payment'
+import type { TableColumn, FilterTab } from '~/components/shared/TransactionTable.vue'
 import {
   PlusIcon,
   PencilIcon,
@@ -43,6 +44,31 @@ const isStep1InProgress = computed(() => workflowStatus.value === 'step1_in_prog
 // ─── Transactions ─────────────────────────────────────────────────────────────
 const dateTransactions = computed(() => store.getTransactionsByDate(props.date))
 
+// ─── Filter Tabs ──────────────────────────────────────────────────────────────
+const activeFilter = ref('all')
+
+const filterTabs = computed<FilterTab[]>(() => [
+  { key: 'all', label: 'ทั้งหมด', count: dateTransactions.value.length },
+  { key: 'completed', label: 'สำเร็จ', count: dateTransactions.value.filter((t: any) => t.status === 'completed').length },
+  { key: 'draft', label: 'รอดำเนินการ', count: dateTransactions.value.filter((t: any) => t.status === 'draft').length },
+  { key: 'on_hold', label: 'พักรายการ', count: dateTransactions.value.filter((t: any) => t.status === 'on_hold').length },
+])
+
+const filteredTransactions = computed(() => {
+  if (activeFilter.value === 'all') return dateTransactions.value
+  return dateTransactions.value.filter((t: any) => t.status === activeFilter.value)
+})
+
+// ─── Table Columns ────────────────────────────────────────────────────────────
+const bpColumns: TableColumn[] = [
+  { key: 'transactionType', label: 'ประเภท', component: 'type' },
+  { key: 'customerName', label: 'ลูกค้า', formatter: (v) => v || '-' },
+  { key: 'amount', label: 'จำนวนเงิน', align: 'right', component: 'amount' },
+  { key: 'commission', label: 'ค่าธรรมเนียม', align: 'right', component: 'commission' },
+  { key: 'status', label: 'สถานะ', align: 'center', component: 'status' },
+  { key: 'timestamp', label: 'เวลา', formatter: (v) => formatTime(v) },
+]
+
 const totalOwnerDeposit = computed(() =>
   dateTransactions.value
     .filter((t: any) => t.transactionType === 'owner_deposit' && t.status === 'completed')
@@ -64,8 +90,15 @@ const isSettingOpeningBalance = ref(false)
 
 const isOpeningSet = computed(() => store.currentBalance?.openingBalanceSource != null)
 const carryoverAmount = computed(() => store.previousDayBalance?.bankAccount ?? 0)
+const noDraftPending = computed(() => store.getDraftTransactions.length === 0)
+const noOnHoldPending = computed(() => store.getOnHoldTransactions.length === 0)
 const canCompleteStep1 = computed(
-  () => isOpeningSet.value && dateTransactions.value.length > 0 && !isCompletingStep1.value
+  () =>
+    isOpeningSet.value &&
+    dateTransactions.value.length > 0 &&
+    noDraftPending.value &&
+    noOnHoldPending.value &&
+    !isCompletingStep1.value
 )
 
 function openOpeningBalanceModal() {
@@ -391,120 +424,128 @@ onMounted(async () => {
         </ActionButton>
       </div>
 
-      <EmptyState
-        v-if="dateTransactions.length === 0"
-        title="ยังไม่มีรายการ"
-        description="กดปุ่ม 'รายการใหม่' เพื่อเริ่มบันทึกรายการรับชำระบิล"
-        class="py-10"
-      />
+      <div class="rounded-xl border border-gray-200 bg-white shadow-sm">
+        <TransactionTable
+          :transactions="filteredTransactions"
+          :columns="bpColumns"
+          :show-filter-tabs="true"
+          :filter-tabs="filterTabs"
+          :active-filter="activeFilter"
+          :show-pagination="true"
+          :page-size="10"
+          empty-message="กดปุ่ม 'รายการใหม่' เพื่อเริ่มบันทึกรายการรับชำระบิล"
+          @update:active-filter="activeFilter = $event"
+        >
+          <!-- ประเภท column -->
+          <template #col-type="{ row }">
+            <div class="font-medium text-gray-800">
+              {{ formatTransactionType(row.transactionType) }}
+            </div>
+            <div v-if="row.billType" class="text-xs text-gray-400">
+              {{ formatBillType(row.billType) }}
+            </div>
+          </template>
 
-      <div v-else class="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
-        <table class="w-full text-sm">
-          <thead class="border-b border-gray-100 bg-gray-50 text-xs text-gray-500">
-            <tr>
-              <th class="px-4 py-3 text-left">#</th>
-              <th class="px-4 py-3 text-left">ประเภท</th>
-              <th class="px-4 py-3 text-left">ลูกค้า</th>
-              <th class="px-4 py-3 text-right">จำนวนเงิน</th>
-              <th class="px-4 py-3 text-right">ค่าธรรมเนียม</th>
-              <th class="px-4 py-3 text-center">สถานะ</th>
-              <th class="px-4 py-3 text-left">เวลา</th>
-              <th class="px-4 py-3 text-center">จัดการ</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-            <tr
-              v-for="(txn, idx) in dateTransactions"
-              :key="txn.id"
-              class="hover:bg-gray-50"
-            >
-              <td class="px-4 py-3 text-gray-400">{{ Number(idx) + 1 }}</td>
-              <td class="px-4 py-3">
-                <div class="font-medium text-gray-800">
-                  {{ formatTransactionType(txn.transactionType) }}
-                </div>
-                <div v-if="txn.billType" class="text-xs text-gray-400">
-                  {{ formatBillType(txn.billType) }}
-                </div>
-              </td>
-              <td class="px-4 py-3 text-gray-600">{{ txn.customerName || '-' }}</td>
-              <td class="px-4 py-3 text-right font-medium text-gray-800">
-                {{ formatAmount(txn.amount) }}
-              </td>
-              <td class="px-4 py-3 text-right text-gray-600">
-                {{ txn.transactionType === 'bill_payment' ? formatAmount(txn.commission) : '-' }}
-              </td>
-              <td class="px-4 py-3 text-center">
-                <BaseBadge :variant="getStatusBadgeVariant(txn.status)">
-                  {{ getStatusLabel(txn.status) }}
-                </BaseBadge>
-              </td>
-              <td class="px-4 py-3 text-gray-500">{{ formatTime(txn.timestamp) }}</td>
-              <td class="px-4 py-3">
-                <div class="flex items-center justify-center gap-2">
-                  <ActionButton
-                    :permission="PERMISSIONS.EDIT_FINANCE"
-                    variant="ghost"
-                    size="sm"
-                    title="แก้ไข"
-                    @click="openEditTransaction(txn)"
-                  >
-                    <PencilIcon class="h-4 w-4" />
-                  </ActionButton>
-                  <ActionButton
-                    :permission="PERMISSIONS.EDIT_FINANCE"
-                    variant="ghost"
-                    size="sm"
-                    title="เปลี่ยนสถานะ"
-                    @click="openStatusModal(txn.id, txn.status)"
-                  >
-                    <EllipsisVerticalIcon class="h-4 w-4" />
-                  </ActionButton>
-                  <ActionButton
-                    :permission="PERMISSIONS.EDIT_FINANCE"
-                    variant="ghost"
-                    size="sm"
-                    title="ลบ"
-                    class="text-red-500 hover:text-red-700"
-                    @click="promptDelete(txn.id)"
-                  >
-                    <TrashIcon class="h-4 w-4" />
-                  </ActionButton>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+          <!-- จำนวนเงิน column -->
+          <template #col-amount="{ row }">
+            <span class="font-medium text-gray-800">{{ formatAmount(row.amount) }}</span>
+          </template>
+
+          <!-- ค่าธรรมเนียม column -->
+          <template #col-commission="{ row }">
+            <span class="text-gray-600">
+              {{ row.transactionType === 'bill_payment' ? formatAmount(row.commission) : '-' }}
+            </span>
+          </template>
+
+          <!-- สถานะ column -->
+          <template #col-status="{ row }">
+            <BaseBadge :variant="getStatusBadgeVariant(row.status)">
+              {{ getStatusLabel(row.status) }}
+            </BaseBadge>
+          </template>
+
+          <!-- Actions -->
+          <template #actions="{ txn }">
+            <div class="flex items-center justify-center gap-2">
+              <ActionButton
+                :permission="PERMISSIONS.EDIT_FINANCE"
+                variant="ghost"
+                size="sm"
+                title="แก้ไข"
+                @click="openEditTransaction(txn)"
+              >
+                <PencilIcon class="h-4 w-4" />
+              </ActionButton>
+              <ActionButton
+                :permission="PERMISSIONS.EDIT_FINANCE"
+                variant="ghost"
+                size="sm"
+                title="เปลี่ยนสถานะ"
+                @click="openStatusModal(txn.id, txn.status)"
+              >
+                <EllipsisVerticalIcon class="h-4 w-4" />
+              </ActionButton>
+              <ActionButton
+                :permission="PERMISSIONS.EDIT_FINANCE"
+                variant="ghost"
+                size="sm"
+                title="ลบ"
+                class="text-red-500 hover:text-red-700"
+                @click="promptDelete(txn.id)"
+              >
+                <TrashIcon class="h-4 w-4" />
+              </ActionButton>
+            </div>
+          </template>
+        </TransactionTable>
       </div>
     </section>
 
     <!-- ── Step 1 Complete Button ─────────────────────────────────────────── -->
     <section class="flex flex-col items-end gap-3 border-t border-gray-100 pt-4">
       <!-- Checklist -->
-      <div class="w-full rounded-xl border border-gray-200 bg-gray-50 px-5 py-4">
-        <h3 class="mb-3 text-sm font-semibold text-gray-700">
+      <div
+        class="w-full rounded-xl border px-5 py-4"
+        :class="canCompleteStep1 ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'"
+      >
+        <h3 class="mb-3 text-sm font-semibold" :class="canCompleteStep1 ? 'text-green-800' : 'text-gray-700'">
           {{ canCompleteStep1 ? '✅ พร้อมยืนยันบันทึกรายการแล้ว' : '📋 เงื่อนไขก่อนยืนยันบันทึกรายการ' }}
         </h3>
         <ul class="space-y-2 text-sm">
           <li class="flex items-center gap-2" :class="isOpeningSet ? 'text-green-700' : 'text-gray-500'">
-            <span class="text-base">{{ isOpeningSet ? '✅' : '⬜' }}</span>
+            <span class="text-base">{{ isOpeningSet ? '✅' : '❌' }}</span>
             ตั้ง Opening Balance แล้ว
           </li>
           <li class="flex items-center gap-2" :class="dateTransactions.length > 0 ? 'text-green-700' : 'text-gray-500'">
-            <span class="text-base">{{ dateTransactions.length > 0 ? '✅' : '⬜' }}</span>
+            <span class="text-base">{{ dateTransactions.length > 0 ? '✅' : '❌' }}</span>
             มีรายการอย่างน้อย 1 รายการ
-            <span class="text-gray-400">(ปัจจุบัน: {{ dateTransactions.length }} รายการ)</span>
+            <span class="text-gray-400">({{ dateTransactions.length }} รายการ)</span>
+          </li>
+          <li class="flex items-center gap-2" :class="noDraftPending ? 'text-green-700' : 'text-orange-600'">
+            <span class="text-base">{{ noDraftPending ? '✅' : '❌' }}</span>
+            ไม่มีรายการ Draft ค้าง
+            <span v-if="!noDraftPending" class="text-orange-500">
+              (เหลือ {{ store.getDraftTransactions.length }} รายการ)
+            </span>
+          </li>
+          <li class="flex items-center gap-2" :class="noOnHoldPending ? 'text-green-700' : 'text-orange-600'">
+            <span class="text-base">{{ noOnHoldPending ? '✅' : '❌' }}</span>
+            ไม่มีรายการ On Hold ค้าง
+            <span v-if="!noOnHoldPending" class="text-orange-500">
+              (เหลือ {{ store.getOnHoldTransactions.length }} รายการ)
+            </span>
           </li>
         </ul>
       </div>
       <ActionButton
         :permission="PERMISSIONS.EDIT_FINANCE"
-        variant="primary"
+        :variant="canCompleteStep1 ? 'success' : 'primary'"
         :disabled="!canCompleteStep1"
         :loading="isCompletingStep1"
         @click="handleCompleteStep1"
       >
-        ไปขั้นตอนที่ 2 →
+        ยืนยันบันทึกรายการ → ตรวจนับเงินสด
       </ActionButton>
     </section>
 
