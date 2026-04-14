@@ -42,9 +42,14 @@ export default defineNuxtConfig({
       pathPrefix: false,
     },
     {
-      path: '~/components',
+      path: '~/components/shared',
       prefix: '',
       pathPrefix: false,
+    },
+    {
+      path: '~/components',
+      prefix: '',
+      pathPrefix: true,
     },
   ],
 
