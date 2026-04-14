@@ -106,12 +106,12 @@ describe('useBillPaymentStore getters', () => {
     expect(store.isApproved).toBe(true)
   })
 
-  it('getDraftTransactions returns all transactions during step1_in_progress', () => {
+  it('getDraftTransactions returns all draft transactions during step1_in_progress', () => {
     const store = useBillPaymentStore()
     store.currentSummary = buildSummary('step1_in_progress')
     store.transactions = [
-      { id: 'txn-1', date: '2026-01-29', transactionType: 'bill_payment', amount: 1000 },
-      { id: 'txn-2', date: '2026-01-29', transactionType: 'owner_deposit', amount: 5000 },
+      { id: 'txn-1', date: '2026-01-29', transactionType: 'bill_payment', amount: 1000, status: 'draft' },
+      { id: 'txn-2', date: '2026-01-29', transactionType: 'owner_deposit', amount: 5000, status: 'draft' },
     ]
     expect(store.getDraftTransactions).toHaveLength(2)
   })
@@ -120,7 +120,7 @@ describe('useBillPaymentStore getters', () => {
     const store = useBillPaymentStore()
     store.currentSummary = buildSummary('needs_correction')
     store.transactions = [
-      { id: 'txn-1', date: '2026-01-29', transactionType: 'bill_payment', amount: 1000 },
+      { id: 'txn-1', date: '2026-01-29', transactionType: 'bill_payment', amount: 1000, status: 'draft' },
     ]
     expect(store.getDraftTransactions).toHaveLength(1)
   })
@@ -256,12 +256,12 @@ describe('needs_correction loop: auditor → manager → auditor', () => {
       needsCorrectionFrom: 'auditor',
     })
     store.transactions = [
-      { id: 'txn-1', date: '2026-01-29', transactionType: 'bill_payment', amount: 2000, commission: 20, status: 'success' },
-      { id: 'txn-4', date: '2026-01-29', transactionType: 'bill_payment', amount: 1200, commission: 20, status: 'success' },
+      { id: 'txn-1', date: '2026-01-29', transactionType: 'bill_payment', amount: 2000, commission: 20, status: 'completed' },
+      { id: 'txn-4', date: '2026-01-29', transactionType: 'bill_payment', amount: 1200, commission: 20, status: 'completed' },
     ]
 
     // Verify Step 1 transactions are still accessible (not cleared)
-    expect(store.getDraftTransactions).toHaveLength(2)
+    expect(store.getCompletedTransactions).toHaveLength(2)
 
     // Step 2: Manager re-submits Step 2 verification
     const resubmittedSummary = buildSummary('step2_completed', {

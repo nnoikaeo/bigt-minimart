@@ -1,8 +1,8 @@
 # Project Status Dashboard
 
 **Last Updated**: Apr 14, 2026
-**Updated By**: Claude Code
-**Current Branch**: develop (latest merge: PR #139 — 33fe0c8)
+**Updated By**: Claude Code (Copilot)
+**Current Branch**: feature/bp-data-migration-final-review
 
 ---
 
@@ -20,8 +20,8 @@ PHASE 1: Core Features
 ├─ Week 8: UI Components & Layout Overhaul        ✅ COMPLETE (100%)
 ├─ Week 9: Layout Consistency & Polish            ✅ COMPLETE (100%)
 ├─ Week 5-6 (original plan): Dashboard + Reports ❌ NOT STARTED (0%)
-├─ Week 10+: Bill Payment Service Harmonization               🔄 IN PROGRESS (~85%)
-└─ Overall: PHASE 1 CORE COMPLETE — BP Harmonization in progress
+├─ Week 10+: Bill Payment Service Harmonization               ✅ COMPLETE (100%)
+└─ Overall: PHASE 1 CORE COMPLETE — BP Harmonization COMPLETE ✓
 
 Timeline Status: Money Transfer feature fully shipped ✓
 ```
@@ -116,6 +116,16 @@ Timeline Status: Money Transfer feature fully shipped ✓
    ├─ Task 5.2: step1_completed Status + Owner refactor (PR #135, #137)
    │     └─ OwnerApprovalSection → WorkflowStepSummaryCard ทั้ง 3 sections
    └─ Task 5.3: Cash Verification UI → shared CashVerificationTable + Notes always visible
+
+✅ Phase 6: Testing + Migration (PRs #138, #139, #TBD)
+   ├─ Task 6.1: Unit Tests — BP Sub-Components (PR #138)
+   ├─ Task 6.2: Integration Tests — ทั้งสอง Service (PR #139)
+   └─ Task 6.3: Data Migration Script + Final Review
+         ├─ Migration endpoint: POST /api/admin/migrate-bill-payment-status (dry-run + apply)
+         ├─ Fix outdated tests: legacy status values (success→completed, failed→cancelled)
+         ├─ Fix outdated tests: route expectations (single-page architecture)
+         ├─ Code Quality Review: 0 TypeScript errors, all imports verified
+         └─ UX Consistency: both services share shared components + patterns
 ```
 
 ### Week 9 (Mar 23-25): Layout Consistency & Polish

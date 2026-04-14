@@ -1845,7 +1845,7 @@ Component ที่ต้องเขียน test:
 
 ---
 
-#### Task 6.3: Data Migration Script + Final Review
+#### Task 6.3: Data Migration Script + Final Review ✅ Done (PR #TBD)
 
 **Skill:** `review-and-refactor`
 
@@ -1928,6 +1928,6 @@ Component ที่ต้องเขียน test:
 | **5** | 5.3 | BP — Cash Verification UI + Notes | `refactor` | BP |
 | **6** | 6.1 ✅ | Unit Tests — BP Sub-Components | `unit-test-vue-pinia` | Tests |
 | **6** | 6.2 ✅ | Integration Tests — ทั้งสอง Service | `unit-test-vue-pinia` | Tests |
-| **6** | 6.3 | Data Migration + Final Review | `review-and-refactor` | All |
+| **6** | 6.3 ✅ | Data Migration + Final Review | `review-and-refactor` | All |
 
 **รวม: 27 Tasks ใน 6 Phases**
