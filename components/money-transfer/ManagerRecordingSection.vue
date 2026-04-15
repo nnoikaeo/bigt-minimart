@@ -48,6 +48,18 @@ const showOpeningBalanceModal = ref(false)
 // ─── Modal data ───────────────────────────────────────────────────────────────
 const editingTransaction = ref<any>(null)
 const viewingTransaction = ref<any>(null)
+
+// Balance Impact rows สำหรับแสดงใน Detail Modal (Bank Reconciliation)
+const balanceImpactRows = computed(() => {
+  const bi = viewingTransaction.value?.balanceImpact
+  if (!bi) return []
+  return [
+    { label: 'บัญชีธนาคาร',      before: bi.bankAccountBefore         ?? 0, after: bi.bankAccountAfter         ?? 0 },
+    { label: 'เงินสด (โอน)',      before: bi.transferCashBefore        ?? 0, after: bi.transferCashAfter        ?? 0 },
+    { label: 'ค่าบริการ (เงินสด)', before: bi.serviceFeeBeforeCash      ?? 0, after: bi.serviceFeeAfterCash      ?? 0 },
+    { label: 'ค่าบริการ (โอน)',    before: bi.serviceFeeBeforeTransfer  ?? 0, after: bi.serviceFeeAfterTransfer  ?? 0 },
+  ].filter((r) => r.before !== 0 || r.after !== 0)
+})
 const deletingTransactionId = ref<string>('')
 const presetType = ref<'transfer' | 'withdrawal' | 'owner_deposit' | ''>('')
 const statusChangeMode = ref<{ currentStatus: 'completed' | 'on_hold' } | undefined>(undefined)
@@ -66,6 +78,14 @@ const {
   effectiveCommission: favEffectiveCommission,
   reset: resetFavCommission,
 } = useCommission(favAmount)
+
+const favCommissionInput = computed({
+  get: () => favEffectiveCommission.value,
+  set: (val: number) => {
+    favManualCommission.value = val
+    favIsCommissionManual.value = true
+  },
+})
 
 const favTab = ref<1 | 2 | 3 | 4 | 5>(1)
 const favMode = ref<'select' | 'manage' | 'add' | 'edit'>('select')
@@ -539,51 +559,15 @@ async function handleCompleteStep1() {
       </div>
     </section>
 
-    <!-- ── Balance Cards — full 8 cards ──────────────────────────────────── -->
-    <section v-if="isStep1InProgress" class="mb-6">
-      <h2 class="text-base font-semibold text-gray-700 mb-3">📊 ยอดเงินปัจจุบัน</h2>
-      <!-- Row 1 -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-        <BaseCard class="text-center">
-          <div class="text-xs text-gray-500 mb-1">เงินในบัญชีเริ่มต้น</div>
-          <div class="text-lg font-bold text-gray-700">{{ formatCurrency(store.currentBalance?.openingBalance ?? 0) }}</div>
-          <div class="text-xs text-gray-400 mt-0.5">
-            {{ store.currentBalance?.openingBalanceSource === 'carryover' ? 'จากเมื่อวาน' : store.currentBalance?.openingBalanceSource === 'manual' ? 'กำหนดเอง' : '—' }}
-          </div>
-        </BaseCard>
-        <BaseCard class="text-center">
-          <div class="text-xs text-gray-500 mb-1">รวมเงินฝาก</div>
-          <div class="text-lg font-bold text-blue-700">{{ formatCurrency(totalDeposits) }}</div>
-        </BaseCard>
-        <BaseCard class="text-center">
-          <div class="text-xs text-gray-500 mb-1">รวมเงินโอน</div>
-          <div class="text-lg font-bold text-red-600">{{ formatCurrency(totalTransfers) }}</div>
-        </BaseCard>
-        <BaseCard class="text-center">
-          <div class="text-xs text-gray-500 mb-1">รวมเงินถอน</div>
-          <div class="text-lg font-bold text-purple-700">{{ formatCurrency(totalWithdrawals) }}</div>
-        </BaseCard>
-      </div>
-      <!-- Row 2 -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <BaseCard class="text-center">
-          <div class="text-xs text-gray-500 mb-1">รวมค่าบริการ (เงินสด)</div>
-          <div class="text-lg font-bold text-green-700">{{ formatCurrency(store.currentBalance?.serviceFeeCash ?? 0) }}</div>
-        </BaseCard>
-        <BaseCard class="text-center">
-          <div class="text-xs text-gray-500 mb-1">รวมค่าบริการ (โอน)</div>
-          <div class="text-lg font-bold text-green-700">{{ formatCurrency(store.currentBalance?.serviceFeeTransfer ?? 0) }}</div>
-        </BaseCard>
-        <BaseCard class="text-center border-gray-300 bg-gray-50 col-span-1">
-          <div class="text-xs text-gray-600 font-medium mb-1">เงินในบัญชีคงเหลือ</div>
-          <div class="text-xl font-bold text-gray-900">{{ formatCurrency(store.currentBalance?.bankAccount ?? 0) }}</div>
-        </BaseCard>
-        <BaseCard class="text-center border-blue-200 bg-blue-50/40 col-span-1">
-          <div class="text-xs text-blue-600 font-medium mb-1">เงินสดคงเหลือ</div>
-          <div class="text-lg font-bold text-blue-800">{{ formatCurrency(totalCash) }}</div>
-        </BaseCard>
-      </div>
-    </section>
+    <!-- ── Balance Cards — CompactBalanceSummary with expand/collapse ──────── -->
+    <CompactBalanceSummary
+      v-if="isStep1InProgress"
+      :primary-cards="mtPrimaryCards"
+      :secondary-cards="mtSecondaryCards"
+      title="📊 ยอดเงินปัจจุบัน"
+      :default-expanded="true"
+      class="mb-6"
+    />
 
     <!-- ── Default Fee Banner ─────────────────────────────────────────────── -->
     <div v-if="usingDefaultFees" class="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm">
@@ -1021,11 +1005,11 @@ async function handleCompleteStep1() {
               ❌ ยอดเงินไม่เพียงพอ (ขาด {{ formatCurrency(favAmount - (store.currentBalance?.bankAccount ?? 0)) }})
             </div>
           </FormField>
-          <FormField label="ค่าบริการ">
+          <FormField :label="favIsCommissionManual ? 'ค่าบริการ' : 'ค่าบริการ (คำนวณอัตโนมัติ)'">
             <div class="flex items-center gap-3">
               <div class="relative flex-1">
                 <BaseInput
-                  v-model="favManualCommission"
+                  v-model="favCommissionInput"
                   type="number"
                   placeholder="0"
                   :disabled="!favIsCommissionManual"
@@ -1037,7 +1021,6 @@ async function handleCompleteStep1() {
                 กำหนดเอง
               </label>
             </div>
-            <div v-if="!favIsCommissionManual" class="text-xs text-gray-400 mt-1">ค่าบริการอัตโนมัติ: {{ formatCurrency(favEffectiveCommission) }}</div>
           </FormField>
           <FormField label="ประเภทค่าบริการ">
             <div class="flex gap-4">
@@ -1134,13 +1117,35 @@ async function handleCompleteStep1() {
           <div v-if="viewingTransaction.transactionType === 'owner_deposit'"><div class="text-gray-500">ช่องทาง</div><div class="font-medium text-gray-900">{{ getChannelLabel(viewingTransaction.channel) }}</div></div>
           <div><div class="text-gray-500">วันที่/เวลา</div><div class="font-medium text-gray-900">{{ formatDatetime(viewingTransaction.datetime) }}</div></div>
           <div><div class="text-gray-500">จำนวนเงิน</div><div class="font-bold text-gray-900 text-base">{{ formatCurrency(viewingTransaction.amount) }}</div></div>
-          <div v-if="viewingTransaction.commission && viewingTransaction.transactionType !== 'owner_deposit'">
+          <div v-if="viewingTransaction.transactionType !== 'owner_deposit'">
             <div class="text-gray-500">ค่าบริการ</div>
-            <div class="font-medium text-green-700">{{ formatCurrency(viewingTransaction.commission) }} <span class="text-xs text-gray-400">({{ viewingTransaction.commissionType === 'cash' ? 'เงินสด' : 'โอน' }})</span></div>
+            <div class="font-medium text-green-700">{{ formatCurrency(viewingTransaction.commission ?? 0) }} <span class="text-xs text-gray-400">({{ viewingTransaction.commissionType === 'cash' ? 'เงินสด' : 'โอน' }})</span></div>
           </div>
-          <div v-if="viewingTransaction.destinationName"><div class="text-gray-500">ชื่อปลายทาง</div><div class="font-medium text-gray-900">{{ viewingTransaction.destinationName }}</div></div>
-          <div v-if="viewingTransaction.destinationIdentifier"><div class="text-gray-500">หมายเลขบัญชี</div><div class="font-medium text-gray-900">{{ viewingTransaction.destinationIdentifier }}</div></div>
           <div v-if="viewingTransaction.notes" class="col-span-2"><div class="text-gray-500">หมายเหตุ</div><div class="font-medium text-gray-900">{{ viewingTransaction.notes }}</div></div>
+        </div>
+
+        <!-- Balance Impact (สำหรับ Bank Reconciliation) -->
+        <div v-if="viewingTransaction.balanceImpact" class="border-t border-gray-200 pt-3">
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">🏦 ผลกระทบต่อยอดเงิน (Bank Reconciliation)</div>
+          <div class="grid grid-cols-3 gap-2 text-xs">
+            <div class="font-medium text-gray-500">ประเภทยอด</div>
+            <div class="font-medium text-gray-500 text-right">ก่อน</div>
+            <div class="font-medium text-gray-500 text-right">หลัง</div>
+
+            <template v-for="row in balanceImpactRows" :key="row.label">
+              <div class="text-gray-700">{{ row.label }}</div>
+              <div class="text-right text-gray-600">{{ formatCurrency(row.before) }}</div>
+              <div
+                class="text-right font-semibold"
+                :class="row.after > row.before ? 'text-green-700' : row.after < row.before ? 'text-red-600' : 'text-gray-700'"
+              >
+                {{ formatCurrency(row.after) }}
+                <span v-if="row.after !== row.before" class="text-[10px] font-normal opacity-70">
+                  ({{ row.after > row.before ? '+' : '' }}{{ formatCurrency(row.after - row.before) }})
+                </span>
+              </div>
+            </template>
+          </div>
         </div>
       </div>
       <template #footer>

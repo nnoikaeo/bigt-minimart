@@ -45,8 +45,8 @@ const createTransactionSchema = z.object({
   // Notes
   notes: z.string().optional(),
 
-  // Status (client suggestion, but server may override)
-  status: z.enum(['draft', 'completed']).default('completed'),
+  // Status — trust client choice; "cancelled" = failed bank transaction (no balance impact)
+  status: z.enum(['draft', 'completed', 'cancelled']).default('completed'),
 })
 
 export default defineEventHandler(async (event) => {
@@ -68,26 +68,10 @@ export default defineEventHandler(async (event) => {
       currentBalance
     )
 
-    // Check balance sufficiency
-    // owner_deposit = เพิ่มเงินเข้าบัญชี ไม่มีเงื่อนไขยอดคงเหลือ ให้ผ่านเสมอ
-    const hasSufficientBalance =
-      validatedData.transactionType === 'owner_deposit'
-        ? true
-        : validatedData.transactionType === 'withdrawal'
-          ? currentBalance.transferCash >= validatedData.amount
-          : currentBalance.bankAccount >= validatedData.amount
-
-    // Determine final status
-    let finalStatus: 'draft' | 'completed' = validatedData.status
-    let draftReason: string | undefined
-
-    if (!hasSufficientBalance && validatedData.status === 'completed') {
-      console.log(
-        `[POST /api/money-transfer/transactions] Insufficient balance for ${validatedData.transactionType}: available=${currentBalance.bankAccount}, required=${validatedData.amount}`
-      )
-      finalStatus = 'draft'
-      draftReason = 'Insufficient bank account balance'
-    }
+    // Trust client-chosen status — manager explicitly marks as "สำเร็จ" / "ไม่สำเร็จ"
+    // No auto-downgrade: the record reflects actual bank-app outcome, not balance availability.
+    const finalStatus: 'draft' | 'completed' | 'cancelled' = validatedData.status
+    const draftReason: string | undefined = undefined
 
     // Calculate balance impacts
     let balanceAfterBankAccount = currentBalance.bankAccount
