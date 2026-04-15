@@ -42,8 +42,8 @@ const isNeedsCorrection = computed(() => workflowStatus.value === 'needs_correct
 const MT_WORKFLOW_STEPS: WorkflowStep[] = [
   { label: 'บันทึก', shortLabel: 'บันทึก', key: 'record' },
   { label: 'ตรวจนับ', shortLabel: 'นับ', key: 'verify' },
-  { label: 'Auditor', shortLabel: 'Audit', key: 'audit' },
-  { label: 'Owner', shortLabel: 'Owner', key: 'approve' },
+  { label: 'ตรวจสอบ', shortLabel: 'ตรวจสอบ', key: 'audit' },
+  { label: 'อนุมัติ', shortLabel: 'อนุมัติ', key: 'approve' },
 ]
 const MT_STATUS_TO_STEP_MAP: Record<UnifiedWorkflowStatus, number> = {
   step1_in_progress: 0,
@@ -212,7 +212,7 @@ onMounted(async () => {
 
     <!-- ── Workflow Progress Bar ──────────────────────────────────────────── -->
     <WorkflowProgressBar
-      v-if="!(isManagerOrAsst && isStep1InProgress) && !isApproved"
+      v-if="!isApproved"
       :steps="MT_WORKFLOW_STEPS"
       :current-status="workflowStatus"
       :status-to-step-map="MT_STATUS_TO_STEP_MAP"
