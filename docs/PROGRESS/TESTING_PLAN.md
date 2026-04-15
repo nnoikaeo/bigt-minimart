@@ -84,33 +84,33 @@
 4. ตรวจสอบว่าเห็นหน้า History (รายการประวัติ)
 
 **Step 2: ตรวจสอบ Pending Inbox**
-- [ ] เห็น Pending Inbox cards (Manager / Auditor / Owner)
-- [ ] ตัวเลข count ในแต่ละ card ถูกต้อง
-- [ ] กดที่ card → filter รายการตาม role
+- [x] เห็น Pending Inbox cards (Manager / Auditor / Owner)
+- [x] ตัวเลข count ในแต่ละ card ถูกต้อง
+- [x] กดที่ card → filter รายการตาม role
 
 **Step 3: ตรวจสอบตารางรายการ**
-- [ ] ตาราง แสดง columns: วันที่, สถานะ, จำนวนรายการ, ยอดรวม, ปุ่ม Action
-- [ ] Status Badge แสดงสีถูกต้อง (เขียว=approved, เหลือง=in_progress, แดง=needs_correction)
-- [ ] Status ใหม่แสดงถูกต้อง: `step2_completed_with_notes`, `audited_with_issues`, `approved_with_notes`
+- [x] ตาราง แสดง columns: วันที่, สถานะ, จำนวนรายการ, ยอดรวม, ปุ่ม Action
+- [x] Status Badge แสดงสีถูกต้อง (เขียว=approved, เหลือง=in_progress, แดง=needs_correction)
+- [x] Status ใหม่แสดงถูกต้อง: `step2_completed_with_notes`, `audited_with_issues`, `approved_with_notes`
 
 **Step 4: ทดสอบเพิ่มรายการใหม่**
-- [ ] กดปุ่ม "+ บันทึกรายการใหม่"
-- [ ] เลือกวันที่ → กด Submit
-- [ ] ⚠️ **Backdated Warning:** เลือกวันที่ที่ไม่ใช่วันนี้ → ต้องเห็น alert สีเหลือง "คุณกำลังบันทึกรายการย้อนหลัง"
-- [ ] หลัง submit → navigate ไปหน้า Service
+- [x] กดปุ่ม "+ บันทึกรายการใหม่"
+- [x] เลือกวันที่ → กด Submit
+- [x] ⚠️ **Backdated Warning:** เลือกวันที่ที่ไม่ใช่วันนี้ → ต้องเห็น alert สีเหลือง "คุณกำลังบันทึกรายการย้อนหลัง"
+- [x] หลัง submit → navigate ไปหน้า Service
 
 **Step 5: ตรวจสอบปุ่ม Action**
-- [ ] กดปุ่ม Action ในแต่ละแถว → navigate ไปหน้า Service พร้อม date ถูกต้อง
+- [x] กดปุ่ม Action ในแต่ละแถว → navigate ไปหน้า Service พร้อม date ถูกต้อง
 
 **Step 6: ทดสอบด้วย Auditor (logout → login Auditor)**
-- [ ] เห็น Pending Inbox → Auditor card แสดง count ถูกต้อง
-- [ ] Inbox count นับ: step2_completed + step2_completed_with_notes + needs_correction
-- [ ] กด Action → ไปหน้า Service ในมุมมอง Auditor
+- [x] เห็น Pending Inbox → Auditor card แสดง count ถูกต้อง
+- [x] Inbox count นับ: step2_completed + step2_completed_with_notes + needs_correction
+- [x] กด Action → ไปหน้า Service ในมุมมอง Auditor
 
 **Step 7: ทดสอบด้วย Owner (logout → login Owner)**
-- [ ] เห็น Pending Inbox → Owner card แสดง count ถูกต้อง
-- [ ] Inbox count นับ: audited + audited_with_issues
-- [ ] กด Action → ไปหน้า Service ในมุมมอง Owner
+- [x] เห็น Pending Inbox → Owner card แสดง count ถูกต้อง
+- [x] Inbox count นับ: audited + audited_with_issues
+- [x] กด Action → ไปหน้า Service ในมุมมอง Owner
 
 ---
 
@@ -126,41 +126,41 @@
 1. ไปที่ History → เพิ่มรายการวันใหม่ (หรือเลือกวันที่ status = `step1_in_progress`)
 2. ตรวจสอบหน้า Service ที่เปิดขึ้น
 
-- [ ] **Workflow Progress Bar:** เห็น 4 ขั้นตอน (บันทึก → ตรวจนับ → Auditor → Owner)
-- [ ] ขั้นตอน "บันทึก" highlight สี amber (กำลังทำ)
-- [ ] **Opening Balance Alert:** เห็นข้อความเตือน "ต้องตั้งยอดเริ่มต้นก่อน"
+- [x] **Workflow Progress Bar:** เห็น 4 ขั้นตอน (บันทึก → ตรวจนับ → Auditor → Owner)
+- [x] ขั้นตอน "บันทึก" highlight สี amber (กำลังทำ)
+- [x] **Opening Balance Alert:** เห็นข้อความเตือน "ต้องตั้งยอดเริ่มต้นก่อน"
 
 **Step 2: ตั้ง Opening Balance**
-- [ ] กดปุ่ม "ตั้งยอดเริ่มต้น" → เปิด modal
-- [ ] เห็นตัวเลือก "ยกยอดจากวันก่อน" / "กำหนดเอง"
-- [ ] เลือก "กำหนดเอง" → ใส่ตัวเลข → กด Submit
-- [ ] หลัง submit → Opening Balance alert หายไป
-- [ ] **Balance Cards** แสดงยอดเริ่มต้นถูกต้อง
+- [x] กดปุ่ม "ตั้งยอดเริ่มต้น" → เปิด modal
+- [x] เห็นตัวเลือก "ยกยอดจากวันก่อน" / "กำหนดเอง"
+- [x] เลือก "กำหนดเอง" → ใส่ตัวเลข → กด Submit
+- [x] หลัง submit → Opening Balance alert หายไป
+- [x] **Balance Cards** แสดงยอดเริ่มต้นถูกต้อง
 
 **Step 3: ตรวจสอบ Balance Cards**
-- [ ] **CompactBalanceSummary:** เห็น cards แถวบน (4 cards)
-- [ ] กดปุ่ม "▼ ขยาย" → เห็น cards แถวล่าง (4 cards เพิ่มเติม)
-- [ ] กดปุ่ม "▲ ย่อ" → cards แถวล่างหายไป
-- [ ] ตัวเลขเริ่มต้นถูกต้อง (เงินเริ่มต้น = Opening Balance ที่ตั้งไว้)
+- [x] **CompactBalanceSummary:** เห็น cards แถวบน (4 cards)
+- [x] กดปุ่ม "▼ ขยาย" → เห็น cards แถวล่าง (4 cards เพิ่มเติม)
+- [x] กดปุ่ม "▲ ย่อ" → cards แถวล่างหายไป
+- [x] ตัวเลขเริ่มต้นถูกต้อง (เงินเริ่มต้น = Opening Balance ที่ตั้งไว้)
 
 **Step 4: ตรวจสอบ Quick Actions**
-- [ ] เห็นปุ่ม Quick Actions (โปรด / โอน / ถอน / ฝาก)
-- [ ] กดปุ่ม "โอน" → เปิด Transaction Form → type = transfer
-- [ ] กดปุ่ม "ถอน" → เปิด Transaction Form → type = withdrawal
-- [ ] กดปุ่ม "ฝาก" → เปิด Transaction Form → type = owner_deposit
+- [x] เห็นปุ่ม Quick Actions (โปรด / โอน / ถอน / ฝาก)
+- [x] กดปุ่ม "โอน" → เปิด Transaction Form → type = transfer
+- [x] กดปุ่ม "ถอน" → เปิด Transaction Form → type = withdrawal
+- [x] กดปุ่ม "ฝาก" → เปิด Transaction Form → type = owner_deposit
 
 **Step 5: บันทึก Transaction**
-- [ ] กรอกข้อมูลใน Transaction Form → กด Submit
-- [ ] ตารางรายการ เพิ่มแถวใหม่
-- [ ] **Commission Auto-calculate:** เปลี่ยนจำนวนเงิน → ค่าบริการคำนวณอัตโนมัติ
-- [ ] กดปุ่ม Manual → สามารถแก้ค่าบริการเองได้
-- [ ] Balance Cards อัปเดตตัวเลข
+- [x] กรอกข้อมูลใน Transaction Form → กด Submit
+- [x] ตารางรายการ เพิ่มแถวใหม่
+- [x] **Commission Auto-calculate:** เปลี่ยนจำนวนเงิน → ค่าบริการคำนวณอัตโนมัติ
+- [x] กดปุ่ม Manual → สามารถแก้ค่าบริการเองได้
+- [x] Balance Cards อัปเดตตัวเลข
 
 **Step 6: ทดสอบ Draft Transaction**
-- [ ] บันทึก transaction ที่ยอดเงินไม่พอ → ต้องถูกบันทึกเป็น Draft
-- [ ] เห็น Draft Alert section (สีเหลือง) พร้อมจำนวน draft
-- [ ] กดปุ่ม "ดำเนินการ" ที่ draft → complete draft
-- [ ] กดปุ่ม "ลบ" ที่ draft → delete draft
+- [x] บันทึก transaction ที่ยอดเงินไม่พอ → ต้องถูกบันทึกเป็น Draft
+- [x] เห็น Draft Alert section (สีเหลือง) พร้อมจำนวน draft
+- [x] กดปุ่ม "ดำเนินการ" ที่ draft → complete draft
+- [x] กดปุ่ม "ลบ" ที่ draft → delete draft
 
 **Step 7: ทดสอบ Status Change**
 - [ ] ที่แถว transaction → กดปุ่ม Status Change

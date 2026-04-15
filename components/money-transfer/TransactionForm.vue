@@ -8,10 +8,14 @@
         :key="t.value"
         type="button"
         class="flex-1 py-2.5 text-sm font-medium transition-colors"
-        :class="formData.transactionType === t.value
-          ? 'bg-primary text-white'
-          : 'bg-white text-gray-600 hover:bg-gray-50'"
-        @click="formData.transactionType = t.value"
+        :class="[
+          formData.transactionType === t.value
+            ? 'bg-primary text-white'
+            : 'bg-white text-gray-600 hover:bg-gray-50',
+          isTypeLocked && formData.transactionType !== t.value ? 'opacity-40 cursor-not-allowed' : ''
+        ]"
+        :disabled="isTypeLocked && formData.transactionType !== t.value"
+        @click="!isTypeLocked && (formData.transactionType = t.value)"
       >
         {{ t.label }}
       </button>
@@ -156,8 +160,8 @@
             class="flex-1 px-3 py-2 text-sm outline-none min-w-0"
             @input="isCommissionManual = true"
           />
-          <!-- Commission type inline buttons — แสดงเมื่อมีค่าบริการ -->
-          <template v-if="effectiveCommission > 0">
+          <!-- Commission type inline buttons — แสดงเฉพาะถอนเงินและเมื่อมีค่าบริการ -->
+          <template v-if="effectiveCommission > 0 && formData.transactionType === 'withdrawal'">
             <button
               type="button"
               class="px-3 py-2 text-xs font-medium transition-colors border-l"
@@ -221,9 +225,37 @@
       <!-- สถานะการบันทึก (ไม่แสดงอีกต่อไป) -->
     </div>
 
+    <!-- ── สถานะรายการ (สำหรับรายการใหม่/แก้ไข Draft) ─────────────── -->
+    <div v-if="!isStatusChangeMode" class="space-y-2">
+      <label class="block text-sm font-medium text-gray-700">สถานะรายการ</label>
+      <div class="grid grid-cols-2 gap-2">
+        <label
+          class="flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors"
+          :class="newTransactionStatus === 'completed'
+            ? 'border-green-400 bg-green-50'
+            : 'border-gray-200 bg-white hover:bg-gray-50'"
+        >
+          <input v-model="newTransactionStatus" type="radio" value="completed" class="text-green-600 focus:ring-green-500" />
+          <span class="font-medium text-sm" :class="newTransactionStatus === 'completed' ? 'text-green-800' : 'text-gray-700'">✅ สำเร็จ</span>
+        </label>
+        <label
+          class="flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors"
+          :class="newTransactionStatus === 'cancelled'
+            ? 'border-red-400 bg-red-50'
+            : 'border-gray-200 bg-white hover:bg-gray-50'"
+        >
+          <input v-model="newTransactionStatus" type="radio" value="cancelled" class="text-red-600 focus:ring-red-500" />
+          <span class="font-medium text-sm" :class="newTransactionStatus === 'cancelled' ? 'text-red-800' : 'text-gray-700'">❌ ไม่สำเร็จ</span>
+        </label>
+      </div>
+      <p v-if="newTransactionStatus === 'cancelled'" class="text-xs text-red-600">
+        ⚠️ ทำเครื่องหมายว่าการโอนเงินจริงในแอพธนาคารมีปัญหา (ยอดเงินจะไม่ถูกปรับ)
+      </p>
+    </div>
+
     <!-- ── Status Change Section ──────────────────────────────── -->
     <div v-if="isStatusChangeMode && statusChange" class="space-y-3 border-t border-gray-200 pt-4">
-      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">เปลี่ยนสถานะ</p>
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">เปลี่ยนสถานะ <span class="text-red-500">*</span></p>
 
       <div class="flex items-center gap-2 text-sm">
         <span class="text-gray-500">สถานะปัจจุบัน:</span>
@@ -292,7 +324,7 @@
         type="button"
         class="flex-1 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         :class="isSubmitting ? 'bg-primary/60' : 'bg-primary hover:bg-primary-dark'"
-        :disabled="isSubmitting || formData.amount <= 0 || alreadyEdited"
+        :disabled="isSubmitting || formData.amount <= 0 || alreadyEdited || (isStatusChangeMode && !statusTarget)"
         @click="handleSubmit"
       >
         <svg v-if="isSubmitting" class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
@@ -376,8 +408,8 @@ const {
   reset: resetCommission,
 } = useCommission(commissionAmount)
 
-// Pre-fill commission when editing an existing transaction
-if (props.editingData?.commission != null && props.editingData.commission > 0) {
+// Pre-fill commission when editing — ยอมรับ 0 เป็นค่าที่ผู้ใช้ตั้งเองโดยตั้งใจ
+if (props.editingData?.commission != null) {
   manualCommission.value = props.editingData.commission
   isCommissionManual.value = true
 }
@@ -439,6 +471,11 @@ const bannerInfo = computed(() => {
 // ── Helpers ───────────────────────────────────────────────────
 const { formatCurrency, getStatusLabel, getStatusBadgeVariant } = useMoneyTransferHelpers()
 
+// ── New transaction status (สำเร็จ / ไม่สำเร็จ) ───────────────
+const newTransactionStatus = ref<'completed' | 'cancelled'>(
+  (props.editingData?.status as 'completed' | 'cancelled') ?? 'completed'
+)
+
 // ── Status Change ────────────────────────────────────────────
 // Auto-pre-select edit_only only when completed + has previous note
 const statusTarget = ref<'edit_only' | 'on_hold' | 'completed' | 'cancelled' | ''>(
@@ -449,6 +486,17 @@ const previousStatusNote = computed(() => props.editingData?.statusNote ?? '')
 const alreadyEdited = computed(() => isEditOnly.value && !!previousStatusNote.value)
 const isStatusChangeMode = computed(() => !!props.statusChange)
 const isEditOnly = computed(() => statusTarget.value === 'edit_only')
+// Lock ประเภทรายการเมื่ออยู่ในโหมดแก้ไข/เปลี่ยนสถานะ หรือ preset มา
+const isTypeLocked = computed(() => isStatusChangeMode.value || !!props.editingData || !!props.presetType)
+
+// โอนเงิน/ฝากเงิน ไม่มีตัวเลือกค่าบริการแบบโอน — บังคับเป็นเงินสด
+watch(
+  () => formData.value.transactionType,
+  (type) => {
+    if (type !== 'withdrawal') formData.value.commissionType = 'cash'
+  },
+  { immediate: true }
+)
 const needsStatusNote = computed(() => isStatusChangeMode.value && statusTarget.value !== '' && !alreadyEdited.value)
 
 // ── Validation & Submit ───────────────────────────────────────
@@ -509,7 +557,7 @@ function handleSubmit() {
     recordedByName: props.recordedByName,
     status: isStatusChangeMode.value
       ? (isEditOnly.value ? props.statusChange!.currentStatus : statusTarget.value)
-      : (hasSufficientBalance.value ? 'completed' : 'draft'),
+      : newTransactionStatus.value,
     // Save statusNote for edit_only (persisted on transaction record)
     ...(isStatusChangeMode.value && statusNote.value.trim() ? { statusNote: statusNote.value.trim() } : {}),
   }
