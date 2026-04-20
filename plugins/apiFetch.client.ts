@@ -6,10 +6,10 @@
  * is authenticated without each store managing token retrieval manually.
  */
 export default defineNuxtPlugin(() => {
-  const { $auth } = useNuxtApp()
-
   const apiFetch = $fetch.create({
     onRequest: async ({ options }) => {
+      // Resolve $auth at request time — firebase.client.ts may not have run yet at plugin init
+      const { $auth } = useNuxtApp()
       const auth = $auth as any
       if (!auth?.currentUser) return
 
