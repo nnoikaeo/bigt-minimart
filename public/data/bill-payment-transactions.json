@@ -63,7 +63,7 @@
     "customerName": "นายสมชาย ทดสอบ",
     "status": "completed",
     "recordedBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
-    "recordedAt": "2026-04-08T13:06:08.978Z",
+    "recordedAt": "2026-04-20T15:13:10.123Z",
     "timestamp": "2026-04-08T13:06:08.985Z",
     "id": "bptxn-1775653568985-l7kzp6l1r"
   },
@@ -113,5 +113,18 @@
     "recordedAt": "2026-04-08T14:37:58.039Z",
     "timestamp": "2026-04-08T14:37:58.039Z",
     "id": "bptxn-1775659078039-5wf0zjttx"
+  },
+  {
+    "date": "2026-04-01",
+    "transactionType": "bill_payment",
+    "billType": "utility",
+    "amount": 105,
+    "commission": 10,
+    "status": "cancelled",
+    "recordedBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
+    "recordedAt": "2026-04-20T17:29:35.609Z",
+    "timestamp": "2026-04-20T17:26:30.583Z",
+    "id": "bptxn-1776705990583-z090fte0r",
+    "statusNote": "ระบบธนาคารมีปัญหา"
   }
 ]

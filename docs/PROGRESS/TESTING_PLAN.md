@@ -163,10 +163,13 @@
 - [x] กดปุ่ม "ลบ" ที่ draft → delete draft
 
 **Step 7: ทดสอบ Status Change**
-- [ ] ที่แถว transaction → กดปุ่ม Status Change
-- [ ] เปลี่ยน completed → on_hold → ต้องใส่เหตุผล
-- [ ] เปลี่ยน on_hold → completed
-- [ ] เปลี่ยน → cancelled → ต้องใส่เหตุผล
+> ⚠️ หมายเหตุ: ปุ่ม ⋮ (Status Change Modal แยก) ถูกลบออกแล้ว (PR ล่าสุด)
+> การเปลี่ยนสถานะทำผ่าน Edit Modal (ปุ่มดินสอ) เท่านั้น
+> ช่อง "เหตุผล/หมายเหตุสถานะ" แสดงอัตโนมัติเมื่อเลือก draft/on_hold/cancelled แต่ไม่ใช่ required
+- [x] ที่แถว transaction → กดปุ่มดินสอ (แก้ไข) → เปลี่ยนสถานะในฟอร์ม
+- [x] เปลี่ยน completed → on_hold → บันทึกสำเร็จ (ช่องเหตุผลแสดง แต่ไม่ required)
+- [x] เปลี่ยน on_hold → completed → บันทึกสำเร็จ
+- [x] เปลี่ยน → cancelled → บันทึกสำเร็จ (ช่องเหตุผลแสดง แต่ไม่ required)
 
 **Step 8: ทดสอบ Filter Tabs + Pagination**
 - [ ] เห็น tabs: ทั้งหมด / สำเร็จ / รอดำเนินการ / พักรายการ

@@ -12,7 +12,6 @@ import {
   TrashIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
-  EllipsisVerticalIcon,
   StarIcon,
   DocumentTextIcon,
   BanknotesIcon,
@@ -93,6 +92,18 @@ const manualOpeningAmount = ref<number>(0)
 const isSettingOpeningBalance = ref(false)
 
 const isOpeningSet = computed(() => store.currentBalance?.openingBalanceSource != null)
+// Only gate actions on opening-balance when workflow is still in Step 1.
+// Past Step 1 (completed/audited/approved), editing is governed by workflow status, not opening balance.
+const needsOpeningBalance = computed(() => isStep1InProgress.value && !isOpeningSet.value)
+// Manager can edit/delete only while workflow is still mutable (Step 1 or sent back for correction)
+const canManagerEdit = computed(() => isStep1InProgress.value || isNeedsCorrection.value)
+// Reason a row's edit/delete is disabled (drives tooltip message)
+const disableReason = computed(() => {
+  if (!canManagerEdit.value) return 'รายการนี้ผ่านขั้นตอนแก้ไขแล้ว ไม่สามารถแก้ไข/ลบได้'
+  if (needsOpeningBalance.value) return 'กรุณาตั้ง Opening Balance ก่อน'
+  return ''
+})
+const isRowActionDisabled = computed(() => !canManagerEdit.value || needsOpeningBalance.value)
 const carryoverAmount = computed(() => store.previousDayBalance?.bankAccount ?? 0)
 const noDraftPending = computed(() => store.getDraftTransactions.length === 0)
 const noOnHoldPending = computed(() => store.getOnHoldTransactions.length === 0)
@@ -135,7 +146,8 @@ const editingTransaction = ref<BillPaymentTransaction | null>(null)
 const transactionPresetType = ref<'bill_payment' | 'owner_deposit' | ''>('')
 
 function openNewTransaction(type: 'bill_payment' | 'owner_deposit' | '' = '') {
-  if (!isOpeningSet.value) {
+  if (!canManagerEdit.value) return
+  if (needsOpeningBalance.value) {
     openOpeningBalanceModal()
     return
   }
@@ -145,6 +157,11 @@ function openNewTransaction(type: 'bill_payment' | 'owner_deposit' | '' = '') {
 }
 
 function openEditTransaction(txn: BillPaymentTransaction) {
+  if (!canManagerEdit.value) return
+  if (needsOpeningBalance.value) {
+    openOpeningBalanceModal()
+    return
+  }
   editingTransaction.value = txn
   showTransactionModal.value = true
 }
@@ -194,6 +211,11 @@ const showDeleteConfirm = ref(false)
 const deletingTransactionId = ref('')
 
 function promptDelete(id: string) {
+  if (!canManagerEdit.value) return
+  if (needsOpeningBalance.value) {
+    openOpeningBalanceModal()
+    return
+  }
   deletingTransactionId.value = id
   showDeleteConfirm.value = true
 }
@@ -213,42 +235,12 @@ async function handleDeleteExecute() {
   }
 }
 
-// ─── Status change ────────────────────────────────────────────────────────────
-const showStatusModal = ref(false)
-const statusChangeTarget = ref<{ id: string; currentStatus: BillPaymentTransactionStatus } | null>(null)
-const newStatus = ref<BillPaymentTransactionStatus>('completed')
-const statusChangeNote = ref('')
-const isChangingStatus = ref(false)
-
-function openStatusModal(txnId: string, currentStatus: BillPaymentTransactionStatus) {
-  statusChangeTarget.value = { id: txnId, currentStatus }
-  newStatus.value = currentStatus
-  statusChangeNote.value = ''
-  showStatusModal.value = true
-}
-
-async function handleStatusChange() {
-  if (!statusChangeTarget.value) return
-  isChangingStatus.value = true
-  errorMessage.value = ''
-  try {
-    await store.changeTransactionStatus(
-      statusChangeTarget.value.id,
-      newStatus.value,
-      statusChangeNote.value || undefined
-    )
-    successMessage.value = 'เปลี่ยนสถานะรายการสำเร็จ'
-    showStatusModal.value = false
-    logger.log(`Status changed ${statusChangeTarget.value.id} → ${newStatus.value}`)
-  } catch (err: any) {
-    errorMessage.value = err.message ?? 'เกิดข้อผิดพลาด'
-    logger.error('handleStatusChange', err)
-  } finally {
-    isChangingStatus.value = false
-  }
-}
-
 async function handleCompleteDraft(txnId: string) {
+  if (!canManagerEdit.value) return
+  if (needsOpeningBalance.value) {
+    openOpeningBalanceModal()
+    return
+  }
   errorMessage.value = ''
   try {
     await store.completeDraftTransaction(txnId)
@@ -317,7 +309,7 @@ const favTabItems = computed(() =>
 const favTabFull = computed(() => favTabItems.value.length >= 10)
 
 function openFavoriteModal() {
-  if (!isOpeningSet.value) {
+  if (needsOpeningBalance.value) {
     openOpeningBalanceModal()
     return
   }
@@ -507,8 +499,10 @@ onMounted(async () => {
             <ActionButton
               v-if="txn.status === 'draft'"
               :permission="PERMISSIONS.EDIT_FINANCE"
+              :disabled="isRowActionDisabled"
               variant="primary"
               size="sm"
+              :title="disableReason"
               @click="handleCompleteDraft(txn.id)"
             >
               <template #icon><CheckCircleIcon class="h-4 w-4" /></template>
@@ -516,18 +510,10 @@ onMounted(async () => {
             </ActionButton>
             <ActionButton
               :permission="PERMISSIONS.EDIT_FINANCE"
+              :disabled="isRowActionDisabled"
               variant="ghost"
               size="sm"
-              title="เปลี่ยนสถานะ"
-              @click="openStatusModal(txn.id, txn.status)"
-            >
-              <EllipsisVerticalIcon class="h-4 w-4" />
-            </ActionButton>
-            <ActionButton
-              :permission="PERMISSIONS.EDIT_FINANCE"
-              variant="ghost"
-              size="sm"
-              title="ลบ"
+              :title="disableReason || 'ลบ'"
               class="text-red-500 hover:text-red-700"
               @click="promptDelete(txn.id)"
             >
@@ -539,7 +525,7 @@ onMounted(async () => {
     </div>
 
     <!-- ── Opening Balance prompt ──────────────────────────────────────────── -->
-    <section v-if="!isOpeningSet" class="mb-4">
+    <section v-if="needsOpeningBalance" class="mb-4">
       <div class="flex items-center justify-between gap-4 rounded-xl border border-blue-300 bg-blue-50 px-5 py-4">
         <div>
           <div class="font-semibold text-blue-900">💳 กำหนดยอดเงินในบัญชีเริ่มต้น</div>
@@ -610,9 +596,12 @@ onMounted(async () => {
           </span>
         </h2>
         <ActionButton
+          v-if="canManagerEdit"
           :permission="PERMISSIONS.EDIT_FINANCE"
+          :disabled="needsOpeningBalance"
           variant="primary"
           size="sm"
+          :title="needsOpeningBalance ? 'กรุณาตั้ง Opening Balance ก่อน' : ''"
           @click="openNewTransaction()"
         >
           <template #icon><PlusIcon class="h-4 w-4" /></template>
@@ -666,27 +655,20 @@ onMounted(async () => {
             <div class="flex items-center justify-center gap-2">
               <ActionButton
                 :permission="PERMISSIONS.EDIT_FINANCE"
+                :disabled="isRowActionDisabled"
                 variant="ghost"
                 size="sm"
-                title="แก้ไข"
+                :title="disableReason || 'แก้ไข'"
                 @click="openEditTransaction(txn)"
               >
                 <PencilIcon class="h-4 w-4" />
               </ActionButton>
               <ActionButton
                 :permission="PERMISSIONS.EDIT_FINANCE"
+                :disabled="isRowActionDisabled"
                 variant="ghost"
                 size="sm"
-                title="เปลี่ยนสถานะ"
-                @click="openStatusModal(txn.id, txn.status)"
-              >
-                <EllipsisVerticalIcon class="h-4 w-4" />
-              </ActionButton>
-              <ActionButton
-                :permission="PERMISSIONS.EDIT_FINANCE"
-                variant="ghost"
-                size="sm"
-                title="ลบ"
+                :title="disableReason || 'ลบ'"
                 class="text-red-500 hover:text-red-700"
                 @click="promptDelete(txn.id)"
               >
@@ -699,7 +681,7 @@ onMounted(async () => {
     </section>
 
     <!-- ── Step 1 Complete Button ─────────────────────────────────────────── -->
-    <section class="flex flex-col items-end gap-3 border-t border-gray-100 pt-4">
+    <section v-if="isStep1InProgress || isNeedsCorrection" class="flex flex-col items-end gap-3 border-t border-gray-100 pt-4">
       <!-- Checklist -->
       <div
         class="w-full rounded-xl border px-5 py-4"
@@ -801,60 +783,6 @@ onMounted(async () => {
             @click="handleSetOpeningBalance"
           >
             💾 ยืนยันยอดเงินเริ่มต้น
-          </BaseButton>
-        </div>
-      </template>
-    </BaseModal>
-
-    <!-- ═══════════════════════════════════════════════════════════════════════
-         MODAL: Status Change
-    ════════════════════════════════════════════════════════════════════════════ -->
-    <BaseModal
-      :open="showStatusModal"
-      title="เปลี่ยนสถานะรายการ"
-      size="sm"
-      @close="showStatusModal = false"
-    >
-      <div class="space-y-4">
-        <FormField label="สถานะใหม่" required>
-          <div class="flex flex-wrap gap-3">
-            <label
-              v-for="opt in [
-                { value: 'completed', label: 'สำเร็จ', color: 'text-green-700' },
-                { value: 'on_hold',   label: 'พักรายการ', color: 'text-orange-600' },
-                { value: 'cancelled', label: 'ยกเลิก', color: 'text-gray-600' },
-              ]"
-              :key="opt.value"
-              class="flex cursor-pointer items-center gap-2"
-            >
-              <input
-                v-model="newStatus"
-                type="radio"
-                :value="opt.value"
-                class="accent-red-600"
-              />
-              <span class="text-sm" :class="opt.color">{{ opt.label }}</span>
-            </label>
-          </div>
-        </FormField>
-        <FormField label="หมายเหตุ (ไม่บังคับ)">
-          <BaseInput
-            v-model="statusChangeNote"
-            type="text"
-            placeholder="เหตุผลในการเปลี่ยนสถานะ"
-          />
-        </FormField>
-      </div>
-      <template #footer>
-        <div class="flex justify-end gap-2">
-          <BaseButton variant="secondary" @click="showStatusModal = false">ยกเลิก</BaseButton>
-          <BaseButton
-            variant="primary"
-            :loading="isChangingStatus"
-            :disabled="!newStatus || newStatus === statusChangeTarget?.currentStatus"
-            @click="handleStatusChange"
-          >
-            บันทึก
           </BaseButton>
         </div>
       </template>
