@@ -96,5 +96,12 @@
     "auditTransactionsVerified": 3,
     "auditTransactionsWithIssues": 0,
     "approvedAt": "2026-04-08T13:25:58.817Z"
+  },
+  {
+    "id": "bpsum-2026-04-01",
+    "date": "2026-04-01",
+    "workflowStatus": "step1_in_progress",
+    "createdAt": "2026-04-20T17:25:13.781Z",
+    "updatedAt": "2026-04-20T17:25:13.781Z"
   }
 ]
