@@ -347,8 +347,13 @@
 - [ ] เห็น Draft Alert → ดำเนินการ / ลบ
 
 **Step 7: ทดสอบ Status Change (BP)**
-- [ ] completed ↔ on_hold → ต้องใส่เหตุผล
-- [ ] → cancelled → ต้องใส่เหตุผล
+> ⚠️ หมายเหตุ: เหมือน MT-2 Step 7 — ปุ่ม ⋮ ถูกลบออกแล้ว (PR #149)
+> การเปลี่ยนสถานะทำผ่าน Edit Modal (ปุ่มดินสอ) เท่านั้น
+> ช่อง "เหตุผล/หมายเหตุสถานะ" แสดงอัตโนมัติเมื่อเลือก draft/on_hold/cancelled แต่ไม่ใช่ required
+- [ ] ที่แถว transaction → กดปุ่มดินสอ (แก้ไข) → เปลี่ยนสถานะในฟอร์ม
+- [ ] completed ↔ on_hold → บันทึกสำเร็จ (ช่องเหตุผลแสดง แต่ไม่ required)
+- [ ] → cancelled → บันทึกสำเร็จ (ช่องเหตุผลแสดง แต่ไม่ required)
+- [ ] ปุ่มแก้ไขแสดงเฉพาะสถานะ `step1_in_progress` / `needs_correction` — สถานะอื่นแก้ไขไม่ได้ (workflow edit gate)
 
 **Step 8: Filter Tabs + Pagination (BP)**
 - [ ] เหมือน MT: 4 tabs + pagination 10/page
@@ -688,7 +693,7 @@ Screenshots บันทึกที่: tests/e2e/screenshots/
 | # | Task ID | ชื่อ Task | ทำโดย | Skill | สถานะ |
 |---|---|---|---|---|---|
 | 1 | MT-1 | MT History Page Manual Test | คุณ | — | ✅ |
-| 2 | MT-2 | MT Service Manager Flow | คุณ | — | ☐ |
+| 2 | MT-2 | MT Service Manager Flow | คุณ | — | 🔄 Step 1-7 |
 | 3 | MT-3 | MT Auditor Flow | คุณ | — | ☐ |
 | 4 | MT-4 | MT Owner Flow | คุณ | — | ☐ |
 | 5 | BP-1 | BP History Page Manual Test | คุณ | — | ☐ |
@@ -716,7 +721,7 @@ Screenshots บันทึกที่: tests/e2e/screenshots/
 | Task | วันที่ทดสอบ | ผลลัพธ์ | จำนวน Bug | หมายเหตุ |
 |---|---|---|---|---|
 | MT-1 | 15 เม.ย. 2569 | ✅ ผ่าน | 3 (แก้แล้ว) | PR #143, #144 — แก้ status labels/colors, เพิ่ม card filtering, แก้ column header |
-| MT-2 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
+| MT-2 | 15-27 เม.ย. 2569 | 🔄 Step 1-7 ผ่าน | (แก้แล้ว) | PR #147, #149 — Form UX, ลบปุ่ม ⋮, workflow edit gate — เหลือ Step 8-11 |
 | MT-3 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
 | MT-4 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
 | BP-1 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |

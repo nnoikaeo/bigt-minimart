@@ -1,9 +1,10 @@
 # Project Status Dashboard
 
-**Last Updated**: Apr 14, 2026
-**Updated By**: GitHub Copilot
-**Current Branch**: develop (latest merge: PR #141)
+**Last Updated**: Oct 16, 2026
+**Updated By**: Claude Code
+**Current Branch**: develop (latest merge: PR #149)
 **Current Phase**: Testing — Service Harmonization (Manual Test → Bug Fix → E2E)
+**Next Up**: MT-2 Step 8 (Filter Tabs + Pagination)
 
 ---
 
@@ -22,7 +23,7 @@ PHASE 1: Core Features
 ├─ Week 9: Layout Consistency & Polish            ✅ COMPLETE (100%)
 ├─ Week 5-6 (original plan): Dashboard + Reports ❌ NOT STARTED (0%)
 ├─ Week 10+: Bill Payment Service Harmonization               ✅ COMPLETE (100%)
-├─ Testing: Service Harmonization Testing Plan                 🔄 IN PROGRESS
+├─ Testing: Service Harmonization Testing Plan                 🔄 IN PROGRESS (MT-1 ✅, MT-2 Step 1-7 ✅)
 └─ Overall: PHASE 1 CORE COMPLETE — Harmonization COMPLETE — Testing IN PROGRESS
 
 Timeline Status: Money Transfer feature fully shipped ✓
@@ -130,6 +131,30 @@ Timeline Status: Money Transfer feature fully shipped ✓
          └─ UX Consistency: both services share shared components + patterns
 ```
 
+### Week 11 (Apr 14-21): Manual Testing — MT-1 + MT-2 Fixes
+
+**PRs**: #142 (release → main), #143–#149
+
+```
+✅ MT-1: History Page — ผ่านทั้งหมด (PR #143, #144, #145, #146)
+   ├─ Unify status labels + badge colors ระหว่าง MT / BP
+   ├─ Pending Inbox card → filter รายการตาม role
+   └─ แก้ column header ในตาราง
+
+✅ MT-2 Step 1-6: Transaction Form UX (PR #147, release #148 → main)
+   ├─ TransactionForm: lock type switcher, cash/transfer toggle เฉพาะ withdrawal
+   ├─ Commission: บังคับ cash สำหรับ transfer/deposit, คง commission=0 (manual) ตอนแก้ไข
+   ├─ Detail modal: แสดง commission เสมอ + Bank Reconciliation (before/after/delta)
+   ├─ Server: เชื่อ status จาก client (ไม่ auto-draft), รองรับ "cancelled"
+   └─ Workflow labels: Auditor → ตรวจสอบ, Owner → อนุมัติ
+
+✅ MT-2 Step 7 + BP Status UX (PR #149)
+   ├─ แก้ 401 error ใน BP (apiFetch plugin + summaries API)
+   ├─ ลบปุ่ม ⋮ (Status Change Modal) → เปลี่ยนสถานะผ่าน Edit Modal เท่านั้น
+   ├─ ช่อง "เหตุผล/หมายเหตุสถานะ" แสดงเมื่อเลือก draft/on_hold/cancelled (ไม่ required)
+   └─ Workflow edit gate: แก้ไขรายการได้เฉพาะสถานะ workflow ที่อนุญาต
+```
+
 ### Week 9 (Mar 23-25): Layout Consistency & Polish
 
 **PRs**: #80, #81, #82, #83, #84, #85
@@ -222,11 +247,13 @@ Components (38+ total):
 |--------|-------|--------|
 | Pages | 25 | ✅ |
 | Components | 38 | ✅ |
-| PRs merged to develop | 140 | ✅ |
-| TypeScript errors | 0 | ✅ |
+| PRs merged (latest) | #149 | ✅ |
+| TypeScript errors (`nuxt typecheck`) | 0 | ✅ |
+| Unit/Integration tests (`vitest run`) | 280/280 passed (18 files) | ✅ |
+| Production build (`nuxt build`) | Success | ✅ |
 | Money Transfer workflow | 9/9 statuses (unified) | ✅ |
 | Bill Payment workflow | Phase 1-6 Complete (27 Tasks) | ✅ |
-| Service Harmonization Testing | 0/17 tasks | 🔄 |
+| Service Harmonization Testing | 1/17 tasks done + MT-2 in progress | 🔄 |
 | Design System components | 18+ | ✅ |
 | Mobile responsive | Yes | ✅ |
 
@@ -236,7 +263,10 @@ Components (38+ total):
 
 ```
 🔄 Service Harmonization Testing (17 Tasks)
-   ├─ Manual Test: 10 tasks (MT-1~4, BP-1~4, SHARED-1~2) ☐ NOT STARTED
+   ├─ Manual Test: 10 tasks (MT-1~4, BP-1~4, SHARED-1~2) 🔄 IN PROGRESS
+   │     ├─ MT-1 ✅ ผ่าน
+   │     ├─ MT-2 🔄 Step 1-7 ผ่าน — เหลือ Step 8-11 (Filter/Pagination, Favorites, Checklist, Cash Verification)
+   │     └─ MT-3, MT-4, BP-1~4, SHARED-1~2 ☐ NOT STARTED
    ├─ Bug Fix: 2 tasks (BugFix-1, BugFix-2)              ☐ WAITING FOR MANUAL TEST
    ├─ E2E Playwright: 5 tasks (E2E-1~5)                   ☐ WAITING FOR BUG FIX
    └─ Testing Plan: docs/PROGRESS/TESTING_PLAN.md ✅ CREATED
