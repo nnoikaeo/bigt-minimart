@@ -23,16 +23,16 @@
 ## Technical Questions
 
 ### Q: ระบบใช้เทคโนโลยีอะไร?
-**A**: Nuxt.js 3, Vue 3, TypeScript, Firebase, Tailwind CSS (เทคโนโลยีสมัยใหม่)
+**A**: Nuxt 4, Vue 3, TypeScript, Pinia, Firebase (Auth + Hosting), Tailwind CSS
 
 ### Q: ข้อมูลจัดเก็บไว้ที่ไหน?
-**A**: Firestore (NoSQL database) ของ Firebase ซึ่งเป็น cloud service ของ Google
+**A**: ปัจจุบัน (ต.ค. 2569) ข้อมูลเก็บเป็นไฟล์ JSON บน server (`public/data/`) — มีแผนย้ายไป Firestore (NoSQL database ของ Firebase) ในอนาคต
 
 ### Q: ข้อมูลปลอดภัยไหม?
 **A**: ✅ ปลอดภัยมาก - Firebase มีมาตรการความปลอดภัย Level Enterprise
 
 ### Q: สามารถ Backup ข้อมูลได้ไหม?
-**A**: ✅ Firebase ทำ Backup อัตโนมัติทุกวัน ข้อมูลเก็บไว้ 30 วัน
+**A**: ปัจจุบันไฟล์ข้อมูล JSON ถูกเก็บใน Git (มีประวัติทุก commit) — เมื่อย้ายไป Firestore จะใช้ระบบ Backup ของ Firebase แทน
 
 ### Q: สามารถ Offline ได้ไหม?
 **A**: ❌ ไม่ได้ - ระบบต้องการการเชื่อมต่อ Internet
@@ -176,5 +176,5 @@
 ---
 
 **Source**: Newly created FAQ  
-**Last Updated**: Jan 7, 2026  
+**Last Updated**: Oct 16, 2026  
 **Version**: 1.0  

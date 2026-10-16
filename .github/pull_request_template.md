@@ -23,7 +23,8 @@ Closes #(issue number)
 <!-- How was this tested? -->
 - [ ] Tested in browser
 - [ ] Tested on mobile
-- [ ] All unit tests pass
+- [ ] `npm test` passes (not run in CI — run locally)
+- [ ] `npm run lint` + `npm run type-check` pass
 - [ ] No console errors
 - [ ] Responsive design verified
 

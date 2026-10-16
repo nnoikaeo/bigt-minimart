@@ -1,7 +1,7 @@
 # ✅ Component Quality Checklist
 
-**Version**: 1.0
-**Last Updated**: Feb 9, 2026
+**Version**: 1.1
+**Last Updated**: Oct 16, 2026
 **Purpose**: Verify that new components follow architecture principles
 
 ---
@@ -20,7 +20,11 @@ Use this checklist **every time** you create a new UI component or page to ensur
 |---|---|---|
 | Reusable UI (Button, Input, etc.) | `components/ui/` | `BaseButton.vue` |
 | Layout (PageWrapper, Header) | `components/layout/` | `PageWrapper.vue` |
-| Domain-specific (Sales, Finance) | `components/domain/{feature}/` | `DailySalesModal.vue` |
+| Shared workflow (used by MT + BP) | `components/shared/` | `WorkflowProgressBar.vue`, `CashVerificationTable.vue` |
+| Domain-specific (per service) | `components/{feature}/` | `components/money-transfer/TransactionForm.vue`, `components/bill-payment/ManagerRecordingSection.vue` |
+
+> `ui/*`, `layout/` and `shared/` are auto-imported **without** a path prefix (`<BaseButton>`, `<BalanceSnapshot>`).
+> Domain folders are auto-imported **with** a path prefix (`<MoneyTransferTransactionForm>`, `<BillPaymentManagerRecordingSection>`) — see `nuxt.config.ts`.
 
 ---
 
@@ -43,7 +47,7 @@ Use this checklist **every time** you create a new UI component or page to ensur
 
 - [ ] Component name is **PascalCase** (e.g., `BaseButton.vue`, `PageHeader.vue`)
 - [ ] Base components use `Base` prefix (e.g., `BaseButton`, `BaseInput`)
-- [ ] Domain components use feature prefix (e.g., `DailySalesTable`)
+- [ ] Domain components are named for their role inside the feature folder (e.g., `AuditorReviewSection`)
 - [ ] Layout components are descriptive (e.g., `PageWrapper`, `EmptyState`)
 
 ### ✅ File Location
@@ -55,7 +59,9 @@ Use this checklist **every time** you create a new UI component or page to ensur
   - `components/ui/feedback/` - Modals, alerts
   - `components/ui/display/` - Cards, badges
 - [ ] Layout components are in `components/layout/`
-- [ ] Domain components are in `components/domain/{feature}/`
+- [ ] Components shared by Money Transfer + Bill Payment are in `components/shared/`
+- [ ] Domain components are in `components/{feature}/` (`money-transfer/`, `bill-payment/`)
+- [ ] New shared components have a unit test in `tests/unit/components/shared/`
 
 ### ❌ **Common Mistakes**
 
@@ -65,7 +71,8 @@ Use this checklist **every time** you create a new UI component or page to ensur
 ❌ components/sales-table.vue       (kebab-case instead of PascalCase)
 
 ✅ components/ui/button/BaseButton.vue
-✅ components/domain/sales/DailySalesTable.vue
+✅ components/shared/CashVerificationTable.vue
+✅ components/bill-payment/AuditorReviewSection.vue
 ```
 
 ---
@@ -593,10 +600,13 @@ const handleSubmit = async (data) => {
 ### Quick Test Commands
 
 ```bash
+# Unit + integration tests
+npm test
+
 # Type check
 npm run type-check
 
-# Lint code
+# nuxt typecheck
 npm run lint
 
 # Run dev server
@@ -703,7 +713,7 @@ const hasPermission = computed(() => {
 ## 📚 Related Documentation
 
 - [COMPONENT_SYSTEM_ARCHITECTURE.md](../TECHNICAL/COMPONENT_SYSTEM_ARCHITECTURE.md) - Full architecture guide
-- [CODING_STANDARDS.md](./CODING_STANDARDS.md) - General coding standards
+- [DESIGN_SYSTEM.md](../DESIGN/DESIGN_SYSTEM.md) - Colors, typography, UI patterns
 - [STATE_MANAGEMENT_ARCHITECTURE.md](../TECHNICAL/STATE_MANAGEMENT_ARCHITECTURE.md) - Pinia usage guide
 
 ---
@@ -718,5 +728,5 @@ If any checklist items failed, review the [COMPONENT_SYSTEM_ARCHITECTURE.md](../
 ---
 
 **Status**: ✅ READY TO USE
-**Last Updated**: Feb 9, 2026
-**Version**: 1.0
+**Last Updated**: Oct 16, 2026
+**Version**: 1.1

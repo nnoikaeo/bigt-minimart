@@ -9,6 +9,21 @@ Complete business workflows for daily operations
 3. **Daily Money Transfer Service Income Flow** - นับและตรวจสอบเงินโอนจากบริการโอนเงิน (Manager → Auditor → Owner)
 4. **Daily Bill Payment Service Income Flow** - นับและตรวจสอบเงินจากบริการรับชำระบิล (Manager → Auditor → Owner)
 
+> ⚠️ **Implementation note (Oct 2026)** — FLOW 2 (Money Transfer) and FLOW 3 (Bill Payment) are
+> implemented and share **unified statuses** defined in `types/shared-workflow.ts`. Where this
+> document uses older status names, read them as:
+>
+> | In this doc | Implemented |
+> |-------------|-------------|
+> | Transaction `success` / `failed` | `completed` / `cancelled` (+ `draft`, `on_hold`) — `UnifiedTransactionStatus` |
+> | Step 2 `verified` / `verified_with_notes` | workflow `step2_completed` / `step2_completed_with_notes` |
+> | `submitted` (FLOW 2/3) | `step1_in_progress` → `step1_completed` → `step2_completed` |
+>
+> Full workflow cycle: `step1_in_progress` → `step1_completed` → `step2_completed[_with_notes]` →
+> `audited[_with_issues]` → `approved[_with_notes]`, with `needs_correction` sending the day back to
+> the Manager. Labels/colors: see SHARED-2 in [TESTING_PLAN.md](../PROGRESS/TESTING_PLAN.md).
+> FLOW 1 (Daily Sales) and the Income/Expense flow keep their own statuses.
+
 ---
 
 # 💰 FLOW 1: Daily Cash Reconciliation (นับและตรวจสอบเงินรายวัน)
@@ -2866,7 +2881,7 @@ Bill Payment Service Income ✓            Daily Income/Expense Data ✓
 ---
 
 **Source**: Updated based on business requirements clarification (Jan 30, 2026)  
-**Last Updated**: Jan 30, 2026  
-**Version**: 3.0  
+**Last Updated**: Oct 16, 2026 (implementation note at top; FLOW 2/3 detail revised Mar–Apr 2026)  
+**Version**: 3.1  
 **Status**: ✅ Clarified with four distinct flows (Cash Reconciliation, Money Transfer Service, Bill Payment Service, Daily Income/Expense)
 

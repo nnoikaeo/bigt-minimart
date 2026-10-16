@@ -27,11 +27,11 @@ npm run dev
 # Build for production
 npm run build
 
-# Preview production build locally (uses Firebase Hosting)
-firebase serve
+# Preview production build locally (Nitro node-server)
+npm run preview
 
-# Preview on specific port
-firebase serve -p 8080
+# Emulate Hosting + Functions (nuxtServer) locally
+firebase emulators:start --only hosting,functions
 ```
 
 ## Deployment
