@@ -97,7 +97,7 @@
     "serviceFeeTransfer": 0,
     "serviceFeeCash": 30,
     "history": [],
-    "updatedAt": "2026-04-15T15:46:25.475Z",
+    "updatedAt": "2026-04-27T13:07:18.842Z",
     "openingBalance": 5000,
     "openingBalanceSetAt": "2026-04-15T13:27:27.371Z",
     "openingBalanceSource": "manual",
@@ -216,5 +216,15 @@
     "serviceFeeCash": 0,
     "history": [],
     "updatedAt": "2026-04-20T13:14:29.560Z"
+  },
+  {
+    "id": "mtbal-2026-04-27",
+    "date": "2026-04-27",
+    "bankAccount": 0,
+    "transferCash": 0,
+    "serviceFeeTransfer": 0,
+    "serviceFeeCash": 0,
+    "history": [],
+    "updatedAt": "2026-04-27T13:04:49.419Z"
   }
 ]
