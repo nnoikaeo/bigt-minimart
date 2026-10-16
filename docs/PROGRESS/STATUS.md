@@ -1,8 +1,8 @@
 # Project Status Dashboard
 
-**Last Updated**: Oct 16, 2026
+**Last Updated**: Oct 17, 2026
 **Updated By**: Claude Code
-**Current Branch**: develop (latest merge: PR #151; main: docs synced via PR #150, code at release #148)
+**Current Branch**: develop (latest merge: PR #152; main: docs synced via PR #150, code at release #148)
 **Current Phase**: Testing — Service Harmonization (Manual Test → Bug Fix → E2E)
 **Next Up**: PR 1 — Draft queue (MT + BP), then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`); MT-2 Step 8 pagination still untested
 
@@ -155,9 +155,9 @@ Timeline Status: Money Transfer feature fully shipped ✓
    └─ Workflow edit gate: แก้ไขรายการได้เฉพาะสถานะ workflow ที่อนุญาต
 ```
 
-### Week 12 (Oct 16, 2026): Project Re-entry — Docs & Tooling
+### Week 12 (Oct 16-17, 2026): Project Re-entry — Docs, Tooling & MT-2 Step 8
 
-**PRs**: #150 (docs → main), #151
+**PRs**: #150 (docs → main), #151, #152
 
 ```
 ✅ Documentation sync (commit 6f19509 + PR #150)
@@ -169,6 +169,12 @@ Timeline Status: Money Transfer feature fully shipped ✓
    ├─ CLAUDE.md = single source of project facts for Claude Code (replaces private memory)
    ├─ "Keeping docs in sync" rules (STATUS.md / TESTING_PLAN.md / tech docs)
    └─ .claude/hooks/session-status.mjs prints this file's header + testing progress at session start
+
+🔄 MT-2 Step 8 manual test + design decision (PR #152, data 8b5dc73)
+   ├─ Tabs / filter / badge passed; pagination not yet tested
+   ├─ BUG-001~006 logged in TESTING_PLAN.md (Bug List)
+   └─ Owner approved spec docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md
+       (draft queue for MT + BP, borrow/repay sales cash) — not implemented yet
 ```
 
 ### Week 9 (Mar 23-25): Layout Consistency & Polish
@@ -278,13 +284,13 @@ Components (49 total):
 | Pages | 26 (16 functional, 10 placeholders) | ✅ |
 | Components | 49 | ✅ |
 | API routes | 72 | ✅ |
-| PRs merged (latest) | #149 | ✅ |
+| PRs merged (latest) | #152 | ✅ |
 | TypeScript errors (`nuxt typecheck`) | 0 | ✅ |
 | Unit/Integration tests (`vitest run`) | 280/280 passed (18 files) | ✅ |
 | Production build (`nuxt build`) | Success | ✅ |
 | Money Transfer workflow | 9/9 statuses (unified) | ✅ |
 | Bill Payment workflow | Phase 1-6 Complete (27 Tasks) | ✅ |
-| Service Harmonization Testing | 1/17 tasks done + MT-2 in progress | 🔄 |
+| Service Harmonization Testing | 1/17 tasks done + MT-2 in progress (Step 8 partial, 6 open bugs) | 🔄 |
 | Design System components | 14 ui + 4 layout + 8 shared | ✅ |
 | Mobile responsive | Yes | ✅ |
 | CI (PR Check / Staging / Production) | All green (Oct 16, 2026) | ✅ |
