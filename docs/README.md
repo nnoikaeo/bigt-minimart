@@ -76,6 +76,7 @@ docs/
 | [DEPLOYMENT.md](DEVELOPMENT/DEPLOYMENT.md) | Environments, release flow, rollback |
 | [CI_CD.md](DEVELOPMENT/CI_CD.md) | GitHub Actions workflows & secrets |
 | [../.claude/PLAYBOOK.md](../.claude/PLAYBOOK.md) | AI skills playbook (Thai) |
+| [../CLAUDE.md](../CLAUDE.md) | Claude Code project instructions (auto-loaded) — conventions + doc-sync rules |
 
 ---
 
