@@ -301,6 +301,9 @@ Components (49 total):
    ├─ Money Transfer mutation APIs don't call requireServerAuth (Bill Payment does)
    ├─ PR Check workflow doesn't run `npm test`
    ├─ Firestore migration not started (all data in public/data/*.json)
+   ├─ ⚠️ Unverified: production (Cloud Functions `nuxtServer`) may not persist JSON writes —
+   │   repositories write to process.cwd()/public/data, and CI deploys Hosting only (not Functions).
+   │   Verify on production before the next release.
    └─ Unused deps: vee-validate, radix-vue, @vueuse/core, dayjs, sass-embedded
 
 Phase 2: Google Sheets integration
