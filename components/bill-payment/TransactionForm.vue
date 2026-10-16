@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useBillPaymentHelpers } from '~/composables/useBillPaymentHelpers'
 import type { BillPaymentTransaction, BillPaymentTransactionStatus } from '~/types/bill-payment'
-import { CheckCircleIcon, ClockIcon, PauseCircleIcon, XCircleIcon } from '@heroicons/vue/24/outline'
+import { CheckCircleIcon, PauseCircleIcon, XCircleIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
   editingData?: BillPaymentTransaction | null
@@ -15,7 +15,8 @@ const emit = defineEmits<{
     amount: number
     commission: number
     customerName?: string
-    status: BillPaymentTransactionStatus
+    /** Only sent when editing a non-draft record — new records/drafts are queued by the server */
+    status?: BillPaymentTransactionStatus
     statusNote?: string
     notes?: string
   }]
@@ -37,6 +38,15 @@ const form = reactive({
 
 const formErrors = ref<string[]>([])
 const isSubmitting = ref(false)
+
+// Draft queue: new records + drafts get their status from the server / queue actions.
+// The status picker is only for editing a record that already left the queue.
+const showStatusPicker = computed(() => !!props.editingData && props.editingData.status !== 'draft')
+const isQueuedOnCreate = computed(() => !props.editingData && form.transactionType === 'bill_payment')
+const submitLabel = computed(() => {
+  if (props.editingData) return 'บันทึกการแก้ไข'
+  return isQueuedOnCreate.value ? 'บันทึกเข้าคิว' : 'เพิ่มรายการ'
+})
 
 // ─── Auto Commission ──────────────────────────────────────────────────────────
 const amountAsNumber = computed(() => Number(form.amount) || 0)
@@ -122,8 +132,9 @@ async function handleSubmit() {
       amount: Number(form.amount),
       commission: commissionValue,
       customerName: form.customerName || undefined,
-      status: form.status,
-      statusNote: form.statusNote || undefined,
+      ...(showStatusPicker.value
+        ? { status: form.status, statusNote: form.statusNote || undefined }
+        : {}),
       notes: form.notes || undefined,
     })
   } finally {
@@ -238,8 +249,13 @@ async function handleSubmit() {
       />
     </FormField>
 
-    <!-- ── สถานะรายการ ─────────────────────────────────────────────────── -->
-    <FormField label="สถานะรายการ" required>
+    <!-- ── คิวรอดำเนินการ (รายการใหม่ รับชำระบิล) ─────────────────────── -->
+    <p v-if="isQueuedOnCreate" class="text-xs text-gray-500">
+      รายการจะเข้าคิว "รอดำเนินการ" (ยังไม่นับยอด) — ชำระในแอปธนาคารแล้วกด "ดำเนินการ" ที่รายการ
+    </p>
+
+    <!-- ── สถานะรายการ (แก้ไขรายการที่ออกจากคิวแล้วเท่านั้น) ──────────── -->
+    <FormField v-if="showStatusPicker" label="สถานะรายการ" required>
       <div class="flex flex-wrap gap-4">
         <label class="flex cursor-pointer items-center gap-2">
           <input
@@ -250,16 +266,6 @@ async function handleSubmit() {
           />
           <CheckCircleIcon class="h-4 w-4 text-green-600" />
           <span class="text-sm">สำเร็จ</span>
-        </label>
-        <label class="flex cursor-pointer items-center gap-2">
-          <input
-            v-model="form.status"
-            type="radio"
-            value="draft"
-            class="accent-yellow-500"
-          />
-          <ClockIcon class="h-4 w-4 text-yellow-500" />
-          <span class="text-sm">รอดำเนินการ</span>
         </label>
         <label class="flex cursor-pointer items-center gap-2">
           <input
@@ -284,15 +290,15 @@ async function handleSubmit() {
       </div>
     </FormField>
 
-    <!-- ── หมายเหตุสถานะ (เฉพาะ draft / on_hold / cancelled) ──────────── -->
+    <!-- ── หมายเหตุสถานะ (เฉพาะ on_hold / cancelled) ───────────────────── -->
     <FormField
-      v-if="form.status !== 'completed'"
+      v-if="showStatusPicker && form.status !== 'completed'"
       label="เหตุผล / หมายเหตุสถานะ"
     >
       <BaseInput
         v-model="form.statusNote"
         type="text"
-        :placeholder="form.status === 'draft' ? 'เช่น ยอดในระบบไม่พอ รอตรวจสอบ' : form.status === 'on_hold' ? 'เช่น รอเอกสารเพิ่มเติม' : 'เช่น ลูกค้ายกเลิก'"
+        :placeholder="form.status === 'on_hold' ? 'เช่น รอเอกสารเพิ่มเติม' : 'เช่น ลูกค้ายกเลิก'"
       />
     </FormField>
 
@@ -316,7 +322,7 @@ async function handleSubmit() {
         :loading="isSubmitting"
         :disabled="!form.transactionType || !form.amount"
       >
-        {{ editingData ? 'บันทึกการแก้ไข' : 'เพิ่มรายการ' }}
+        {{ submitLabel }}
       </BaseButton>
     </div>
 

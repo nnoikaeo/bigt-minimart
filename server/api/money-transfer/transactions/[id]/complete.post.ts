@@ -3,9 +3,9 @@ import { moneyTransferJsonRepository } from '~/server/repositories/money-transfe
 /**
  * POST /api/money-transfer/transactions/[id]/complete
  *
- * Complete a draft transaction after owner deposits funds
+ * Complete a queued draft after the bank-app step succeeded ("ดำเนินการ")
  * - Verifies transaction is currently draft status
- * - Checks if balance is now sufficient
+ * - Checks the source of funds: transfer → bankAccount, withdrawal → transferCash
  * - Updates transaction to completed status
  * - Updates balance impacts and snapshots
  * - Updates daily summary transaction counts
@@ -46,16 +46,26 @@ export default defineEventHandler(async (event) => {
     // Get current balance for the transaction date
     const currentBalance = await moneyTransferJsonRepository.getCurrentBalance(transaction.date)
 
+    // Check balance sufficiency against the source of funds:
+    //   transfer   → bank account pays out
+    //   withdrawal → transfer cash pays out
+    //   owner_deposit → no source needed
+    const fundsLabel = transaction.transactionType === 'withdrawal' ? 'เงินสด' : 'ยอดในบัญชี'
+    const available =
+      transaction.transactionType === 'withdrawal'
+        ? currentBalance.transferCash
+        : currentBalance.bankAccount
+
     console.log(
-      `[POST /api/money-transfer/transactions/[id]/complete] Balance check:`,
-      `Required: ${transaction.amount}, Available: ${currentBalance.bankAccount}`
+      `[POST /api/money-transfer/transactions/[id]/complete] Balance check (${transaction.transactionType}):`,
+      `Required: ${transaction.amount}, Available: ${available}`
     )
 
-    // Check balance sufficiency
-    if (currentBalance.bankAccount < transaction.amount) {
+    if (transaction.transactionType !== 'owner_deposit' && available < transaction.amount) {
       throw createError({
         statusCode: 400,
-        message: `Insufficient balance. Current: ${currentBalance.bankAccount}, Required: ${transaction.amount}`,
+        message: `${fundsLabel}ไม่พอ (มี ${available} ฿ ขาด ${transaction.amount - available} ฿)`,
+        data: { reason: 'insufficient_funds', available, required: transaction.amount },
       })
     }
 
@@ -101,6 +111,7 @@ export default defineEventHandler(async (event) => {
     // Update transaction with new balance impacts and completed status
     const completedTransaction = await moneyTransferJsonRepository.updateTransaction(id, {
       status: 'completed',
+      draftReason: undefined,
       completedAt: new Date().toISOString(),
       balanceImpact: {
         bankAccountBefore: Number(currentBalance.bankAccount),

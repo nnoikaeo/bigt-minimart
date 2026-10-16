@@ -17,6 +17,7 @@ import {
   PencilIcon,
   TrashIcon,
   CheckCircleIcon,
+  XCircleIcon,
   ArrowPathIcon,
 } from '@heroicons/vue/24/outline'
 
@@ -43,6 +44,7 @@ const showTransactionModal = ref(false)
 const showFavoriteModal = ref(false)
 const showDetailModal = ref(false)
 const showDeleteConfirm = ref(false)
+const showCancelDraftConfirm = ref(false)
 const showOpeningBalanceModal = ref(false)
 
 // ─── Modal data ───────────────────────────────────────────────────────────────
@@ -61,6 +63,7 @@ const balanceImpactRows = computed(() => {
   ].filter((r) => r.before !== 0 || r.after !== 0)
 })
 const deletingTransactionId = ref<string>('')
+const cancellingDraftId = ref<string>('')
 const presetType = ref<'transfer' | 'withdrawal' | 'owner_deposit' | ''>('')
 const statusChangeMode = ref<{ currentStatus: 'completed' | 'on_hold' } | undefined>(undefined)
 
@@ -238,6 +241,8 @@ const favBannerInfo = computed(() => {
 })
 const isInsufficientFunds = computed(() => Number(favAmount.value) > 0 && !favBannerInfo.value.ok)
 
+const QUEUED_MESSAGE = 'บันทึกเข้าคิวแล้ว — ทำในแอปธนาคารแล้วกด "ดำเนินการ"'
+
 const {
   formatCurrency,
   formatTime,
@@ -264,11 +269,23 @@ function getTabCount(status: string): number {
   return dateTransactions.value.filter((t: any) => t.status === status).length
 }
 
+// ถอนเงินจ่ายจากเงินสด (transferCash); โอนเงินจ่ายจากบัญชี (bankAccount)
+function getDraftAvailable(draft: any): number {
+  return draft.transactionType === 'withdrawal'
+    ? (store.currentBalance?.transferCash ?? 0)
+    : (store.currentBalance?.bankAccount ?? 0)
+}
 function canCompleteDraft(draft: any): boolean {
-  return (store.currentBalance?.bankAccount ?? 0) >= draft.amount
+  return draft.transactionType === 'owner_deposit' || getDraftAvailable(draft) >= draft.amount
 }
 function getShortfall(draft: any): number {
-  return Math.max(0, draft.amount - (store.currentBalance?.bankAccount ?? 0))
+  return Math.max(0, draft.amount - getDraftAvailable(draft))
+}
+function getInsufficientMessage(draft: any): string {
+  const shortfall = formatCurrency(getShortfall(draft))
+  return draft.transactionType === 'withdrawal'
+    ? `เงินสดไม่พอ (ขาด ${shortfall})`
+    : `ยอดในบัญชีไม่พอ (ขาด ${shortfall}) — โทรหา Owner ให้ฝากเงินเข้า`
 }
 
 // ─── Modal open/close ─────────────────────────────────────────────────────────
@@ -315,6 +332,10 @@ function openStatusChange(txn: any) {
 function confirmDelete(transactionId: string) {
   deletingTransactionId.value = transactionId
   showDeleteConfirm.value = true
+}
+function confirmCancelDraft(transactionId: string) {
+  cancellingDraftId.value = transactionId
+  showCancelDraftConfirm.value = true
 }
 
 // ─── Favorite modal helpers ────────────────────────────────────────────────────
@@ -425,8 +446,6 @@ async function handleSubmitFavorite() {
       accountName: fav.name,
       recordedBy: props.currentUser.uid,
       recordedByName: props.currentUser.displayName,
-      status: isInsufficientFunds.value ? 'draft' : 'completed',
-      draftReason: isInsufficientFunds.value ? 'insufficient_funds' : undefined,
     }
     if (fav.channel === 'bank') {
       data.bankName = fav.bankName ?? ''
@@ -436,9 +455,7 @@ async function handleSubmitFavorite() {
       data.promptpayIdentifierType = fav.identifierType ?? 'phone'
     }
     await store.createTransaction(data)
-    successMessage.value = isInsufficientFunds.value
-      ? 'บันทึกเป็น Draft (ยอดเงินไม่เพียงพอ)'
-      : 'บันทึกรายการโอนเงินสำเร็จ'
+    successMessage.value = QUEUED_MESSAGE
     showFavoriteModal.value = false
     await store.fetchTransactionsByDate(props.date)
     logger.log('Favorite transfer created')
@@ -467,13 +484,13 @@ async function handleSubmitTransaction(transactionData: any) {
         successMessage.value = 'อัปเดตรายการสำเร็จ'
       }
     } else {
-      await store.createTransaction({
+      const created = await store.createTransaction({
         ...txnFields,
         date: props.date,
         recordedBy: props.currentUser.uid,
         recordedByName: props.currentUser.displayName,
       })
-      successMessage.value = 'บันทึกรายการใหม่สำเร็จ'
+      successMessage.value = created.status === 'draft' ? QUEUED_MESSAGE : 'บันทึกรายการใหม่สำเร็จ'
     }
     showTransactionModal.value = false
     statusChangeMode.value = undefined
@@ -485,15 +502,35 @@ async function handleSubmitTransaction(transactionData: any) {
   }
 }
 
-async function handleCompleteDraft(transactionId: string) {
+async function handleCompleteDraft(draft: any) {
+  errorMessage.value = ''
+  if (!canCompleteDraft(draft)) {
+    errorMessage.value = getInsufficientMessage(draft)
+    return
+  }
   try {
-    await store.completeDraftTransaction(transactionId)
-    successMessage.value = 'ดำเนินการ Draft Transaction สำเร็จ'
+    await store.completeDraftTransaction(draft.id)
+    successMessage.value = 'ดำเนินการรายการสำเร็จ — นับยอดแล้ว'
+    showDetailModal.value = false
     await store.fetchTransactionsByDate(props.date)
-    logger.log('Draft completed:', transactionId)
+    logger.log('Draft completed:', draft.id)
   } catch (err: any) {
-    errorMessage.value = err.message || 'เกิดข้อผิดพลาด'
+    errorMessage.value = err.data?.message || err.message || 'เกิดข้อผิดพลาด'
     logger.error('Failed to complete draft', err)
+  }
+}
+
+async function handleCancelDraft() {
+  try {
+    await store.changeTransactionStatus(cancellingDraftId.value, 'cancelled', 'ทำรายการในแอปธนาคารไม่สำเร็จ')
+    successMessage.value = 'ยกเลิกรายการแล้ว (ไม่กระทบยอด)'
+    showCancelDraftConfirm.value = false
+    showDetailModal.value = false
+    await store.fetchTransactionsByDate(props.date)
+    logger.log('Draft cancelled:', cancellingDraftId.value)
+  } catch (err: any) {
+    errorMessage.value = err.data?.message || err.message || 'เกิดข้อผิดพลาด'
+    logger.error('Failed to cancel draft', err)
   }
 }
 
@@ -512,7 +549,7 @@ async function handleDeleteTransaction() {
 
 async function handleCompleteStep1() {
   if (hasDrafts.value) {
-    errorMessage.value = 'กรุณาดำเนินการหรือลบ Draft Transaction ทั้งหมดก่อน'
+    errorMessage.value = 'กรุณาดำเนินการ ยกเลิก หรือลบรายการที่รอดำเนินการทั้งหมดก่อน'
     return
   }
   if (hasOnHold.value) {
@@ -619,11 +656,12 @@ async function handleCompleteStep1() {
       </div>
     </section>
 
-    <!-- ── Draft Transactions Alert ───────────────────────────────────────── -->
+    <!-- ── Draft Queue (รอดำเนินการ) ─────────────────────────────────────── -->
     <section v-if="hasDrafts" class="mb-6">
       <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
-        <div class="flex items-center gap-2 mb-3">
-          <span class="text-amber-600 font-semibold">⚠️ Draft Transactions ({{ draftTransactions.length }} รายการ)</span>
+        <div class="mb-3">
+          <span class="text-amber-700 font-semibold">คิวรอดำเนินการ ({{ draftTransactions.length }} รายการ)</span>
+          <p class="text-xs text-amber-700/80 mt-0.5">ทำในแอปธนาคารแล้วกด "ดำเนินการ" — ถ้าแอปธนาคารไม่ผ่าน กด "ยกเลิก"</p>
         </div>
         <div class="space-y-3">
           <div
@@ -633,25 +671,27 @@ async function handleCompleteStep1() {
           >
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1">
-                <BaseBadge variant="warning" size="sm">DRAFT</BaseBadge>
+                <BaseBadge variant="warning" size="sm">รอดำเนินการ</BaseBadge>
                 <span class="font-medium text-gray-900">{{ getTransactionTypeLabel(draft.transactionType) }}</span>
                 <span class="text-gray-500 text-sm">{{ formatTime(draft.datetime) }}</span>
               </div>
               <div class="text-sm text-gray-600">
-                จำนวน: <strong>{{ formatCurrency(draft.amount) }}</strong>
-                <span v-if="!canCompleteDraft(draft)" class="text-red-600 ml-2">(ขาด {{ formatCurrency(getShortfall(draft)) }})</span>
+                {{ getAccountName(draft) }} · <strong>{{ formatCurrency(draft.amount) }}</strong>
               </div>
-              <div v-if="draft.draftReason" class="text-xs text-gray-500 mt-0.5">
-                {{ draft.draftReason === 'insufficient_funds' ? 'ยอดเงินในบัญชีไม่เพียงพอ' : draft.draftReason }}
+              <div v-if="!canCompleteDraft(draft)" class="text-xs text-red-600 mt-0.5">
+                {{ getInsufficientMessage(draft) }}
               </div>
             </div>
             <div class="flex gap-2">
-              <ActionButton v-if="canCompleteDraft(draft)" :permission="PERMISSIONS.EDIT_FINANCE" variant="success" size="sm" @click="handleCompleteDraft(draft.id)">
+              <ActionButton :permission="PERMISSIONS.EDIT_FINANCE" variant="success" size="sm" @click="handleCompleteDraft(draft)">
                 <CheckCircleIcon class="w-4 h-4" />
                 ดำเนินการ
               </ActionButton>
-              <BaseButton v-else variant="secondary" size="sm" disabled>ยอดไม่พอ</BaseButton>
-              <ActionButton :permission="PERMISSIONS.EDIT_FINANCE" variant="danger" size="sm" @click="confirmDelete(draft.id)">
+              <ActionButton :permission="PERMISSIONS.EDIT_FINANCE" variant="secondary" size="sm" @click="confirmCancelDraft(draft.id)">
+                <XCircleIcon class="w-4 h-4" />
+                ยกเลิก
+              </ActionButton>
+              <ActionButton :permission="PERMISSIONS.EDIT_FINANCE" variant="danger" size="sm" aria-label="ลบรายการ" @click="confirmDelete(draft.id)">
                 <TrashIcon class="w-4 h-4" />
               </ActionButton>
             </div>
@@ -775,7 +815,7 @@ async function handleCompleteStep1() {
           </li>
           <li class="flex items-center gap-2" :class="!hasDrafts ? 'text-green-700' : 'text-red-600'">
             <span class="text-base">{{ !hasDrafts ? '✅' : '❌' }}</span>
-            {{ hasDrafts ? 'มีดราฟต์ค้างอยู่' : 'ไม่มีดราฟต์ค้างอยู่' }}
+            {{ hasDrafts ? 'มีรายการรอดำเนินการค้างอยู่' : 'ไม่มีรายการรอดำเนินการค้างอยู่' }}
             <span v-if="hasDrafts" class="font-medium text-red-600">({{ todayStats.drafts }} รายการ)</span>
           </li>
           <li class="flex items-center gap-2" :class="!hasOnHold ? 'text-green-700' : 'text-red-600'">
@@ -786,7 +826,7 @@ async function handleCompleteStep1() {
         </ul>
       </div>
       <div class="flex justify-center mb-3 flex-col items-center gap-2">
-        <BaseAlert v-if="hasDrafts" variant="warning" message="กรุณาดำเนินการหรือลบ Draft Transaction ทั้งหมดก่อนไปขั้นตอนถัดไป" :dismissible="false" class="w-full max-w-lg" />
+        <BaseAlert v-if="hasDrafts" variant="warning" message="กรุณาดำเนินการ ยกเลิก หรือลบรายการที่รอดำเนินการทั้งหมดก่อนไปขั้นตอนถัดไป" :dismissible="false" class="w-full max-w-lg" />
         <BaseAlert v-if="hasOnHold" variant="warning" message="กรุณาสรุปรายการที่พักไว้ (on hold) ทั้งหมดก่อนไปขั้นตอนถัดไป" :dismissible="false" class="w-full max-w-lg" />
       </div>
       <div class="flex justify-center">
@@ -998,11 +1038,11 @@ async function handleCompleteStep1() {
         <div class="space-y-4">
           <FormField label="จำนวนเงิน" required>
             <div class="relative">
-              <BaseInput v-model="favAmount" type="number" placeholder="0" :error="isInsufficientFunds" />
+              <BaseInput v-model="favAmount" type="number" placeholder="0" />
               <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">บาท</span>
             </div>
-            <div v-if="isInsufficientFunds" class="text-red-600 text-sm mt-1">
-              ❌ ยอดเงินไม่เพียงพอ (ขาด {{ formatCurrency(favAmount - (store.currentBalance?.bankAccount ?? 0)) }})
+            <div v-if="isInsufficientFunds" class="text-amber-700 text-sm mt-1">
+              ยอดในบัญชีตอนนี้ไม่พอ (ขาด {{ formatCurrency(favAmount - (store.currentBalance?.bankAccount ?? 0)) }}) — บันทึกเข้าคิวได้ แต่ต้องมียอดพอก่อนกด "ดำเนินการ"
             </div>
           </FormField>
           <FormField :label="favIsCommissionManual ? 'ค่าบริการ' : 'ค่าบริการ (คำนวณอัตโนมัติ)'">
@@ -1034,7 +1074,7 @@ async function handleCompleteStep1() {
               <span class="font-medium">{{ formatCurrency(favBannerInfo.current) }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-500">หลังโอน</span>
+              <span class="text-gray-500">หลังดำเนินการ</span>
               <span class="font-medium" :class="favBannerInfo.ok ? 'text-gray-900' : 'text-red-600'">{{ formatCurrency(favBannerInfo.after) }}</span>
             </div>
           </div>
@@ -1057,7 +1097,7 @@ async function handleCompleteStep1() {
             </BaseButton>
             <!-- Submit transfer -->
             <ActionButton v-if="favStep === 2" :permission="PERMISSIONS.EDIT_FINANCE" variant="primary" :disabled="favAmount <= 0" @click="handleSubmitFavorite">
-              ✅ {{ isInsufficientFunds ? 'บันทึกเป็น Draft' : 'ยืนยันโอนเงิน' }}
+              บันทึกเข้าคิว
             </ActionButton>
           </div>
         </div>
@@ -1100,7 +1140,7 @@ async function handleCompleteStep1() {
       </template>
       <div v-if="viewingTransaction" class="space-y-3 text-sm">
         <div v-if="viewingTransaction.status === 'draft'" class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-amber-800">
-          ⚠️ รายการนี้อยู่ในสถานะ Draft — รอดำเนินการ
+          รายการนี้อยู่ในคิวรอดำเนินการ — ยังไม่นับยอด
         </div>
         <div class="grid grid-cols-2 gap-x-4 gap-y-3">
           <template v-if="viewingTransaction.channel === 'bank' || viewingTransaction.channel === 'other'">
@@ -1173,6 +1213,16 @@ async function handleCompleteStep1() {
             </ActionButton>
           </div>
           <div class="flex gap-2">
+            <template v-if="viewingTransaction && viewingTransaction.status === 'draft'">
+              <ActionButton :permission="PERMISSIONS.EDIT_FINANCE" variant="success" size="sm" @click="handleCompleteDraft(viewingTransaction)">
+                <CheckCircleIcon class="w-4 h-4" />
+                ดำเนินการ
+              </ActionButton>
+              <ActionButton :permission="PERMISSIONS.EDIT_FINANCE" variant="secondary" size="sm" @click="confirmCancelDraft(viewingTransaction.id)">
+                <XCircleIcon class="w-4 h-4" />
+                ยกเลิกรายการ
+              </ActionButton>
+            </template>
             <ActionButton
               v-if="viewingTransaction && viewingTransaction.status === 'draft'"
               :permission="PERMISSIONS.EDIT_FINANCE"
@@ -1199,6 +1249,18 @@ async function handleCompleteStep1() {
       variant="danger"
       @confirm="handleDeleteTransaction"
       @cancel="showDeleteConfirm = false"
+    />
+
+    <!-- Cancel Draft Confirm Dialog (แอปธนาคารไม่ผ่าน) -->
+    <ConfirmDialog
+      :open="showCancelDraftConfirm"
+      title="ยกเลิกรายการ"
+      message="ทำรายการในแอปธนาคารไม่สำเร็จใช่หรือไม่? รายการจะถูกบันทึกเป็น ยกเลิก และไม่กระทบยอด"
+      confirm-text="ยกเลิกรายการ"
+      cancel-text="ปิด"
+      variant="warning"
+      @confirm="handleCancelDraft"
+      @cancel="showCancelDraftConfirm = false"
     />
   </div>
 </template>

@@ -204,54 +204,30 @@
       />
     </div>
 
-    <!-- ── สถานะยอดเงิน ─────────────────────────────────────────── -->
+    <!-- ── ข้อมูลยอดเงิน (ข้อมูลเท่านั้น — ไม่ใช่การตัดสินสถานะ) ───────── -->
     <div
       v-if="formData.amount > 0"
-      class="rounded-lg px-3 py-2.5 text-sm flex items-center justify-between gap-2"
+      class="rounded-lg px-3 py-2.5 text-sm space-y-1"
       :class="bannerInfo.ok
-        ? 'bg-green-50 border border-green-200 text-green-800'
+        ? 'bg-gray-50 border border-gray-200 text-gray-700'
         : 'bg-amber-50 border border-amber-200 text-amber-800'"
     >
-      <!-- ยอดปัจจุบัน → ยอดหลังรายการ -->
+      <!-- ยอดปัจจุบัน → ยอดหลังดำเนินการ -->
       <div class="flex items-center gap-2 font-medium">
-        <span>{{ bannerInfo.ok ? '✅' : '⚠️' }}</span>
         <span class="text-xs opacity-70">{{ bannerInfo.balanceLabel }}</span>
         <span>{{ formatCurrency(bannerInfo.current) }}</span>
         <span class="opacity-50">→</span>
-        <span :class="bannerInfo.ok ? 'text-green-700 font-semibold' : 'text-amber-700 font-semibold'">
-          {{ formatCurrency(bannerInfo.after) }}
-        </span>
+        <span class="font-semibold">{{ formatCurrency(bannerInfo.after) }}</span>
       </div>
-      <!-- สถานะการบันทึก (ไม่แสดงอีกต่อไป) -->
-    </div>
-
-    <!-- ── สถานะรายการ (สำหรับรายการใหม่/แก้ไข Draft) ─────────────── -->
-    <div v-if="!isStatusChangeMode" class="space-y-2">
-      <label class="block text-sm font-medium text-gray-700">สถานะรายการ</label>
-      <div class="grid grid-cols-2 gap-2">
-        <label
-          class="flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors"
-          :class="newTransactionStatus === 'completed'
-            ? 'border-green-400 bg-green-50'
-            : 'border-gray-200 bg-white hover:bg-gray-50'"
-        >
-          <input v-model="newTransactionStatus" type="radio" value="completed" class="text-green-600 focus:ring-green-500" />
-          <span class="font-medium text-sm" :class="newTransactionStatus === 'completed' ? 'text-green-800' : 'text-gray-700'">✅ สำเร็จ</span>
-        </label>
-        <label
-          class="flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors"
-          :class="newTransactionStatus === 'cancelled'
-            ? 'border-red-400 bg-red-50'
-            : 'border-gray-200 bg-white hover:bg-gray-50'"
-        >
-          <input v-model="newTransactionStatus" type="radio" value="cancelled" class="text-red-600 focus:ring-red-500" />
-          <span class="font-medium text-sm" :class="newTransactionStatus === 'cancelled' ? 'text-red-800' : 'text-gray-700'">❌ ไม่สำเร็จ</span>
-        </label>
-      </div>
-      <p v-if="newTransactionStatus === 'cancelled'" class="text-xs text-red-600">
-        ⚠️ ทำเครื่องหมายว่าการโอนเงินจริงในแอพธนาคารมีปัญหา (ยอดเงินจะไม่ถูกปรับ)
+      <p v-if="!bannerInfo.ok" class="text-xs">
+        {{ bannerInfo.balanceLabel }}ตอนนี้ไม่พอ — บันทึกเข้าคิวได้ แต่ต้องมียอดพอก่อนกด "ดำเนินการ"
       </p>
     </div>
+
+    <!-- ── คิวรอดำเนินการ (รายการใหม่ โอน/ถอน) ───────────────────── -->
+    <p v-if="isQueuedOnCreate" class="text-xs text-gray-500">
+      รายการจะเข้าคิว "รอดำเนินการ" (ยังไม่นับยอด) — ทำในแอปธนาคารแล้วกด "ดำเนินการ" ที่รายการ
+    </p>
 
     <!-- ── Status Change Section ──────────────────────────────── -->
     <div v-if="isStatusChangeMode && statusChange" class="space-y-3 border-t border-gray-200 pt-4">
@@ -331,7 +307,7 @@
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
         </svg>
-        <span>{{ isStatusChangeMode ? (isEditOnly ? '💾 บันทึกการแก้ไข' : '💾 บันทึกและเปลี่ยนสถานะ') : '💾 บันทึก' }}</span>
+        <span>{{ submitLabel }}</span>
       </button>
     </div>
 
@@ -426,7 +402,8 @@ const commissionInput = computed({
 /**
  * โอนเงิน  → ต้องมียอดในบัญชีธนาคาร (bankAccount) เพียงพอ
  * ถอนเงิน  → ต้องมียอดเงินสด (transferCash) เพียงพอ
- * ฝากเงิน  → เพิ่มยอดเงินสดเสมอ ถือว่าสำเร็จเสมอ
+ * ฝากเงิน  → เพิ่มยอดในบัญชีเสมอ
+ * ใช้แสดงข้อมูลเท่านั้น — การเช็คจริงทำตอนกด "ดำเนินการ" (POST /:id/complete)
  */
 const hasSufficientBalance = computed(() => {
   const { transactionType } = formData.value
@@ -471,11 +448,6 @@ const bannerInfo = computed(() => {
 // ── Helpers ───────────────────────────────────────────────────
 const { formatCurrency, getStatusLabel, getStatusBadgeVariant } = useMoneyTransferHelpers()
 
-// ── New transaction status (สำเร็จ / ไม่สำเร็จ) ───────────────
-const newTransactionStatus = ref<'completed' | 'cancelled'>(
-  (props.editingData?.status as 'completed' | 'cancelled') ?? 'completed'
-)
-
 // ── Status Change ────────────────────────────────────────────
 // Auto-pre-select edit_only only when completed + has previous note
 const statusTarget = ref<'edit_only' | 'on_hold' | 'completed' | 'cancelled' | ''>(
@@ -497,6 +469,14 @@ watch(
   },
   { immediate: true }
 )
+// รายการใหม่ โอน/ถอน → server บันทึกเป็น draft (คิว) เสมอ; ฝากเงิน → completed ทันที
+const isQueuedOnCreate = computed(
+  () => !props.editingData && formData.value.transactionType !== 'owner_deposit'
+)
+const submitLabel = computed(() => {
+  if (isStatusChangeMode.value) return isEditOnly.value ? 'บันทึกการแก้ไข' : 'บันทึกและเปลี่ยนสถานะ'
+  return isQueuedOnCreate.value ? 'บันทึกเข้าคิว' : 'บันทึก'
+})
 const needsStatusNote = computed(() => isStatusChangeMode.value && statusTarget.value !== '' && !alreadyEdited.value)
 
 // ── Validation & Submit ───────────────────────────────────────
@@ -555,9 +535,10 @@ function handleSubmit() {
     notes: formData.value.notes,
     recordedBy: props.recordedBy,
     recordedByName: props.recordedByName,
-    status: isStatusChangeMode.value
-      ? (isEditOnly.value ? props.statusChange!.currentStatus : statusTarget.value)
-      : newTransactionStatus.value,
+    // New/draft: status is decided by the server (draft queue) — only status-change mode sends one
+    ...(isStatusChangeMode.value
+      ? { status: isEditOnly.value ? props.statusChange!.currentStatus : statusTarget.value }
+      : {}),
     // Save statusNote for edit_only (persisted on transaction record)
     ...(isStatusChangeMode.value && statusNote.value.trim() ? { statusNote: statusNote.value.trim() } : {}),
   }

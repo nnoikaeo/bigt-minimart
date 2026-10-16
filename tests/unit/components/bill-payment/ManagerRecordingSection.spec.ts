@@ -216,9 +216,9 @@ describe('ManagerRecordingSection', () => {
       expect(wrapper.text()).toContain('มีรายการอย่างน้อย 1 รายการ')
     })
 
-    it('shows "ไม่มีรายการ Draft ค้าง" checklist item', () => {
+    it('shows "ไม่มีรายการรอดำเนินการค้าง" checklist item', () => {
       const wrapper = mountSection()
-      expect(wrapper.text()).toContain('ไม่มีรายการ Draft ค้าง')
+      expect(wrapper.text()).toContain('ไม่มีรายการรอดำเนินการค้าง')
     })
 
     it('shows "ไม่มีรายการ On Hold ค้าง" checklist item', () => {

@@ -400,7 +400,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
     },
 
     /**
-     * Change transaction status (completed ↔ on_hold, on_hold → cancelled)
+     * Change transaction status (completed ↔ on_hold, on_hold → cancelled, draft → cancelled)
      */
     async changeTransactionStatus(
       id: string,
@@ -420,6 +420,10 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
         if (index !== -1) {
           this.transactions[index] = updated
         }
+
+        // draft → cancelled leaves the queue
+        this.draftCount = this.transactions.filter((t: any) => t.status === 'draft').length
+        this.hasDrafts = this.draftCount > 0
 
         // Refresh balance for the transaction's date
         if (updated.date) {

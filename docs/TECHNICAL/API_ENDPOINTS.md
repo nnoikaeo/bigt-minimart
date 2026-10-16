@@ -16,12 +16,17 @@
 ### Transactions
 ```
 GET    /api/money-transfer/transactions                 List (query: date, status, type)
-POST   /api/money-transfer/transactions                 Create transaction
-PUT    /api/money-transfer/transactions/:id             Update transaction
+POST   /api/money-transfer/transactions                 Create (transfer/withdrawal → draft; owner_deposit → completed)
+PUT    /api/money-transfer/transactions/:id             Update transaction (a draft stays draft)
 DELETE /api/money-transfer/transactions/:id             Delete (draft) transaction
-POST   /api/money-transfer/transactions/:id/complete    Draft → completed
+POST   /api/money-transfer/transactions/:id/complete    Draft → completed ("ดำเนินการ"; checks funds)
 PUT    /api/money-transfer/transactions/:id/status      Change status (+ statusNote)
 ```
+
+**Draft queue** (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`):
+- `POST` ignores any client `status` — the server decides: transfer/withdrawal start as `draft` (no balance impact), `owner_deposit` is `completed` immediately.
+- `/complete` checks the source of funds: transfer → `bankAccount`, withdrawal → `transferCash`. Not enough → `400` with Thai message and `data: { reason: 'insufficient_funds', available, required }`.
+- `/status` transitions: `completed → on_hold`, `on_hold → completed | cancelled`, `draft → cancelled` (bank-app step failed; no balance change).
 
 ### Balances
 ```
@@ -59,12 +64,14 @@ DELETE /api/money-transfer/favorites/:id
 ### Transactions
 ```
 GET    /api/bill-payment/transactions                   List
-POST   /api/bill-payment/transactions               🔒  Create transaction
-PUT    /api/bill-payment/transactions/:id           🔒  Update transaction
+POST   /api/bill-payment/transactions               🔒  Create (bill_payment → draft; owner_deposit → completed)
+PUT    /api/bill-payment/transactions/:id           🔒  Update transaction (a draft stays draft)
 DELETE /api/bill-payment/transactions/:id           🔒  Delete (draft) transaction
-POST   /api/bill-payment/transactions/:id/complete  🔒  Draft → completed
-PUT    /api/bill-payment/transactions/:id/status    🔒  Change status (+ statusNote)
+POST   /api/bill-payment/transactions/:id/complete  🔒  Draft → completed ("ดำเนินการ"; bill_payment checks bankAccount)
+PUT    /api/bill-payment/transactions/:id/status    🔒  Change status (+ statusNote) — incl. draft → cancelled
 ```
+
+Same draft queue as Money Transfer: `POST` decides the status server-side; `/complete` returns `400` (`reason: 'insufficient_funds'`) when `bankAccount < amount`.
 
 ### Balances
 ```

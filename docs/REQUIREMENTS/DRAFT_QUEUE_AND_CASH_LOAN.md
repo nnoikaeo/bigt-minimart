@@ -1,6 +1,6 @@
 # คิว Draft + สมุดยืม/คืนเงินขาย (Money Transfer & Bill Payment)
 
-> **สถานะ:** ✅ Owner อนุมัติแบบร่าง 16 ต.ค. 2569 — ☐ ยังไม่ implement
+> **สถานะ:** ✅ Owner อนุมัติแบบร่าง 16 ต.ค. 2569 — 🔧 PR 1 (คิว draft) implement แล้ว 17 ต.ค. 2569 รอ manual test — ☐ PR 2 ยังไม่ทำ
 > **ที่มา:** พบระหว่าง MT-2 Step 8 (BUG-005 ใน `docs/PROGRESS/TESTING_PLAN.md`)
 > **แผน implement:** PR 1 (คิว draft) → PR 2 (สมุดยืม/คืน) → Manual test → อัปเดต TESTING_PLAN
 > เมื่อ implement + ทดสอบเสร็จ → ย้ายไฟล์นี้ไป `docs/ARCHIVE/` และอัปเดต `WORKFLOWS.md` (FLOW 2, FLOW 3)

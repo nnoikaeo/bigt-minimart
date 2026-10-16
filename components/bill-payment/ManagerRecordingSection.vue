@@ -12,6 +12,7 @@ import {
   TrashIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
+  XCircleIcon,
   StarIcon,
   DocumentTextIcon,
   BanknotesIcon,
@@ -177,7 +178,7 @@ async function handleFormSubmit(formData: {
   amount: number
   commission: number
   customerName?: string
-  status: BillPaymentTransactionStatus
+  status?: BillPaymentTransactionStatus
   statusNote?: string
   notes?: string
 }) {
@@ -194,8 +195,8 @@ async function handleFormSubmit(formData: {
       await store.updateTransaction(editingTransaction.value.id, payload)
       successMessage.value = 'แก้ไขรายการสำเร็จ'
     } else {
-      await store.createTransaction(payload)
-      successMessage.value = 'เพิ่มรายการสำเร็จ'
+      const created = await store.createTransaction(payload)
+      successMessage.value = created.status === 'draft' ? QUEUED_MESSAGE : 'เพิ่มรายการสำเร็จ'
     }
 
     closeModal()
@@ -235,20 +236,61 @@ async function handleDeleteExecute() {
   }
 }
 
-async function handleCompleteDraft(txnId: string) {
+// ─── Draft queue ──────────────────────────────────────────────────────────────
+const QUEUED_MESSAGE = 'บันทึกเข้าคิวแล้ว — ชำระในแอปธนาคารแล้วกด "ดำเนินการ"'
+
+// รับชำระบิลจ่ายจากบัญชีธนาคาร (bankAccount)
+function getDraftShortfall(txn: BillPaymentTransaction): number {
+  if (txn.transactionType !== 'bill_payment') return 0
+  return Math.max(0, txn.amount - (store.currentBalance?.bankAccount ?? 0))
+}
+function getInsufficientMessage(txn: BillPaymentTransaction): string {
+  return `ยอดในบัญชีไม่พอ (ขาด ${formatAmount(getDraftShortfall(txn))}) — โทรหา Owner ให้ฝากเงินเข้า`
+}
+
+async function handleCompleteDraft(txn: BillPaymentTransaction) {
   if (!canManagerEdit.value) return
   if (needsOpeningBalance.value) {
     openOpeningBalanceModal()
     return
   }
   errorMessage.value = ''
+  if (getDraftShortfall(txn) > 0) {
+    errorMessage.value = getInsufficientMessage(txn)
+    return
+  }
   try {
-    await store.completeDraftTransaction(txnId)
-    successMessage.value = 'ดำเนินการรายการสำเร็จ'
-    logger.log('Draft completed', txnId)
+    await store.completeDraftTransaction(txn.id)
+    successMessage.value = 'ดำเนินการรายการสำเร็จ — นับยอดแล้ว'
+    logger.log('Draft completed', txn.id)
   } catch (err: any) {
-    errorMessage.value = err.message ?? 'เกิดข้อผิดพลาด'
+    errorMessage.value = err.data?.message ?? err.message ?? 'เกิดข้อผิดพลาด'
     logger.error('handleCompleteDraft', err)
+  }
+}
+
+// ยกเลิก draft (ชำระในแอปธนาคารไม่ผ่าน) — ไม่กระทบยอด
+const showCancelDraftConfirm = ref(false)
+const cancellingDraftId = ref('')
+
+function promptCancelDraft(id: string) {
+  if (!canManagerEdit.value) return
+  cancellingDraftId.value = id
+  showCancelDraftConfirm.value = true
+}
+
+async function handleCancelDraft() {
+  errorMessage.value = ''
+  try {
+    await store.changeTransactionStatus(cancellingDraftId.value, 'cancelled', 'ทำรายการในแอปธนาคารไม่สำเร็จ')
+    successMessage.value = 'ยกเลิกรายการแล้ว (ไม่กระทบยอด)'
+    logger.log('Draft cancelled', cancellingDraftId.value)
+  } catch (err: any) {
+    errorMessage.value = err.data?.message ?? err.message ?? 'เกิดข้อผิดพลาด'
+    logger.error('handleCancelDraft', err)
+  } finally {
+    showCancelDraftConfirm.value = false
+    cancellingDraftId.value = ''
   }
 }
 
@@ -355,11 +397,10 @@ async function handleSubmitFavorite() {
       amount: Number(favAmount.value),
       commission,
       customerName: fav.customerName || undefined,
-      status: 'completed',
       recordedBy: props.currentUser.uid,
       recordedAt: new Date().toISOString(),
     })
-    successMessage.value = 'บันทึกรายการจาก Favorite สำเร็จ'
+    successMessage.value = QUEUED_MESSAGE
     showFavoriteModal.value = false
     logger.log('Favorite bill payment created for', props.date)
   } catch (err: any) {
@@ -494,6 +535,9 @@ onMounted(async () => {
               · {{ formatAmount(txn.amount) }}
             </span>
             <span v-if="txn.statusNote" class="text-xs text-gray-400">({{ txn.statusNote }})</span>
+            <span v-if="txn.status === 'draft' && getDraftShortfall(txn) > 0" class="text-xs text-red-600">
+              {{ getInsufficientMessage(txn) }}
+            </span>
           </div>
           <div class="flex shrink-0 gap-2">
             <ActionButton
@@ -503,10 +547,22 @@ onMounted(async () => {
               variant="primary"
               size="sm"
               :title="disableReason"
-              @click="handleCompleteDraft(txn.id)"
+              @click="handleCompleteDraft(txn)"
             >
               <template #icon><CheckCircleIcon class="h-4 w-4" /></template>
               ดำเนินการ
+            </ActionButton>
+            <ActionButton
+              v-if="txn.status === 'draft'"
+              :permission="PERMISSIONS.EDIT_FINANCE"
+              :disabled="isRowActionDisabled"
+              variant="secondary"
+              size="sm"
+              :title="disableReason || 'ชำระในแอปธนาคารไม่ผ่าน'"
+              @click="promptCancelDraft(txn.id)"
+            >
+              <template #icon><XCircleIcon class="h-4 w-4" /></template>
+              ยกเลิก
             </ActionButton>
             <ActionButton
               :permission="PERMISSIONS.EDIT_FINANCE"
@@ -702,7 +758,7 @@ onMounted(async () => {
           </li>
           <li class="flex items-center gap-2" :class="noDraftPending ? 'text-green-700' : 'text-orange-600'">
             <span class="text-base">{{ noDraftPending ? '✅' : '❌' }}</span>
-            ไม่มีรายการ Draft ค้าง
+            ไม่มีรายการรอดำเนินการค้าง
             <span v-if="!noDraftPending" class="text-orange-500">
               (เหลือ {{ store.getDraftTransactions.length }} รายการ)
             </span>
@@ -799,6 +855,18 @@ onMounted(async () => {
       variant="danger"
       @confirm="handleDeleteExecute"
       @cancel="showDeleteConfirm = false"
+    />
+
+    <!-- CONFIRM DIALOG: Cancel draft (ชำระในแอปธนาคารไม่ผ่าน) -->
+    <ConfirmDialog
+      :open="showCancelDraftConfirm"
+      title="ยกเลิกรายการ"
+      message="ชำระในแอปธนาคารไม่สำเร็จใช่หรือไม่? รายการจะถูกบันทึกเป็น ยกเลิก และไม่กระทบยอด"
+      confirm-text="ยกเลิกรายการ"
+      cancel-text="ปิด"
+      variant="warning"
+      @confirm="handleCancelDraft"
+      @cancel="showCancelDraftConfirm = false"
     />
 
     <!-- ═══════════════════════════════════════════════════════════════════════

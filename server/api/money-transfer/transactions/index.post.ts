@@ -7,8 +7,9 @@ import type { MoneyTransferTransaction } from '~/types/repositories'
  *
  * Create a new money transfer transaction
  * - Validates input with Zod
- * - Checks balance sufficiency
- * - Automatically saves as draft if insufficient balance
+ * - Draft queue: transfer/withdrawal always start as 'draft' (no balance impact) —
+ *   completed later via POST /:id/complete after the bank-app step succeeds
+ * - owner_deposit is recorded as 'completed' immediately
  * - Calculates balance impacts and snapshots
  * - Updates daily summary
  *
@@ -44,9 +45,6 @@ const createTransactionSchema = z.object({
 
   // Notes
   notes: z.string().optional(),
-
-  // Status — trust client choice; "cancelled" = failed bank transaction (no balance impact)
-  status: z.enum(['draft', 'completed', 'cancelled']).default('completed'),
 })
 
 export default defineEventHandler(async (event) => {
@@ -68,10 +66,10 @@ export default defineEventHandler(async (event) => {
       currentBalance
     )
 
-    // Trust client-chosen status — manager explicitly marks as "สำเร็จ" / "ไม่สำเร็จ"
-    // No auto-downgrade: the record reflects actual bank-app outcome, not balance availability.
-    const finalStatus: 'draft' | 'completed' | 'cancelled' = validatedData.status
-    const draftReason: string | undefined = undefined
+    // Draft queue: every transfer/withdrawal waits for "ดำเนินการ" after the bank app;
+    // owner deposits have no bank-app step and complete immediately.
+    const finalStatus: 'draft' | 'completed' =
+      validatedData.transactionType === 'owner_deposit' ? 'completed' : 'draft'
 
     // Calculate balance impacts
     let balanceAfterBankAccount = currentBalance.bankAccount
@@ -133,7 +131,6 @@ export default defineEventHandler(async (event) => {
       commissionType: validatedData.transactionType === 'owner_deposit' ? undefined : validatedData.commissionType,
       customerName: validatedData.customerName,
       status: finalStatus,
-      draftReason,
       recordedBy: validatedData.recordedBy,
       recordedByName: validatedData.recordedByName,
       notes: validatedData.notes,
@@ -192,7 +189,7 @@ export default defineEventHandler(async (event) => {
       data: newTransaction,
       message:
         finalStatus === 'draft'
-          ? `Transaction saved as draft (insufficient balance)`
+          ? 'Transaction queued as draft'
           : 'Transaction created successfully',
     }
   } catch (error: any) {

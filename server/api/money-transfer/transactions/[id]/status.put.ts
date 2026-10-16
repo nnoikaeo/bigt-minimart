@@ -8,6 +8,7 @@ import { moneyTransferJsonRepository } from '~/server/repositories/money-transfe
  *   completed → on_hold:  reverse balance (as if transaction never happened)
  *   on_hold → completed:  re-apply balance (as if creating fresh)
  *   on_hold → cancelled:  no balance change (already reversed at on_hold)
+ *   draft → cancelled:    no balance change (bank-app step failed; draft never counted)
  *
  * Requires statusNote for all transitions.
  */
@@ -21,6 +22,7 @@ const statusChangeSchema = z.object({
 const ALLOWED_TRANSITIONS: Record<string, string[]> = {
   completed: ['on_hold'],
   on_hold: ['completed', 'cancelled'],
+  draft: ['cancelled'],
 }
 
 export default defineEventHandler(async (event) => {
@@ -116,7 +118,7 @@ export default defineEventHandler(async (event) => {
         }
       }
     }
-    // on_hold → cancelled: no balance change (already reversed)
+    // on_hold/draft → cancelled: no balance change (already reversed / never applied)
 
     // ── Update transaction ───────────────────────────────────────────────────
 

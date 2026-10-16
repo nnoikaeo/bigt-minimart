@@ -438,6 +438,13 @@ Recommendation: Follow up on QR and Government transfers in next round"
 
 **บริบท**: ก่อนหน้านี้บันทึกลงกระดาษ ตอนนี้จะบันทึกผ่านแอพเพื่อให้ระบบคำนวณ balance อัตโนมัติ
 
+> **คิวรอดำเนินการ (Draft queue — Oct 2026)** — รายการโอน/ถอนใหม่ (ทั้งฟอร์มปกติและรายการโปรด) บันทึกเป็น
+> `draft` เสมอ (ยังไม่นับยอด) → พนักงานทำในแอปธนาคาร → กด **"ดำเนินการ"** (`completed`, นับยอด) หรือ
+> **"ยกเลิก"** ถ้าแอปธนาคารไม่ผ่าน (`cancelled`, ไม่กระทบยอด). ตอนกด "ดำเนินการ" ระบบเช็ค: โอน → ยอดในบัญชี,
+> ถอน → เงินสดจากโอน/ถอน — ไม่พอ = แจ้งเตือน (โอน: โทรหา Owner ให้ฝากเงินเข้า). ฝากเงิน (Owner) ไม่เข้าคิว.
+> บันทึกรายการใหม่ได้ขณะมีคิวค้าง แต่ยืนยัน Step 1 ได้เมื่อคิวว่าง.
+> ตัวอย่าง "FAILED" ด้านล่าง = ปัจจุบันคือ draft ที่กด "ยกเลิก". สเปก: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`
+
 ```
 Manager/Assistant Manager บันทึกใน /finance/money-transfer-service:
 
@@ -1149,6 +1156,11 @@ auditedBy: auditor-001
 **Step 1: Record Bill Payment Transactions (Manager/Assistant Manager บันทึกรายการรับชำระบิล)**
 
 **บริบท**: ก่อนหน้านี้บันทึกลงกระดาษ ตอนนี้จะบันทึกผ่านแอพเพื่อให้ระบบคำนวณ balance อัตโนมัติ
+
+> **คิวรอดำเนินการ (Draft queue — Oct 2026)** — รายการรับชำระบิลใหม่บันทึกเป็น `draft` เสมอ (ยังไม่นับยอด) →
+> ชำระในแอปธนาคาร → กด **"ดำเนินการ"** (`completed`; ต้องมียอดในบัญชีพอ) หรือ **"ยกเลิก"** ถ้าไม่ผ่าน
+> (`cancelled`). ฝากเงิน (Owner) ไม่เข้าคิว. ยืนยัน Step 1 ได้เมื่อคิวว่าง.
+> ตัวอย่าง "FAILED" ด้านล่าง = ปัจจุบันคือ draft ที่กด "ยกเลิก". สเปก: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`
 
 ```
 Manager/Assistant Manager บันทึกใน /finance/bill-payment-service:

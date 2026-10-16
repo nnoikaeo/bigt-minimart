@@ -10,9 +10,6 @@ const schema = z.object({
   amount: z.number().nonnegative(),
   commission: z.number().nonnegative().default(0),
   customerName: z.string().optional(),
-  status: z.enum(['completed', 'draft', 'on_hold', 'cancelled']),
-  draftReason: z.string().optional(),
-  statusNote: z.string().optional(),
   notes: z.string().optional(),
   recordedBy: z.string(),
   recordedAt: z.string().optional(),
@@ -20,6 +17,10 @@ const schema = z.object({
 
 /**
  * POST /api/bill-payment/transactions
+ *
+ * Draft queue: bill_payment always starts as 'draft' (no balance impact) and is
+ * completed via POST /:id/complete after the bank-app step succeeds.
+ * owner_deposit is recorded as 'completed' immediately.
  */
 export default defineEventHandler(async (event) => {
   try {
@@ -33,6 +34,7 @@ export default defineEventHandler(async (event) => {
     const now = new Date().toISOString()
     const txn = await billPaymentJsonRepository.addTransaction({
       ...validated,
+      status: validated.transactionType === 'owner_deposit' ? 'completed' : 'draft',
       timestamp: validated.timestamp ?? now,
       recordedAt: validated.recordedAt ?? now,
       recordedBy: authUser.uid, // server-verified identity overrides client-supplied value
