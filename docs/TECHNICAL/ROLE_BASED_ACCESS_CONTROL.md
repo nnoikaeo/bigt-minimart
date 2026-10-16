@@ -1,8 +1,25 @@
 # 🔐 Role-Based Access Control (RBAC) Implementation
 
 **Document**: Technical Implementation Guide  
-**Last Updated**: January 16, 2026  
-**Status**: Design Phase (Ready for Implementation)
+**Last Updated**: Oct 16, 2026  
+**Status**: Implemented with a different shape than this original design (Jan 2026)
+
+---
+
+## ⚠️ Implementation Status (Oct 2026)
+
+The design below was written before implementation. What was actually built:
+
+| Design (this doc) | Actual implementation |
+|-------------------|-----------------------|
+| Firestore `role_permissions` collection | JSON files: `public/data/roles.json`, `permissions.json`, `role-permissions.json`, `users.json`, `sidebar-menu.json` via `server/repositories/access-control-json.repository.ts` |
+| `GET/PUT /api/role-permissions[/:role]` | `GET /api/access-control/roles`, `GET/PUT /api/access-control/roles/:id/permissions`, `GET /api/access-control/permissions`, `/api/access-control/users[/:id]` — see [API_ENDPOINTS.md](./API_ENDPOINTS.md) |
+| `/admin/roles.vue` admin UI | `/admin/access-control` (full UI); `/admin/roles` is a placeholder page |
+| `middleware/role-based-access.ts` | `middleware/auth.ts` (authentication + loads access-control data); sidebar filtered via `GET /api/sidebar/menu` |
+| Page-level permissions only | Plus action-level permissions: `PERMISSIONS.*` in `types/permissions.ts`, `usePermissions().can()`, `<ActionButton :permission>`, `v-can` directive |
+| — | Server-side identity for Bill Payment mutations: `requireServerAuth(event)` (Firebase ID token) |
+
+Roles (`types/permissions.ts`): `owner`, `manager`, `assistant_manager`, `cashier`, `auditor`.
 
 ---
 
@@ -597,10 +614,11 @@ service cloud.firestore {
 
 - [USER_ROLES.md](../REQUIREMENTS/USER_ROLES.md) - Role definitions
 - [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) - Firestore schema
-- [SIDEBAR_IMPLEMENTATION.md](./SIDEBAR_IMPLEMENTATION.md) - Sidebar details
+- [COMPONENT_SYSTEM_ARCHITECTURE.md](./COMPONENT_SYSTEM_ARCHITECTURE.md) - `ActionButton`, `usePermissions`, `v-can`
+- [SIDEBAR_IMPLEMENTATION.md](../ARCHIVE/TECHNICAL/SIDEBAR_IMPLEMENTATION.md) - Sidebar details (archived)
 
 ---
 
-**Document Version**: 1.0  
-**Status**: Ready for Implementation  
-**Next Steps**: Start Phase 1 (Firestore setup)
+**Document Version**: 1.1  
+**Status**: Implemented (JSON-based) — see "Implementation Status" at the top  
+**Next Steps**: Firestore-based role permissions when migrating off JSON

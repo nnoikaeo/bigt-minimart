@@ -1,5 +1,20 @@
 # 🗄️ Database Schema (Firestore)
 
+> ⚠️ **Status (Oct 2026)**: This is the **target Firestore schema** from the v1.0 spec (Jan 2026).
+> Firestore is not in use yet — all data lives in JSON files under `public/data/`.
+> The source of truth for current data shapes is the TypeScript types:
+>
+> | Domain | Types | JSON files |
+> |--------|-------|------------|
+> | Users / roles | `types/user.ts`, `types/permissions.ts`, `types/access-control.ts` | `users.json`, `roles.json`, `permissions.json`, `role-permissions.json`, `sidebar-menu.json` |
+> | Daily Sales | `types/repositories.ts` (`DailySalesEntry`) | `daily-sales.json` |
+> | Money Transfer | `types/repositories.ts` (`MoneyTransferTransaction`, …) | `money-transfer-{transactions,balances,summaries,favorites,fee-config}.json` |
+> | Bill Payment | `types/bill-payment.ts` | `bill-payment-{transactions,balances,summaries,favorites,fee-config}.json` |
+> | Shared workflow statuses | `types/shared-workflow.ts` | — |
+>
+> Money Transfer and Bill Payment collections are not described below; add them here when the
+> Firestore migration is planned.
+
 ## Collections Overview
 
 ### Collection: users
@@ -383,5 +398,5 @@ interface RolePermissions {
 ---
 
 **Source**: Extracted from Technical Specification  
-**Last Updated**: Jan 7, 2026  
+**Last Updated**: Oct 16, 2026 (status note only; schema unchanged since Jan 7, 2026)  
 **Version**: 1.0  

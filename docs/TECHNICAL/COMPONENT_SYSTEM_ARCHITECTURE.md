@@ -1,8 +1,10 @@
 # 🎨 Component System Architecture & RBAC Implementation
 
-**Version**: 1.0
-**Last Updated**: Feb 9, 2026
-**Status**: 📋 Implementation Plan
+**Version**: 1.1
+**Last Updated**: Oct 16, 2026
+**Status**: ✅ Implemented (Phases 1–4). The design system is in use across Daily Sales, Money Transfer
+and Bill Payment. Sections "Context & Problem Statement" and "Implementation Plan" are kept as
+historical context (Feb 2026).
 
 ---
 
@@ -41,8 +43,7 @@ This document outlines the architecture for creating a comprehensive reusable co
 - **State Management**: Pinia (existing stores)
 - **Styling**: Tailwind CSS
 - **Icons**: Heroicons
-- **Form Validation**: VeeValidate + Zod
-- **Headless UI**: Radix Vue
+- **Form Validation**: Zod (`useValidatedForm`) — VeeValidate / Radix Vue are installed but not used
 - **Language**: TypeScript
 
 ---
@@ -349,58 +350,57 @@ const handleEdit = async (id, data) => {
 
 ### Directory Structure
 
+Actual structure (Oct 2026):
+
 ```
 components/
-├── ui/                              # Design System
-│   ├── button/
-│   │   ├── BaseButton.vue          # Core button
-│   │   └── ActionButton.vue        # Button with permissions
-│   ├── form/
-│   │   ├── BaseInput.vue
-│   │   ├── BaseSelect.vue
-│   │   ├── BaseTextarea.vue
-│   │   └── FormField.vue           # Wrapper with label/error
-│   ├── table/
-│   │   ├── BaseTable.vue           # Simple table
-│   │   └── DataTable.vue           # Advanced table
-│   ├── feedback/
-│   │   ├── BaseAlert.vue
-│   │   ├── BaseModal.vue           # Using Radix Dialog
-│   │   └── ConfirmDialog.vue
-│   └── display/
-│       ├── BaseCard.vue
-│       ├── BaseBadge.vue
-│       └── BaseAvatar.vue
+├── ui/                              # Design System (no path prefix)
+│   ├── button/    BaseButton, ActionButton (permission-gated)
+│   ├── form/      BaseInput, BaseSelect, BaseTextarea, FormField
+│   ├── table/     BaseTable, DataTable, PaginationControl
+│   ├── feedback/  BaseAlert, BaseModal
+│   └── display/   BaseCard, BaseBadge, CollapsibleSection
 │
-├── layout/                          # Page Structure
-│   ├── PageWrapper.vue             # Standard page container
-│   ├── PageHeader.vue              # Page header with actions
-│   ├── EmptyState.vue
-│   ├── LoadingState.vue
-│   ├── Header.vue                  # (Existing)
-│   ├── Sidebar.vue                 # (Existing)
-│   └── Breadcrumb.vue              # (Existing)
+├── layout/                          # Page Structure (no path prefix)
+│   └── PageWrapper, PageHeader, EmptyState, LoadingState
 │
-└── domain/                          # Feature-specific
-    └── sales/
-        ├── DailySalesTable.vue     # (Refactor)
-        └── DailySalesModal.vue     # (Refactor)
+├── shared/                          # Shared by Money Transfer + Bill Payment (no path prefix)
+│   └── WorkflowProgressBar, QuickGlanceSummary, CompactBalanceSummary, BalanceSnapshot,
+│       CashVerificationTable, TransactionTable, WorkflowStepSummaryCard, OwnerDecisionCard
+│
+├── money-transfer/                  # FLOW 2 (prefix: MoneyTransfer*)
+│   └── ManagerRecordingSection, CashVerificationSection, AuditorReviewSection,
+│       OwnerApprovalSection, TransactionForm, TransactionTypeSelector, ChannelSelector,
+│       PromptPayFields, BankAccountFields, BalanceDisplay
+│
+├── bill-payment/                    # FLOW 3 (prefix: BillPayment*)
+│   └── ManagerRecordingSection, CashVerificationSection, AuditorReviewSection,
+│       OwnerApprovalSection, TransactionForm
+│
+└── (root)                           # App shell + Daily Sales
+    └── Header, Sidebar, Breadcrumb, CollapsibleGroup, ConfirmDialog,
+        DailySalesTable, DailySalesModal, DailySalesDetailsModal
 ```
 
 ### Naming Conventions
 
 - **Base Components**: `Base{ComponentName}.vue` (e.g., `BaseButton.vue`)
-- **Feature Components**: `{Feature}{ComponentName}.vue` (e.g., `DataTable.vue`)
-- **Domain Components**: `{Domain}{ComponentName}.vue` (e.g., `DailySalesTable.vue`)
+- **Shared Workflow Components**: descriptive name, service-agnostic props (e.g., `CashVerificationTable.vue`)
+- **Domain Components**: role/section name inside the feature folder (e.g., `money-transfer/AuditorReviewSection.vue`)
 - **Layout Components**: `{Purpose}.vue` (e.g., `PageHeader.vue`)
 
 ### Auto-Import
 
-Nuxt auto-imports components, no manual imports needed:
+Configured in `nuxt.config.ts`:
 
 ```vue
-<!-- No import required -->
+<!-- ui/*, layout/, shared/ — no prefix -->
 <BaseButton variant="primary">Click</BaseButton>
+<WorkflowProgressBar :steps="steps" :current-status="status" :status-to-step-map="map" />
+
+<!-- domain folders — path prefix -->
+<MoneyTransferAuditorReviewSection />
+<BillPaymentManagerRecordingSection />
 ```
 
 ---
@@ -614,7 +614,7 @@ See the full implementation in the [Implementation Plan](#implementation-plan) s
 2. **ActionButton** - Button with permission checking
 3. **FormField** - Form field wrapper with label/error
 4. **BaseInput, BaseSelect, BaseTextarea** - Form inputs
-5. **BaseModal** - Modal using Radix Vue
+5. **BaseModal** - Modal dialog
 6. **DataTable** - Advanced table with sort/filter/pagination
 7. **BaseBadge** - Status badges
 8. **BaseCard** - Content card
@@ -781,10 +781,10 @@ Always provide ARIA labels:
 - [COMPONENT_QUALITY_CHECKLIST.md](../DEVELOPMENT/COMPONENT_QUALITY_CHECKLIST.md) - Testing checklist
 - [STATE_MANAGEMENT_ARCHITECTURE.md](./STATE_MANAGEMENT_ARCHITECTURE.md) - Pinia stores
 - [ROLE_BASED_ACCESS_CONTROL.md](./ROLE_BASED_ACCESS_CONTROL.md) - RBAC overview
-- [UI_UX_GUIDELINES.md](../DESIGN/UI_UX_GUIDELINES.md) - Design guidelines
+- [DESIGN_SYSTEM.md](../DESIGN/DESIGN_SYSTEM.md) - Design guidelines
 
 ---
 
-**Status**: 📋 Implementation Plan Ready
-**Last Updated**: Feb 9, 2026
-**Version**: 1.0
+**Status**: ✅ Implemented
+**Last Updated**: Oct 16, 2026
+**Version**: 1.1

@@ -1,143 +1,68 @@
-# Deployment & CI/CD Guide
+# Deployment Guide
 
-## Overview
-
-This document covers deployment processes and CI/CD pipeline configuration for bigt-minimart.
-
-## Table of Contents
-
-1. [Firebase Hosting Setup](#firebase-hosting-setup)
-2. [CI/CD Pipeline Architecture](#cicd-pipeline-architecture)
-3. [Deployment Processes](#deployment-processes)
-4. [Troubleshooting](#troubleshooting)
+**See also**: [CI_CD.md](./CI_CD.md) · [FIREBASE.md](../TECHNICAL/FIREBASE.md) · [FIREBASE_COMMANDS.md](../REFERENCE/FIREBASE_COMMANDS.md)
 
 ---
 
-## Firebase Hosting Setup
+## Environments
 
-Firebase Hosting is configured for automatic deployments from GitHub Actions.
+| Environment | Branch | Target | How |
+|-------------|--------|--------|-----|
+| Local | any | `http://localhost:3000` | `npm run dev` |
+| Staging | `develop` | Firebase Hosting preview channel `staging` (7-day expiry) | Automatic on push |
+| Production | `main` | Firebase Hosting `live` | Automatic on push |
 
-### Prerequisites
+## Build Configuration
 
-- Firebase project already created
-- Firebase CLI installed locally
-- GitHub Secrets configured:
-  - `FIREBASE_PROJECT_ID` - Your Firebase Project ID
-  - `FIREBASE_SERVICE_ACCOUNT_JSON` - Service account JSON file
+- **Framework**: Nuxt 4 + Vue 3
+- **Nitro preset**: `node-server` (server output in `.output/server`, static assets in `.output/public`)
+- **Prerender**: `/` only (`crawlLinks: false`)
+- **firebase.json**: Hosting serves `.output/public`; all routes rewrite to Cloud Function `nuxtServer`
+  (source `.output/server`, runtime `nodejs20`)
 
-### Local Setup
+## Release Flow
 
-```bash
-npm install -g firebase-tools
-firebase login
-firebase serve  # Test locally
+```
+feature/* ──PR──► develop ──(auto)──► Staging
+                     │
+                     └──PR (release)──► main ──(auto)──► Production
 ```
 
-### Staging Deployment
+1. Feature branch → PR to `develop` → PR Check passes → squash merge
+2. Release PR `develop` → `main` (title `release: ...`) → merge
+3. Merge `main` back into `develop` if the release created a merge commit
 
-- **Trigger**: Push to `develop` branch
-- **URL**: Preview channel (7-day retention)
-- **Purpose**: Internal testing and QA
-
-### Production Deployment
-
-- **Trigger**: Push to `main` branch
-- **URL**: Live Firebase Hosting site
-- **Purpose**: Public-facing application
-
----
-
-## CI/CD Pipeline Architecture
-
-### Workflows
-
-1. **PR Validation** (pr-check.yml)
-   - Runs on: Pull requests to develop/main
-   - Checks: lint, type-check, build
-   - Status: Required to merge
-
-2. **Staging Deploy** (deploy-staging.yml)
-   - Runs on: Push to develop
-   - Action: Build + deploy to staging
-   - Status: Automatic
-
-3. **Production Deploy** (deploy-production.yml)
-   - Runs on: Push to main
-   - Action: Build + deploy to production
-   - Status: Automatic
-
-### Build Configuration
-
-- **Preset**: Static generation (Nitro)
-- **Output**: `.output/public` directory
-- **Prerendered Pages**: `/login`, `/setup`
-- **Framework**: Nuxt 4 with Vue 3
-
----
-
-## Deployment Processes
-
-### Step-by-Step Deployment
-
-1. **Develop Branch** → Staging
-   ```
-   Feature Branch → PR to develop → Checks pass → Merge → Auto-deploy to staging
-   ```
-
-2. **Main Branch** → Production
-   ```
-   Develop → PR to main → Review → Merge → Auto-deploy to production
-   ```
-
-### Local Testing Before Deploy
+## Pre-deploy Checklist (local)
 
 ```bash
-# Build static site
-npm run generate
-
-# Test locally
-firebase serve
-
-# Visit http://localhost:5000
+npm test             # Vitest unit + integration
+npm run lint         # nuxt typecheck
+npm run type-check   # vue-tsc --noEmit
+npm run build
+npm run preview      # smoke-test the production build
 ```
 
-### Manual Deployment (if needed)
-
-```bash
-npm run generate
-firebase deploy --only hosting
-```
-
----
-
-## Troubleshooting
-
-### Build Fails
+## Manual Deployment (if needed)
 
 ```bash
 npm run build
-npm run type-check
-npm run lint
+firebase deploy --only hosting            # hosting only
+firebase deploy --only functions,hosting  # server + hosting
 ```
 
-### Deployment Not Triggering
+## Rollback
 
-- Check GitHub Actions logs
-- Verify secrets are set correctly
-- Ensure branch names match exactly
+Firebase Console → Hosting → Release history → select previous release → **Rollback**
 
-### Preview URL Issues
+## Troubleshooting
 
-- Clear browser cache
-- Check Firebase Console for deployment status
-- Verify `.output/public` directory exists
+| Problem | Check |
+|---------|-------|
+| Build fails in CI | `gh run view <id> --log-failed`, then reproduce with `npm run lint && npm run type-check && npm run build` |
+| Deploy not triggering | Branch name (`develop` / `main`), workflow file, GitHub Actions tab |
+| Deploy auth error | Secrets `FIREBASE_SERVICE_ACCOUNT_JSON`, `FIREBASE_PROJECT_ID` |
+| 401 from API locally | `firebase-service-account.json` present? (see [FIREBASE.md](../TECHNICAL/FIREBASE.md)) |
 
 ---
 
-## Additional Resources
-
-- [Firebase Hosting Setup Guide](./FIREBASE_HOSTING_SETUP.md)
-- [Firebase Commands Reference](./FIREBASE_COMMANDS.md)
-- [Deployment Checklist](./FIREBASE_DEPLOYMENT_CHECKLIST.md)
-- [CI/CD Pipeline Documentation](./CI_CD_SETUP.md)
-
+**Last Updated**: Oct 16, 2026

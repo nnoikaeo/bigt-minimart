@@ -6,8 +6,8 @@ Thank you for interest in contributing to **bigt-minimart**! This guide will hel
 
 ### Prerequisites
 
-- Node.js 18+
-- npm 8+
+- Node.js 20+ (CI uses Node 20)
+- npm 10+
 - Git
 - GitHub account
 
@@ -21,9 +21,15 @@ cd bigt-minimart
 # Install dependencies
 npm install
 
+# Configure Firebase client (fill in values)
+cp .env.example .env
+
 # Create a feature branch
 git checkout -b feature/your-feature-name
 ```
+
+Optional: place `firebase-service-account.json` at the project root to enable server-side token
+verification (git-ignored — never commit it).
 
 ## Development Workflow
 
@@ -51,10 +57,13 @@ npm run dev
 Before committing, run these checks:
 
 ```bash
-# Lint and fix code style
+# Unit + integration tests (not run in CI yet — run locally!)
+npm test
+
+# Nuxt type check
 npm run lint
 
-# Type check TypeScript
+# vue-tsc type check
 npm run type-check
 
 # Build to verify no errors
@@ -102,9 +111,9 @@ Then create a PR on GitHub:
 ### 7. Merge and Deploy
 
 Once approved:
-- Click "Merge pull request" on GitHub
-- Verify staging deployment succeeds
-- Monitor for issues
+- Use **Squash and merge** on GitHub
+- Delete the branch (local + remote)
+- Verify the Deploy Staging run succeeds (`gh run list --branch develop`)
 
 ## CI/CD Pipeline
 
@@ -114,7 +123,7 @@ All pull requests automatically run **PR Validation Checks**:
 
 | Check | Command | Purpose |
 |-------|---------|---------|
-| **Lint** | `npm run lint` | Code style and quality (ESLint, Prettier) |
+| **Lint** | `npm run lint` | `nuxt typecheck` (no ESLint/Prettier configured) |
 | **Type Check** | `npm run type-check` | TypeScript type safety |
 | **Build Test** | `npm run build` | Verify code builds without errors |
 
@@ -131,13 +140,11 @@ Click **Details** to see what failed.
 
 ### Common Issues & Fixes
 
-#### Lint Errors
+#### Lint (nuxt typecheck) Errors
 
 ```bash
-# Auto-fix most lint issues
+# Re-run locally and fix the files shown in the output
 npm run lint
-
-# If still failing, manually fix files shown in error
 ```
 
 #### Type Errors
@@ -196,17 +203,19 @@ const emit = defineEmits<{
 
 ### Naming Conventions
 
-- **Files**: kebab-case for components and utilities (`user-card.vue`, `format-date.ts`)
+- **Component files**: PascalCase (`TransactionForm.vue`, `BaseButton.vue`)
+- **Composables**: camelCase with `use` prefix (`useCommission.ts`)
+- **Stores / server files**: kebab-case (`money-transfer.ts`, `money-transfer-json.repository.ts`)
 - **Classes**: PascalCase (`UserCard`, `AuthService`)
 - **Functions**: camelCase (`formatDate`, `getUserById`)
 - **Constants**: SCREAMING_SNAKE_CASE (`MAX_RETRIES`, `DEFAULT_TIMEOUT`)
 
 ## Testing
 
-If tests exist, run before submitting:
+Vitest is set up (`tests/unit/`, `tests/integration/`). Run before submitting:
 
 ```bash
-npm run test
+npm test
 ```
 
 Write tests for:
@@ -224,8 +233,8 @@ Update documentation when:
 
 Update relevant files:
 - Code comments (JSDoc style)
-- [`docs/`](docs) directory
-- [`README.md`](../../README.md)
+- [`docs/`](../docs/README.md) directory (especially [`docs/PROGRESS/STATUS.md`](../docs/PROGRESS/STATUS.md))
+- [`README.md`](../README.md)
 
 ## Deployment Process
 
@@ -245,9 +254,8 @@ Feature Branch → PR to develop → Checks Pass → Merge → Auto-Deploy to St
 
 ### Production Environment
 
-- Manual approval required
-- Only from main branch
-- Merged releases/hotfixes
+- Auto-deploys on push to `main`
+- Only via release PR (`develop` → `main`) or hotfix
 
 ## Code Review Checklist
 
@@ -278,17 +286,20 @@ Found a bug? Create an issue:
 ```
 bigt-minimart/
 ├── pages/              # Route pages (Nuxt)
-├── components/         # Vue components
+├── components/         # ui/, layout/, shared/, money-transfer/, bill-payment/
 ├── composables/        # Composable functions
-├── stores/            # Pinia state management
-├── server/            # Backend API routes
-│   ├── api/          # API endpoints
-│   └── utils/        # Server utilities
-├── types/            # TypeScript type definitions
-├── utils/            # Utility functions
-├── assets/           # Static assets
-├── docs/             # Documentation
-└── public/           # Public files
+├── stores/             # Pinia state management
+├── layouts/ middleware/ plugins/
+├── server/
+│   ├── api/            # API endpoints
+│   ├── repositories/   # JSON / Firestore data access
+│   └── utils/          # Server utilities
+├── types/              # TypeScript type definitions
+├── utils/              # Utility functions
+├── assets/             # Static assets
+├── tests/              # unit/ + integration/ (Vitest)
+├── docs/               # Documentation
+└── public/data/        # JSON data store (dev)
 ```
 
 ## Git Workflow Tips
@@ -305,7 +316,7 @@ git rebase origin/develop
 ```bash
 git fetch origin
 git rebase origin/develop
-git push origin feature/your-feature -f
+git push origin feature/your-feature --force-with-lease
 ```
 
 ### View changes before commit
@@ -317,7 +328,7 @@ git diff --staged     # Staged changes
 
 ## Questions or Need Help?
 
-- 📖 Check documentation in [`docs/`](docs)
+- 📖 Check documentation in [`docs/`](../docs/README.md)
 - 💬 Open an issue for questions
 - 🐛 Report bugs with detailed info
 - 📧 Reach out to the team

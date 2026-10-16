@@ -1,7 +1,8 @@
 # แผนการทดสอบ Service Harmonization (Phase 1-6)
 
 > **วันที่จัดทำ:** 14 เมษายน 2569  
-> **อ้างอิง:** `docs/PROGRESS/SERVICE_HARMONIZATION_PLAN.md`  
+> **อ้างอิง:** `docs/ARCHIVE/PROGRESS/SERVICE_HARMONIZATION_PLAN.md` (archived — implementation complete)  
+> **อัปเดตล่าสุด:** 16 ต.ค. 2569  
 > **สถานะ implement:** Phase 1-6 เสร็จสมบูรณ์ (27 Tasks, PRs #127-#140)  
 > **เป้าหมาย:** ทดสอบทุก feature ที่ implement เพื่อยืนยันว่าทำงานถูกต้องก่อน deploy
 
@@ -549,10 +550,10 @@ BUG-001: [Task ที่พบ] — [อธิบายปัญหาสั้�
 **Skill:** `webapp-testing`
 
 ```
-ฉันต้องการ setup Playwright สำหรับ E2E testing ในโปรเจค Nuxt 3
+ฉันต้องการ setup Playwright สำหรับ E2E testing ในโปรเจค Nuxt 4
 
 โปรเจคนี้:
-- ใช้ Nuxt 3 (dev server: http://localhost:3000)
+- ใช้ Nuxt 4 (dev server: http://localhost:3000)
 - Auth: Firebase Auth (email/password)
 - 3 Roles: Manager, Auditor, Owner
 - Data: JSON files (public/data/) — dev mode
@@ -753,17 +754,29 @@ Screenshots บันทึกที่: tests/e2e/screenshots/
 
 ### Money Transfer Test Dates
 
-| Date | Status | ใช้ทดสอบ |
-|------|--------|---------|
-| 2026-03-09 | `step1_in_progress` | MT-2 (Manager flow) |
-| 2026-03-08 | `step1_completed` | MT-2 (Step 2) |
-| 2026-03-04 | `step2_completed` | MT-3 (Auditor flow) |
-| 2026-02-27 | `approved` | MT-4 (Owner view approved) |
-| (วันใหม่) | ไม่มีข้อมูล | MT-2 (สร้างใหม่ full flow) |
+> อัปเดตจาก `public/data/*-summaries.json` เมื่อ 16 ต.ค. 2569 — สถานะจะเปลี่ยนตามการทดสอบ
+
+| Date | Status | Transactions | ใช้ทดสอบ |
+|------|--------|--------------|---------|
+| 2026-03-11 | `step1_in_progress` | 3 (completed) | MT-2 Step 8-10 (Manager flow) |
+| 2026-03-10 | `step2_completed` | 10 (9 completed, 1 cancelled) | MT-3 (Auditor flow) — 10 รายการพอดี (pagination ต้องมี > 10) |
+| 2026-03-09 | `step2_completed` | 5 | MT-3 (Auditor flow) |
+| 2026-03-08 | `step1_completed` | 5 | MT-2 Step 11 (Cash Verification) |
+| 2026-03-04 | `approved` | 2 | MT-4 (Owner view approved) |
+| 2026-02-27 | `approved` | 6 | MT-4 (Owner view approved) |
+| — | `audited` | ไม่มีข้อมูล | MT-4 — ต้องสร้างจาก MT-3 ก่อน |
+| (วันใหม่) | ไม่มีข้อมูล | — | MT-2 (สร้างใหม่ full flow) |
 
 ### Bill Payment Test Dates
 
-> ตรวจสอบ seed data ใน `public/data/bill-payment-*.json`
+| Date | Status | Transactions | ใช้ทดสอบ |
+|------|--------|--------------|---------|
+| 2026-04-01 | `step1_in_progress` | 1 (cancelled) | BP-2 (Manager flow) |
+| 2026-01-30 | `step2_completed` | 1 | BP-3 (Auditor flow) |
+| 2026-01-31 | `approved` | 4 (3 completed, 1 cancelled) | BP-4 (Owner view approved) |
+| 2026-01-29 | `approved` | 4 (3 completed, 1 cancelled) | BP-4 (Owner view approved) |
+| — | `step1_completed` / `audited` | ไม่มีข้อมูล | ต้องสร้างจาก flow ก่อนหน้า |
+| (วันใหม่) | ไม่มีข้อมูล | — | BP-2 (สร้างใหม่ full flow) |
 
 ### Test Accounts
 

@@ -1,6 +1,6 @@
 # bigt-minimart
 
-> A modern Nuxt.js 3 + Firebase mini-mart application with comprehensive CI/CD pipeline
+> ระบบจัดการร้านบิ๊กธี มินิมาร์ท — Nuxt 4 + Vue 3 + Firebase
 
 [![PR Check](https://github.com/nnoikaeo/bigt-minimart/actions/workflows/pr-check.yml/badge.svg)](https://github.com/nnoikaeo/bigt-minimart/actions/workflows/pr-check.yml)
 [![Deploy Staging](https://github.com/nnoikaeo/bigt-minimart/actions/workflows/deploy-staging.yml/badge.svg)](https://github.com/nnoikaeo/bigt-minimart/actions/workflows/deploy-staging.yml)
@@ -8,141 +8,76 @@
 
 ## Tech Stack
 
-- **Frontend**: [Nuxt 3](https://nuxt.com) + [Vue 3](https://vuejs.org) + [TypeScript](https://www.typescriptlang.org)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com)
-- **Database**: [Firebase](https://firebase.google.com)
-- **Package Manager**: npm
-- **Node Version**: 18+
+- **Frontend**: [Nuxt 4](https://nuxt.com) + [Vue 3](https://vuejs.org) (`<script setup lang="ts">`) + [TypeScript](https://www.typescriptlang.org)
+- **Styling**: [Tailwind CSS 3](https://tailwindcss.com)
+- **State**: [Pinia 3](https://pinia.vuejs.org)
+- **Auth**: Firebase Authentication (email/password)
+- **Data**: JSON files in `public/data/` via Repository Pattern (Firestore repositories prepared, not yet active)
+- **Testing**: Vitest + Vue Test Utils + happy-dom
+- **Node**: 20+ (CI uses Node 20)
 
-## Quick Start
-
-Check the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+ดูรายละเอียดทั้งหมดที่ [docs/TECHNICAL/TECHNOLOGY_STACK.md](docs/TECHNICAL/TECHNOLOGY_STACK.md)
 
 ## Setup
 
-Make sure to install dependencies:
-
 ```bash
-# npm
 npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
+cp .env.example .env    # ใส่ค่า Firebase client config
 ```
 
-## Development Server
+สำหรับ server-side token verification ให้วาง `firebase-service-account.json` ที่ root
+(หรือตั้ง `FIREBASE_SERVICE_ACCOUNT`) — ไฟล์นี้อยู่ใน `.gitignore` แล้ว ห้าม commit
 
-Start the development server on `http://localhost:3000`:
+## Scripts
 
-```bash
-# npm
-npm run dev
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Dev server ที่ `http://localhost:3000` |
+| `npm run build` | Production build (`node-server` preset → `.output/`) |
+| `npm run preview` | Preview production build |
+| `npm run lint` | `nuxt typecheck` |
+| `npm run type-check` | `vue-tsc --noEmit` |
+| `npm test` | Vitest — unit + integration tests |
+| `npm run test:watch` | Vitest watch mode |
 
-# pnpm
-pnpm dev
+## CI/CD
 
-# yarn
-yarn dev
+| Workflow | Trigger | Steps |
+|----------|---------|-------|
+| PR Check | Pull request → `develop` / `main` | lint, type-check, build |
+| Deploy Staging | Push → `develop` | build → Firebase Hosting channel `staging` (7 days) |
+| Deploy Production | Push → `main` | type-check, build → Firebase Hosting `live` |
 
-# bun
-bun run dev
-```
-
-## Production
-
-Build the application for production:
-
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
-
-## Contributing
-
-Please read our [Contributing Guide](.github/CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
-
-### Local Development Checklist
-
-Before submitting a pull request, make sure to run:
-
-```bash
-# Install dependencies
-npm install
-
-# Run code quality checks
-npm run lint      # Lint and fix code style
-npm run type-check # TypeScript type checking
-npm run build     # Test build
-
-# Start dev server for testing
-npm run dev
-```
-
-All checks must pass before merging. See [CI/CD Pipeline Documentation](docs/CI_CD_SETUP.md) for more details.
-
-## CI/CD Pipeline
-
-This project has automated CI/CD pipeline:
-
-- **PR Validation**: Automatic checks on all pull requests (lint, type-check, build)
-- **Staging Deploy**: Automatic deployment to staging on `develop` branch
-- **Production Deploy**: Automatic deployment to production on `main` branch
-
-See [CI/CD Setup Documentation](docs/CI_CD_SETUP.md) for complete details on workflows and deployment.
+ดู [docs/DEVELOPMENT/CI_CD.md](docs/DEVELOPMENT/CI_CD.md) และ [docs/DEVELOPMENT/DEPLOYMENT.md](docs/DEVELOPMENT/DEPLOYMENT.md)
 
 ## Project Structure
 
 ```
-src/
-├── pages/           # Route pages
-├── components/      # Vue components
-├── composables/     # Composable logic
-├── stores/          # Pinia stores
-├── server/          # Backend API routes
-│   ├── api/        # API endpoints
-│   └── utils/      # Server utilities
-├── types/           # TypeScript definitions
-└── utils/           # Utility functions
+├── pages/            # Route pages (finance/, sales/, admin/, settings/, hr/, user/)
+├── components/       # ui/ (design system), layout/, shared/, money-transfer/, bill-payment/
+├── composables/      # useLogger, usePermissions, useCommission, ...
+├── stores/           # Pinia stores (auth, money-transfer, bill-payment, sales, ...)
+├── layouts/          # default, auth
+├── middleware/       # Route guards (auth, guest)
+├── plugins/          # firebase, apiFetch (injects Firebase ID token), directives (v-can)
+├── utils/            # sidebar-menu
+├── server/
+│   ├── api/          # Nitro API routes
+│   ├── repositories/ # JSON / Firestore data access
+│   └── utils/        # firebase-admin, serverAuth, user-service
+├── types/            # TypeScript definitions
+├── public/data/      # JSON data store (dev)
+├── tests/            # unit/ + integration/ (Vitest)
+└── docs/             # Project documentation
 ```
 
 ## Documentation
 
-- [CI/CD Setup Guide](docs/CI_CD_SETUP.md) - Pipeline overview and deployment
-- [Contributing Guide](.github/CONTRIBUTING.md) - How to contribute
-- [Development Workflow](docs/DEVELOPMENT/GIT_WORKFLOW.md) - Git workflow
+- [docs/README.md](docs/README.md) — Documentation index
+- [docs/PROGRESS/STATUS.md](docs/PROGRESS/STATUS.md) — Current project status
+- [docs/PROGRESS/TESTING_PLAN.md](docs/PROGRESS/TESTING_PLAN.md) — Current testing plan
+- [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md) — Contributing guide
+- [docs/DEVELOPMENT/GIT_WORKFLOW.md](docs/DEVELOPMENT/GIT_WORKFLOW.md) — Git workflow
 
 ## License
 

@@ -1,5 +1,8 @@
 # Implementation Plan — Task 5: Bill Payment Service Page Shell + Step 1
 
+> **Archived** (Oct 16, 2026) — FLOW 3 initial implementation (Apr 2026). The page has since been
+> refactored into a single-page orchestrator (PR #127) and harmonized with Money Transfer (PRs #128–#140).
+
 ## Goal
 
 Create `pages/finance/bill-payment-service/index.vue` for FLOW 3.

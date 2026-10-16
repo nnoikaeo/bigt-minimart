@@ -2,7 +2,7 @@
 
 > Master index for all project documentation. Each folder has one purpose.
 
-**Last Updated**: Mar 25, 2026
+**Last Updated**: Oct 16, 2026
 
 ---
 
@@ -37,8 +37,8 @@ docs/
 | [BUSINESS_REQUIREMENTS.md](REQUIREMENTS/BUSINESS_REQUIREMENTS.md) | Functional/non-functional requirements, KPIs |
 | [USER_ROLES.md](REQUIREMENTS/USER_ROLES.md) | 5 roles, permission matrix, page access |
 | [USE_CASES.md](REQUIREMENTS/USE_CASES.md) | 8 use cases with flows and success criteria |
-| [WORKFLOWS.md](REQUIREMENTS/WORKFLOWS.md) | Flow 1-4: Cash, Money Transfer, Bill Payment, Income/Expense |
-| [DEVELOPMENT_ROADMAP.md](REQUIREMENTS/DEVELOPMENT_ROADMAP.md) | Phase 1-4 roadmap, repository pattern strategy |
+| [WORKFLOWS.md](REQUIREMENTS/WORKFLOWS.md) | Flow 1-4: Cash, Money Transfer, Bill Payment, Income/Expense (+ unified status mapping) |
+| [DEVELOPMENT_ROADMAP.md](REQUIREMENTS/DEVELOPMENT_ROADMAP.md) | Original Phase 1-4 roadmap (Jan 2026) + actual-progress banner |
 
 ---
 
@@ -54,14 +54,15 @@ docs/
 
 | File | Description |
 |------|-------------|
-| [TECHNOLOGY_STACK.md](TECHNICAL/TECHNOLOGY_STACK.md) | Nuxt 3, Vue 3, TypeScript, Tailwind, Pinia, Firebase |
-| [COMPONENT_SYSTEM_ARCHITECTURE.md](TECHNICAL/COMPONENT_SYSTEM_ARCHITECTURE.md) | Design system components, RBAC, composables |
-| [STATE_MANAGEMENT_ARCHITECTURE.md](TECHNICAL/STATE_MANAGEMENT_ARCHITECTURE.md) | Pinia stores, repository pattern, caching |
-| [DATABASE_SCHEMA.md](TECHNICAL/DATABASE_SCHEMA.md) | Firestore collections, TypeScript interfaces, security rules |
-| [API_ENDPOINTS.md](TECHNICAL/API_ENDPOINTS.md) | All REST endpoints with response format |
+| [TECHNOLOGY_STACK.md](TECHNICAL/TECHNOLOGY_STACK.md) | Nuxt 4, Vue 3, TypeScript, Tailwind, Pinia 3, Firebase, Vitest |
+| [COMPONENT_SYSTEM_ARCHITECTURE.md](TECHNICAL/COMPONENT_SYSTEM_ARCHITECTURE.md) | Design system, shared workflow components, RBAC, auto-import |
+| [STATE_MANAGEMENT_ARCHITECTURE.md](TECHNICAL/STATE_MANAGEMENT_ARCHITECTURE.md) | Pinia stores (8 current), patterns |
+| [DATABASE_SCHEMA.md](TECHNICAL/DATABASE_SCHEMA.md) | Target Firestore schema (not in use yet) + pointers to current types/JSON |
+| [API_ENDPOINTS.md](TECHNICAL/API_ENDPOINTS.md) | All 72 Nitro API routes (MT, BP, sales, access control, settings) |
 | [AUTH_STORE_USAGE.md](TECHNICAL/AUTH_STORE_USAGE.md) | Auth store guide (Thai), reading user data |
-| [ROLE_BASED_ACCESS_CONTROL.md](TECHNICAL/ROLE_BASED_ACCESS_CONTROL.md) | RBAC design, permission matrix, composable, route guards |
-| [FIREBASE.md](TECHNICAL/FIREBASE.md) | Firebase project setup, hosting, deployment, security rules |
+| [ROLE_BASED_ACCESS_CONTROL.md](TECHNICAL/ROLE_BASED_ACCESS_CONTROL.md) | RBAC design + actual implementation mapping |
+| [FIREBASE.md](TECHNICAL/FIREBASE.md) | Firebase project, env vars, hosting/functions, security rules |
+| [server/repositories/README.md](../server/repositories/README.md) | Repository pattern — JSON (active) / Firestore (prepared) |
 
 ---
 
@@ -70,10 +71,11 @@ docs/
 | File | Description |
 |------|-------------|
 | [README.md](DEVELOPMENT/README.md) | Development quick start |
-| [GIT_WORKFLOW.md](DEVELOPMENT/GIT_WORKFLOW.md) | Branch strategy, commit conventions, merge policy |
+| [GIT_WORKFLOW.md](DEVELOPMENT/GIT_WORKFLOW.md) | Branch strategy, commit conventions, release PRs |
 | [COMPONENT_QUALITY_CHECKLIST.md](DEVELOPMENT/COMPONENT_QUALITY_CHECKLIST.md) | Checklist for new components (TS, RBAC, styling, a11y) |
-| [DEPLOYMENT.md](DEVELOPMENT/DEPLOYMENT.md) | Firebase Hosting deploy guide (staging/production) |
-| [CI_CD.md](DEVELOPMENT/CI_CD.md) | GitHub Actions workflows |
+| [DEPLOYMENT.md](DEVELOPMENT/DEPLOYMENT.md) | Environments, release flow, rollback |
+| [CI_CD.md](DEVELOPMENT/CI_CD.md) | GitHub Actions workflows & secrets |
+| [../.claude/PLAYBOOK.md](../.claude/PLAYBOOK.md) | AI skills playbook (Thai) |
 
 ---
 
@@ -81,7 +83,8 @@ docs/
 
 | File | Description |
 |------|-------------|
-| [STATUS.md](PROGRESS/STATUS.md) | Current project status dashboard (Weeks 1-9) |
+| [STATUS.md](PROGRESS/STATUS.md) | Current project status dashboard (Weeks 1-11) |
+| [TESTING_PLAN.md](PROGRESS/TESTING_PLAN.md) | Service Harmonization testing plan — 17 tasks (Manual → Bug Fix → E2E) |
 
 ---
 
@@ -103,6 +106,7 @@ docs/
 | Developer | [TECHNOLOGY_STACK](TECHNICAL/TECHNOLOGY_STACK.md) → [GIT_WORKFLOW](DEVELOPMENT/GIT_WORKFLOW.md) → [COMPONENT_QUALITY_CHECKLIST](DEVELOPMENT/COMPONENT_QUALITY_CHECKLIST.md) |
 | Designer | [DESIGN_SYSTEM](DESIGN/DESIGN_SYSTEM.md) |
 | Product/Manager | [WORKFLOWS](REQUIREMENTS/WORKFLOWS.md) → [STATUS](PROGRESS/STATUS.md) |
+| Tester | [TESTING_PLAN](PROGRESS/TESTING_PLAN.md) |
 
 ---
 
