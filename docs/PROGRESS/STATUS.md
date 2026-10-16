@@ -4,7 +4,7 @@
 **Updated By**: Claude Code
 **Current Branch**: develop (latest merge: PR #151; main: docs synced via PR #150, code at release #148)
 **Current Phase**: Testing — Service Harmonization (Manual Test → Bug Fix → E2E)
-**Next Up**: MT-2 Step 8 (Filter Tabs + Pagination)
+**Next Up**: PR 1 — Draft queue (MT + BP), then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`); MT-2 Step 8 pagination still untested
 
 ---
 
@@ -23,7 +23,7 @@ PHASE 1: Core Features
 ├─ Week 9: Layout Consistency & Polish            ✅ COMPLETE (100%)
 ├─ Week 5-6 (original plan): Dashboard + Reports ❌ NOT STARTED (0%)
 ├─ Week 10+: Bill Payment Service Harmonization               ✅ COMPLETE (100%)
-├─ Testing: Service Harmonization Testing Plan                 🔄 IN PROGRESS (MT-1 ✅, MT-2 Step 1-7 ✅)
+├─ Testing: Service Harmonization Testing Plan                 🔄 IN PROGRESS (MT-1 ✅, MT-2 Step 1-7 ✅, Step 8 partial — 6 bugs logged)
 └─ Overall: PHASE 1 CORE COMPLETE — Harmonization COMPLETE — Testing IN PROGRESS
 
 Timeline Status: Money Transfer feature fully shipped ✓
@@ -297,7 +297,7 @@ Components (49 total):
 🔄 Service Harmonization Testing (17 Tasks)
    ├─ Manual Test: 10 tasks (MT-1~4, BP-1~4, SHARED-1~2) 🔄 IN PROGRESS
    │     ├─ MT-1 ✅ ผ่าน
-   │     ├─ MT-2 🔄 Step 1-7 ผ่าน — เหลือ Step 8-11 (Filter/Pagination, Favorites, Checklist, Cash Verification)
+   │     ├─ MT-2 🔄 Step 1-7 ผ่าน, Step 8 tabs/filter/badge ผ่าน (16 ต.ค.) — เหลือ Step 8 pagination, 9-11; BUG-001~006 ใน TESTING_PLAN; Step 6 ต้องทดสอบใหม่หลังคิว draft
    │     └─ MT-3, MT-4, BP-1~4, SHARED-1~2 ☐ NOT STARTED
    ├─ Bug Fix: 2 tasks (BugFix-1, BugFix-2)              ☐ WAITING FOR MANUAL TEST
    ├─ E2E Playwright: 5 tasks (E2E-1~5)                   ☐ WAITING FOR BUG FIX

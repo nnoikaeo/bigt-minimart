@@ -39,6 +39,7 @@ docs/
 | [USE_CASES.md](REQUIREMENTS/USE_CASES.md) | 8 use cases with flows and success criteria |
 | [WORKFLOWS.md](REQUIREMENTS/WORKFLOWS.md) | Flow 1-4: Cash, Money Transfer, Bill Payment, Income/Expense (+ unified status mapping) |
 | [DEVELOPMENT_ROADMAP.md](REQUIREMENTS/DEVELOPMENT_ROADMAP.md) | Original Phase 1-4 roadmap (Jan 2026) + actual-progress banner |
+| [DRAFT_QUEUE_AND_CASH_LOAN.md](REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md) | Approved spec (not yet implemented): draft queue for MT/BP + borrow/repay sales cash |
 
 ---
 
