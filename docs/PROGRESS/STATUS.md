@@ -2,7 +2,7 @@
 
 **Last Updated**: Oct 16, 2026
 **Updated By**: Claude Code
-**Current Branch**: develop (latest merge: PR #149)
+**Current Branch**: develop (latest merge: PR #151; main: docs synced via PR #150, code at release #148)
 **Current Phase**: Testing — Service Harmonization (Manual Test → Bug Fix → E2E)
 **Next Up**: MT-2 Step 8 (Filter Tabs + Pagination)
 
@@ -153,6 +153,22 @@ Timeline Status: Money Transfer feature fully shipped ✓
    ├─ ลบปุ่ม ⋮ (Status Change Modal) → เปลี่ยนสถานะผ่าน Edit Modal เท่านั้น
    ├─ ช่อง "เหตุผล/หมายเหตุสถานะ" แสดงเมื่อเลือก draft/on_hold/cancelled (ไม่ required)
    └─ Workflow edit gate: แก้ไขรายการได้เฉพาะสถานะ workflow ที่อนุญาต
+```
+
+### Week 12 (Oct 16, 2026): Project Re-entry — Docs & Tooling
+
+**PRs**: #150 (docs → main), #151
+
+```
+✅ Documentation sync (commit 6f19509 + PR #150)
+   ├─ All active .md files verified against code (Nuxt 4, 72 API routes, CI, Firebase config)
+   ├─ Completed plans archived to docs/ARCHIVE/
+   └─ main received docs only — PR #149 code + test data stay on develop until BP-2 passes
+
+✅ CLAUDE.md + SessionStart hook (PR #151)
+   ├─ CLAUDE.md = single source of project facts for Claude Code (replaces private memory)
+   ├─ "Keeping docs in sync" rules (STATUS.md / TESTING_PLAN.md / tech docs)
+   └─ .claude/hooks/session-status.mjs prints this file's header + testing progress at session start
 ```
 
 ### Week 9 (Mar 23-25): Layout Consistency & Polish
