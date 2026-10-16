@@ -1,9 +1,10 @@
 # Project Status Dashboard
 
-**Last Updated**: Apr 14, 2026
-**Updated By**: GitHub Copilot
-**Current Branch**: develop (latest merge: PR #141)
+**Last Updated**: Oct 16, 2026
+**Updated By**: Claude Code
+**Current Branch**: develop (latest merge: PR #149)
 **Current Phase**: Testing — Service Harmonization (Manual Test → Bug Fix → E2E)
+**Next Up**: MT-2 Step 8 (Filter Tabs + Pagination)
 
 ---
 
@@ -22,7 +23,7 @@ PHASE 1: Core Features
 ├─ Week 9: Layout Consistency & Polish            ✅ COMPLETE (100%)
 ├─ Week 5-6 (original plan): Dashboard + Reports ❌ NOT STARTED (0%)
 ├─ Week 10+: Bill Payment Service Harmonization               ✅ COMPLETE (100%)
-├─ Testing: Service Harmonization Testing Plan                 🔄 IN PROGRESS
+├─ Testing: Service Harmonization Testing Plan                 🔄 IN PROGRESS (MT-1 ✅, MT-2 Step 1-7 ✅)
 └─ Overall: PHASE 1 CORE COMPLETE — Harmonization COMPLETE — Testing IN PROGRESS
 
 Timeline Status: Money Transfer feature fully shipped ✓
@@ -130,6 +131,30 @@ Timeline Status: Money Transfer feature fully shipped ✓
          └─ UX Consistency: both services share shared components + patterns
 ```
 
+### Week 11 (Apr 14-21): Manual Testing — MT-1 + MT-2 Fixes
+
+**PRs**: #142 (release → main), #143–#149
+
+```
+✅ MT-1: History Page — ผ่านทั้งหมด (PR #143, #144, #145, #146)
+   ├─ Unify status labels + badge colors ระหว่าง MT / BP
+   ├─ Pending Inbox card → filter รายการตาม role
+   └─ แก้ column header ในตาราง
+
+✅ MT-2 Step 1-6: Transaction Form UX (PR #147, release #148 → main)
+   ├─ TransactionForm: lock type switcher, cash/transfer toggle เฉพาะ withdrawal
+   ├─ Commission: บังคับ cash สำหรับ transfer/deposit, คง commission=0 (manual) ตอนแก้ไข
+   ├─ Detail modal: แสดง commission เสมอ + Bank Reconciliation (before/after/delta)
+   ├─ Server: เชื่อ status จาก client (ไม่ auto-draft), รองรับ "cancelled"
+   └─ Workflow labels: Auditor → ตรวจสอบ, Owner → อนุมัติ
+
+✅ MT-2 Step 7 + BP Status UX (PR #149)
+   ├─ แก้ 401 error ใน BP (apiFetch plugin + summaries API)
+   ├─ ลบปุ่ม ⋮ (Status Change Modal) → เปลี่ยนสถานะผ่าน Edit Modal เท่านั้น
+   ├─ ช่อง "เหตุผล/หมายเหตุสถานะ" แสดงเมื่อเลือก draft/on_hold/cancelled (ไม่ required)
+   └─ Workflow edit gate: แก้ไขรายการได้เฉพาะสถานะ workflow ที่อนุญาต
+```
+
 ### Week 9 (Mar 23-25): Layout Consistency & Polish
 
 **PRs**: #80, #81, #82, #83, #84, #85
@@ -156,25 +181,31 @@ Timeline Status: Money Transfer feature fully shipped ✓
 
 ```
 Frontend ✅
-  ├─ Nuxt 3 + Vue 3 Composition API (<script setup lang="ts">)
-  ├─ TypeScript (strict, @ts-nocheck only on money-transfer store)
+  ├─ Nuxt 4 + Vue 3 Composition API (<script setup lang="ts">)
+  ├─ TypeScript (strict, @ts-nocheck on money-transfer + bill-payment stores)
   ├─ Tailwind CSS (BigT Red #EF3340)
-  ├─ Pinia stores (sales, money-transfer, auth)
-  ├─ Design System: 18+ reusable UI components (auto-imported)
-  └─ Composables: useLogger, usePermissions
+  ├─ Pinia stores (8): auth, ui, sidebar, access-control, sales, money-transfer, bill-payment, daily-record-settings
+  ├─ Design System: 14 ui/ + 4 layout/ + 8 shared/ components (auto-imported)
+  └─ Composables (13): useLogger, usePermissions, useCommission, useMoneyTransferHelpers, useBillPaymentHelpers, ...
 
 Backend ✅
-  ├─ Nuxt Server API
-  ├─ Firebase Admin SDK
-  ├─ Repository Pattern (JSON + Firestore abstraction)
-  └─ Zod validation
+  ├─ Nuxt Server API (Nitro, node-server preset)
+  ├─ Firebase Admin SDK (token verification via requireServerAuth)
+  ├─ Repository Pattern — all active repositories are JSON (public/data/); Firestore repos prepared, not wired
+  └─ Zod validation (access-control routes)
 
 Auth & RBAC ✅
   ├─ Firebase Auth (email/password)
-  ├─ 3 roles: Owner, Manager/AM, Auditor
-  ├─ Permission-gated ActionButton component
+  ├─ 5 roles: owner, manager, assistant_manager, cashier, auditor
+  ├─ Permission-gated ActionButton component + v-can directive
   ├─ middleware/auth on all finance pages
-  └─ PERMISSIONS.EDIT_FINANCE / VIEW_FINANCE
+  ├─ PERMISSIONS.EDIT_FINANCE / VIEW_FINANCE
+  └─ ⚠️ requireServerAuth on Bill Payment mutations only (Money Transfer routes not yet)
+
+Testing ✅
+  ├─ Vitest: 18 files / 280 tests (unit: shared + BP components, store, helpers; integration: MT, BP, cross-service, daily-sales)
+  ├─ ⚠️ CI (PR Check) does not run tests yet
+  └─ E2E (Playwright): not installed yet
 
 Money Transfer Workflow ✅
   ├─ step1_in_progress → Manager records transactions
@@ -198,20 +229,28 @@ Bill Payment Workflow ✅ COMPLETE
 ## Key Pages & Components
 
 ```
-Pages (25 total):
-  ├─ finance/money-transfer-service/index.vue  — Main workflow page (~2200 lines)
-  ├─ finance/money-transfer-history.vue        — History & entry point
+Pages (26 total — 16 functional, 10 placeholders):
+  ├─ finance/money-transfer-service/index.vue  — MT orchestrator (~290 lines, 4 role sub-components)
+  ├─ finance/money-transfer-history.vue        — MT history & entry point
+  ├─ finance/bill-payment-service/index.vue    — BP orchestrator (~215 lines, 4 role sub-components)
+  ├─ finance/bill-payment-history.vue          — BP history & entry point
   ├─ sales/daily-sales.vue                     — Daily sales CRUD
-  ├─ admin/access-control.vue                  — User permissions
+  ├─ admin/access-control.vue                  — Roles & permissions
   ├─ admin/users.vue                           — User management
-  └─ settings/daily-record-settings.vue        — Fee/config settings
+  ├─ settings/daily-record-settings.vue        — Fee/config settings
+  ├─ index, login, setup, user/profile, user/account-settings, settings/system-settings
+  └─ Placeholders: finance/cash-flow, daily-expenses, monthly-report, sales/sales-report,
+     admin/audit-log, roles, system-logs, hr/attendance, overtime, settings/others
 
-Components (38+ total):
-  ├─ money-transfer/ (10)  — Domain-specific components
-  ├─ bill-payment/ (5)     — Domain-specific components (new)
+Components (49 total):
+  ├─ money-transfer/ (10)  — FLOW 2 domain components
+  ├─ bill-payment/ (5)     — FLOW 3 domain components
+  ├─ shared/ (8)           — WorkflowProgressBar, QuickGlanceSummary, CompactBalanceSummary,
+  │                          BalanceSnapshot, CashVerificationTable, TransactionTable,
+  │                          WorkflowStepSummaryCard, OwnerDecisionCard
   ├─ ui/ (14)              — Design system components
-  ├─ layout/ (4)           — Page layout components
-  └─ shared/ (10+)         — Shared workflow components (WorkflowProgressBar, etc.)
+  ├─ layout/ (4)           — PageWrapper, PageHeader, EmptyState, LoadingState
+  └─ root (8)              — Header, Sidebar, Breadcrumb, DailySales* (3), ConfirmDialog, CollapsibleGroup
 ```
 
 ---
@@ -220,15 +259,19 @@ Components (38+ total):
 
 | Metric | Value | Status |
 |--------|-------|--------|
-| Pages | 25 | ✅ |
-| Components | 38 | ✅ |
-| PRs merged to develop | 140 | ✅ |
-| TypeScript errors | 0 | ✅ |
+| Pages | 26 (16 functional, 10 placeholders) | ✅ |
+| Components | 49 | ✅ |
+| API routes | 72 | ✅ |
+| PRs merged (latest) | #149 | ✅ |
+| TypeScript errors (`nuxt typecheck`) | 0 | ✅ |
+| Unit/Integration tests (`vitest run`) | 280/280 passed (18 files) | ✅ |
+| Production build (`nuxt build`) | Success | ✅ |
 | Money Transfer workflow | 9/9 statuses (unified) | ✅ |
 | Bill Payment workflow | Phase 1-6 Complete (27 Tasks) | ✅ |
-| Service Harmonization Testing | 0/17 tasks | 🔄 |
-| Design System components | 18+ | ✅ |
+| Service Harmonization Testing | 1/17 tasks done + MT-2 in progress | 🔄 |
+| Design System components | 14 ui + 4 layout + 8 shared | ✅ |
 | Mobile responsive | Yes | ✅ |
+| CI (PR Check / Staging / Production) | All green (Oct 16, 2026) | ✅ |
 
 ---
 
@@ -236,7 +279,10 @@ Components (38+ total):
 
 ```
 🔄 Service Harmonization Testing (17 Tasks)
-   ├─ Manual Test: 10 tasks (MT-1~4, BP-1~4, SHARED-1~2) ☐ NOT STARTED
+   ├─ Manual Test: 10 tasks (MT-1~4, BP-1~4, SHARED-1~2) 🔄 IN PROGRESS
+   │     ├─ MT-1 ✅ ผ่าน
+   │     ├─ MT-2 🔄 Step 1-7 ผ่าน — เหลือ Step 8-11 (Filter/Pagination, Favorites, Checklist, Cash Verification)
+   │     └─ MT-3, MT-4, BP-1~4, SHARED-1~2 ☐ NOT STARTED
    ├─ Bug Fix: 2 tasks (BugFix-1, BugFix-2)              ☐ WAITING FOR MANUAL TEST
    ├─ E2E Playwright: 5 tasks (E2E-1~5)                   ☐ WAITING FOR BUG FIX
    └─ Testing Plan: docs/PROGRESS/TESTING_PLAN.md ✅ CREATED
@@ -249,8 +295,13 @@ Components (38+ total):
 
 ✅ needs_correction workflow status (implemented in BP + MT)
 
-❌ Dead code cleanup
-   └─ ~200 lines v-if="false" in index.vue (deferred)
+✅ Dead code cleanup — no `v-if="false"` blocks left in pages/components (MT index.vue split into 4 sub-components, PR #123)
+
+⚠️ Tech debt (found Oct 16, 2026)
+   ├─ Money Transfer mutation APIs don't call requireServerAuth (Bill Payment does)
+   ├─ PR Check workflow doesn't run `npm test`
+   ├─ Firestore migration not started (all data in public/data/*.json)
+   └─ Unused deps: vee-validate, radix-vue, @vueuse/core, dayjs, sass-embedded
 
 Phase 2: Google Sheets integration
 Phase 3: Monthly/Yearly expenses
@@ -261,11 +312,26 @@ Phase 4: HR (schedule, leave, overtime)
 
 ## Test Data Reference
 
+> Snapshot from `public/data/*-summaries.json` on Oct 16, 2026 — changes as you test.
+
+### Money Transfer
+
 | Date | Status | Transactions |
 |------|--------|-------------|
-| 2026-03-09 | `step1_in_progress` | 0 txns |
-| 2026-03-08 | `step1_completed` | 5 txns |
-| 2026-03-04 | `step2_completed` | 2 txns |
-| 2026-02-27 | `approved` | 6 txns (full workflow) |
-| — | `audited` | No test data |
-| — | `needs_correction` | No test data |
+| 2026-03-11 | `step1_in_progress` | 3 (completed 3) |
+| 2026-03-10 | `step2_completed` | 10 (completed 9, cancelled 1) |
+| 2026-03-09 | `step2_completed` | 5 (completed 5) |
+| 2026-03-08 | `step1_completed` | 5 (completed 5) |
+| 2026-03-04 | `approved` | 2 (completed 2) |
+| 2026-02-27 | `approved` | 6 (completed 6) |
+| — | `audited` / `audited_with_issues` / `needs_correction` | No test data |
+
+### Bill Payment
+
+| Date | Status | Transactions |
+|------|--------|-------------|
+| 2026-04-01 | `step1_in_progress` | 1 (cancelled 1) |
+| 2026-01-31 | `approved` | 4 (completed 3, cancelled 1) |
+| 2026-01-30 | `step2_completed` | 1 (completed 1) |
+| 2026-01-29 | `approved` | 4 (completed 3, cancelled 1) |
+| — | `step1_completed` / `audited` / `needs_correction` | No test data |

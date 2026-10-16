@@ -1,445 +1,160 @@
 # 🔄 Git Workflow Guide
 
-**Last Updated**: Jan 7, 2026  
-**Version**: 1.0  
-**Status**: Active  
-**For**: Development team
+**Last Updated**: Oct 16, 2026
+**Version**: 2.0
+**Status**: Active
 
 ---
 
-## 📚 Quick Links
+## 🎯 Strategy
 
-Start here based on your needs:
-
-### 🚀 I'm Starting Development
-→ Read: [GIT_DAILY_WORKFLOW.md](./GIT_DAILY_WORKFLOW.md) (10 min)
-
-### ✅ I Need a Checklist
-→ Use: [GIT_CHECKLIST.md](./GIT_CHECKLIST.md) (print it!)
-
-### 🖥️ I Need a Command
-→ Reference: [GIT_COMMANDS.md](./GIT_COMMANDS.md) (bookmark it!)
-
-### 🔀 I'm Creating a PR
-→ Use: [.github/pull_request_template.md](../../.github/pull_request_template.md)
-
----
-
-## 🎯 Our Workflow Strategy
-
-### Branch Strategy: Feature Branches
-We use **feature branches for everything**:
-- All work happens on feature branches
-- `develop` is our main integration branch
-- No direct commits to `develop`
-- Clean history with meaningful commits
-
-### Merge Strategy: Squash & Merge
-We use **squash and merge** for PRs:
-- Multiple commits become 1 clean commit
-- Keeps main history readable
-- Easy to revert if needed
-- One commit = one feature
-
-### Release Strategy: Tag Based
-We use **git tags** for releases:
-- Version tags: `v1.0`, `v1.1`, `v2.0`
-- Release notes on GitHub
-- One release per week
-- Easy to reference specific versions
+| Topic | Rule |
+|-------|------|
+| Integration branch | `develop` — no direct commits for feature work |
+| Production branch | `main` — updated only through release PRs |
+| Feature work | Short-lived branches from `develop` |
+| Merge | **Squash and merge** (1 PR = 1 commit) |
+| Release | PR `develop` → `main` titled `release: ...` (auto-deploys to production) |
+| Tags | Optional — last tag `v1.6`; releases are tracked by `release:` PRs |
+| Cleanup | Delete the branch (local + remote) after merge |
 
 ---
 
 ## 🌳 Branch Structure
 
 ```
-main
+main      ← production (release PRs only)
   ↑
-  └─ (merge releases here)
-  
-develop ← Main integration branch
+develop   ← integration (auto-deploys to staging)
   ↑
-  ├─ feature/auth-login
-  ├─ feature/daily-sales
-  ├─ bugfix/validation-error
-  ├─ chore/dependencies
-  └─ docs/api-endpoints
-
-hotfix ← Emergency fixes only
-  ↑
-  └─ hotfix/production-bug
+  ├─ feature/<scope>-<name>   e.g. feature/bp-status-ux-and-workflow-gate
+  ├─ fix/<name>               e.g. fix/history-page-consistency
+  ├─ test/<name>              e.g. test/task-6.2-integration-tests
+  ├─ docs/<name>              e.g. docs/update-testing-plan-mt1
+  └─ chore/<name>
 ```
 
-### Branch Naming Convention
-
-| Type | Format | Example |
-|------|--------|---------|
-| Feature | `feature/description` | `feature/user-login` |
-| Bug Fix | `bugfix/description` | `bugfix/form-validation` |
-| Chore | `chore/description` | `chore/update-tailwind` |
-| Docs | `docs/description` | `docs/api-endpoints` |
-| Hotfix | `hotfix/description` | `hotfix/critical-error` |
+| Type | Format |
+|------|--------|
+| Feature | `feature/<description>` |
+| Bug fix | `fix/<description>` |
+| Tests | `test/<description>` |
+| Docs | `docs/<description>` |
+| Chore | `chore/<description>` |
+| Hotfix (from `main`) | `hotfix/<description>` |
 
 ---
 
 ## 🔄 Standard Workflow
 
-### 1. Start Your Day
 ```bash
-git checkout develop
-git pull origin develop
-git checkout -b feature/my-feature
-```
+# 1. Start
+git checkout develop && git pull origin develop
+git checkout -b feature/<scope>-<name>
 
-### 2. During Development
-```bash
-# Make changes in your editor...
+# 2. Commit (Conventional Commits)
+git add <files>
+git commit -m "feat(bill-payment): add favorites modal"
 
-# Commit regularly
-git add .
-git commit -m "feat(auth): implement login"
-git push origin feature/my-feature
-```
+# 3. Verify locally (CI does not run tests yet)
+npm test && npm run lint && npm run type-check && npm run build
 
-### 3. Create Pull Request
-- Go to GitHub
-- Create PR from `feature/my-feature` → `develop`
-- Fill in PR template
-- Request reviewers
+# 4. Push + PR to develop
+git push -u origin feature/<scope>-<name>
+gh pr create --base develop --fill
 
-### 4. Code Review
-- Address feedback
-- Push new commits
-- Get approval ✅
-
-### 5. Merge & Deploy
-- Merge on GitHub: "Squash and merge"
-- Delete branch
-- Pull latest develop
-- Deploy to staging/production
-
-### 6. Release (Weekly)
-```bash
-git tag -a v1.1 -m "Week 1 Complete"
-git push origin v1.1
-# Create release on GitHub
+# 5. After PR Check passes → Squash and merge, then clean up
+git checkout develop && git pull origin develop
+git branch -D feature/<scope>-<name>     # -D needed: squash merge rewrites commits
+git push origin --delete feature/<scope>-<name>
 ```
 
 ---
 
 ## 📋 Commit Message Convention
 
-**Format:**
 ```
 type(scope): subject
 
 [optional body]
 ```
 
-**Type:**
-- `feat` - New feature
-- `fix` - Bug fix
-- `docs` - Documentation
-- `style` - Code style (Prettier, etc)
-- `refactor` - Refactoring
-- `test` - Tests
-- `chore` - Maintenance
+**Types**: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `style`, `release`
 
-**Scope:**
-- `auth` - Authentication
-- `sales` - Daily sales module
-- `expenses` - Expense tracking
-- `dashboard` - Dashboard
-- `ui` - UI components
-- etc.
+**Scopes used in this repo**: `money-transfer` / `mt`, `bill-payment` / `bp`, `finance`, `workflow`,
+`ui`, `sales`, `auth`, `testing`, `progress`, `data`
 
-**Examples:**
 ```bash
-feat(auth): implement login form
-fix(expenses): correct tax calculation
-docs(readme): update setup instructions
-refactor(dashboard): simplify component
-test(auth): add login validation tests
-```
-
----
-
-## 🔀 PR Merge Process
-
-### Before Merge
-1. ✅ All tests pass
-2. ✅ Code reviewed and approved
-3. ✅ No merge conflicts
-4. ✅ Base branch is up to date
-
-### Merge on GitHub UI
-1. Go to Pull Request
-2. Click "Merge pull request"
-3. Select "Squash and merge"
-4. Confirm the merge message
-5. Delete branch
-
-### After Merge
-```bash
-git checkout develop
-git pull origin develop
-git branch -d feature/name
+feat(money-transfer): improve transaction form UX + detail modal reconciliation
+fix(bill-payment): resolve 401, remove ⋮ button, enforce workflow edit gate
+test(workflow): Task 6.2 — Integration Tests for both Services
+docs(testing): update MT-1 status to passed in TESTING_PLAN.md
+chore(data): sync money-transfer test data
 ```
 
 ---
 
 ## 📦 Release Process
 
-### Weekly Release (Friday)
-
 ```bash
-# 1. Verify develop is clean
-git checkout develop
-git pull origin develop
-git status  # Should show clean
+# 1. Make sure develop is green (PR Check / Deploy Staging)
+gh run list --branch develop --limit 3
 
-# 2. Create version tag
-git tag -a v1.1 -m "Week 1 Complete - Login Implementation"
+# 2. Open release PR
+gh pr create --base main --head develop --title "release: <summary>"
 
-# 3. Push tag
-git push origin v1.1
+# 3. Merge → Deploy Production runs automatically
 
-# 4. GitHub UI - Create Release
-#    - Go to Releases
-#    - Select tag v1.1
-#    - Add release notes
-#    - Publish release
+# 4. If main got a merge commit, sync it back
+git checkout develop && git pull origin develop
+git merge origin/main && git push origin develop
 ```
-
-### Version Numbering
-- `v1.0`, `v1.1`, `v1.2` - Minor releases
-- `v2.0`, `v3.0` - Major releases
-- Always format: `v[major].[minor]` or `v[major].[minor].[patch]`
 
 ---
 
 ## 🚨 Handling Issues
 
-### Merge Conflicts
+### Merge conflicts in `public/data/*.json`
+Test data files change during manual testing. Prefer keeping the `develop` version unless the
+other side contains intentional seed data, then re-run the app to regenerate summaries.
 
-When PR shows "Can't merge":
-
+### Update a feature branch with latest develop
 ```bash
-# Fetch latest
 git fetch origin
-
-# Rebase on develop
 git rebase origin/develop
-
-# Resolve conflicts in editor
-# Search for: <<<<<<, ======, >>>>>>
-
-# After resolving
-git add .
-git rebase --continue
-
-# Push with force (safe)
-git push origin feature/name --force-with-lease
+git push --force-with-lease
 ```
 
-### Reverting a Merge
-
+### Revert a squash-merged PR
 ```bash
-# If PR merged but has issues:
-git revert -m 1 <merge-commit-hash>
-
-# This creates a revert commit in develop
-# Push and deploy
+git revert <commit-hash>
 ```
 
-### Lost Commits
-
+### Lost commits
 ```bash
-# See all commits (including deleted)
 git reflog
-
-# Recover deleted commit
 git cherry-pick <commit-hash>
 ```
 
 ---
 
-## 🧹 Cleanup
+## 🔐 Authentication
 
-### Delete Old Branches
-
-```bash
-# Delete local branch
-git branch -d feature/name
-
-# Delete remote branch
-git push origin --delete feature/name
-```
-
-### Clean Up Merged Branches
+Git pushes over HTTPS use the GitHub CLI credential helper:
 
 ```bash
-# Fetch latest
-git fetch origin
-
-# Delete all merged branches (except main/develop)
-git branch --merged | grep -v "main\|develop" | xargs git branch -d
+gh auth status
+gh auth setup-git
 ```
 
 ---
 
-## 📊 Team Best Practices
+## 🔗 Related
 
-### Do This ✅
-- ✅ Push at least daily
-- ✅ Keep commits focused
-- ✅ Write clear commit messages
-- ✅ Pull before starting work
-- ✅ Test locally before pushing
-- ✅ Create PRs promptly
-- ✅ Review thoroughly
-- ✅ Respond to feedback quickly
-
-### Don't Do This ❌
-- ❌ Commit directly to develop
-- ❌ Mix multiple features in one commit
-- ❌ Vague messages ("fix", "update")
-- ❌ Leave uncommitted changes overnight
-- ❌ Push without testing
-- ❌ Merge without review
-- ❌ Rewrite history after merging
-- ❌ Keep branches for weeks
-
----
-
-## 🎯 Common Scenarios
-
-### Scenario 1: Need Latest Code Mid-Feature
-
-```bash
-git fetch origin
-git rebase origin/develop
-# If conflicts, resolve them
-git push origin feature/name --force-with-lease
-```
-
-### Scenario 2: Committed to Wrong Branch
-
-```bash
-git reset --soft HEAD~1       # Undo commit, keep changes
-git stash                      # Save changes
-git checkout correct-branch    # Switch branch
-git stash apply               # Apply changes
-git commit -m "..."           # Commit on correct branch
-```
-
-### Scenario 3: Need to Update Your PR
-
-```bash
-# Just make changes and commit normally
-git add .
-git commit -m "fix: address review feedback"
-git push origin feature/name
-# PR automatically updates!
-```
-
-### Scenario 4: Want to See What Changed
-
-```bash
-# See changes vs develop
-git diff origin/develop
-
-# See commits you added
-git log --oneline origin/develop..
-
-# See specific commit
-git show abc1234
-```
-
----
-
-## 🔗 Documentation Index
-
-### For Daily Work
-- [Daily Workflow Guide](./GIT_DAILY_WORKFLOW.md) - Step-by-step process
-- [Checklist](./GIT_CHECKLIST.md) - Checklist for each operation
-
-### For Reference
-- [Commands Reference](./GIT_COMMANDS.md) - All git commands
-- [PR Template](../../.github/pull_request_template.md) - PR format
-
-### For Learning
-- [PROJECT_INSTRUCTIONS.md](./PROJECT_INSTRUCTIONS.md) - Project setup
-- [CODING_STANDARDS.md](./CODING_STANDARDS.md) - Code guidelines
-- [TESTING_GUIDELINES.md](./TESTING_GUIDELINES.md) - Testing approach
-
----
-
-## 📞 Quick Command Reference
-
-```bash
-# Start work
-git checkout develop && git pull origin develop
-git checkout -b feature/name
-
-# Daily workflow
-git add .
-git commit -m "type(scope): message"
-git push origin feature/name
-
-# Create PR (GitHub UI)
-
-# Review feedback
-git commit -m "fix: address feedback"
-git push origin feature/name
-
-# Merge (GitHub UI - Squash and merge)
-
-# Cleanup
-git checkout develop
-git pull origin develop
-git branch -d feature/name
-
-# Release
-git tag -a v1.1 -m "message"
-git push origin v1.1
-```
-
----
-
-## 🆘 Getting Help
-
-### Can't Remember What to Do?
-1. Read: [GIT_DAILY_WORKFLOW.md](./GIT_DAILY_WORKFLOW.md)
-2. Check: [GIT_CHECKLIST.md](./GIT_CHECKLIST.md)
-3. Look up: [GIT_COMMANDS.md](./GIT_COMMANDS.md)
-
-### Need Specific Command?
-→ Search: [GIT_COMMANDS.md](./GIT_COMMANDS.md)
-
-### Stuck or Error?
-1. Run: `git status`
-2. Run: `git log --oneline`
-3. Read: [GIT_COMMANDS.md - Troubleshooting](./GIT_COMMANDS.md)
-4. Ask: Post in Slack or create issue
-
----
-
-## 🎓 Training
-
-### For New Team Members
-1. Read: This document (all sections)
-2. Study: [GIT_DAILY_WORKFLOW.md](./GIT_DAILY_WORKFLOW.md)
-3. Print: [GIT_CHECKLIST.md](./GIT_CHECKLIST.md)
-4. Bookmark: [GIT_COMMANDS.md](./GIT_COMMANDS.md)
-5. Do: Practice by creating first PR
-
-### Pairing/Mentoring
-- Pair on first PR creation
-- Show branch workflow
-- Demonstrate commit message format
-- Guide through code review process
-- Show merge and cleanup steps
+- [PR Template](../../.github/pull_request_template.md)
+- [CONTRIBUTING.md](../../.github/CONTRIBUTING.md)
+- [CI_CD.md](./CI_CD.md) · [DEPLOYMENT.md](./DEPLOYMENT.md)
+- [COMPONENT_QUALITY_CHECKLIST.md](./COMPONENT_QUALITY_CHECKLIST.md)
 
 ---
 
@@ -448,22 +163,4 @@ git push origin v1.1
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2026-01-07 | Initial workflow guide |
-| - | - | - |
-
----
-
-## 🎉 Next Steps
-
-1. **Read**: [GIT_DAILY_WORKFLOW.md](./GIT_DAILY_WORKFLOW.md) (today)
-2. **Print**: [GIT_CHECKLIST.md](./GIT_CHECKLIST.md) (keep at desk)
-3. **Bookmark**: [GIT_COMMANDS.md](./GIT_COMMANDS.md) (reference often)
-4. **Create PR**: First feature branch (this week)
-5. **Join Team**: Start following this workflow (immediately)
-
----
-
-<div align="center">
-  <p><strong>Welcome to our Git Workflow! 🚀</strong></p>
-  <p>Clear process → Organized code → Happy team</p>
-  <p><em>Let's build something great together</em></p>
-</div>
+| 2.0 | 2026-10-16 | Match actual practice (release PRs, branch types, gh CLI); remove links to non-existent docs |

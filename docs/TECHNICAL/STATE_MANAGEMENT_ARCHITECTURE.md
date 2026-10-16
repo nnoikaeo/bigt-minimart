@@ -1,9 +1,33 @@
 # 🗂️ State Management Architecture with Pinia
 
 **Document**: State Management Implementation Guide  
-**Last Updated**: January 28, 2026  
-**Version**: 1.0  
-**Status**: Planning Phase
+**Last Updated**: Oct 16, 2026  
+**Version**: 1.1  
+**Status**: Implemented — the "Planned" sections below are the original Jan 2026 design
+
+---
+
+## ⚠️ Current Stores (Oct 2026)
+
+| Store | File | Purpose |
+|-------|------|---------|
+| `auth` | `stores/auth.ts` | Firebase user, role, session |
+| `ui` | `stores/ui.ts` | Global UI state |
+| `sidebar` | `stores/sidebar.ts` | Sidebar menu state |
+| `access-control` | `stores/access-control.ts` | Roles, permissions, `hasPermission()` |
+| `sales` | `stores/sales.ts` | FLOW 1 — Daily Sales |
+| `money-transfer` | `stores/money-transfer.ts` | FLOW 2 — transactions, balances, workflow (`// @ts-nocheck`) |
+| `bill-payment` | `stores/bill-payment.ts` | FLOW 3 — transactions, balances, workflow (`// @ts-nocheck`) |
+| `daily-record-settings` | `stores/daily-record-settings.ts` | Fee configuration |
+
+Differences from the original plan:
+- Stores call the Nitro API (`$fetch`, or `getApiFetch()` / `$apiFetch` which adds the Firebase ID
+  token) — they do **not** call repositories or Firestore directly.
+- Data is stored in JSON files (`public/data/`) behind server repositories — see
+  [server/repositories/README.md](../../server/repositories/README.md). The Firestore sync/caching
+  patterns below are not in use yet.
+- `finance.ts`, `users.ts`, `reports.ts`, `settings.ts` were not created; finance is split into the
+  `money-transfer` and `bill-payment` stores.
 
 ---
 
@@ -1635,15 +1659,18 @@ state: () => ({
 | Phase | Store | Week | Status |
 |-------|-------|------|--------|
 | Phase 1 | auth | Week 1 | ✅ Done |
-| Phase 1 | ui | Week 2 | ✅ Done |
-| Phase 1 | sales | Week 3 | 📋 Planned |
-| Phase 1 | finance | Week 4 | 📋 Planned |
-| Phase 1 | users | Week 5 | 📋 Planned |
-| Phase 1 | reports | Week 5-6 | 📋 Planned |
-| Phase 2 | settings | Phase 2 | 📋 Planned |
+| Phase 1 | ui, sidebar | Week 2 | ✅ Done |
+| Phase 1 | sales | Week 3 | ✅ Done |
+| Phase 1 | access-control | Week 4 | ✅ Done |
+| Phase 1 | money-transfer | Week 5-9 | ✅ Done |
+| Phase 1 | daily-record-settings | Week 5 | ✅ Done |
+| Phase 1 | bill-payment | Week 10+ | ✅ Done |
+| — | reports (Dashboard & Reports) | — | ❌ Not started |
+| Phase 3 | expenses (monthly/yearly) | Phase 3 | 📋 Planned |
 
 ---
 
 **Version History**:
 - v1.0 (Jan 28, 2026) - Initial documentation
+- v1.1 (Oct 16, 2026) - Added current store list and implementation status
 

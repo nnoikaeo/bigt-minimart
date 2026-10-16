@@ -4,13 +4,15 @@ version: '1.0'
 date_created: '2026-04-14'
 last_updated: '2026-04-14'
 owner: 'Dev Team'
-status: 'In progress'
+status: 'Completed'
 tags: ['feature', 'bill-payment', 'quick-actions', 'favorites']
 ---
 
 # Introduction
 
-![Status: In progress](https://img.shields.io/badge/status-In_progress-yellow)
+![Status: Completed](https://img.shields.io/badge/status-Completed-brightgreen)
+
+> **Archived** (Oct 16, 2026) — Implemented in PR #133 (Service Harmonization Task 4.6).
 
 เพิ่มระบบ Quick Actions Grid และ Favorites System สำหรับ Bill Payment Service
 เพื่อให้ Manager สามารถเพิ่มรายการที่ใช้บ่อยได้รวดเร็ว โดยอ้างอิงแนวทางจาก Money Transfer Service

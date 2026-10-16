@@ -1,7 +1,8 @@
 # แผนการทดสอบ Service Harmonization (Phase 1-6)
 
 > **วันที่จัดทำ:** 14 เมษายน 2569  
-> **อ้างอิง:** `docs/PROGRESS/SERVICE_HARMONIZATION_PLAN.md`  
+> **อ้างอิง:** `docs/ARCHIVE/PROGRESS/SERVICE_HARMONIZATION_PLAN.md` (archived — implementation complete)  
+> **อัปเดตล่าสุด:** 16 ต.ค. 2569  
 > **สถานะ implement:** Phase 1-6 เสร็จสมบูรณ์ (27 Tasks, PRs #127-#140)  
 > **เป้าหมาย:** ทดสอบทุก feature ที่ implement เพื่อยืนยันว่าทำงานถูกต้องก่อน deploy
 
@@ -163,10 +164,13 @@
 - [x] กดปุ่ม "ลบ" ที่ draft → delete draft
 
 **Step 7: ทดสอบ Status Change**
-- [ ] ที่แถว transaction → กดปุ่ม Status Change
-- [ ] เปลี่ยน completed → on_hold → ต้องใส่เหตุผล
-- [ ] เปลี่ยน on_hold → completed
-- [ ] เปลี่ยน → cancelled → ต้องใส่เหตุผล
+> ⚠️ หมายเหตุ: ปุ่ม ⋮ (Status Change Modal แยก) ถูกลบออกแล้ว (PR ล่าสุด)
+> การเปลี่ยนสถานะทำผ่าน Edit Modal (ปุ่มดินสอ) เท่านั้น
+> ช่อง "เหตุผล/หมายเหตุสถานะ" แสดงอัตโนมัติเมื่อเลือก draft/on_hold/cancelled แต่ไม่ใช่ required
+- [x] ที่แถว transaction → กดปุ่มดินสอ (แก้ไข) → เปลี่ยนสถานะในฟอร์ม
+- [x] เปลี่ยน completed → on_hold → บันทึกสำเร็จ (ช่องเหตุผลแสดง แต่ไม่ required)
+- [x] เปลี่ยน on_hold → completed → บันทึกสำเร็จ
+- [x] เปลี่ยน → cancelled → บันทึกสำเร็จ (ช่องเหตุผลแสดง แต่ไม่ required)
 
 **Step 8: ทดสอบ Filter Tabs + Pagination**
 - [ ] เห็น tabs: ทั้งหมด / สำเร็จ / รอดำเนินการ / พักรายการ
@@ -344,8 +348,13 @@
 - [ ] เห็น Draft Alert → ดำเนินการ / ลบ
 
 **Step 7: ทดสอบ Status Change (BP)**
-- [ ] completed ↔ on_hold → ต้องใส่เหตุผล
-- [ ] → cancelled → ต้องใส่เหตุผล
+> ⚠️ หมายเหตุ: เหมือน MT-2 Step 7 — ปุ่ม ⋮ ถูกลบออกแล้ว (PR #149)
+> การเปลี่ยนสถานะทำผ่าน Edit Modal (ปุ่มดินสอ) เท่านั้น
+> ช่อง "เหตุผล/หมายเหตุสถานะ" แสดงอัตโนมัติเมื่อเลือก draft/on_hold/cancelled แต่ไม่ใช่ required
+- [ ] ที่แถว transaction → กดปุ่มดินสอ (แก้ไข) → เปลี่ยนสถานะในฟอร์ม
+- [ ] completed ↔ on_hold → บันทึกสำเร็จ (ช่องเหตุผลแสดง แต่ไม่ required)
+- [ ] → cancelled → บันทึกสำเร็จ (ช่องเหตุผลแสดง แต่ไม่ required)
+- [ ] ปุ่มแก้ไขแสดงเฉพาะสถานะ `step1_in_progress` / `needs_correction` — สถานะอื่นแก้ไขไม่ได้ (workflow edit gate)
 
 **Step 8: Filter Tabs + Pagination (BP)**
 - [ ] เหมือน MT: 4 tabs + pagination 10/page
@@ -541,10 +550,10 @@ BUG-001: [Task ที่พบ] — [อธิบายปัญหาสั้�
 **Skill:** `webapp-testing`
 
 ```
-ฉันต้องการ setup Playwright สำหรับ E2E testing ในโปรเจค Nuxt 3
+ฉันต้องการ setup Playwright สำหรับ E2E testing ในโปรเจค Nuxt 4
 
 โปรเจคนี้:
-- ใช้ Nuxt 3 (dev server: http://localhost:3000)
+- ใช้ Nuxt 4 (dev server: http://localhost:3000)
 - Auth: Firebase Auth (email/password)
 - 3 Roles: Manager, Auditor, Owner
 - Data: JSON files (public/data/) — dev mode
@@ -685,7 +694,7 @@ Screenshots บันทึกที่: tests/e2e/screenshots/
 | # | Task ID | ชื่อ Task | ทำโดย | Skill | สถานะ |
 |---|---|---|---|---|---|
 | 1 | MT-1 | MT History Page Manual Test | คุณ | — | ✅ |
-| 2 | MT-2 | MT Service Manager Flow | คุณ | — | ☐ |
+| 2 | MT-2 | MT Service Manager Flow | คุณ | — | 🔄 Step 1-7 |
 | 3 | MT-3 | MT Auditor Flow | คุณ | — | ☐ |
 | 4 | MT-4 | MT Owner Flow | คุณ | — | ☐ |
 | 5 | BP-1 | BP History Page Manual Test | คุณ | — | ☐ |
@@ -713,7 +722,7 @@ Screenshots บันทึกที่: tests/e2e/screenshots/
 | Task | วันที่ทดสอบ | ผลลัพธ์ | จำนวน Bug | หมายเหตุ |
 |---|---|---|---|---|
 | MT-1 | 15 เม.ย. 2569 | ✅ ผ่าน | 3 (แก้แล้ว) | PR #143, #144 — แก้ status labels/colors, เพิ่ม card filtering, แก้ column header |
-| MT-2 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
+| MT-2 | 15-27 เม.ย. 2569 | 🔄 Step 1-7 ผ่าน | (แก้แล้ว) | PR #147, #149 — Form UX, ลบปุ่ม ⋮, workflow edit gate — เหลือ Step 8-11 |
 | MT-3 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
 | MT-4 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
 | BP-1 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
@@ -745,17 +754,29 @@ Screenshots บันทึกที่: tests/e2e/screenshots/
 
 ### Money Transfer Test Dates
 
-| Date | Status | ใช้ทดสอบ |
-|------|--------|---------|
-| 2026-03-09 | `step1_in_progress` | MT-2 (Manager flow) |
-| 2026-03-08 | `step1_completed` | MT-2 (Step 2) |
-| 2026-03-04 | `step2_completed` | MT-3 (Auditor flow) |
-| 2026-02-27 | `approved` | MT-4 (Owner view approved) |
-| (วันใหม่) | ไม่มีข้อมูล | MT-2 (สร้างใหม่ full flow) |
+> อัปเดตจาก `public/data/*-summaries.json` เมื่อ 16 ต.ค. 2569 — สถานะจะเปลี่ยนตามการทดสอบ
+
+| Date | Status | Transactions | ใช้ทดสอบ |
+|------|--------|--------------|---------|
+| 2026-03-11 | `step1_in_progress` | 3 (completed) | MT-2 Step 8-10 (Manager flow) |
+| 2026-03-10 | `step2_completed` | 10 (9 completed, 1 cancelled) | MT-3 (Auditor flow) — 10 รายการพอดี (pagination ต้องมี > 10) |
+| 2026-03-09 | `step2_completed` | 5 | MT-3 (Auditor flow) |
+| 2026-03-08 | `step1_completed` | 5 | MT-2 Step 11 (Cash Verification) |
+| 2026-03-04 | `approved` | 2 | MT-4 (Owner view approved) |
+| 2026-02-27 | `approved` | 6 | MT-4 (Owner view approved) |
+| — | `audited` | ไม่มีข้อมูล | MT-4 — ต้องสร้างจาก MT-3 ก่อน |
+| (วันใหม่) | ไม่มีข้อมูล | — | MT-2 (สร้างใหม่ full flow) |
 
 ### Bill Payment Test Dates
 
-> ตรวจสอบ seed data ใน `public/data/bill-payment-*.json`
+| Date | Status | Transactions | ใช้ทดสอบ |
+|------|--------|--------------|---------|
+| 2026-04-01 | `step1_in_progress` | 1 (cancelled) | BP-2 (Manager flow) |
+| 2026-01-30 | `step2_completed` | 1 | BP-3 (Auditor flow) |
+| 2026-01-31 | `approved` | 4 (3 completed, 1 cancelled) | BP-4 (Owner view approved) |
+| 2026-01-29 | `approved` | 4 (3 completed, 1 cancelled) | BP-4 (Owner view approved) |
+| — | `step1_completed` / `audited` | ไม่มีข้อมูล | ต้องสร้างจาก flow ก่อนหน้า |
+| (วันใหม่) | ไม่มีข้อมูล | — | BP-2 (สร้างใหม่ full flow) |
 
 ### Test Accounts
 

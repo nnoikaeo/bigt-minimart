@@ -4,13 +4,15 @@ version: 1.0
 date_created: 2026-04-14
 last_updated: 2026-04-14
 owner: Dev Team
-status: 'In progress'
+status: 'Completed'
 tags: [feature, bill-payment, auditor, harmonization]
 ---
 
 # Introduction
 
-![Status: In progress](https://img.shields.io/badge/status-In%20progress-yellow)
+![Status: Completed](https://img.shields.io/badge/status-Completed-brightgreen)
+
+> **Archived** (Oct 16, 2026) — Implemented in PR #134 (Service Harmonization Task 5.1).
 
 ปรับปรุง `components/bill-payment/AuditorReviewSection.vue` ให้สอดคล้องกับ Money Transfer สี่ด้านหลัก:
 1. **Balance Snapshot** — เพิ่ม `<BalanceSnapshot>` ด้านบน Auditor form  

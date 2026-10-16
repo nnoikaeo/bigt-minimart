@@ -1,9 +1,26 @@
 # 📊 Development Roadmap
 
-**Last Updated**: Jan 14, 2026  
+**Last Updated**: Oct 16, 2026 (status banner; plan body unchanged since Jan 14, 2026)  
 **Phase**: Phase 1 - Core Features  
-**Timeline**: Weeks 1-6 (January - February 2026)  
-**Target Launch**: March 2026
+**Timeline**: Weeks 1-6 (January - February 2026) — original plan  
+**Target Launch**: March 2026 — original plan
+
+---
+
+> ⚠️ **Actual progress (Oct 2026)** — the plan below is the original Jan 2026 roadmap. Live status
+> is tracked in [STATUS.md](../PROGRESS/STATUS.md).
+>
+> | Original plan | Actual |
+> |---------------|--------|
+> | Week 1–2: Setup, Auth, Layout | ✅ Done (Nuxt 4) |
+> | Week 3: Daily Sales | ✅ Done (JSON repository, not Firestore yet) |
+> | Week 4: Expenses + Audit | 🔄 Re-scoped → Access Control + Owner Approval ✅; Expenses ❌ not started |
+> | Week 5–6: Dashboard + Reports | ❌ Not started |
+> | (not in plan) Money Transfer Service — FLOW 2 | ✅ Done (Weeks 5–9) |
+> | (not in plan) Bill Payment Service — FLOW 3 + harmonization | ✅ Done (Week 10+, PRs #127–#140) |
+> | Testing | 🔄 Manual testing in progress — [TESTING_PLAN.md](../PROGRESS/TESTING_PLAN.md) |
+>
+> Data is still stored in JSON (`public/data/`); Firestore migration has not started.
 
 ---
 
@@ -14,7 +31,7 @@
 **Objective**: Project initialization and user authentication system
 
 **Completed**:
-- [x] Nuxt 3 + TypeScript + Tailwind setup
+- [x] Nuxt (now Nuxt 4) + TypeScript + Tailwind setup
 - [x] Firebase integration (Auth, Firestore, Storage)
 - [x] User authentication (Login/Logout)
 - [x] User Management CRUD (Create, Read, Update, Delete)
@@ -381,16 +398,16 @@ Component → Store (Pinia) → Repository Interface → JSON File
 
 ### Code Quality
 - ✅ TypeScript strict mode
-- ✅ ESLint/Prettier for formatting
+- ⬜ ESLint/Prettier for formatting (not configured)
 - ✅ Type-safe API calls
 - ✅ Component composition
-- ✅ Error handling & logging
+- ✅ Error handling & logging (`useLogger`)
 
 ### Testing
-- ✅ Component unit tests (Vue Test Utils)
-- ✅ API integration tests
-- ✅ End-to-end tests (Cypress)
-- ✅ Manual testing (3 viewports)
+- ✅ Component unit tests (Vitest + Vue Test Utils)
+- ✅ Workflow integration tests (Vitest)
+- ⬜ End-to-end tests (Playwright — planned, TESTING_PLAN E2E-1~5)
+- 🔄 Manual testing (TESTING_PLAN MT/BP/SHARED)
 
 ### Documentation
 - ✅ Component documentation
@@ -466,6 +483,5 @@ Component → Store (Pinia) → Repository Interface → JSON File
 
 ---
 
-**Current Status**: Week 3 Design Complete  
-**Next Phase**: Development Sprint (Task 3.2 onwards)  
-**Estimated Completion**: End of February 2026
+**Current Status**: See [STATUS.md](../PROGRESS/STATUS.md) — Phase 1 core + FLOW 2/3 complete, testing in progress  
+**Next Phase**: Finish Service Harmonization testing → Dashboard & Reports
