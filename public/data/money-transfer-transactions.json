@@ -799,7 +799,7 @@
     "amount": 500,
     "commission": 0,
     "commissionType": "cash",
-    "status": "completed",
+    "status": "cancelled",
     "draftReason": "Insufficient bank account balance",
     "recordedBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
     "recordedByName": "กัลญา ผิวขำทองดี",
@@ -816,8 +816,9 @@
     },
     "id": "mts-1776261749996-hdkyrt3oi",
     "createdAt": "2026-04-15T14:02:29.996Z",
-    "updatedAt": "2026-04-15T14:49:34.308Z",
-    "completedAt": "2026-04-15T14:49:34.308Z"
+    "updatedAt": "2026-10-16T13:54:18.132Z",
+    "completedAt": "2026-04-15T14:49:34.308Z",
+    "statusNote": "ทดสอบ"
   },
   {
     "date": "2026-03-11",
@@ -876,5 +877,33 @@
     "updatedAt": "2026-04-27T13:07:18.808Z",
     "notes": "",
     "statusNote": "test"
+  },
+  {
+    "date": "2026-03-11",
+    "datetime": "2026-10-16T14:00:57.810Z",
+    "transactionType": "transfer",
+    "channel": "promptpay",
+    "promptpayIdentifierType": "id_card",
+    "promptpayIdentifier": "1729900314648",
+    "accountName": "ชณิภรณ์ (โบว์)",
+    "amount": 5000,
+    "commission": 30,
+    "commissionType": "cash",
+    "status": "draft",
+    "recordedBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
+    "recordedByName": "กัลญา ผิวขำทองดี",
+    "balanceImpact": {
+      "bankAccountBefore": 3750,
+      "bankAccountAfter": 3750,
+      "transferCashBefore": 1250,
+      "transferCashAfter": 1250,
+      "serviceFeeBeforeCash": 30,
+      "serviceFeeAfterCash": 30,
+      "serviceFeeBeforeTransfer": 0,
+      "serviceFeeAfterTransfer": 0
+    },
+    "id": "mts-1792159257822-x82x5iosn",
+    "createdAt": "2026-10-16T14:00:57.822Z",
+    "updatedAt": "2026-10-16T14:00:57.822Z"
   }
 ]
