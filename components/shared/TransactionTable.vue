@@ -199,7 +199,6 @@ function alignClass(align?: 'left' | 'center' | 'right') {
                 col.hideOnMobile ? 'hidden md:table-cell' : '',
                 col.tdClass ?? '',
               ]"
-              @click="col.component ? $event.stopPropagation() : undefined"
             >
               <!-- Custom slot renderer -->
               <slot

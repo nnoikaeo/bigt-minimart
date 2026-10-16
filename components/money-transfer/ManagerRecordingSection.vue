@@ -1202,31 +1202,8 @@ async function handleCompleteStep1() {
         </div>
       </div>
       <template #footer>
-        <!-- รายการในคิว: แก้ไข/ลบ เป็นไอคอน (ซ้าย) — ยกเลิก/ดำเนินการ (ขวา) -->
-        <div v-if="viewingTransaction?.status === 'draft'" class="flex items-center justify-between gap-2">
-          <div class="flex gap-1">
-            <ActionButton
-              :permission="PERMISSIONS.EDIT_FINANCE"
-              variant="ghost"
-              size="sm"
-              aria-label="แก้ไข"
-              title="แก้ไข"
-              @click="openEditModal(viewingTransaction); showDetailModal = false"
-            >
-              <PencilIcon class="w-4 h-4" />
-            </ActionButton>
-            <ActionButton
-              :permission="PERMISSIONS.EDIT_FINANCE"
-              variant="ghost"
-              size="sm"
-              aria-label="ลบ"
-              title="ลบ"
-              class="text-red-500 hover:text-red-600 hover:bg-red-50"
-              @click="confirmDelete(viewingTransaction.id); showDetailModal = false"
-            >
-              <TrashIcon class="w-4 h-4" />
-            </ActionButton>
-          </div>
+        <!-- รายการในคิว: ยกเลิก / ดำเนินการ (แก้ไข/ลบ อยู่ที่แถวในตารางแล้ว) -->
+        <div v-if="viewingTransaction?.status === 'draft'" class="flex justify-end">
           <div class="flex gap-2">
             <ActionButton :permission="PERMISSIONS.EDIT_FINANCE" variant="secondary" size="sm" @click="confirmCancelDraft(viewingTransaction.id)">
               <XCircleIcon class="w-4 h-4" />

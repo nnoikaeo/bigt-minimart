@@ -94,6 +94,15 @@ describe('TransactionTable', () => {
       await wrapper.findAll('tbody tr')[1].trigger('click')
       expect(wrapper.emitted('row-click')[0][0]).toEqual(TRANSACTIONS[1])
     })
+
+    it('emits row-click when a custom slot cell is clicked', async () => {
+      const wrapper = mountTable(
+        { columns: [{ key: 'status', label: 'สถานะ', component: 'status' }] },
+        { 'col-status': '<span class="status-badge">badge</span>' },
+      )
+      await wrapper.find('.status-badge').trigger('click')
+      expect(wrapper.emitted('row-click')[0][0]).toEqual(TRANSACTIONS[0])
+    })
   })
 
   describe('issuedIds highlighting', () => {
