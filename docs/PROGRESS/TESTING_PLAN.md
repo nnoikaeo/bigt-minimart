@@ -158,25 +158,33 @@
 - [x] Balance Cards อัปเดตตัวเลข
 
 **Step 6: ทดสอบ Draft Transaction**
+> ⚠️ หมายเหตุ (16 ต.ค. 2569): ตั้งแต่ PR #147 ฟอร์มปกติ (โอน/ถอน/ฝาก) **ไม่** auto-draft แล้ว — บันทึกตามที่เลือก "สำเร็จ/ไม่สำเร็จ" (ยอดติดลบได้) ส่วน "รายการโปรด" ยัง auto-draft เมื่อยอดไม่พอ
+> → Owner อนุมัติให้เปลี่ยนเป็น **คิว draft** (ทุกรายการโอน/ถอนเริ่มเป็น draft) — ดู `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md` — Step นี้ต้องทดสอบใหม่หลัง implement
 - [x] บันทึก transaction ที่ยอดเงินไม่พอ → ต้องถูกบันทึกเป็น Draft
 - [x] เห็น Draft Alert section (สีเหลือง) พร้อมจำนวน draft
 - [x] กดปุ่ม "ดำเนินการ" ที่ draft → complete draft
 - [x] กดปุ่ม "ลบ" ที่ draft → delete draft
 
 **Step 7: ทดสอบ Status Change**
-> ⚠️ หมายเหตุ: ปุ่ม ⋮ (Status Change Modal แยก) ถูกลบออกแล้ว (PR ล่าสุด)
-> การเปลี่ยนสถานะทำผ่าน Edit Modal (ปุ่มดินสอ) เท่านั้น
-> ช่อง "เหตุผล/หมายเหตุสถานะ" แสดงอัตโนมัติเมื่อเลือก draft/on_hold/cancelled แต่ไม่ใช่ required
+> ⚠️ หมายเหตุ: ปุ่ม ⋮ (Status Change Modal แยก) ถูกลบออกแล้ว (PR #149)
+> การเปลี่ยนสถานะทำผ่านปุ่ม 🔄 (ArrowPath) ที่แถวรายการ completed/on_hold → modal "แก้ไขรายการและเปลี่ยนสถานะ" (ปุ่มดินสอแสดงเฉพาะ draft)
+> ทางเปลี่ยนสถานะ: completed → on_hold → completed / cancelled (ยกเลิกได้จาก on_hold เท่านั้น)
+> ช่อง "เหตุผล" **required** เมื่อเปลี่ยนสถานะ (ไม่ required เมื่อเลือก "แก้ไขรายการ") — แก้ไขข้อความ 16 ต.ค. 2569 ให้ตรงกับหน้าจอจริง
 - [x] ที่แถว transaction → กดปุ่มดินสอ (แก้ไข) → เปลี่ยนสถานะในฟอร์ม
 - [x] เปลี่ยน completed → on_hold → บันทึกสำเร็จ (ช่องเหตุผลแสดง แต่ไม่ required)
 - [x] เปลี่ยน on_hold → completed → บันทึกสำเร็จ
 - [x] เปลี่ยน → cancelled → บันทึกสำเร็จ (ช่องเหตุผลแสดง แต่ไม่ required)
 
 **Step 8: ทดสอบ Filter Tabs + Pagination**
-- [ ] เห็น tabs: ทั้งหมด / สำเร็จ / รอดำเนินการ / พักรายการ
-- [ ] กดแต่ละ tab → filter รายการถูกต้อง
-- [ ] badge count ในแต่ละ tab ตรงกับจำนวนจริง
-- [ ] ถ้ามี > 10 รายการ → เห็น pagination
+> Login ด้วย **Manager** (`lek@bigt.co.th`) — ส่วนบันทึกรายการแสดงตาม **primaryRole** เท่านั้น (Owner ที่มี role manager ด้วยจะเห็นแค่ "⏳ Manager กำลังบันทึกรายการ")
+> ไม่มี tab "ยกเลิก" — รายการ cancelled เห็นเฉพาะใน "ทั้งหมด" (ผลรวม 3 tab จึงน้อยกว่า "ทั้งหมด")
+- [x] เห็น tabs: ทั้งหมด / สำเร็จ / รอดำเนินการ / พักรายการ (อยู่ใต้หัวข้อ "รายการธุรกรรมวันนี้")
+- [x] กดแต่ละ tab → filter รายการถูกต้อง (สำเร็จ 2, พักรายการ 1, รอดำเนินการ 0 → empty message "ไม่มีรายการที่มีสถานะ รอดำเนินการ")
+- [x] badge count ในแต่ละ tab ตรงกับจำนวนจริง และอัปเดตทันทีเมื่อเปลี่ยนสถานะ (completed → on_hold → cancelled, สร้าง draft ผ่านรายการโปรด)
+- [ ] ถ้ามี > 10 รายการ → เห็น pagination `‹ 1 / 2 ›` (ยังไม่ทดสอบ)
+- [ ] หน้า 2 เลขลำดับต่อเนื่อง (11, 12, …) และปุ่ม ‹ / › disabled ที่หน้าแรก/หน้าสุดท้าย (ยังไม่ทดสอบ)
+- [ ] เปลี่ยน tab ขณะอยู่หน้า 2 → กลับไปหน้า 1 (ยังไม่ทดสอบ)
+- [ ] อยู่หน้า 2 แล้วรายการลดเหลือ ≤ 10 (เช่น ลบ draft) → ตารางต้องไม่ว่าง (ยังไม่ทดสอบ — สงสัย BUG-006)
 
 **Step 9: ทดสอบ Favorites**
 - [ ] กดปุ่ม "โปรด" (Quick Actions) → เปิด Favorite Modal
@@ -722,7 +730,7 @@ Screenshots บันทึกที่: tests/e2e/screenshots/
 | Task | วันที่ทดสอบ | ผลลัพธ์ | จำนวน Bug | หมายเหตุ |
 |---|---|---|---|---|
 | MT-1 | 15 เม.ย. 2569 | ✅ ผ่าน | 3 (แก้แล้ว) | PR #143, #144 — แก้ status labels/colors, เพิ่ม card filtering, แก้ column header |
-| MT-2 | 15-27 เม.ย. 2569 | 🔄 Step 1-7 ผ่าน | (แก้แล้ว) | PR #147, #149 — Form UX, ลบปุ่ม ⋮, workflow edit gate — เหลือ Step 8-11 |
+| MT-2 | 15-27 เม.ย. 2569, 16 ต.ค. 2569 | 🔄 Step 1-7 ผ่าน, Step 8 ผ่านบางส่วน (tabs/filter/badge ✅, pagination ยังไม่ทดสอบ) | 5 (BUG-001~005) + สงสัย 1 (BUG-006) | PR #147, #149 — Form UX, ลบปุ่ม ⋮, workflow edit gate — Step 6 ต้องทดสอบใหม่หลัง implement คิว draft — เหลือ Step 8 (pagination), 9-11 |
 | MT-3 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
 | MT-4 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
 | BP-1 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
@@ -736,7 +744,12 @@ Screenshots บันทึกที่: tests/e2e/screenshots/
 
 | Bug ID | Task | อธิบาย | Severity | สถานะ |
 |---|---|---|---|---|
-| | | | | |
+| BUG-001 | MT-2 Step 8 | ฟอร์มแก้ไขรายการที่ **completed** แสดงยอดเงินสดก่อน/หลังผิด (ถอน 500: แสดง 750 → 250 ควรเป็น 1,250 → 750) — หักยอดรายการตัวเองซ้ำ; `hasSufficientBalance` ผิดด้วย (`components/money-transfer/TransactionForm.vue` bannerInfo) | Medium | ☐ เปิด |
+| BUG-002 | MT-2 Step 8 | ปุ่ม "ยืนยันบันทึกรายการ" ไม่ disabled เมื่อมีรายการพักค้าง (`:disabled` ไม่รวม `hasOnHold`) — กดแล้ว handler บล็อก จึงไม่เสียข้อมูล แต่ขัดกับ Step 10 (`ManagerRecordingSection.vue`) | Low | ☐ เปิด |
+| BUG-003 | MT-2 Step 8 | Modal เปลี่ยนสถานะ: ปุ่มปิดฟอร์มชื่อ "ยกเลิก" ซ้ำกับตัวเลือกสถานะ "ยกเลิก" → ผู้ทดสอบกดผิด (ควรเปลี่ยนเป็น "ปิด") | Low (UX) | ☐ เปิด |
+| BUG-004 | MT-2 Step 8 (อ่านโค้ด) | กด "ดำเนินการ" draft เช็คยอดในบัญชี (`bankAccount`) เสมอ — draft ถอนเงินควรเช็คเงินสด (`transferCash`) (`server/api/money-transfer/transactions/[id]/complete.post.ts`) | Medium | ☐ เปิด — แก้ใน PR คิว draft |
+| BUG-005 | MT-2 Step 6/8 | ฟอร์มปกติไม่ auto-draft (ยอดติดลบได้) แต่รายการโปรด auto-draft — กติกาไม่สอดคล้องกัน | Design | ☐ อนุมัติแบบใหม่แล้ว → `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md` |
+| BUG-006 | MT-2 Step 8 (อ่านโค้ด) | สงสัย: อยู่หน้า 2 แล้วจำนวนรายการลดจนเหลือ 1 หน้า → `currentPage` ไม่ถูก clamp → ตารางว่าง + pagination หาย | Medium | ☐ รอยืนยันจาก Step 8 pagination |
 
 ### E2E Test Results
 
@@ -758,7 +771,7 @@ Screenshots บันทึกที่: tests/e2e/screenshots/
 
 | Date | Status | Transactions | ใช้ทดสอบ |
 |------|--------|--------------|---------|
-| 2026-03-11 | `step1_in_progress` | 3 (completed) | MT-2 Step 8-10 (Manager flow) |
+| 2026-03-11 | `step1_in_progress` | 4 (2 completed, 1 cancelled, 1 draft) — อัปเดต 16 ต.ค. 2569 | MT-2 Step 8-10 (Manager flow) — ต้องเพิ่มอีก ≥ 7 รายการเพื่อทดสอบ pagination |
 | 2026-03-10 | `step2_completed` | 10 (9 completed, 1 cancelled) | MT-3 (Auditor flow) — 10 รายการพอดี (pagination ต้องมี > 10) |
 | 2026-03-09 | `step2_completed` | 5 | MT-3 (Auditor flow) |
 | 2026-03-08 | `step1_completed` | 5 | MT-2 Step 11 (Cash Verification) |
@@ -780,8 +793,11 @@ Screenshots บันทึกที่: tests/e2e/screenshots/
 
 ### Test Accounts
 
-| Role | Email | Password | หมายเหตุ |
-|------|-------|----------|---------|
-| Manager | (ใส่เอง) | (ใส่เอง) | ROLES.MANAGER |
-| Auditor | (ใส่เอง) | (ใส่เอง) | ROLES.AUDITOR |
-| Owner | (ใส่เอง) | (ใส่เอง) | ROLES.OWNER |
+> รหัสผ่านเก็บใน Firebase Auth เท่านั้น — **ห้ามใส่รหัสผ่านในไฟล์นี้** (ลืม → reset ใน Firebase Console → Authentication)
+> หน้า service แสดงส่วนของ role ตาม **primaryRole** (`public/data/users.json`) — ทดสอบแต่ละ role ต้อง login ด้วยบัญชีที่ primaryRole ตรงกัน
+
+| Role | Email | หมายเหตุ |
+|------|-------|---------|
+| Manager | `lek@bigt.co.th` | primaryRole: manager |
+| Auditor | `tip@bigt.co.th` | primaryRole: auditor |
+| Owner | `nop@bigt.co.th` | primaryRole: owner (มีทุก role แต่เห็นเฉพาะมุมมอง Owner) |
