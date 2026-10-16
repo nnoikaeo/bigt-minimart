@@ -19,6 +19,8 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ArrowPathIcon,
+  XMarkIcon,
+  ExclamationTriangleIcon,
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
@@ -45,6 +47,8 @@ const showFavoriteModal = ref(false)
 const showDetailModal = ref(false)
 const showDeleteConfirm = ref(false)
 const showCancelDraftConfirm = ref(false)
+// Dialog แจ้งเหตุผลที่ดำเนินการ/ยกเลิก draft ไม่ได้ (errorMessage อยู่บนสุดของหน้า มองไม่เห็นตอนเลื่อนลงมา)
+const queueBlockedMessage = ref('')
 const showOpeningBalanceModal = ref(false)
 
 // ─── Modal data ───────────────────────────────────────────────────────────────
@@ -285,7 +289,7 @@ function getInsufficientMessage(draft: any): string {
   const shortfall = formatCurrency(getShortfall(draft))
   return draft.transactionType === 'withdrawal'
     ? `เงินสดไม่พอ (ขาด ${shortfall})`
-    : `ยอดในบัญชีไม่พอ (ขาด ${shortfall}) — โทรหา Owner ให้ฝากเงินเข้า`
+    : `ยอดในบัญชีไม่พอ (ขาด ${shortfall})`
 }
 
 // ─── Modal open/close ─────────────────────────────────────────────────────────
@@ -505,7 +509,8 @@ async function handleSubmitTransaction(transactionData: any) {
 async function handleCompleteDraft(draft: any) {
   errorMessage.value = ''
   if (!canCompleteDraft(draft)) {
-    errorMessage.value = getInsufficientMessage(draft)
+    showDetailModal.value = false
+    queueBlockedMessage.value = getInsufficientMessage(draft)
     return
   }
   try {
@@ -515,7 +520,8 @@ async function handleCompleteDraft(draft: any) {
     await store.fetchTransactionsByDate(props.date)
     logger.log('Draft completed:', draft.id)
   } catch (err: any) {
-    errorMessage.value = err.data?.message || err.message || 'เกิดข้อผิดพลาด'
+    showDetailModal.value = false
+    queueBlockedMessage.value = err.data?.message || err.message || 'เกิดข้อผิดพลาด'
     logger.error('Failed to complete draft', err)
   }
 }
@@ -529,7 +535,9 @@ async function handleCancelDraft() {
     await store.fetchTransactionsByDate(props.date)
     logger.log('Draft cancelled:', cancellingDraftId.value)
   } catch (err: any) {
-    errorMessage.value = err.data?.message || err.message || 'เกิดข้อผิดพลาด'
+    showCancelDraftConfirm.value = false
+    showDetailModal.value = false
+    queueBlockedMessage.value = err.data?.message || err.message || 'เกิดข้อผิดพลาด'
     logger.error('Failed to cancel draft', err)
   }
 }
@@ -1133,9 +1141,14 @@ async function handleCompleteStep1() {
       <template #header>
         <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h2 class="text-lg font-bold text-gray-900">รายละเอียดรายการ</h2>
-          <BaseBadge v-if="viewingTransaction" :variant="getStatusBadgeVariant(viewingTransaction.status)" size="md" dot>
-            {{ getStatusLabel(viewingTransaction.status) }}
-          </BaseBadge>
+          <div class="flex items-center gap-2">
+            <BaseBadge v-if="viewingTransaction" :variant="getStatusBadgeVariant(viewingTransaction.status)" size="md" dot>
+              {{ getStatusLabel(viewingTransaction.status) }}
+            </BaseBadge>
+            <button type="button" aria-label="ปิด" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg" @click="showDetailModal = false">
+              <XMarkIcon class="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </template>
       <div v-if="viewingTransaction" class="space-y-3 text-sm">
@@ -1189,52 +1202,68 @@ async function handleCompleteStep1() {
         </div>
       </div>
       <template #footer>
-        <div class="flex items-center justify-between">
-          <div class="flex gap-2">
+        <!-- รายการในคิว: แก้ไข/ลบ เป็นไอคอน (ซ้าย) — ยกเลิก/ดำเนินการ (ขวา) -->
+        <div v-if="viewingTransaction?.status === 'draft'" class="flex items-center justify-between gap-2">
+          <div class="flex gap-1">
             <ActionButton
-              v-if="viewingTransaction && (viewingTransaction.status === 'completed' || viewingTransaction.status === 'on_hold') && !store.isStep1Complete"
               :permission="PERMISSIONS.EDIT_FINANCE"
-              variant="secondary"
+              variant="ghost"
               size="sm"
-              @click="openStatusChange(viewingTransaction)"
-            >
-              <ArrowPathIcon class="w-4 h-4" />
-              เปลี่ยนสถานะ
-            </ActionButton>
-            <ActionButton
-              v-if="viewingTransaction && viewingTransaction.status === 'draft'"
-              :permission="PERMISSIONS.EDIT_FINANCE"
-              variant="secondary"
-              size="sm"
+              aria-label="แก้ไข"
+              title="แก้ไข"
               @click="openEditModal(viewingTransaction); showDetailModal = false"
             >
               <PencilIcon class="w-4 h-4" />
-              แก้ไข
             </ActionButton>
-          </div>
-          <div class="flex gap-2">
-            <template v-if="viewingTransaction && viewingTransaction.status === 'draft'">
-              <ActionButton :permission="PERMISSIONS.EDIT_FINANCE" variant="success" size="sm" @click="handleCompleteDraft(viewingTransaction)">
-                <CheckCircleIcon class="w-4 h-4" />
-                ดำเนินการ
-              </ActionButton>
-              <ActionButton :permission="PERMISSIONS.EDIT_FINANCE" variant="secondary" size="sm" @click="confirmCancelDraft(viewingTransaction.id)">
-                <XCircleIcon class="w-4 h-4" />
-                ยกเลิกรายการ
-              </ActionButton>
-            </template>
             <ActionButton
-              v-if="viewingTransaction && viewingTransaction.status === 'draft'"
               :permission="PERMISSIONS.EDIT_FINANCE"
-              variant="danger"
+              variant="ghost"
               size="sm"
+              aria-label="ลบ"
+              title="ลบ"
+              class="text-red-500 hover:text-red-600 hover:bg-red-50"
               @click="confirmDelete(viewingTransaction.id); showDetailModal = false"
             >
               <TrashIcon class="w-4 h-4" />
-              ลบ
             </ActionButton>
-            <BaseButton variant="secondary" @click="showDetailModal = false">ปิด</BaseButton>
           </div>
+          <div class="flex gap-2">
+            <ActionButton :permission="PERMISSIONS.EDIT_FINANCE" variant="secondary" size="sm" @click="confirmCancelDraft(viewingTransaction.id)">
+              <XCircleIcon class="w-4 h-4" />
+              ยกเลิก
+            </ActionButton>
+            <ActionButton :permission="PERMISSIONS.EDIT_FINANCE" variant="success" size="sm" @click="handleCompleteDraft(viewingTransaction)">
+              <CheckCircleIcon class="w-4 h-4" />
+              ดำเนินการ
+            </ActionButton>
+          </div>
+        </div>
+        <div
+          v-else-if="viewingTransaction && (viewingTransaction.status === 'completed' || viewingTransaction.status === 'on_hold') && !store.isStep1Complete"
+          class="flex justify-end"
+        >
+          <ActionButton
+            :permission="PERMISSIONS.EDIT_FINANCE"
+            variant="secondary"
+            size="sm"
+            @click="openStatusChange(viewingTransaction)"
+          >
+            <ArrowPathIcon class="w-4 h-4" />
+            เปลี่ยนสถานะ
+          </ActionButton>
+        </div>
+      </template>
+    </BaseModal>
+
+    <!-- Queue blocked dialog (ยอดไม่พอ / server error ตอนดำเนินการ-ยกเลิก) -->
+    <BaseModal :open="!!queueBlockedMessage" title="ดำเนินการไม่ได้" size="sm" @close="queueBlockedMessage = ''">
+      <div class="flex items-start gap-3 text-sm text-gray-700">
+        <ExclamationTriangleIcon class="w-6 h-6 text-amber-500 flex-shrink-0" />
+        <p>{{ queueBlockedMessage }} — รายการยังอยู่ในคิว "รอดำเนินการ"</p>
+      </div>
+      <template #footer>
+        <div class="flex justify-end">
+          <BaseButton variant="primary" @click="queueBlockedMessage = ''">ตกลง</BaseButton>
         </div>
       </template>
     </BaseModal>

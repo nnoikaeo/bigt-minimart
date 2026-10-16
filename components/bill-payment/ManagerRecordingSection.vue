@@ -245,8 +245,11 @@ function getDraftShortfall(txn: BillPaymentTransaction): number {
   return Math.max(0, txn.amount - (store.currentBalance?.bankAccount ?? 0))
 }
 function getInsufficientMessage(txn: BillPaymentTransaction): string {
-  return `ยอดในบัญชีไม่พอ (ขาด ${formatAmount(getDraftShortfall(txn))}) — โทรหา Owner ให้ฝากเงินเข้า`
+  return `ยอดในบัญชีไม่พอ (ขาด ${formatAmount(getDraftShortfall(txn))})`
 }
+
+// Dialog แจ้งเหตุผลที่ดำเนินการ/ยกเลิก draft ไม่ได้ (errorMessage อยู่บนสุดของหน้า มองไม่เห็นตอนเลื่อนลงมา)
+const queueBlockedMessage = ref('')
 
 async function handleCompleteDraft(txn: BillPaymentTransaction) {
   if (!canManagerEdit.value) return
@@ -256,7 +259,7 @@ async function handleCompleteDraft(txn: BillPaymentTransaction) {
   }
   errorMessage.value = ''
   if (getDraftShortfall(txn) > 0) {
-    errorMessage.value = getInsufficientMessage(txn)
+    queueBlockedMessage.value = getInsufficientMessage(txn)
     return
   }
   try {
@@ -264,7 +267,7 @@ async function handleCompleteDraft(txn: BillPaymentTransaction) {
     successMessage.value = 'ดำเนินการรายการสำเร็จ — นับยอดแล้ว'
     logger.log('Draft completed', txn.id)
   } catch (err: any) {
-    errorMessage.value = err.data?.message ?? err.message ?? 'เกิดข้อผิดพลาด'
+    queueBlockedMessage.value = err.data?.message ?? err.message ?? 'เกิดข้อผิดพลาด'
     logger.error('handleCompleteDraft', err)
   }
 }
@@ -286,7 +289,7 @@ async function handleCancelDraft() {
     successMessage.value = 'ยกเลิกรายการแล้ว (ไม่กระทบยอด)'
     logger.log('Draft cancelled', cancellingDraftId.value)
   } catch (err: any) {
-    errorMessage.value = err.data?.message ?? err.message ?? 'เกิดข้อผิดพลาด'
+    queueBlockedMessage.value = err.data?.message ?? err.message ?? 'เกิดข้อผิดพลาด'
     logger.error('handleCancelDraft', err)
   } finally {
     showCancelDraftConfirm.value = false
@@ -856,6 +859,19 @@ onMounted(async () => {
       @confirm="handleDeleteExecute"
       @cancel="showDeleteConfirm = false"
     />
+
+    <!-- Queue blocked dialog (ยอดไม่พอ / server error ตอนดำเนินการ-ยกเลิก) -->
+    <BaseModal :open="!!queueBlockedMessage" title="ดำเนินการไม่ได้" size="sm" @close="queueBlockedMessage = ''">
+      <div class="flex items-start gap-3 text-sm text-gray-700">
+        <ExclamationTriangleIcon class="h-6 w-6 flex-shrink-0 text-amber-500" />
+        <p>{{ queueBlockedMessage }} — รายการยังอยู่ในคิว "รอดำเนินการ"</p>
+      </div>
+      <template #footer>
+        <div class="flex justify-end">
+          <BaseButton variant="primary" @click="queueBlockedMessage = ''">ตกลง</BaseButton>
+        </div>
+      </template>
+    </BaseModal>
 
     <!-- CONFIRM DIALOG: Cancel draft (ชำระในแอปธนาคารไม่ผ่าน) -->
     <ConfirmDialog
