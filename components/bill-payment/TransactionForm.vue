@@ -11,7 +11,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   submit: [formData: {
     transactionType: 'bill_payment' | 'owner_deposit'
-    billType?: 'utility' | 'telecom' | 'insurance' | 'other'
+    billType?: 'utility' | 'telecom' | 'loan' | 'other'
     amount: number
     commission: number
     customerName?: string
@@ -28,7 +28,7 @@ const { validateTransactionForm } = useBillPaymentHelpers()
 // ─── Form state ───────────────────────────────────────────────────────────────
 const form = reactive({
   transactionType: '' as 'bill_payment' | 'owner_deposit' | '',
-  billType: '' as 'utility' | 'telecom' | 'insurance' | 'other' | '',
+  billType: '' as 'utility' | 'telecom' | 'loan' | 'other' | '',
   amount: '' as number | '',
   customerName: '',
   status: 'completed' as BillPaymentTransactionStatus,
@@ -189,7 +189,7 @@ async function handleSubmit() {
         :options="[
           { value: 'utility', label: 'สาธารณูปโภค' },
           { value: 'telecom', label: 'โทรคมนาคม' },
-          { value: 'insurance', label: 'ประกันภัย' },
+          { value: 'loan', label: 'สินเชื่อ (บัตรเครดิต/ผ่อนสินค้า)' },
           { value: 'other', label: 'อื่นๆ' },
         ]"
       />

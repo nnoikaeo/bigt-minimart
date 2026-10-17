@@ -8,7 +8,7 @@ export interface BillPaymentTransaction {
   date: string
   timestamp: string
   transactionType: 'bill_payment' | 'owner_deposit'
-  billType?: 'utility' | 'telecom' | 'insurance' | 'other'
+  billType?: 'utility' | 'telecom' | 'loan' | 'other'
   amount: number
   commission: number
   customerName?: string
@@ -121,7 +121,7 @@ export interface BillPaymentFavorite {
   order: number
   label: string
   customerName?: string
-  billType?: 'utility' | 'telecom' | 'insurance' | 'other'
+  billType?: 'utility' | 'telecom' | 'loan' | 'other'
   defaultAmount?: number
   defaultCommission?: number
   createdAt: string

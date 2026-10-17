@@ -1306,7 +1306,7 @@ Manager/Assistant Manager บันทึกลงแอพ:
   - ✅ No manual balance calculations needed
 - **Data Recorded Per Transaction**:
   - transactionType: "bill_payment" or "owner_deposit"
-  - billType: "utility" / "telecom" / "insurance" / "other" (เฉพาะ bill_payment)
+  - billType: "utility" / "telecom" / "loan" (สินเชื่อ — บัตรเครดิต/ผ่อนสินค้า) / "other" (เฉพาะ bill_payment)
   - amount: เงินที่ลูกค้าจ่ายหรือ owner ฝาก
   - commission: ค่าบริการ (เงินสดเท่านั้น)
   - timestamp: เวลาที่บันทึก
@@ -1473,7 +1473,7 @@ Review System Data from Step 1:
      - Review all recorded transactions
      - Check transaction types, amounts, dates
      - Verify commission amounts
-     - Check bill type breakdown (utility/telecom/insurance/other)
+     - Check bill type breakdown (utility/telecom/loan/other)
         ↓
      VERIFY AGAINST BANK STATEMENT:
      1. Cross-check each bill payment transaction:

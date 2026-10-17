@@ -6,7 +6,7 @@ const schema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   timestamp: z.string().optional(),
   transactionType: z.enum(['bill_payment', 'owner_deposit']),
-  billType: z.enum(['utility', 'telecom', 'insurance', 'other']).optional(),
+  billType: z.enum(['utility', 'telecom', 'loan', 'other']).optional(),
   amount: z.number().nonnegative(),
   commission: z.number().nonnegative().default(0),
   customerName: z.string().optional(),

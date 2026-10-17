@@ -175,7 +175,7 @@ function closeModal() {
 
 async function handleFormSubmit(formData: {
   transactionType: 'bill_payment' | 'owner_deposit'
-  billType?: 'utility' | 'telecom' | 'insurance' | 'other'
+  billType?: 'utility' | 'telecom' | 'loan' | 'other'
   amount: number
   commission: number
   customerName?: string
@@ -332,7 +332,7 @@ const deletingFavoriteId = ref<string>('')
 const isSavingFavorite = ref(false)
 const favFormData = ref({
   label: '',
-  billType: '' as 'utility' | 'telecom' | 'insurance' | 'other' | '',
+  billType: '' as 'utility' | 'telecom' | 'loan' | 'other' | '',
   // ยอดไม่คงที่ (ค่าไฟ/ค่าน้ำ/บัตรเครดิต) = กรอกทุกครั้ง; ยอดคงที่ (ผ่อนรถ) = ใช้ defaultAmount
   amountMode: 'variable' as 'variable' | 'fixed',
   defaultAmount: '' as number | '',
@@ -346,7 +346,7 @@ const isFavFormValid = computed(() =>
 const BILL_TYPE_OPTIONS = [
   { value: 'utility', label: 'สาธารณูปโภค' },
   { value: 'telecom', label: 'โทรคมนาคม' },
-  { value: 'insurance', label: 'ประกัน' },
+  { value: 'loan', label: 'สินเชื่อ' },
   { value: 'other', label: 'อื่นๆ' },
 ] as const
 

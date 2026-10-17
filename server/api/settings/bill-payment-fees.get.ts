@@ -20,8 +20,8 @@ const DEFAULT_CONFIG = {
   billTypes: {
     utility:   { label: 'สาธารณูปโภค (ค่าน้ำ/ค่าไฟ)', tiers: DEFAULT_TIERS },
     telecom:   { label: 'ค่าโทรศัพท์/อินเทอร์เน็ต',   tiers: DEFAULT_TIERS },
-    insurance: {
-      label: 'ค่าประกัน',
+    loan: {
+      label: 'สินเชื่อ (บัตรเครดิต/ผ่อนสินค้า)',
       tiers: [
         { id: 1, label: '1 – 999',        minAmount: 1,    maxAmount: 999,   fee: 15 },
         { id: 2, label: '1,000 – 3,999',  minAmount: 1000, maxAmount: 3999,  fee: 25 },

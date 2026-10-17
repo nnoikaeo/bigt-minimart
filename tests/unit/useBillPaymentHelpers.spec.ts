@@ -25,8 +25,8 @@ describe('formatBillType', () => {
     expect(formatBillType('telecom')).toBe('โทรคมนาคม')
   })
 
-  it('returns Thai label for insurance', () => {
-    expect(formatBillType('insurance')).toBe('ประกันภัย')
+  it('returns Thai label for loan', () => {
+    expect(formatBillType('loan')).toBe('สินเชื่อ')
   })
 
   it('returns Thai label for other', () => {
