@@ -270,14 +270,14 @@
     "date": "2026-03-11",
     "step1": {
       "status": "in_progress",
-      "totalTransactions": 4,
-      "completedTransactions": 2,
-      "draftTransactions": 1,
-      "totalAmount": 1250,
-      "totalCommission": 30
+      "totalTransactions": 8,
+      "completedTransactions": 6,
+      "draftTransactions": 0,
+      "totalAmount": 16750,
+      "totalCommission": 80
     },
     "workflowStatus": "step1_in_progress",
     "createdAt": "2026-04-14T16:48:13.605Z",
-    "updatedAt": "2026-10-16T14:00:57.826Z"
+    "updatedAt": "2026-10-17T04:48:31.862Z"
   }
 ]
