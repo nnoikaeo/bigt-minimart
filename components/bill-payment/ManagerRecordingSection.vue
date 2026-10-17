@@ -1011,8 +1011,8 @@ onMounted(async () => {
                 </select>
               </FormField>
               <div class="grid grid-cols-2 gap-3">
-                <FormField label="จำนวนเงินเริ่มต้น (บาท)">
-                  <BaseInput v-model="favFormData.defaultAmount" type="number" placeholder="0" min="0" />
+                <FormField label="ยอดคงที่ (บาท)" hint="เช่น ผ่อนรถรายเดือน — เว้นว่างถ้ายอดเปลี่ยนทุกครั้ง (ค่าไฟ/ค่าน้ำ/บัตรเครดิต)">
+                  <BaseInput v-model="favFormData.defaultAmount" type="number" placeholder="เว้นว่าง = กรอกทุกครั้ง" min="0" />
                 </FormField>
                 <FormField label="ค่าธรรมเนียมเริ่มต้น (บาท)">
                   <BaseInput v-model="favFormData.defaultCommission" type="number" placeholder="0" min="0" />
@@ -1066,7 +1066,7 @@ onMounted(async () => {
               :disabled="!favAmount || Number(favAmount) <= 0"
               @click="handleSubmitFavorite"
             >
-              ✅ บันทึกรายการ
+              บันทึกเข้าคิว
             </BaseButton>
           </div>
         </template>
