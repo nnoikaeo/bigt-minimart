@@ -56,6 +56,7 @@ const filterTabs = computed<FilterTab[]>(() => [
   { key: 'completed', label: 'สำเร็จ', count: dateTransactions.value.filter((t: any) => t.status === 'completed').length },
   { key: 'draft', label: 'รอดำเนินการ', count: dateTransactions.value.filter((t: any) => t.status === 'draft').length },
   { key: 'on_hold', label: 'พักรายการ', count: dateTransactions.value.filter((t: any) => t.status === 'on_hold').length },
+  { key: 'cancelled', label: 'ยกเลิก', count: dateTransactions.value.filter((t: any) => t.status === 'cancelled').length },
 ])
 
 const filteredTransactions = computed(() => {

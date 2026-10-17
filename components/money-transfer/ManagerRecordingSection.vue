@@ -113,6 +113,7 @@ const filterTabs = [
   { label: 'สำเร็จ', value: 'completed' as const },
   { label: 'รอดำเนินการ', value: 'draft' as const },
   { label: 'พักรายการ', value: 'on_hold' as const },
+  { label: 'ยกเลิก', value: 'cancelled' as const },
 ]
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
