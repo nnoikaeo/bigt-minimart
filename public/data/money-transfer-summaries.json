@@ -167,9 +167,32 @@
         "serviceFeeCash": 90
       }
     },
-    "workflowStatus": "step1_completed",
+    "workflowStatus": "step2_completed_with_notes",
     "createdAt": "2026-03-08T09:00:00.000Z",
-    "updatedAt": "2026-03-08T15:30:00.000Z"
+    "updatedAt": "2026-10-17T05:22:46.961Z",
+    "step2": {
+      "status": "completed",
+      "completedAt": "2026-10-17T05:22:46.961Z",
+      "completedBy": "manager",
+      "completedByName": "Manager",
+      "expectedCash": {
+        "transferWithdrawal": 8500,
+        "serviceFee": 90,
+        "total": 8590
+      },
+      "actualCash": {
+        "transferWithdrawal": 8400,
+        "serviceFee": 90,
+        "total": 8490
+      },
+      "differences": {
+        "transferWithdrawal": -100,
+        "serviceFee": 0,
+        "total": -100
+      },
+      "verificationNotes": "เงินสดขาด 100 บาท ทอนลูกค้าเกิน",
+      "hasDiscrepancies": true
+    }
   },
   {
     "id": "mtsum-2026-03-09",
