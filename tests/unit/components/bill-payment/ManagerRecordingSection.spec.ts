@@ -5,6 +5,15 @@ import { createTestingPinia } from '@pinia/testing'
 import { useBillPaymentStore } from '~/stores/bill-payment'
 import ManagerRecordingSection from '~/components/bill-payment/ManagerRecordingSection.vue'
 
+// ── Stub Nuxt auto-import: useCommission (favorite commission) ────────────────
+vi.stubGlobal('useCommission', () => ({
+  isManual: ref(false),
+  manualValue: ref(0),
+  autoCommission: ref(10),
+  effectiveCommission: computed(() => 10),
+  reset: vi.fn(),
+}))
+
 // ── Stub module imports ───────────────────────────────────────────────────────
 vi.mock('~/composables/useLogger', () => ({
   useLogger: () => ({ log: vi.fn(), error: vi.fn() }),

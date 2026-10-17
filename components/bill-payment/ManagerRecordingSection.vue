@@ -327,25 +327,47 @@ const favTab = ref<1 | 2 | 3 | 4 | 5>(1)
 const favMode = ref<'select' | 'manage' | 'add' | 'edit'>('select')
 const selectedFavorite = ref<BillPaymentFavorite | null>(null)
 const favAmount = ref<number>(0)
-const favIsCommissionManual = ref(false)
-const favManualCommission = ref<number>(0)
 const editingFavoriteId = ref<string>('')
 const isSavingFavorite = ref(false)
 const favFormData = ref({
   label: '',
-  customerName: '',
   billType: '' as 'utility' | 'telecom' | 'insurance' | 'other' | '',
+  // ยอดไม่คงที่ (ค่าไฟ/ค่าน้ำ/บัตรเครดิต) = กรอกทุกครั้ง; ยอดคงที่ (ผ่อนรถ) = ใช้ defaultAmount
+  amountMode: 'variable' as 'variable' | 'fixed',
   defaultAmount: '' as number | '',
-  defaultCommission: '' as number | '',
 })
+const isFavFormValid = computed(() =>
+  favFormData.value.label.trim().length > 0 &&
+  (favFormData.value.amountMode === 'variable' || Number(favFormData.value.defaultAmount) > 0)
+)
 
 const BILL_TYPE_OPTIONS = [
-  { value: '', label: '— ไม่ระบุ —' },
-  { value: 'utility', label: '💡 สาธารณูปโภค' },
-  { value: 'telecom', label: '📱 โทรคมนาคม' },
-  { value: 'insurance', label: '🛡️ ประกัน' },
-  { value: 'other', label: '📋 อื่นๆ' },
-]
+  { value: 'utility', label: 'สาธารณูปโภค' },
+  { value: 'telecom', label: 'โทรคมนาคม' },
+  { value: 'insurance', label: 'ประกัน' },
+  { value: 'other', label: 'อื่นๆ' },
+] as const
+
+// Commission for a favorite: auto from the bill-payment fee tiers (same as TransactionForm),
+// with manual override — a legacy favorite's defaultCommission pre-fills the manual value.
+const favAmountNumber = computed(() => Number(favAmount.value) || 0)
+const favBillTypeRef = computed(() => selectedFavorite.value?.billType || 'other')
+const {
+  isManual: favIsCommissionManual,
+  manualValue: favManualCommission,
+  autoCommission: favAutoCommission,
+  effectiveCommission: favEffectiveCommission,
+  reset: resetFavCommission,
+} = useCommission(favAmountNumber, { serviceType: 'bill-payment', billType: favBillTypeRef })
+
+function toggleFavCommissionMode() {
+  if (!favIsCommissionManual.value) {
+    favManualCommission.value = favAutoCommission.value
+    favIsCommissionManual.value = true
+  } else {
+    resetFavCommission()
+  }
+}
 
 const favTabItems = computed(() =>
   (store.favorites as BillPaymentFavorite[])
@@ -364,8 +386,7 @@ function openFavoriteModal() {
   favTab.value = 1
   selectedFavorite.value = null
   favAmount.value = 0
-  favIsCommissionManual.value = false
-  favManualCommission.value = 0
+  resetFavCommission()
   showFavoriteModal.value = true
 }
 
@@ -376,8 +397,7 @@ function handleSelectFavorite(fav: BillPaymentFavorite) {
     favIsCommissionManual.value = true
     favManualCommission.value = fav.defaultCommission
   } else {
-    favIsCommissionManual.value = false
-    favManualCommission.value = 0
+    resetFavCommission()
   }
   favStep.value = 2
 }
@@ -391,7 +411,7 @@ function goBackFavStep1() {
 async function handleSubmitFavorite() {
   if (!selectedFavorite.value || !favAmount.value) return
   const fav = selectedFavorite.value
-  const commission = favIsCommissionManual.value ? (favManualCommission.value ?? 0) : 0
+  const commission = Number(favEffectiveCommission.value) || 0
   errorMessage.value = ''
   try {
     await store.createTransaction({
@@ -400,7 +420,8 @@ async function handleSubmitFavorite() {
       billType: fav.billType,
       amount: Number(favAmount.value),
       commission,
-      customerName: fav.customerName || undefined,
+      // ชื่อรายการโปรดใช้เป็นชื่อลูกค้า (favorite เก่าที่มี customerName แยกยังใช้ค่านั้น)
+      customerName: fav.customerName || fav.label,
       recordedBy: props.currentUser.uid,
       recordedAt: new Date().toISOString(),
     })
@@ -415,7 +436,7 @@ async function handleSubmitFavorite() {
 
 function startAddFavorite() {
   editingFavoriteId.value = ''
-  favFormData.value = { label: '', customerName: '', billType: '', defaultAmount: '', defaultCommission: '' }
+  favFormData.value = { label: '', billType: '', amountMode: 'variable', defaultAmount: '' }
   favMode.value = 'add'
 }
 
@@ -423,16 +444,15 @@ function startEditFavorite(fav: BillPaymentFavorite) {
   editingFavoriteId.value = fav.id
   favFormData.value = {
     label: fav.label,
-    customerName: fav.customerName ?? '',
     billType: fav.billType ?? '',
+    amountMode: fav.defaultAmount ? 'fixed' : 'variable',
     defaultAmount: fav.defaultAmount ?? '',
-    defaultCommission: fav.defaultCommission ?? '',
   }
   favMode.value = 'edit'
 }
 
 async function handleSaveFavorite() {
-  if (!favFormData.value.label.trim()) return
+  if (!isFavFormValid.value) return
   isSavingFavorite.value = true
   errorMessage.value = ''
   try {
@@ -440,10 +460,8 @@ async function handleSaveFavorite() {
       tab: favTab.value,
       order: favTabItems.value.length + 1,
       label: favFormData.value.label.trim(),
-      customerName: favFormData.value.customerName?.trim() || undefined,
       billType: (favFormData.value.billType as BillPaymentFavorite['billType']) || undefined,
-      defaultAmount: favFormData.value.defaultAmount !== '' ? Number(favFormData.value.defaultAmount) : undefined,
-      defaultCommission: favFormData.value.defaultCommission !== '' ? Number(favFormData.value.defaultCommission) : undefined,
+      defaultAmount: favFormData.value.amountMode === 'fixed' ? Number(favFormData.value.defaultAmount) : undefined,
     }
     if (favMode.value === 'edit' && editingFavoriteId.value) {
       await store.updateFavorite(editingFavoriteId.value, data)
@@ -957,8 +975,9 @@ onMounted(async () => {
                   {{ BILL_TYPE_OPTIONS.find(o => o.value === fav.billType)?.label }}
                 </span>
                 <span v-if="fav.defaultAmount" class="mt-1 text-sm font-medium text-green-700">
-                  {{ formatAmount(fav.defaultAmount) }}
+                  ยอดคงที่ {{ formatAmount(fav.defaultAmount) }}
                 </span>
+                <span v-else class="mt-1 text-xs text-gray-400">กรอกยอดทุกครั้ง</span>
               </button>
             </div>
           </template>
@@ -999,29 +1018,59 @@ onMounted(async () => {
           <!-- Add / Edit form -->
           <template v-else-if="favMode === 'add' || favMode === 'edit'">
             <div class="space-y-3">
-              <FormField label="ชื่อรายการโปรด" required>
-                <BaseInput v-model="favFormData.label" placeholder="เช่น ค่าไฟบ้านคุณสมชาย" />
+              <FormField label="ชื่อรายการโปรด" required hint="ใช้เป็นชื่อลูกค้าในรายการด้วย">
+                <BaseInput v-model="favFormData.label" placeholder="เช่น ค่าไฟ คุณสมชาย" />
               </FormField>
-              <FormField label="ชื่อลูกค้า">
-                <BaseInput v-model="favFormData.customerName" placeholder="ชื่อลูกค้า (ไม่บังคับ)" />
-              </FormField>
+
               <FormField label="ประเภทบิล">
-                <select v-model="favFormData.billType" class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm">
-                  <option v-for="opt in BILL_TYPE_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                </select>
+                <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  <button
+                    v-for="opt in BILL_TYPE_OPTIONS"
+                    :key="opt.value"
+                    type="button"
+                    class="rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
+                    :class="favFormData.billType === opt.value
+                      ? 'border-primary bg-primary text-white'
+                      : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'"
+                    @click="favFormData.billType = favFormData.billType === opt.value ? '' : opt.value"
+                  >
+                    {{ opt.label }}
+                  </button>
+                </div>
               </FormField>
-              <div class="grid grid-cols-2 gap-3">
-                <FormField label="ยอดคงที่ (บาท)" hint="เช่น ผ่อนรถรายเดือน — เว้นว่างถ้ายอดเปลี่ยนทุกครั้ง (ค่าไฟ/ค่าน้ำ/บัตรเครดิต)">
-                  <BaseInput v-model="favFormData.defaultAmount" type="number" placeholder="เว้นว่าง = กรอกทุกครั้ง" min="0" />
-                </FormField>
-                <FormField label="ค่าธรรมเนียมเริ่มต้น (บาท)">
-                  <BaseInput v-model="favFormData.defaultCommission" type="number" placeholder="0" min="0" />
-                </FormField>
-              </div>
+
+              <FormField label="ยอดเงิน" required>
+                <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <label
+                    class="flex cursor-pointer items-start gap-2 rounded-lg border p-3 transition-colors"
+                    :class="favFormData.amountMode === 'variable' ? 'border-primary bg-red-50' : 'border-gray-200 bg-white hover:bg-gray-50'"
+                  >
+                    <input v-model="favFormData.amountMode" type="radio" value="variable" class="mt-1 accent-red-600" />
+                    <span>
+                      <span class="block text-sm font-medium text-gray-900">ยอดไม่คงที่</span>
+                      <span class="block text-xs text-gray-500">กรอกยอดทุกครั้งที่ลูกค้ามาจ่าย เช่น ค่าไฟ ค่าน้ำ บัตรเครดิต</span>
+                    </span>
+                  </label>
+                  <label
+                    class="flex cursor-pointer items-start gap-2 rounded-lg border p-3 transition-colors"
+                    :class="favFormData.amountMode === 'fixed' ? 'border-primary bg-red-50' : 'border-gray-200 bg-white hover:bg-gray-50'"
+                  >
+                    <input v-model="favFormData.amountMode" type="radio" value="fixed" class="mt-1 accent-red-600" />
+                    <span>
+                      <span class="block text-sm font-medium text-gray-900">ยอดคงที่</span>
+                      <span class="block text-xs text-gray-500">ใช้ยอดเดิมทุกครั้ง (แก้ได้ตอนบันทึก) เช่น ผ่อนรถ ผ่อนสินค้า</span>
+                    </span>
+                  </label>
+                </div>
+                <div v-if="favFormData.amountMode === 'fixed'" class="mt-2">
+                  <BaseInput v-model="favFormData.defaultAmount" type="number" placeholder="ยอดต่อครั้ง (บาท)" min="0" />
+                </div>
+              </FormField>
+              <p class="text-xs text-gray-500">ค่าธรรมเนียมคำนวณอัตโนมัติตามประเภทบิลและยอดเงินตอนบันทึก</p>
             </div>
             <div class="mt-4 flex justify-end gap-2">
               <BaseButton variant="secondary" @click="favMode = 'manage'">ยกเลิก</BaseButton>
-              <BaseButton variant="primary" :loading="isSavingFavorite" :disabled="!favFormData.label.trim()" @click="handleSaveFavorite">
+              <BaseButton variant="primary" :loading="isSavingFavorite" :disabled="!isFavFormValid" @click="handleSaveFavorite">
                 💾 บันทึก
               </BaseButton>
             </div>
@@ -1041,21 +1090,28 @@ onMounted(async () => {
             <BaseInput v-model="favAmount" type="number" placeholder="0" min="0" />
           </FormField>
           <FormField label="ค่าธรรมเนียม (บาท)">
-            <div class="flex items-center gap-2">
-              <BaseInput
-                v-model="favManualCommission"
+            <div
+              class="flex overflow-hidden rounded-lg border focus-within:ring-2 focus-within:ring-primary"
+              :class="favIsCommissionManual ? 'border-amber-400' : 'border-gray-300'"
+            >
+              <input
+                :value="favEffectiveCommission"
                 type="number"
-                placeholder="0"
                 min="0"
+                step="1"
                 :disabled="!favIsCommissionManual"
-                class="flex-1"
+                class="min-w-0 flex-1 bg-white px-3 py-2 text-sm outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                @input="e => { favManualCommission = Number((e.target as HTMLInputElement).value); favIsCommissionManual = true }"
               />
               <button
-                class="rounded-lg border px-3 py-2 text-sm transition-colors"
-                :class="favIsCommissionManual ? 'border-blue-300 bg-blue-50 text-blue-700' : 'border-gray-200 bg-gray-50 text-gray-500'"
-                @click="favIsCommissionManual = !favIsCommissionManual"
+                type="button"
+                class="whitespace-nowrap border-l px-3 py-2 text-xs font-medium transition-colors"
+                :class="favIsCommissionManual
+                  ? 'border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                  : 'border-gray-300 bg-blue-50 text-blue-700 hover:bg-blue-100'"
+                @click="toggleFavCommissionMode"
               >
-                {{ favIsCommissionManual ? '✏️ กำหนดเอง' : '— ไม่มี' }}
+                {{ favIsCommissionManual ? 'กำหนดเอง' : 'อัตโนมัติ' }}
               </button>
             </div>
           </FormField>
