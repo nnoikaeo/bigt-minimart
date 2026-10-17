@@ -334,5 +334,20 @@
       "verificationNotes": "",
       "hasDiscrepancies": false
     }
+  },
+  {
+    "id": "mtsum-2026-10-17",
+    "date": "2026-10-17",
+    "step1": {
+      "status": "in_progress",
+      "totalTransactions": 0,
+      "completedTransactions": 0,
+      "draftTransactions": 0,
+      "totalAmount": 0,
+      "totalCommission": 0
+    },
+    "workflowStatus": "step1_in_progress",
+    "createdAt": "2026-10-17T05:59:43.253Z",
+    "updatedAt": "2026-10-17T05:59:43.253Z"
   }
 ]

@@ -240,11 +240,15 @@
   {
     "id": "mtbal-2026-10-17",
     "date": "2026-10-17",
-    "bankAccount": 0,
+    "bankAccount": 7500,
     "transferCash": 0,
     "serviceFeeTransfer": 0,
     "serviceFeeCash": 0,
     "history": [],
-    "updatedAt": "2026-10-17T05:20:50.028Z"
+    "updatedAt": "2026-10-17T05:59:49.928Z",
+    "openingBalance": 7500,
+    "openingBalanceSetAt": "2026-10-17T05:59:49.928Z",
+    "openingBalanceSource": "carryover",
+    "openingBalanceSetBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3"
   }
 ]
