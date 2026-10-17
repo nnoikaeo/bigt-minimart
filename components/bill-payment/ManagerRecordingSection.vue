@@ -1047,7 +1047,7 @@ onMounted(async () => {
 
         <!-- ADD / EDIT FORM -->
         <div v-else-if="favMode === 'add' || favMode === 'edit'" class="space-y-4">
-          <FormField label="ชื่อรายการโปรด" required hint="ใช้เป็นชื่อลูกค้าในรายการด้วย">
+          <FormField label="ชื่อรายการโปรด" required>
             <BaseInput v-model="favFormData.label" placeholder="เช่น ค่าไฟ คุณสมชาย" />
           </FormField>
 
@@ -1095,7 +1095,6 @@ onMounted(async () => {
               <BaseInput v-model="favFormData.defaultAmount" type="number" placeholder="ยอดต่อครั้ง (บาท)" min="0" />
             </div>
           </FormField>
-          <p class="text-xs text-gray-500">ค่าธรรมเนียมคำนวณอัตโนมัติตามประเภทบิลและยอดเงินตอนบันทึก</p>
         </div>
       </div>
 
