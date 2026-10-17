@@ -285,8 +285,31 @@
         "serviceFeeCash": 110
       }
     },
-    "workflowStatus": "step1_completed",
+    "workflowStatus": "step2_completed",
     "createdAt": "2026-04-14T16:48:13.605Z",
-    "updatedAt": "2026-10-17T05:13:49.839Z"
+    "updatedAt": "2026-10-17T05:17:50.484Z",
+    "step2": {
+      "status": "completed",
+      "completedAt": "2026-10-17T05:17:50.484Z",
+      "completedBy": "manager",
+      "completedByName": "Manager",
+      "expectedCash": {
+        "transferWithdrawal": 7500,
+        "serviceFee": 110,
+        "total": 7610
+      },
+      "actualCash": {
+        "transferWithdrawal": 7500,
+        "serviceFee": 110,
+        "total": 7610
+      },
+      "differences": {
+        "transferWithdrawal": 0,
+        "serviceFee": 0,
+        "total": 0
+      },
+      "verificationNotes": "",
+      "hasDiscrepancies": false
+    }
   }
 ]
