@@ -85,6 +85,25 @@ describe('CashVerificationTable', () => {
   })
 
   describe('manager-input mode', () => {
+    it('shows an empty input with 0 placeholder and no total badge before counting', () => {
+      const rows = [{ label: 'เงินสด', expected: 1000, managerActual: null }]
+      const wrapper = mountTable('manager-input', { rows })
+      const input = wrapper.find('input[type="number"]')
+      expect((input.element as HTMLInputElement).value).toBe('')
+      expect(input.attributes('placeholder')).toBe('0')
+      expect(wrapper.text()).not.toContain('มีผลต่าง')
+      expect(wrapper.text()).not.toContain('ตรงกัน')
+    })
+
+    it('emits null when the input is cleared', async () => {
+      const rows = [{ label: 'เงินสด', expected: 1000, managerActual: 900 }]
+      const wrapper = mountTable('manager-input', { rows })
+      const input = wrapper.find('input[type="number"]')
+      Object.defineProperty(input.element, 'value', { value: '', writable: true })
+      await input.trigger('input')
+      expect(wrapper.emitted('update:managerActual')?.[0]).toEqual([0, null])
+    })
+
     it('renders number inputs for manager actual values', () => {
       const rows = [{ label: 'เงินสด', expected: 1000, managerActual: null }]
       const wrapper = mountTable('manager-input', { rows })

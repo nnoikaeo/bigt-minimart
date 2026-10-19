@@ -25,6 +25,18 @@ const emit = defineEmits<{
 
 const { validateTransactionForm } = useBillPaymentHelpers()
 
+const BILL_TYPE_OPTIONS = [
+  { value: 'utility', label: 'สาธารณูปโภค' },
+  { value: 'telecom', label: 'โทรคมนาคม' },
+  { value: 'loan', label: 'สินเชื่อ' },
+  { value: 'other', label: 'อื่นๆ' },
+] as const
+
+const TRANSACTION_TYPE_OPTIONS = [
+  { value: 'bill_payment', label: 'รับชำระบิล' },
+  { value: 'owner_deposit', label: 'ฝากเงิน (เจ้าของ)' },
+] as const
+
 // ─── Form state ───────────────────────────────────────────────────────────────
 const form = reactive({
   transactionType: '' as 'bill_payment' | 'owner_deposit' | '',
@@ -156,25 +168,20 @@ async function handleSubmit() {
 
     <!-- ── ประเภทรายการ ──────────────────────────────────────────────────── -->
     <FormField label="ประเภทรายการ" required>
-      <div class="flex gap-4">
-        <label class="flex cursor-pointer items-center gap-2">
-          <input
-            v-model="form.transactionType"
-            type="radio"
-            value="bill_payment"
-            class="accent-red-600"
-          />
-          <span class="text-sm">รับชำระบิล</span>
-        </label>
-        <label class="flex cursor-pointer items-center gap-2">
-          <input
-            v-model="form.transactionType"
-            type="radio"
-            value="owner_deposit"
-            class="accent-red-600"
-          />
-          <span class="text-sm">ฝากเงิน (เจ้าของ)</span>
-        </label>
+      <div class="txn-type-group grid grid-cols-2 gap-2">
+        <button
+          v-for="opt in TRANSACTION_TYPE_OPTIONS"
+          :key="opt.value"
+          type="button"
+          :data-value="opt.value"
+          class="rounded-lg border px-2 py-2 text-center text-sm font-medium transition-colors"
+          :class="form.transactionType === opt.value
+            ? 'border-primary bg-primary text-white'
+            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'"
+          @click="form.transactionType = opt.value"
+        >
+          {{ opt.label }}
+        </button>
       </div>
     </FormField>
 
@@ -184,16 +191,20 @@ async function handleSubmit() {
       label="ประเภทบิล"
       required
     >
-      <BaseSelect
-        v-model="form.billType"
-        placeholder="เลือกประเภทบิล"
-        :options="[
-          { value: 'utility', label: 'สาธารณูปโภค' },
-          { value: 'telecom', label: 'โทรคมนาคม' },
-          { value: 'loan', label: 'สินเชื่อ (บัตรเครดิต/ผ่อนสินค้า)' },
-          { value: 'other', label: 'อื่นๆ' },
-        ]"
-      />
+      <div class="bill-type-group grid grid-cols-2 gap-2">
+        <button
+          v-for="opt in BILL_TYPE_OPTIONS"
+          :key="opt.value"
+          type="button"
+          class="rounded-lg border px-2 py-2 text-center text-sm font-medium transition-colors"
+          :class="form.billType === opt.value
+            ? 'border-primary bg-primary text-white'
+            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'"
+          @click="form.billType = opt.value"
+        >
+          {{ opt.label }}
+        </button>
+      </div>
     </FormField>
 
     <!-- ── จำนวนเงิน ─────────────────────────────────────────────────────── -->
@@ -204,6 +215,7 @@ async function handleSubmit() {
         min="0"
         step="1"
         placeholder="0"
+        class="text-center"
       />
     </FormField>
 
@@ -224,7 +236,7 @@ async function handleSubmit() {
           step="1"
           placeholder="0"
           :disabled="!isCommissionManual"
-          class="flex-1 px-3 py-2 text-sm outline-none min-w-0 bg-white disabled:bg-gray-50 disabled:text-gray-500"
+          class="flex-1 px-3 py-2 text-center text-sm outline-none min-w-0 bg-white disabled:bg-gray-50 disabled:text-gray-500"
           @input="e => { commissionManualValue = Number((e.target as HTMLInputElement).value); isCommissionManual = true }"
         />
         <button

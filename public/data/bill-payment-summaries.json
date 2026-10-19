@@ -119,5 +119,29 @@
     "step2ExpectedServiceFeeCash": 20,
     "step2ActualServiceFeeCash": 20,
     "step2HasDiscrepancies": false
+  },
+  {
+    "id": "bpsum-2026-04-02",
+    "date": "2026-04-02",
+    "workflowStatus": "step2_completed_with_notes",
+    "createdAt": "2026-10-19T17:23:41.792Z",
+    "updatedAt": "2026-10-19T19:05:07.732Z",
+    "step1CompletedAt": "2026-10-19T18:51:44.357Z",
+    "step1CompletedBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
+    "step1CompletedByName": "lek@bigt.co.th",
+    "step1TotalTransactions": 11,
+    "step1SuccessTransactions": 11,
+    "step1FailedTransactions": 0,
+    "step1TotalAmount": 1100,
+    "step1TotalCommission": 110,
+    "step2CompletedAt": "2026-10-19T19:05:07.732Z",
+    "step2CompletedBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
+    "step2CompletedByName": "lek@bigt.co.th",
+    "step2ExpectedBillPaymentCash": 1100,
+    "step2ActualBillPaymentCash": 1000,
+    "step2ExpectedServiceFeeCash": 110,
+    "step2ActualServiceFeeCash": 210,
+    "step2HasDiscrepancies": true,
+    "step2VerificationNotes": "รอตรวจสอบ"
   }
 ]

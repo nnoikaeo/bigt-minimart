@@ -49,6 +49,15 @@ const isStep1InProgress = computed(() => workflowStatus.value === 'step1_in_prog
 // ─── Transactions ─────────────────────────────────────────────────────────────
 const dateTransactions = computed(() => store.getTransactionsByDate(props.date))
 
+// Row number as shown in the "ทั้งหมด" table, so queue items can be matched to table rows
+const dayRowNumber = computed(() => new Map<string, number>(dateTransactions.value.map((t: any, i: number) => [t.id, i + 1])))
+
+// Drafts + on-hold, oldest first (order customers came in)
+const pendingQueue = computed(() =>
+  [...store.getDraftTransactions, ...store.getOnHoldTransactions]
+    .sort((a: any, b: any) => (dayRowNumber.value.get(a.id) ?? 0) - (dayRowNumber.value.get(b.id) ?? 0)),
+)
+
 // ─── Filter Tabs ──────────────────────────────────────────────────────────────
 const activeFilter = ref('all')
 
@@ -557,16 +566,19 @@ onMounted(async () => {
       </div>
       <ul class="space-y-2">
         <li
-          v-for="txn in [...store.getDraftTransactions, ...store.getOnHoldTransactions]"
+          v-for="txn in pendingQueue"
           :key="txn.id"
           class="flex items-center justify-between gap-3 rounded-lg border border-yellow-200 bg-white px-4 py-2 text-sm"
         >
           <div class="flex items-center gap-2 min-w-0">
+            <span class="w-8 shrink-0 font-semibold text-gray-900">#{{ dayRowNumber.get(txn.id) }}</span>
+            <span class="w-12 shrink-0 text-gray-500">{{ formatTime(txn.timestamp) }}</span>
             <BaseBadge :variant="getStatusBadgeVariant(txn.status)" size="sm">
               {{ getStatusLabel(txn.status) }}
             </BaseBadge>
             <span class="truncate text-gray-700">
               {{ formatTransactionType(txn.transactionType) }}
+              {{ txn.billType ? `· ${formatBillType(txn.billType)}` : '' }}
               {{ txn.customerName ? `— ${txn.customerName}` : '' }}
               · {{ formatAmount(txn.amount) }}
             </span>
