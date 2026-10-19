@@ -261,10 +261,18 @@ describe('TransactionForm', () => {
       recordedAt: '2026-04-14T10:00:00Z',
     }
 
-    it('hides statusNote input for a new transaction', () => {
-      const wrapper = mountForm()
+    it('hides statusNote input for a new transaction', async () => {
+      const wrapper = mountForm({ presetType: 'bill_payment' })
+      await nextTick()
       // 2 BaseInput (amount + customerName), no statusNote
       expect(wrapper.findAll('.base-input')).toHaveLength(2)
+    })
+
+    it('hides customerName input for owner_deposit', async () => {
+      const wrapper = mountForm({ presetType: 'owner_deposit' })
+      await nextTick()
+      // amount only
+      expect(wrapper.findAll('.base-input')).toHaveLength(1)
     })
 
     it('renders completed / on_hold / cancelled radios (no draft) when editing a completed record', async () => {

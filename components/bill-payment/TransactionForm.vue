@@ -109,6 +109,7 @@ watch(() => props.presetType, init)
 // ─── Submit ───────────────────────────────────────────────────────────────────
 async function handleSubmit() {
   const commissionValue = form.transactionType === 'bill_payment' ? effectiveCommission.value : 0
+  const customerName = form.transactionType === 'bill_payment' ? form.customerName || undefined : undefined
 
   const { valid, errors } = validateTransactionForm({
     transactionType: form.transactionType,
@@ -116,7 +117,7 @@ async function handleSubmit() {
     amount: form.amount,
     commission: commissionValue,
     status: form.status,
-    customerName: form.customerName || undefined,
+    customerName,
     notes: form.notes || undefined,
   })
   if (!valid) {
@@ -131,7 +132,7 @@ async function handleSubmit() {
       billType: form.transactionType === 'bill_payment' ? (form.billType as any) || undefined : undefined,
       amount: Number(form.amount),
       commission: commissionValue,
-      customerName: form.customerName || undefined,
+      customerName,
       ...(showStatusPicker.value
         ? { status: form.status, statusNote: form.statusNote || undefined }
         : {}),
@@ -240,8 +241,8 @@ async function handleSubmit() {
       </div>
     </FormField>
 
-    <!-- ── ชื่อลูกค้า ──────────────────────────────────────────────────── -->
-    <FormField label="ชื่อลูกค้า (ไม่บังคับ)">
+    <!-- ── ชื่อลูกค้า (เฉพาะ bill_payment — ฝากเงินเป็นของเจ้าของ) ────────── -->
+    <FormField v-if="form.transactionType === 'bill_payment'" label="ชื่อลูกค้า (ไม่บังคับ)">
       <BaseInput
         v-model="form.customerName"
         type="text"
