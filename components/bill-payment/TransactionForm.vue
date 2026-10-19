@@ -25,6 +25,13 @@ const emit = defineEmits<{
 
 const { validateTransactionForm } = useBillPaymentHelpers()
 
+const BILL_TYPE_OPTIONS = [
+  { value: 'utility', label: 'สาธารณูปโภค' },
+  { value: 'telecom', label: 'โทรคมนาคม' },
+  { value: 'loan', label: 'สินเชื่อ' },
+  { value: 'other', label: 'อื่นๆ' },
+] as const
+
 // ─── Form state ───────────────────────────────────────────────────────────────
 const form = reactive({
   transactionType: '' as 'bill_payment' | 'owner_deposit' | '',
@@ -184,16 +191,20 @@ async function handleSubmit() {
       label="ประเภทบิล"
       required
     >
-      <BaseSelect
-        v-model="form.billType"
-        placeholder="เลือกประเภทบิล"
-        :options="[
-          { value: 'utility', label: 'สาธารณูปโภค' },
-          { value: 'telecom', label: 'โทรคมนาคม' },
-          { value: 'loan', label: 'สินเชื่อ (บัตรเครดิต/ผ่อนสินค้า)' },
-          { value: 'other', label: 'อื่นๆ' },
-        ]"
-      />
+      <div class="bill-type-group grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <button
+          v-for="opt in BILL_TYPE_OPTIONS"
+          :key="opt.value"
+          type="button"
+          class="rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
+          :class="form.billType === opt.value
+            ? 'border-primary bg-primary text-white'
+            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'"
+          @click="form.billType = opt.value"
+        >
+          {{ opt.label }}
+        </button>
+      </div>
     </FormField>
 
     <!-- ── จำนวนเงิน ─────────────────────────────────────────────────────── -->

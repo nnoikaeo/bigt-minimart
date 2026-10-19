@@ -108,7 +108,16 @@ describe('TransactionForm', () => {
   describe('billType dropdown visibility', () => {
     it('hides billType dropdown when no transactionType is selected', () => {
       const wrapper = mountForm()
-      expect(wrapper.find('.base-select').exists()).toBe(false)
+      expect(wrapper.find('.bill-type-group').exists()).toBe(false)
+    })
+
+    it('selects a bill type with one click on its button', async () => {
+      const wrapper = mountForm({ presetType: 'bill_payment' })
+      await nextTick()
+      const buttons = wrapper.findAll('.bill-type-group button')
+      expect(buttons.map(b => b.text())).toEqual(['สาธารณูปโภค', 'โทรคมนาคม', 'สินเชื่อ', 'อื่นๆ'])
+      await buttons[2]!.trigger('click')
+      expect(buttons[2]!.classes()).toContain('bg-primary')
     })
 
     it('shows billType dropdown when bill_payment radio is selected', async () => {
@@ -116,7 +125,7 @@ describe('TransactionForm', () => {
       const radio = wrapper.findAll('input[type="radio"]').find(r => r.element.value === 'bill_payment')
       radio.element.checked = true
       await radio.trigger('change')
-      expect(wrapper.find('.base-select').exists()).toBe(true)
+      expect(wrapper.find('.bill-type-group').exists()).toBe(true)
     })
 
     it('hides billType dropdown when owner_deposit radio is selected', async () => {
@@ -124,7 +133,7 @@ describe('TransactionForm', () => {
       const ownerRadio = wrapper.findAll('input[type="radio"]').find(r => r.element.value === 'owner_deposit')
       ownerRadio.element.checked = true
       await ownerRadio.trigger('change')
-      expect(wrapper.find('.base-select').exists()).toBe(false)
+      expect(wrapper.find('.bill-type-group').exists()).toBe(false)
     })
   })
 
@@ -134,18 +143,18 @@ describe('TransactionForm', () => {
     it('shows billType dropdown when presetType is bill_payment', async () => {
       const wrapper = mountForm({ presetType: 'bill_payment' })
       await nextTick()
-      expect(wrapper.find('.base-select').exists()).toBe(true)
+      expect(wrapper.find('.bill-type-group').exists()).toBe(true)
     })
 
     it('hides billType dropdown when presetType is owner_deposit', async () => {
       const wrapper = mountForm({ presetType: 'owner_deposit' })
       await nextTick()
-      expect(wrapper.find('.base-select').exists()).toBe(false)
+      expect(wrapper.find('.bill-type-group').exists()).toBe(false)
     })
 
     it('renders form without preset selection when presetType is empty string', () => {
       const wrapper = mountForm({ presetType: '' })
-      expect(wrapper.find('.base-select').exists()).toBe(false)
+      expect(wrapper.find('.bill-type-group').exists()).toBe(false)
     })
   })
 
@@ -207,7 +216,7 @@ describe('TransactionForm', () => {
     it('shows billType dropdown when editingData has bill_payment type', async () => {
       const wrapper = mountForm({ editingData })
       await nextTick()
-      expect(wrapper.find('.base-select').exists()).toBe(true)
+      expect(wrapper.find('.bill-type-group').exists()).toBe(true)
     })
 
     it('hides billType dropdown when editingData has owner_deposit type', async () => {
@@ -215,7 +224,7 @@ describe('TransactionForm', () => {
         editingData: { ...editingData, transactionType: 'owner_deposit', billType: undefined },
       })
       await nextTick()
-      expect(wrapper.find('.base-select').exists()).toBe(false)
+      expect(wrapper.find('.bill-type-group').exists()).toBe(false)
     })
   })
 
