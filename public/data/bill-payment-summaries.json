@@ -100,9 +100,9 @@
   {
     "id": "bpsum-2026-04-01",
     "date": "2026-04-01",
-    "workflowStatus": "step1_completed",
+    "workflowStatus": "step2_completed",
     "createdAt": "2026-04-20T17:25:13.781Z",
-    "updatedAt": "2026-10-19T16:35:21.432Z",
+    "updatedAt": "2026-10-19T16:45:40.531Z",
     "step1CompletedAt": "2026-10-19T16:35:21.431Z",
     "step1CompletedBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
     "step1CompletedByName": "lek@bigt.co.th",
@@ -110,6 +110,14 @@
     "step1SuccessTransactions": 2,
     "step1FailedTransactions": 3,
     "step1TotalAmount": 3000,
-    "step1TotalCommission": 20
+    "step1TotalCommission": 20,
+    "step2CompletedAt": "2026-10-19T16:45:40.531Z",
+    "step2CompletedBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
+    "step2CompletedByName": "lek@bigt.co.th",
+    "step2ExpectedBillPaymentCash": 2000,
+    "step2ActualBillPaymentCash": 2000,
+    "step2ExpectedServiceFeeCash": 20,
+    "step2ActualServiceFeeCash": 20,
+    "step2HasDiscrepancies": false
   }
 ]
