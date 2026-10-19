@@ -1306,7 +1306,7 @@ Manager/Assistant Manager บันทึกลงแอพ:
   - ✅ No manual balance calculations needed
 - **Data Recorded Per Transaction**:
   - transactionType: "bill_payment" or "owner_deposit"
-  - billType: "utility" / "telecom" / "loan" (สินเชื่อ — บัตรเครดิต/ผ่อนสินค้า) / "other" (เฉพาะ bill_payment)
+  - billType: "utility" / "telecom" / "loan" (สินเชื่อ — บัตรเครดิต/ผ่อนสินค้า) / "other" (เฉพาะ bill_payment) — เลือกด้วยปุ่ม; ค่าธรรมเนียมทุกประเภทใช้ขั้นเดียวกัน 1–999: 10 / 1,000–3,999: 20 / 4,000–6,999: 30 / 7,000–10,000: 40 (Owner ยืนยัน 19 ต.ค. 2569; แก้ได้ที่ `public/data/bill-payment-fee-config.json`)
   - amount: เงินที่ลูกค้าจ่ายหรือ owner ฝาก
   - commission: ค่าบริการ (เงินสดเท่านั้น)
   - timestamp: เวลาที่บันทึก

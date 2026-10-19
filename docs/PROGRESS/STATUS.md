@@ -2,9 +2,9 @@
 
 **Last Updated**: Oct 20, 2026
 **Updated By**: Claude Code
-**Current Branch**: develop (latest merge: PR #156; main: docs synced via PR #150, code at release #148)
+**Current Branch**: develop (latest merge: PR #157; main: docs synced via PR #150, code at release #148)
 **Current Phase**: Testing — Service Harmonization (Manual Test → Bug Fix → E2E)
-**Next Up**: merge `test/bp-2-leftovers` (BUG-018~020 + BP-2 results); BP-3 Auditor (2026-04-01 / 04-02 ready at step2); then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
+**Next Up**: BP-3 Auditor manual test — plan + data ready (TESTING_PLAN BP-3 "เริ่มจากตรงนี้": 2026-04-01 / 04-02); then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
 
 ---
 
@@ -23,7 +23,7 @@ PHASE 1: Core Features
 ├─ Week 9: Layout Consistency & Polish            ✅ COMPLETE (100%)
 ├─ Week 5-6 (original plan): Dashboard + Reports ❌ NOT STARTED (0%)
 ├─ Week 10+: Bill Payment Service Harmonization               ✅ COMPLETE (100%)
-├─ Testing: Service Harmonization Testing Plan                 🔄 IN PROGRESS (MT-1 ✅, MT-2 ✅, BP-2 Step 6 ✅)
+├─ Testing: Service Harmonization Testing Plan                 🔄 IN PROGRESS (MT-1 ✅, MT-2 ✅, BP-2 ✅; next BP-3)
 └─ Overall: PHASE 1 CORE COMPLETE — Harmonization COMPLETE — Testing IN PROGRESS
 
 Timeline Status: Money Transfer feature fully shipped ✓
@@ -157,7 +157,7 @@ Timeline Status: Money Transfer feature fully shipped ✓
 
 ### Week 12 (Oct 16-19, 2026): Project Re-entry — Docs, Tooling, MT-2 + Draft Queue
 
-**PRs**: #150 (docs → main), #151, #152, #153, #154, #155, #156
+**PRs**: #150 (docs → main), #151, #152, #153, #154, #155, #156, #157
 
 ```
 ✅ Documentation sync (commit 6f19509 + PR #150)
@@ -190,6 +190,12 @@ Timeline Status: Money Transfer feature fully shipped ✓
    ├─ BUG-015 (High): BP Step 2 cash count form never rendered after Step 1 (since #127)
    ├─ BUG-014 favorites modal close button (MT + BP), BUG-016 redundant waiting banner (MT + BP)
    └─ BUG-017 CashVerificationTable: offsetting row diffs flagged, row diffs as badges
+
+✅ BP-2 finished (PR #157, Oct 20)
+   ├─ BUG-018 BP form: transaction type + bill type as button groups; amount/fee centered
+   ├─ BUG-019 queue rows show #N (table row), time, bill type; oldest first (MT gets #N)
+   ├─ BUG-020 cash count inputs start empty (placeholder 0); no diff until counted
+   └─ BP-2 Step 1-11 ✅ (2026-04-01 matching, 2026-04-02 discrepancy) → BP-3 next
 ```
 
 ### Week 9 (Mar 23-25): Layout Consistency & Polish
@@ -299,13 +305,13 @@ Components (49 total):
 | Pages | 26 (16 functional, 10 placeholders) | ✅ |
 | Components | 49 | ✅ |
 | API routes | 72 | ✅ |
-| PRs merged (latest) | #156 | ✅ |
+| PRs merged (latest) | #157 | ✅ |
 | TypeScript errors (`nuxt typecheck`) | 0 | ✅ |
-| Unit/Integration tests (`vitest run`) | 287/287 passed (18 files) | ✅ |
+| Unit/Integration tests (`vitest run`) | 291/291 passed (18 files) | ✅ |
 | Production build (`nuxt build`) | Success | ✅ |
 | Money Transfer workflow | 9/9 statuses (unified) | ✅ |
 | Bill Payment workflow | Phase 1-6 Complete (27 Tasks) | ✅ |
-| Service Harmonization Testing | 2/17 tasks done (MT-1, MT-2) + BP-2 in progress (Step 6 ✅); open bugs BUG-001~003 | 🔄 |
+| Service Harmonization Testing | 3/17 tasks done (MT-1, MT-2, BP-2); next BP-3; open bugs BUG-001~003 | 🔄 |
 | Design System components | 14 ui + 4 layout + 8 shared | ✅ |
 | Mobile responsive | Yes | ✅ |
 | CI (PR Check / Staging / Production) | All green (Oct 16, 2026) | ✅ |
@@ -319,7 +325,7 @@ Components (49 total):
    ├─ Manual Test: 10 tasks (MT-1~4, BP-1~4, SHARED-1~2) 🔄 IN PROGRESS
    │     ├─ MT-1 ✅ ผ่าน
    │     ├─ MT-2 ✅ ผ่าน Step 1-11 (17 ต.ค., merged PR #153) — BUG-007~011 แก้แล้ว; BUG-001~003 ยังเปิด; BUG-002 ยังไม่ได้ทดสอบ
-   │     ├─ BP-2 ✅ Step 1-11 (17-20 ต.ค.; เหลือข้อย่อยที่ไม่ได้ลอง ดู TESTING_PLAN) — BUG-018~020 (ปุ่มเลือกประเภท, #N ในคิว, ช่องตรวจนับว่าง) แก้ + ทดสอบผ่าน บน `test/bp-2-leftovers`; BUG-014 (modal รายการโปรดไม่มีปุ่ม ✕) + BUG-015 (ฟอร์มตรวจนับ Step 2 ไม่แสดง, High) แก้ + ทดสอบผ่าน (PR #156); BUG-016/017 (กล่องสถานะซ้ำ, ป้ายตารางตรวจนับ) แก้แล้ว (PR #156); BUG-012 ✅ ทดสอบผ่าน; BUG-013 (ฟอร์มฝากเงินมีช่องชื่อลูกค้า) ✅ แก้ + ทดสอบผ่าน; ประเภทบิล "ประกัน" → "สินเชื่อ" (`loan`) — ค่าธรรมเนียมเท่าสาธารณูปโภค (10/20/30/40, Owner ยืนยัน 19 ต.ค.)
+   │     ├─ BP-2 ✅ Step 1-11 (17-20 ต.ค.; เหลือข้อย่อยที่ไม่ได้ลอง ดู TESTING_PLAN) — BUG-018~020 (ปุ่มเลือกประเภท, #N ในคิว, ช่องตรวจนับว่าง) แก้ + ทดสอบผ่าน (PR #157); BUG-014 (modal รายการโปรดไม่มีปุ่ม ✕) + BUG-015 (ฟอร์มตรวจนับ Step 2 ไม่แสดง, High) แก้ + ทดสอบผ่าน (PR #156); BUG-016/017 (กล่องสถานะซ้ำ, ป้ายตารางตรวจนับ) แก้แล้ว (PR #156); BUG-012 ✅ ทดสอบผ่าน; BUG-013 (ฟอร์มฝากเงินมีช่องชื่อลูกค้า) ✅ แก้ + ทดสอบผ่าน; ประเภทบิล "ประกัน" → "สินเชื่อ" (`loan`) — ค่าธรรมเนียมเท่าสาธารณูปโภค (10/20/30/40, Owner ยืนยัน 19 ต.ค.)
    │     └─ MT-3, MT-4, BP-1~4, SHARED-1~2 ☐ NOT STARTED
    ├─ Bug Fix: 2 tasks (BugFix-1, BugFix-2)              ☐ WAITING FOR MANUAL TEST
    ├─ E2E Playwright: 5 tasks (E2E-1~5)                   ☐ WAITING FOR BUG FIX
