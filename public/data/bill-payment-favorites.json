@@ -1,10 +1,10 @@
 [
   {
     "tab": 1,
-    "order": 1,
+    "order": 2,
     "label": "ค่าไฟน้ำทดสอบ",
-    "billType": "utility",
-    "defaultAmount": 300,
+    "billType": "loan",
+    "defaultAmount": 1500,
     "id": "bpfav-1792414480441-hqaw1ifgy",
     "createdAt": "2026-10-19T12:54:40.441Z"
   }
