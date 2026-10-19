@@ -50,7 +50,7 @@ const isStep1InProgress = computed(() => workflowStatus.value === 'step1_in_prog
 const dateTransactions = computed(() => store.getTransactionsByDate(props.date))
 
 // Row number as shown in the "ทั้งหมด" table, so queue items can be matched to table rows
-const dayRowNumber = computed(() => new Map(dateTransactions.value.map((t: any, i: number) => [t.id, i + 1])))
+const dayRowNumber = computed(() => new Map<string, number>(dateTransactions.value.map((t: any, i: number) => [t.id, i + 1])))
 
 // Drafts + on-hold, oldest first (order customers came in)
 const pendingQueue = computed(() =>

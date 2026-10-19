@@ -157,7 +157,7 @@ const paginatedTransactions = computed(() => {
 watch([activeFilter, () => props.date], () => { currentPage.value = 1 })
 
 // Row number as shown in the "ทั้งหมด" table, so queue items can be matched to table rows
-const dayRowNumber = computed(() => new Map(dateTransactions.value.map((t: any, i: number) => [t.id, i + 1])))
+const dayRowNumber = computed(() => new Map<string, number>(dateTransactions.value.map((t: any, i: number) => [t.id, i + 1])))
 
 const draftTransactions = computed(() =>
   dateTransactions.value.filter((t: any) => t.status === 'draft')
