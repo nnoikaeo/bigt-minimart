@@ -2,9 +2,9 @@
 
 **Last Updated**: Oct 19, 2026
 **Updated By**: Claude Code
-**Current Branch**: develop (latest merge: PR #154; main: docs synced via PR #150, code at release #148)
+**Current Branch**: develop (latest merge: PR #155; main: docs synced via PR #150, code at release #148)
 **Current Phase**: Testing — Service Harmonization (Manual Test → Bug Fix → E2E)
-**Next Up**: BP-2 Step 7-11 manual test (on develop); then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
+**Next Up**: merge `fix/bp-2-step8-11` (BUG-014/015); BP-2 leftovers (Step 1-5 ticks, Step 8 pagination, Step 11 discrepancy path); then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
 
 ---
 
@@ -157,7 +157,7 @@ Timeline Status: Money Transfer feature fully shipped ✓
 
 ### Week 12 (Oct 16-19, 2026): Project Re-entry — Docs, Tooling, MT-2 + Draft Queue
 
-**PRs**: #150 (docs → main), #151, #152, #153, #154
+**PRs**: #150 (docs → main), #151, #152, #153, #154, #155
 
 ```
 ✅ Documentation sync (commit 6f19509 + PR #150)
@@ -293,7 +293,7 @@ Components (49 total):
 | Pages | 26 (16 functional, 10 placeholders) | ✅ |
 | Components | 49 | ✅ |
 | API routes | 72 | ✅ |
-| PRs merged (latest) | #154 | ✅ |
+| PRs merged (latest) | #155 | ✅ |
 | TypeScript errors (`nuxt typecheck`) | 0 | ✅ |
 | Unit/Integration tests (`vitest run`) | 285/285 passed (18 files) | ✅ |
 | Production build (`nuxt build`) | Success | ✅ |
@@ -313,7 +313,7 @@ Components (49 total):
    ├─ Manual Test: 10 tasks (MT-1~4, BP-1~4, SHARED-1~2) 🔄 IN PROGRESS
    │     ├─ MT-1 ✅ ผ่าน
    │     ├─ MT-2 ✅ ผ่าน Step 1-11 (17 ต.ค., merged PR #153) — BUG-007~011 แก้แล้ว; BUG-001~003 ยังเปิด; BUG-002 ยังไม่ได้ทดสอบ
-   │     ├─ BP-2 🔄 Step 6 (คิว draft) ✅ ผ่าน 8/8 (19 ต.ค.) — BUG-012 ✅ ทดสอบผ่าน; BUG-013 (ฟอร์มฝากเงินมีช่องชื่อลูกค้า) ✅ แก้ + ทดสอบผ่าน; ประเภทบิล "ประกัน" → "สินเชื่อ" (`loan`) — ค่าธรรมเนียมเท่าสาธารณูปโภค (10/20/30/40, Owner ยืนยัน 19 ต.ค.)
+   │     ├─ BP-2 🔄 Step 6, 7, 9, 10, 11 ✅ (19 ต.ค.) — BUG-014 (modal รายการโปรดไม่มีปุ่ม ✕) + BUG-015 (ฟอร์มตรวจนับ Step 2 ไม่แสดง, High) แก้ + ทดสอบผ่าน บน `fix/bp-2-step8-11`; BUG-012 ✅ ทดสอบผ่าน; BUG-013 (ฟอร์มฝากเงินมีช่องชื่อลูกค้า) ✅ แก้ + ทดสอบผ่าน; ประเภทบิล "ประกัน" → "สินเชื่อ" (`loan`) — ค่าธรรมเนียมเท่าสาธารณูปโภค (10/20/30/40, Owner ยืนยัน 19 ต.ค.)
    │     └─ MT-3, MT-4, BP-1~4, SHARED-1~2 ☐ NOT STARTED
    ├─ Bug Fix: 2 tasks (BugFix-1, BugFix-2)              ☐ WAITING FOR MANUAL TEST
    ├─ E2E Playwright: 5 tasks (E2E-1~5)                   ☐ WAITING FOR BUG FIX

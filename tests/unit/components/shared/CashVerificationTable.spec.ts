@@ -66,6 +66,22 @@ describe('CashVerificationTable', () => {
       const wrapper = mountTable('manager-readonly', { rows: matchingRows })
       expect(wrapper.text()).toContain('✅ ตรงกัน')
     })
+
+    it('shows "⚠️ มีผลต่าง" when row diffs offset each other to a matching total', () => {
+      const offsetRows = [
+        { label: 'A', expected: 1000, managerActual: 900 },
+        { label: 'B', expected: 20, managerActual: 120 },
+      ]
+      const wrapper = mountTable('manager-readonly', { rows: offsetRows })
+      expect(wrapper.text()).toContain('⚠️ มีผลต่าง')
+      expect(wrapper.text()).not.toContain('✅ ตรงกัน')
+    })
+
+    it('renders each row diff as a badge', () => {
+      const wrapper = mountTable('manager-readonly')
+      // 2 rows + total row
+      expect(wrapper.findAllComponents(BaseBadgeStub)).toHaveLength(3)
+    })
   })
 
   describe('manager-input mode', () => {

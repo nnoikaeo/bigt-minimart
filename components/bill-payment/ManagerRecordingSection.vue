@@ -17,6 +17,7 @@ import {
   DocumentTextIcon,
   BanknotesIcon,
   Cog6ToothIcon,
+  XMarkIcon,
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
@@ -922,7 +923,7 @@ onMounted(async () => {
     ════════════════════════════════════════════════════════════════════════════ -->
     <BaseModal :open="showFavoriteModal" size="lg" @close="showFavoriteModal = false">
       <template #header>
-        <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+        <div class="flex items-center justify-between gap-4">
           <div class="flex items-center gap-2">
             <StarIcon class="h-5 w-5 text-yellow-500" />
             <h2 class="text-lg font-bold text-gray-900">
@@ -933,11 +934,21 @@ onMounted(async () => {
               <span v-else>กรอกจำนวนเงิน</span>
             </h2>
           </div>
-          <div class="text-sm text-gray-500">
-            ยอดเงินในบัญชี:
-            <span class="font-bold" :class="isFavInsufficient ? 'text-red-600' : 'text-green-700'">
-              {{ formatAmount(favBankBalance) }}
-            </span>
+          <div class="flex items-center gap-4">
+            <div class="text-sm text-gray-500">
+              ยอดเงินในบัญชี:
+              <span class="font-bold" :class="isFavInsufficient ? 'text-red-600' : 'text-green-700'">
+                {{ formatAmount(favBankBalance) }}
+              </span>
+            </div>
+            <button
+              type="button"
+              aria-label="ปิด"
+              class="text-gray-400 transition-colors hover:text-gray-600"
+              @click="showFavoriteModal = false"
+            >
+              <XMarkIcon class="h-6 w-6" />
+            </button>
           </div>
         </div>
       </template>

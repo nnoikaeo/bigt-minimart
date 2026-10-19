@@ -31,8 +31,8 @@ const errorMessage = ref('')
 /** Step 2 editable: step1 done but step2 not yet submitted */
 const isStep2Active = computed(
   () =>
-    store.getCurrentWorkflowStatus === 'step1_in_progress' &&
-    !!store.currentSummary?.step1CompletedAt
+    store.getCurrentWorkflowStatus === 'step1_completed' &&
+    !store.currentSummary?.step2CompletedAt
 )
 /** Step 2 read-only: step2 has been submitted */
 const isStep2ReadOnly = computed(() => !!store.currentSummary?.step2CompletedAt)
@@ -209,7 +209,7 @@ async function handleCompleteStep2() {
     <!-- ═══════════════════════════════════════════════════════════════════════
          STEP 2 — Read-only summary (step2 submitted)
     ════════════════════════════════════════════════════════════════════════════ -->
-    <section v-else-if="isStep2ReadOnly" class="mt-2">
+    <section v-else-if="isStep2ReadOnly" class="mt-2 mb-4">
       <div class="mb-3 flex items-center gap-2">
         <CheckCircleIcon class="h-5 w-5 text-green-600" />
         <h2 class="text-base font-semibold text-gray-700">ขั้นตอนที่ 2 — ผลการตรวจนับเงินสด</h2>

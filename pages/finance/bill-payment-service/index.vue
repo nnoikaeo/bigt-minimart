@@ -60,7 +60,8 @@ const BP_STATUS_TO_STEP_MAP: Record<BillPaymentWorkflowStatus, number> = {
 const showStatusBanner = computed(() => {
   if (isApproved.value) return false
   if (isAuditor.value && isNeedsCorrection.value) return false
-  if (isManagerOrAsst.value && !isStep1InProgress.value && !store.isStep2Complete) return true
+  // step1_completed: Manager/AM sees the Step 2 form itself, so no "waiting" banner
+  if (isManagerOrAsst.value && !isStep1InProgress.value && !store.isStep2Complete && workflowStatus.value !== 'step1_completed') return true
   if (isManagerOrAsst.value && store.isStep2Complete) return true
   if (isAuditor.value && (store.isAudited || !store.isStep2Complete)) return true
   if (isOwner.value && !store.isAudited) return true
