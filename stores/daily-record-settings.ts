@@ -43,7 +43,7 @@ export interface BillPaymentBillTypeConfig {
 }
 
 export interface BillPaymentFeeConfig {
-  /** Tiers per bill type: utility | telecom | insurance | other */
+  /** Tiers per bill type: utility | telecom | loan | other */
   billTypes: Record<string, BillPaymentBillTypeConfig>
   updatedAt: string | null
   updatedBy: string | null
@@ -78,8 +78,8 @@ const DEFAULT_BP_FEE_CONFIG: BillPaymentFeeConfig = {
         { id: 4, label: '7,000 – 10,000', minAmount: 7000, maxAmount: 10000, fee: 40 },
       ],
     },
-    insurance: {
-      label: 'ค่าประกัน',
+    loan: {
+      label: 'สินเชื่อ (บัตรเครดิต/ผ่อนสินค้า)',
       tiers: [
         { id: 1, label: '1 – 999',        minAmount: 1,    maxAmount: 999,   fee: 15 },
         { id: 2, label: '1,000 – 3,999',  minAmount: 1000, maxAmount: 3999,  fee: 25 },
@@ -117,7 +117,7 @@ export const useDailyRecordSettingsStore = defineStore('daily-record-settings', 
       billTypes: {
         utility:   { ...DEFAULT_BP_FEE_CONFIG.billTypes.utility },
         telecom:   { ...DEFAULT_BP_FEE_CONFIG.billTypes.telecom },
-        insurance: { ...DEFAULT_BP_FEE_CONFIG.billTypes.insurance },
+        loan: { ...DEFAULT_BP_FEE_CONFIG.billTypes.loan },
         other:     { ...DEFAULT_BP_FEE_CONFIG.billTypes.other },
       },
       updatedAt: null as string | null,
@@ -289,7 +289,7 @@ export const useDailyRecordSettingsStore = defineStore('daily-record-settings', 
      * Uses per-billType fee tiers. Amounts over 10,000 are split into cycles.
      *
      * @param amount   - Bill amount in baht (positive integer)
-     * @param billType - Bill type key: 'utility' | 'telecom' | 'insurance' | 'other'
+     * @param billType - Bill type key: 'utility' | 'telecom' | 'loan' | 'other'
      * @returns Total fee and breakdown per cycle
      */
     calculateBillPaymentFee(

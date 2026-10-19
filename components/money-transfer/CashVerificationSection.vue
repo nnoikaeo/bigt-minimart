@@ -24,7 +24,6 @@ const errorMessage = ref('')
 // ─── Step 2 form state ────────────────────────────────────────────────────────
 const actualTransferWithdrawal = ref<number>(0)
 const actualServiceFee = ref<number>(0)
-const verificationStatus = ref<'match' | 'discrepancy' | ''>('')
 const verificationNotes = ref('')
 const followUpAction = ref('')
 const isSubmittingStep2 = ref(false)
@@ -63,11 +62,19 @@ const diffTransferWithdrawal = computed(() => Number(actualTransferWithdrawal.va
 const diffServiceFee = computed(() => Number(actualServiceFee.value) - expectedServiceFee.value)
 const diffTotal = computed(() => actualTotal.value - expectedTotal.value)
 const hasDiscrepancy = computed(() => diffTotal.value !== 0)
+// Derived from the counted amounts (BUG-011: a watch on hasDiscrepancy never fired when
+// the count was off from the start, leaving the confirm button disabled)
+const verificationStatus = computed<'match' | 'discrepancy' | ''>(() => {
+  if (actualTotal.value <= 0) return ''
+  return hasDiscrepancy.value ? 'discrepancy' : 'match'
+})
 
 const isStep2FormValid = computed(() =>
   Number(actualTransferWithdrawal.value) >= 0 &&
   Number(actualServiceFee.value) >= 0 &&
-  verificationStatus.value !== ''
+  verificationStatus.value !== '' &&
+  // มีผลต่าง → ต้องระบุสาเหตุ (เหมือน Bill Payment)
+  (verificationStatus.value !== 'discrepancy' || verificationNotes.value.trim().length > 0)
 )
 
 const cashVerificationSummary = computed(() => {
@@ -83,12 +90,6 @@ const mtCashVerificationRows = computed<CashVerificationRow[]>(() => {
   ]
 })
 
-// Auto-set verificationStatus when actual values change
-watch(hasDiscrepancy, (val) => {
-  if (actualTotal.value > 0) {
-    verificationStatus.value = val ? 'discrepancy' : 'match'
-  }
-})
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function diffClass(diff: number): string {
@@ -109,7 +110,6 @@ function loadExistingStep2Data() {
     actualTransferWithdrawal.value = step2.actualCash?.transferWithdrawal ?? 0
     actualServiceFee.value = step2.actualCash?.serviceFee ?? 0
     verificationNotes.value = step2.verificationNotes ?? ''
-    verificationStatus.value = step2.hasDiscrepancies ? 'discrepancy' : 'match'
   }
 }
 
@@ -231,6 +231,7 @@ async function handleConfirmVerification() {
       <div v-if="verificationStatus === 'discrepancy' || verificationNotes" class="bg-white border border-gray-200 rounded-xl p-4 space-y-3 mb-4">
         <FormField
           label="หมายเหตุ/สาเหตุ"
+          :required="verificationStatus === 'discrepancy'"
           :hint="verificationStatus === 'discrepancy' ? 'กรุณาระบุสาเหตุของผลต่างที่พบ' : ''"
         >
           <BaseTextarea

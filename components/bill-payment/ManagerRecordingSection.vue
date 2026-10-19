@@ -12,6 +12,7 @@ import {
   TrashIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
+  XCircleIcon,
   StarIcon,
   DocumentTextIcon,
   BanknotesIcon,
@@ -55,6 +56,7 @@ const filterTabs = computed<FilterTab[]>(() => [
   { key: 'completed', label: 'สำเร็จ', count: dateTransactions.value.filter((t: any) => t.status === 'completed').length },
   { key: 'draft', label: 'รอดำเนินการ', count: dateTransactions.value.filter((t: any) => t.status === 'draft').length },
   { key: 'on_hold', label: 'พักรายการ', count: dateTransactions.value.filter((t: any) => t.status === 'on_hold').length },
+  { key: 'cancelled', label: 'ยกเลิก', count: dateTransactions.value.filter((t: any) => t.status === 'cancelled').length },
 ])
 
 const filteredTransactions = computed(() => {
@@ -173,11 +175,11 @@ function closeModal() {
 
 async function handleFormSubmit(formData: {
   transactionType: 'bill_payment' | 'owner_deposit'
-  billType?: 'utility' | 'telecom' | 'insurance' | 'other'
+  billType?: 'utility' | 'telecom' | 'loan' | 'other'
   amount: number
   commission: number
   customerName?: string
-  status: BillPaymentTransactionStatus
+  status?: BillPaymentTransactionStatus
   statusNote?: string
   notes?: string
 }) {
@@ -194,8 +196,8 @@ async function handleFormSubmit(formData: {
       await store.updateTransaction(editingTransaction.value.id, payload)
       successMessage.value = 'แก้ไขรายการสำเร็จ'
     } else {
-      await store.createTransaction(payload)
-      successMessage.value = 'เพิ่มรายการสำเร็จ'
+      const created = await store.createTransaction(payload)
+      successMessage.value = created.status === 'draft' ? QUEUED_MESSAGE : 'เพิ่มรายการสำเร็จ'
     }
 
     closeModal()
@@ -235,20 +237,64 @@ async function handleDeleteExecute() {
   }
 }
 
-async function handleCompleteDraft(txnId: string) {
+// ─── Draft queue ──────────────────────────────────────────────────────────────
+const QUEUED_MESSAGE = 'บันทึกเข้าคิวแล้ว — ชำระในแอปธนาคารแล้วกด "ดำเนินการ"'
+
+// รับชำระบิลจ่ายจากบัญชีธนาคาร (bankAccount)
+function getDraftShortfall(txn: BillPaymentTransaction): number {
+  if (txn.transactionType !== 'bill_payment') return 0
+  return Math.max(0, txn.amount - (store.currentBalance?.bankAccount ?? 0))
+}
+function getInsufficientMessage(txn: BillPaymentTransaction): string {
+  return `ยอดในบัญชีไม่พอ (ขาด ${formatAmount(getDraftShortfall(txn))})`
+}
+
+// Dialog แจ้งเหตุผลที่ดำเนินการ/ยกเลิก draft ไม่ได้ (errorMessage อยู่บนสุดของหน้า มองไม่เห็นตอนเลื่อนลงมา)
+const queueBlockedMessage = ref('')
+
+async function handleCompleteDraft(txn: BillPaymentTransaction) {
   if (!canManagerEdit.value) return
   if (needsOpeningBalance.value) {
     openOpeningBalanceModal()
     return
   }
   errorMessage.value = ''
+  if (getDraftShortfall(txn) > 0) {
+    queueBlockedMessage.value = getInsufficientMessage(txn)
+    return
+  }
   try {
-    await store.completeDraftTransaction(txnId)
-    successMessage.value = 'ดำเนินการรายการสำเร็จ'
-    logger.log('Draft completed', txnId)
+    await store.completeDraftTransaction(txn.id)
+    successMessage.value = 'ดำเนินการรายการสำเร็จ — นับยอดแล้ว'
+    logger.log('Draft completed', txn.id)
   } catch (err: any) {
-    errorMessage.value = err.message ?? 'เกิดข้อผิดพลาด'
+    queueBlockedMessage.value = err.data?.message ?? err.message ?? 'เกิดข้อผิดพลาด'
     logger.error('handleCompleteDraft', err)
+  }
+}
+
+// ยกเลิก draft (ชำระในแอปธนาคารไม่ผ่าน) — ไม่กระทบยอด
+const showCancelDraftConfirm = ref(false)
+const cancellingDraftId = ref('')
+
+function promptCancelDraft(id: string) {
+  if (!canManagerEdit.value) return
+  cancellingDraftId.value = id
+  showCancelDraftConfirm.value = true
+}
+
+async function handleCancelDraft() {
+  errorMessage.value = ''
+  try {
+    await store.changeTransactionStatus(cancellingDraftId.value, 'cancelled', 'ทำรายการในแอปธนาคารไม่สำเร็จ')
+    successMessage.value = 'ยกเลิกรายการแล้ว (ไม่กระทบยอด)'
+    logger.log('Draft cancelled', cancellingDraftId.value)
+  } catch (err: any) {
+    queueBlockedMessage.value = err.data?.message ?? err.message ?? 'เกิดข้อผิดพลาด'
+    logger.error('handleCancelDraft', err)
+  } finally {
+    showCancelDraftConfirm.value = false
+    cancellingDraftId.value = ''
   }
 }
 
@@ -281,25 +327,49 @@ const favTab = ref<1 | 2 | 3 | 4 | 5>(1)
 const favMode = ref<'select' | 'manage' | 'add' | 'edit'>('select')
 const selectedFavorite = ref<BillPaymentFavorite | null>(null)
 const favAmount = ref<number>(0)
-const favIsCommissionManual = ref(false)
-const favManualCommission = ref<number>(0)
 const editingFavoriteId = ref<string>('')
+const deletingFavoriteId = ref<string>('')
 const isSavingFavorite = ref(false)
 const favFormData = ref({
   label: '',
-  customerName: '',
-  billType: '' as 'utility' | 'telecom' | 'insurance' | 'other' | '',
+  billType: '' as 'utility' | 'telecom' | 'loan' | 'other' | '',
+  // ยอดไม่คงที่ (ค่าไฟ/ค่าน้ำ/บัตรเครดิต) = กรอกทุกครั้ง; ยอดคงที่ (ผ่อนรถ) = ใช้ defaultAmount
+  amountMode: 'variable' as 'variable' | 'fixed',
   defaultAmount: '' as number | '',
-  defaultCommission: '' as number | '',
 })
+const isFavFormValid = computed(() =>
+  favFormData.value.label.trim().length > 0 &&
+  favFormData.value.billType !== '' &&
+  (favFormData.value.amountMode === 'variable' || Number(favFormData.value.defaultAmount) > 0)
+)
 
 const BILL_TYPE_OPTIONS = [
-  { value: '', label: '— ไม่ระบุ —' },
-  { value: 'utility', label: '💡 สาธารณูปโภค' },
-  { value: 'telecom', label: '📱 โทรคมนาคม' },
-  { value: 'insurance', label: '🛡️ ประกัน' },
-  { value: 'other', label: '📋 อื่นๆ' },
-]
+  { value: 'utility', label: 'สาธารณูปโภค' },
+  { value: 'telecom', label: 'โทรคมนาคม' },
+  { value: 'loan', label: 'สินเชื่อ' },
+  { value: 'other', label: 'อื่นๆ' },
+] as const
+
+// Commission for a favorite: auto from the bill-payment fee tiers (same as TransactionForm),
+// with manual override — a legacy favorite's defaultCommission pre-fills the manual value.
+const favAmountNumber = computed(() => Number(favAmount.value) || 0)
+const favBillTypeRef = computed(() => selectedFavorite.value?.billType || 'other')
+const {
+  isManual: favIsCommissionManual,
+  manualValue: favManualCommission,
+  autoCommission: favAutoCommission,
+  effectiveCommission: favEffectiveCommission,
+  reset: resetFavCommission,
+} = useCommission(favAmountNumber, { serviceType: 'bill-payment', billType: favBillTypeRef })
+
+function toggleFavCommissionMode() {
+  if (!favIsCommissionManual.value) {
+    favManualCommission.value = favAutoCommission.value
+    favIsCommissionManual.value = true
+  } else {
+    resetFavCommission()
+  }
+}
 
 const favTabItems = computed(() =>
   (store.favorites as BillPaymentFavorite[])
@@ -307,6 +377,11 @@ const favTabItems = computed(() =>
     .sort((a, b) => a.order - b.order)
 )
 const favTabFull = computed(() => favTabItems.value.length >= 10)
+const favTabCount = (t: number) => (store.favorites as BillPaymentFavorite[]).filter(f => f.tab === t).length
+
+// Bank balance preview in step 2 (bill_payment is paid from the bank account)
+const favBankBalance = computed(() => store.currentBalance?.bankAccount ?? 0)
+const isFavInsufficient = computed(() => Number(favAmount.value) > favBankBalance.value)
 
 function openFavoriteModal() {
   if (needsOpeningBalance.value) {
@@ -316,10 +391,10 @@ function openFavoriteModal() {
   favStep.value = 1
   favMode.value = 'select'
   favTab.value = 1
+  deletingFavoriteId.value = ''
   selectedFavorite.value = null
   favAmount.value = 0
-  favIsCommissionManual.value = false
-  favManualCommission.value = 0
+  resetFavCommission()
   showFavoriteModal.value = true
 }
 
@@ -330,8 +405,7 @@ function handleSelectFavorite(fav: BillPaymentFavorite) {
     favIsCommissionManual.value = true
     favManualCommission.value = fav.defaultCommission
   } else {
-    favIsCommissionManual.value = false
-    favManualCommission.value = 0
+    resetFavCommission()
   }
   favStep.value = 2
 }
@@ -345,7 +419,7 @@ function goBackFavStep1() {
 async function handleSubmitFavorite() {
   if (!selectedFavorite.value || !favAmount.value) return
   const fav = selectedFavorite.value
-  const commission = favIsCommissionManual.value ? (favManualCommission.value ?? 0) : 0
+  const commission = Number(favEffectiveCommission.value) || 0
   errorMessage.value = ''
   try {
     await store.createTransaction({
@@ -354,12 +428,12 @@ async function handleSubmitFavorite() {
       billType: fav.billType,
       amount: Number(favAmount.value),
       commission,
-      customerName: fav.customerName || undefined,
-      status: 'completed',
+      // ชื่อรายการโปรดใช้เป็นชื่อลูกค้า (favorite เก่าที่มี customerName แยกยังใช้ค่านั้น)
+      customerName: fav.customerName || fav.label,
       recordedBy: props.currentUser.uid,
       recordedAt: new Date().toISOString(),
     })
-    successMessage.value = 'บันทึกรายการจาก Favorite สำเร็จ'
+    successMessage.value = QUEUED_MESSAGE
     showFavoriteModal.value = false
     logger.log('Favorite bill payment created for', props.date)
   } catch (err: any) {
@@ -370,7 +444,7 @@ async function handleSubmitFavorite() {
 
 function startAddFavorite() {
   editingFavoriteId.value = ''
-  favFormData.value = { label: '', customerName: '', billType: '', defaultAmount: '', defaultCommission: '' }
+  favFormData.value = { label: '', billType: '', amountMode: 'variable', defaultAmount: '' }
   favMode.value = 'add'
 }
 
@@ -378,16 +452,15 @@ function startEditFavorite(fav: BillPaymentFavorite) {
   editingFavoriteId.value = fav.id
   favFormData.value = {
     label: fav.label,
-    customerName: fav.customerName ?? '',
     billType: fav.billType ?? '',
+    amountMode: fav.defaultAmount ? 'fixed' : 'variable',
     defaultAmount: fav.defaultAmount ?? '',
-    defaultCommission: fav.defaultCommission ?? '',
   }
   favMode.value = 'edit'
 }
 
 async function handleSaveFavorite() {
-  if (!favFormData.value.label.trim()) return
+  if (!isFavFormValid.value) return
   isSavingFavorite.value = true
   errorMessage.value = ''
   try {
@@ -395,10 +468,8 @@ async function handleSaveFavorite() {
       tab: favTab.value,
       order: favTabItems.value.length + 1,
       label: favFormData.value.label.trim(),
-      customerName: favFormData.value.customerName?.trim() || undefined,
       billType: (favFormData.value.billType as BillPaymentFavorite['billType']) || undefined,
-      defaultAmount: favFormData.value.defaultAmount !== '' ? Number(favFormData.value.defaultAmount) : undefined,
-      defaultCommission: favFormData.value.defaultCommission !== '' ? Number(favFormData.value.defaultCommission) : undefined,
+      defaultAmount: favFormData.value.amountMode === 'fixed' ? Number(favFormData.value.defaultAmount) : undefined,
     }
     if (favMode.value === 'edit' && editingFavoriteId.value) {
       await store.updateFavorite(editingFavoriteId.value, data)
@@ -416,14 +487,19 @@ async function handleSaveFavorite() {
   }
 }
 
-async function handleDeleteFavorite(id: string) {
+async function confirmDeleteFavorite() {
+  if (!deletingFavoriteId.value) return
+  isSavingFavorite.value = true
   errorMessage.value = ''
   try {
-    await store.deleteFavorite(id)
-    successMessage.value = 'ลบ Favorite สำเร็จ'
+    await store.deleteFavorite(deletingFavoriteId.value)
+    deletingFavoriteId.value = ''
+    successMessage.value = 'ลบรายการโปรดสำเร็จ'
   } catch (err: any) {
     errorMessage.value = err.message || 'เกิดข้อผิดพลาด'
-    logger.error('handleDeleteFavorite', err)
+    logger.error('confirmDeleteFavorite', err)
+  } finally {
+    isSavingFavorite.value = false
   }
 }
 
@@ -494,6 +570,9 @@ onMounted(async () => {
               · {{ formatAmount(txn.amount) }}
             </span>
             <span v-if="txn.statusNote" class="text-xs text-gray-400">({{ txn.statusNote }})</span>
+            <span v-if="txn.status === 'draft' && getDraftShortfall(txn) > 0" class="text-xs text-red-600">
+              {{ getInsufficientMessage(txn) }}
+            </span>
           </div>
           <div class="flex shrink-0 gap-2">
             <ActionButton
@@ -503,10 +582,22 @@ onMounted(async () => {
               variant="primary"
               size="sm"
               :title="disableReason"
-              @click="handleCompleteDraft(txn.id)"
+              @click="handleCompleteDraft(txn)"
             >
               <template #icon><CheckCircleIcon class="h-4 w-4" /></template>
               ดำเนินการ
+            </ActionButton>
+            <ActionButton
+              v-if="txn.status === 'draft'"
+              :permission="PERMISSIONS.EDIT_FINANCE"
+              :disabled="isRowActionDisabled"
+              variant="secondary"
+              size="sm"
+              :title="disableReason || 'ชำระในแอปธนาคารไม่ผ่าน'"
+              @click="promptCancelDraft(txn.id)"
+            >
+              <template #icon><XCircleIcon class="h-4 w-4" /></template>
+              ยกเลิก
             </ActionButton>
             <ActionButton
               :permission="PERMISSIONS.EDIT_FINANCE"
@@ -702,7 +793,7 @@ onMounted(async () => {
           </li>
           <li class="flex items-center gap-2" :class="noDraftPending ? 'text-green-700' : 'text-orange-600'">
             <span class="text-base">{{ noDraftPending ? '✅' : '❌' }}</span>
-            ไม่มีรายการ Draft ค้าง
+            ไม่มีรายการรอดำเนินการค้าง
             <span v-if="!noDraftPending" class="text-orange-500">
               (เหลือ {{ store.getDraftTransactions.length }} รายการ)
             </span>
@@ -801,191 +892,299 @@ onMounted(async () => {
       @cancel="showDeleteConfirm = false"
     />
 
+    <!-- Queue blocked dialog (ยอดไม่พอ / server error ตอนดำเนินการ-ยกเลิก) -->
+    <BaseModal :open="!!queueBlockedMessage" title="ดำเนินการไม่ได้" size="sm" @close="queueBlockedMessage = ''">
+      <div class="flex items-start gap-3 text-sm text-gray-700">
+        <ExclamationTriangleIcon class="h-6 w-6 flex-shrink-0 text-amber-500" />
+        <p>{{ queueBlockedMessage }} — รายการยังอยู่ในคิว "รอดำเนินการ"</p>
+      </div>
+      <template #footer>
+        <div class="flex justify-end">
+          <BaseButton variant="primary" @click="queueBlockedMessage = ''">ตกลง</BaseButton>
+        </div>
+      </template>
+    </BaseModal>
+
+    <!-- CONFIRM DIALOG: Cancel draft (ชำระในแอปธนาคารไม่ผ่าน) -->
+    <ConfirmDialog
+      :open="showCancelDraftConfirm"
+      title="ยกเลิกรายการ"
+      message="ชำระในแอปธนาคารไม่สำเร็จใช่หรือไม่? รายการจะถูกบันทึกเป็น ยกเลิก และไม่กระทบยอด"
+      confirm-text="ยกเลิกรายการ"
+      cancel-text="ปิด"
+      variant="warning"
+      @confirm="handleCancelDraft"
+      @cancel="showCancelDraftConfirm = false"
+    />
+
     <!-- ═══════════════════════════════════════════════════════════════════════
          MODAL: Favorites
     ════════════════════════════════════════════════════════════════════════════ -->
     <BaseModal :open="showFavoriteModal" size="lg" @close="showFavoriteModal = false">
-      <template #title>
-        <span v-if="favStep === 1 && favMode === 'select'">⭐ รายการโปรด</span>
-        <span v-else-if="favStep === 1 && favMode === 'manage'">⚙️ จัดการรายการโปรด</span>
-        <span v-else-if="favStep === 1 && (favMode === 'add' || favMode === 'edit')">
-          {{ favMode === 'add' ? '➕ เพิ่มรายการโปรด' : '✏️ แก้ไขรายการโปรด' }}
-        </span>
-        <span v-else>ยืนยันรายการ</span>
+      <template #header>
+        <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+          <div class="flex items-center gap-2">
+            <StarIcon class="h-5 w-5 text-yellow-500" />
+            <h2 class="text-lg font-bold text-gray-900">
+              <span v-if="favStep === 1 && favMode === 'select'">รายการโปรด</span>
+              <span v-else-if="favStep === 1 && favMode === 'manage'">จัดการรายการโปรด</span>
+              <span v-else-if="favStep === 1 && favMode === 'add'">เพิ่มรายการโปรด</span>
+              <span v-else-if="favStep === 1 && favMode === 'edit'">แก้ไขรายการโปรด</span>
+              <span v-else>กรอกจำนวนเงิน</span>
+            </h2>
+          </div>
+          <div class="text-sm text-gray-500">
+            ยอดเงินในบัญชี:
+            <span class="font-bold" :class="isFavInsufficient ? 'text-red-600' : 'text-green-700'">
+              {{ formatAmount(favBankBalance) }}
+            </span>
+          </div>
+        </div>
       </template>
 
-      <div class="space-y-4">
-        <!-- Step 1: Select or Manage -->
-        <template v-if="favStep === 1">
-          <!-- Tab selector -->
-          <div class="flex gap-1 border-b border-gray-200 pb-3">
-            <button
-              v-for="t in [1,2,3,4,5]"
-              :key="t"
-              :class="['px-3 py-1.5 rounded-lg text-sm font-medium transition-colors', favTab === t ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100']"
-              @click="favTab = t as 1|2|3|4|5"
-            >
-              Tab {{ t }}
-            </button>
-            <div class="ml-auto flex gap-2">
-              <button
-                v-if="favMode === 'select'"
-                class="flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
-                @click="favMode = 'manage'"
-              >
-                <Cog6ToothIcon class="h-4 w-4" />
-                จัดการ
-              </button>
-              <button
-                v-else-if="favMode === 'manage'"
-                class="rounded-lg px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
-                @click="favMode = 'select'"
-              >
-                ← กลับ
-              </button>
-              <button
-                v-else-if="favMode === 'add' || favMode === 'edit'"
-                class="rounded-lg px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
-                @click="favMode = 'manage'"
-              >
-                ← กลับ
-              </button>
-            </div>
-          </div>
+      <!-- Step 1: Select / Manage / Add / Edit -->
+      <div v-if="favStep === 1">
+        <div v-if="favMode === 'select' || favMode === 'manage'" class="-mx-1 mb-4 flex border-b border-gray-200">
+          <button
+            v-for="t in ([1, 2, 3, 4, 5] as const)"
+            :key="t"
+            class="flex-1 py-2 text-sm font-medium transition-colors"
+            :class="favTab === t ? 'border-b-2 border-red-500 text-red-600' : 'text-gray-500 hover:text-gray-700'"
+            @click="favTab = t; deletingFavoriteId = ''"
+          >
+            Tab #{{ t }}
+            <span class="ml-1 rounded-full px-1.5 py-0.5 text-xs" :class="favTab === t ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500'">
+              {{ favTabCount(t) }}
+            </span>
+          </button>
+        </div>
 
-          <!-- Select mode: list of favorites to pick -->
-          <template v-if="favMode === 'select'">
-            <div v-if="favTabItems.length === 0" class="py-8 text-center text-sm text-gray-400">
-              ยังไม่มีรายการโปรดใน Tab {{ favTab }}<br />
-              <button class="mt-2 text-blue-600 hover:underline" @click="favMode = 'manage'">+ เพิ่มรายการโปรด</button>
-            </div>
-            <div v-else class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <!-- SELECT MODE -->
+        <div v-if="favMode === 'select'">
+          <p class="mb-3 text-sm text-gray-500">คลิกชื่อเพื่อเลือกรายการ</p>
+          <div class="h-72 space-y-2 overflow-y-auto pr-1">
+            <template v-if="favTabItems.length > 0">
               <button
-                v-for="fav in favTabItems"
+                v-for="(fav, i) in favTabItems"
                 :key="fav.id"
-                class="flex flex-col items-start rounded-xl border border-gray-200 bg-white p-4 text-left transition-colors hover:border-blue-300 hover:bg-blue-50"
+                class="flex w-full items-center justify-between rounded-xl border border-gray-200 p-3 text-left transition-colors hover:border-red-300 hover:bg-red-50"
                 @click="handleSelectFavorite(fav)"
               >
-                <span class="font-semibold text-gray-900">{{ fav.label }}</span>
-                <span v-if="fav.customerName" class="mt-0.5 text-sm text-gray-500">{{ fav.customerName }}</span>
-                <span v-if="fav.billType" class="mt-1 text-xs text-blue-600">
-                  {{ BILL_TYPE_OPTIONS.find(o => o.value === fav.billType)?.label }}
-                </span>
-                <span v-if="fav.defaultAmount" class="mt-1 text-sm font-medium text-green-700">
-                  {{ formatAmount(fav.defaultAmount) }}
-                </span>
-              </button>
-            </div>
-          </template>
-
-          <!-- Manage mode: edit/delete list -->
-          <template v-else-if="favMode === 'manage'">
-            <div v-if="favTabItems.length === 0" class="py-4 text-center text-sm text-gray-400">
-              ยังไม่มีรายการโปรดใน Tab {{ favTab }}
-            </div>
-            <div v-else class="space-y-2">
-              <div
-                v-for="fav in favTabItems"
-                :key="fav.id"
-                class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3"
-              >
-                <div class="flex-1 min-w-0">
-                  <p class="font-medium text-gray-900">{{ fav.label }}</p>
-                  <p v-if="fav.customerName" class="text-sm text-gray-500">{{ fav.customerName }}</p>
+                <div class="flex items-center gap-3">
+                  <span class="w-6 text-center text-sm font-bold text-yellow-500">★{{ i + 1 }}</span>
+                  <div>
+                    <div class="font-medium text-gray-900">{{ fav.label }}</div>
+                    <div class="text-sm text-gray-500">
+                      {{ BILL_TYPE_OPTIONS.find(o => o.value === fav.billType)?.label ?? 'ไม่ระบุประเภท' }}
+                      · {{ fav.defaultAmount ? `ยอดคงที่ ${formatAmount(fav.defaultAmount)}` : 'กรอกยอดทุกครั้ง' }}
+                    </div>
+                  </div>
                 </div>
-                <button class="text-blue-600 hover:text-blue-800" title="แก้ไข" @click="startEditFavorite(fav)">
-                  <PencilIcon class="h-4 w-4" />
-                </button>
-                <button class="text-red-500 hover:text-red-700" title="ลบ" @click="handleDeleteFavorite(fav.id)">
-                  <TrashIcon class="h-4 w-4" />
-                </button>
-              </div>
+                <span class="text-lg text-gray-300">›</span>
+              </button>
+            </template>
+            <div v-else class="py-12 text-center text-gray-400">
+              <p class="mb-2 text-4xl">☆</p>
+              <p class="text-sm">Tab #{{ favTab }} ยังไม่มีรายการโปรด</p>
+              <p class="mt-1 text-xs">กด "จัดการ" เพื่อเพิ่ม</p>
             </div>
+          </div>
+        </div>
+
+        <!-- MANAGE MODE -->
+        <div v-else-if="favMode === 'manage'">
+          <div class="h-64 space-y-2 overflow-y-auto pr-1">
+            <template v-if="favTabItems.length > 0">
+              <div v-for="(fav, i) in favTabItems" :key="fav.id">
+                <div
+                  class="flex items-center justify-between rounded-xl border border-gray-200 p-3"
+                  :class="deletingFavoriteId === fav.id ? 'border-red-300 bg-red-50' : ''"
+                >
+                  <div class="flex items-center gap-3">
+                    <span class="w-6 text-center text-sm font-bold text-yellow-500">★{{ i + 1 }}</span>
+                    <div>
+                      <div class="text-sm font-medium text-gray-900">{{ fav.label }}</div>
+                      <div class="text-xs text-gray-500">
+                        {{ BILL_TYPE_OPTIONS.find(o => o.value === fav.billType)?.label ?? 'ไม่ระบุประเภท' }}
+                        · {{ fav.defaultAmount ? `ยอดคงที่ ${formatAmount(fav.defaultAmount)}` : 'กรอกยอดทุกครั้ง' }}
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <button class="p-1 text-blue-500 hover:text-blue-700" title="แก้ไข" @click="startEditFavorite(fav)">
+                      <PencilIcon class="h-4 w-4" />
+                    </button>
+                    <button class="p-1 text-red-500 hover:text-red-700" title="ลบ" @click="deletingFavoriteId = deletingFavoriteId === fav.id ? '' : fav.id">
+                      <TrashIcon class="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                <div v-if="deletingFavoriteId === fav.id" class="mt-1 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+                  <span class="text-sm text-red-700">ยืนยันลบ "{{ fav.label }}" ?</span>
+                  <div class="flex gap-2">
+                    <button class="text-sm text-gray-500 hover:text-gray-700" @click="deletingFavoriteId = ''">ยกเลิก</button>
+                    <BaseButton size="sm" variant="danger" :loading="isSavingFavorite" @click="confirmDeleteFavorite">ลบ</BaseButton>
+                  </div>
+                </div>
+              </div>
+            </template>
+            <div v-else class="py-10 text-center text-gray-400">
+              <p class="text-sm">Tab #{{ favTab }} ยังไม่มีรายการโปรด</p>
+            </div>
+          </div>
+          <div class="mt-3 border-t border-gray-100 pt-3">
             <button
               v-if="!favTabFull"
-              class="mt-3 w-full rounded-xl border border-dashed border-blue-300 py-3 text-sm text-blue-600 hover:bg-blue-50"
+              class="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 py-2.5 text-sm text-gray-500 transition-colors hover:border-red-300 hover:text-red-500"
               @click="startAddFavorite"
             >
-              + เพิ่มรายการโปรด
+              <PlusIcon class="h-4 w-4" />
+              เพิ่มรายการโปรดใน Tab #{{ favTab }}
             </button>
-            <p v-else class="mt-2 text-center text-xs text-gray-400">Tab นี้เต็มแล้ว (สูงสุด 10 รายการ)</p>
-          </template>
-
-          <!-- Add / Edit form -->
-          <template v-else-if="favMode === 'add' || favMode === 'edit'">
-            <div class="space-y-3">
-              <FormField label="ชื่อรายการโปรด" required>
-                <BaseInput v-model="favFormData.label" placeholder="เช่น ค่าไฟบ้านคุณสมชาย" />
-              </FormField>
-              <FormField label="ชื่อลูกค้า">
-                <BaseInput v-model="favFormData.customerName" placeholder="ชื่อลูกค้า (ไม่บังคับ)" />
-              </FormField>
-              <FormField label="ประเภทบิล">
-                <select v-model="favFormData.billType" class="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm">
-                  <option v-for="opt in BILL_TYPE_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                </select>
-              </FormField>
-              <div class="grid grid-cols-2 gap-3">
-                <FormField label="จำนวนเงินเริ่มต้น (บาท)">
-                  <BaseInput v-model="favFormData.defaultAmount" type="number" placeholder="0" min="0" />
-                </FormField>
-                <FormField label="ค่าธรรมเนียมเริ่มต้น (บาท)">
-                  <BaseInput v-model="favFormData.defaultCommission" type="number" placeholder="0" min="0" />
-                </FormField>
-              </div>
-            </div>
-            <div class="mt-4 flex justify-end gap-2">
-              <BaseButton variant="secondary" @click="favMode = 'manage'">ยกเลิก</BaseButton>
-              <BaseButton variant="primary" :loading="isSavingFavorite" :disabled="!favFormData.label.trim()" @click="handleSaveFavorite">
-                💾 บันทึก
-              </BaseButton>
-            </div>
-          </template>
-        </template>
-
-        <!-- Step 2: Confirm amount -->
-        <template v-else-if="favStep === 2 && selectedFavorite">
-          <div class="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
-            <p class="font-semibold text-blue-900">{{ selectedFavorite.label }}</p>
-            <p v-if="selectedFavorite.customerName" class="text-sm text-blue-700">{{ selectedFavorite.customerName }}</p>
-            <p v-if="selectedFavorite.billType" class="mt-1 text-xs text-blue-600">
-              {{ BILL_TYPE_OPTIONS.find(o => o.value === selectedFavorite!.billType)?.label }}
-            </p>
+            <p v-else class="py-2 text-center text-sm text-gray-400">Tab #{{ favTab }} เต็มแล้ว (สูงสุด 10 รายการ)</p>
           </div>
-          <FormField label="จำนวนเงิน (บาท)" required>
-            <BaseInput v-model="favAmount" type="number" placeholder="0" min="0" />
+        </div>
+
+        <!-- ADD / EDIT FORM -->
+        <div v-else-if="favMode === 'add' || favMode === 'edit'" class="space-y-4">
+          <FormField label="ชื่อรายการโปรด" required>
+            <BaseInput v-model="favFormData.label" placeholder="เช่น ค่าไฟ คุณสมชาย" />
           </FormField>
-          <FormField label="ค่าธรรมเนียม (บาท)">
-            <div class="flex items-center gap-2">
-              <BaseInput
-                v-model="favManualCommission"
-                type="number"
-                placeholder="0"
-                min="0"
-                :disabled="!favIsCommissionManual"
-                class="flex-1"
-              />
+
+          <FormField label="ประเภทบิล" required>
+            <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <button
-                class="rounded-lg border px-3 py-2 text-sm transition-colors"
-                :class="favIsCommissionManual ? 'border-blue-300 bg-blue-50 text-blue-700' : 'border-gray-200 bg-gray-50 text-gray-500'"
-                @click="favIsCommissionManual = !favIsCommissionManual"
+                v-for="opt in BILL_TYPE_OPTIONS"
+                :key="opt.value"
+                type="button"
+                class="rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
+                :class="favFormData.billType === opt.value
+                  ? 'border-primary bg-primary text-white'
+                  : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'"
+                @click="favFormData.billType = opt.value"
               >
-                {{ favIsCommissionManual ? '✏️ กำหนดเอง' : '— ไม่มี' }}
+                {{ opt.label }}
               </button>
             </div>
           </FormField>
-          <div class="flex justify-end gap-2">
-            <BaseButton variant="secondary" @click="goBackFavStep1">← กลับ</BaseButton>
+
+          <FormField label="ยอดเงิน" required>
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <label
+                class="flex cursor-pointer items-start gap-2 rounded-lg border p-3 transition-colors"
+                :class="favFormData.amountMode === 'variable' ? 'border-primary bg-red-50' : 'border-gray-200 bg-white hover:bg-gray-50'"
+              >
+                <input v-model="favFormData.amountMode" type="radio" value="variable" class="mt-1 accent-red-600" />
+                <span>
+                  <span class="block text-sm font-medium text-gray-900">ยอดไม่คงที่</span>
+                  <span class="block text-xs text-gray-500">กรอกยอดทุกครั้งที่ลูกค้ามาจ่าย เช่น ค่าไฟ ค่าน้ำ บัตรเครดิต</span>
+                </span>
+              </label>
+              <label
+                class="flex cursor-pointer items-start gap-2 rounded-lg border p-3 transition-colors"
+                :class="favFormData.amountMode === 'fixed' ? 'border-primary bg-red-50' : 'border-gray-200 bg-white hover:bg-gray-50'"
+              >
+                <input v-model="favFormData.amountMode" type="radio" value="fixed" class="mt-1 accent-red-600" />
+                <span>
+                  <span class="block text-sm font-medium text-gray-900">ยอดคงที่</span>
+                  <span class="block text-xs text-gray-500">ใช้ยอดเดิมทุกครั้ง (แก้ได้ตอนบันทึก) เช่น ผ่อนรถ ผ่อนสินค้า</span>
+                </span>
+              </label>
+            </div>
+            <div v-if="favFormData.amountMode === 'fixed'" class="mt-2">
+              <BaseInput v-model="favFormData.defaultAmount" type="number" placeholder="ยอดต่อครั้ง (บาท)" min="0" />
+            </div>
+          </FormField>
+        </div>
+      </div>
+
+      <!-- Step 2: Enter Amount -->
+      <div v-else-if="favStep === 2 && selectedFavorite">
+        <div class="mb-4 rounded-xl bg-gray-50 p-4">
+          <div class="font-semibold text-gray-900">★ {{ selectedFavorite.label }}</div>
+          <div class="mt-0.5 text-sm text-gray-500">
+            {{ BILL_TYPE_OPTIONS.find(o => o.value === selectedFavorite!.billType)?.label ?? 'ไม่ระบุประเภท' }}
+            <template v-if="selectedFavorite.customerName"> · {{ selectedFavorite.customerName }}</template>
+          </div>
+        </div>
+        <div class="space-y-4">
+          <FormField label="จำนวนเงิน" required>
+            <div class="relative">
+              <BaseInput v-model="favAmount" type="number" placeholder="0" min="0" />
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">บาท</span>
+            </div>
+            <div v-if="isFavInsufficient" class="mt-1 text-sm text-amber-700">
+              ยอดในบัญชีตอนนี้ไม่พอ (ขาด {{ formatAmount(Number(favAmount) - favBankBalance) }}) — บันทึกเข้าคิวได้ แต่ต้องมียอดพอก่อนกด "ดำเนินการ"
+            </div>
+          </FormField>
+          <FormField :label="favIsCommissionManual ? 'ค่าธรรมเนียม' : 'ค่าธรรมเนียม (คำนวณอัตโนมัติ)'">
+            <div class="flex items-center gap-3">
+              <div class="relative flex-1">
+                <input
+                  :value="favEffectiveCommission"
+                  type="number"
+                  min="0"
+                  step="1"
+                  :disabled="!favIsCommissionManual"
+                  class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary disabled:bg-gray-50 disabled:text-gray-500"
+                  @input="e => { favManualCommission = Number((e.target as HTMLInputElement).value) }"
+                />
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">บาท</span>
+              </div>
+              <label class="flex items-center gap-1.5 whitespace-nowrap text-sm text-gray-600">
+                <input :checked="favIsCommissionManual" type="checkbox" class="accent-red-500" @change="toggleFavCommissionMode" />
+                กำหนดเอง
+              </label>
+            </div>
+          </FormField>
+          <div v-if="Number(favAmount) > 0" class="space-y-1 rounded-lg bg-gray-50 p-3 text-sm">
+            <div class="flex justify-between">
+              <span class="text-gray-500">ยอดเงินในบัญชี ปัจจุบัน</span>
+              <span class="font-medium">{{ formatAmount(favBankBalance) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">หลังดำเนินการ</span>
+              <span class="font-medium" :class="isFavInsufficient ? 'text-red-600' : 'text-gray-900'">
+                {{ formatAmount(favBankBalance - Number(favAmount)) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex justify-between">
+          <div class="flex gap-2">
+            <BaseButton v-if="favStep === 2" variant="secondary" @click="goBackFavStep1">← กลับ</BaseButton>
+            <BaseButton v-else-if="favMode === 'manage'" variant="secondary" @click="favMode = 'select'; deletingFavoriteId = ''">← กลับ</BaseButton>
+            <BaseButton v-else-if="favMode === 'add' || favMode === 'edit'" variant="secondary" @click="favMode = 'manage'">← กลับ</BaseButton>
+          </div>
+          <div class="flex gap-2">
+            <BaseButton v-if="favStep === 1 && favMode === 'select'" variant="secondary" size="sm" @click="favMode = 'manage'">
+              <Cog6ToothIcon class="h-4 w-4" />
+              จัดการ
+            </BaseButton>
             <BaseButton
+              v-if="favStep === 1 && (favMode === 'add' || favMode === 'edit')"
+              variant="primary"
+              :loading="isSavingFavorite"
+              :disabled="!isFavFormValid"
+              @click="handleSaveFavorite"
+            >
+              บันทึก
+            </BaseButton>
+            <ActionButton
+              v-if="favStep === 2"
+              :permission="PERMISSIONS.EDIT_FINANCE"
               variant="primary"
               :disabled="!favAmount || Number(favAmount) <= 0"
               @click="handleSubmitFavorite"
             >
-              ✅ บันทึกรายการ
-            </BaseButton>
+              บันทึกเข้าคิว
+            </ActionButton>
           </div>
-        </template>
-      </div>
+        </div>
+      </template>
     </BaseModal>
   </div>
 </template>

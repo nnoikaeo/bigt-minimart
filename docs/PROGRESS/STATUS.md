@@ -1,10 +1,10 @@
 # Project Status Dashboard
 
-**Last Updated**: Oct 17, 2026
+**Last Updated**: Oct 19, 2026
 **Updated By**: Claude Code
 **Current Branch**: develop (latest merge: PR #152; main: docs synced via PR #150, code at release #148)
 **Current Phase**: Testing — Service Harmonization (Manual Test → Bug Fix → E2E)
-**Next Up**: PR 1 — Draft queue (MT + BP), then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`); MT-2 Step 8 pagination still untested
+**Next Up**: PR 1 — Draft queue (MT + BP) on `feat/draft-queue` (local, not pushed) — MT-2 ✅ passed; BP-2 Step 6 ✅ passed (Oct 19, incl. BUG-012/013) → PR to develop; then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
 
 ---
 
@@ -303,11 +303,20 @@ Components (49 total):
 🔄 Service Harmonization Testing (17 Tasks)
    ├─ Manual Test: 10 tasks (MT-1~4, BP-1~4, SHARED-1~2) 🔄 IN PROGRESS
    │     ├─ MT-1 ✅ ผ่าน
-   │     ├─ MT-2 🔄 Step 1-7 ผ่าน, Step 8 tabs/filter/badge ผ่าน (16 ต.ค.) — เหลือ Step 8 pagination, 9-11; BUG-001~006 ใน TESTING_PLAN; Step 6 ต้องทดสอบใหม่หลังคิว draft
+   │     ├─ MT-2 ✅ ผ่าน Step 1-11 (17 ต.ค., บน `feat/draft-queue`) — BUG-007~011 แก้แล้ว; BUG-001~003 ยังเปิด; BUG-002 ยังไม่ได้ทดสอบ
+   │     ├─ BP-2 🔄 Step 6 (คิว draft) ✅ ผ่าน 8/8 (19 ต.ค.) — BUG-012 ✅ ทดสอบผ่าน; BUG-013 (ฟอร์มฝากเงินมีช่องชื่อลูกค้า) ✅ แก้ + ทดสอบผ่าน; ประเภทบิล "ประกัน" → "สินเชื่อ" (`loan`) — ค่าธรรมเนียมยังใช้อัตราเดิมของประกัน (15/25/35/50) รอ Owner ยืนยัน
    │     └─ MT-3, MT-4, BP-1~4, SHARED-1~2 ☐ NOT STARTED
    ├─ Bug Fix: 2 tasks (BugFix-1, BugFix-2)              ☐ WAITING FOR MANUAL TEST
    ├─ E2E Playwright: 5 tasks (E2E-1~5)                   ☐ WAITING FOR BUG FIX
    └─ Testing Plan: docs/PROGRESS/TESTING_PLAN.md ✅ CREATED
+
+📋 Planned — History summary columns (Owner decided 17 ต.ค. 2569; separate PR after the draft-queue PR)
+   ├─ Problem: history "ยอดรวม" = Σ amount of completed transfer + withdrawal + owner_deposit,
+   │   and "จำนวนรายการ" counts every row (incl. cancelled/draft/deposit) → no picture of the day
+   ├─ MT history (`pages/finance/money-transfer-history.vue`): replace จำนวนรายการ/ยอดรวม with
+   │   "โอนเงิน N รายการ · ยอด" and "ถอนเงิน N รายการ · ยอด" (completed only; "–" when none) + ค่าบริการ
+   ├─ BP history (`pages/finance/bill-payment-history.vue`): same idea — "รับชำระบิล N รายการ · ยอด" + ค่าบริการ
+   └─ Owner deposits: NOT shown on history pages — only on that day's detail page
 
 ❌ Dashboard & Reports (original Week 5-6 plan)
    ├─ Analytics dashboard

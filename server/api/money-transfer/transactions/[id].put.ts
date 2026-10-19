@@ -5,7 +5,7 @@ import { moneyTransferJsonRepository } from '~/server/repositories/money-transfe
  * PUT /api/money-transfer/transactions/:id
  *
  * Update transaction fields.
- * - Draft: if updated amount is sufficient, auto-upgrades to 'completed' + applies balance
+ * - Draft: updates fields only — stays draft (complete via POST /:id/complete)
  * - Completed/on_hold: updates fields only (status change is handled by /status endpoint)
  * - Cancelled: cannot be edited
  */
@@ -179,120 +179,15 @@ export default defineEventHandler(async (event) => {
       return { success: true, data: updated, message: 'Transaction fields updated' }
     }
 
-    const currentBalance = await moneyTransferJsonRepository.getCurrentBalance(existing.date)
+    // Draft: update fields only — stays in the queue until "ดำเนินการ" (POST /complete)
+    const { status: _ignoreDraftStatus, ...draftUpdates } = validated
+    const updated = await moneyTransferJsonRepository.updateTransaction(id, {
+      ...draftUpdates,
+      status: 'draft',
+    })
+    console.log(`[PUT /api/money-transfer/transactions/${id}] Updated draft fields`)
 
-    // Determine final amount (use validated or existing)
-    const finalAmount = validated.amount ?? existing.amount
-    const finalType = validated.transactionType ?? existing.transactionType
-
-    // Check balance sufficiency with updated values
-    const hasSufficientBalance =
-      finalType === 'owner_deposit'
-        ? true
-        : finalType === 'withdrawal'
-          ? currentBalance.transferCash >= finalAmount
-          : currentBalance.bankAccount >= finalAmount
-
-    const finalStatus = hasSufficientBalance ? 'completed' : 'draft'
-
-    // Build balance impacts (only relevant if transitioning to completed)
-    let balanceAfterBankAccount = currentBalance.bankAccount
-    let balanceAfterTransferCash = currentBalance.transferCash
-    let balanceAfterServiceFeeCash = currentBalance.serviceFeeCash
-    let balanceAfterServiceFeeTransfer = currentBalance.serviceFeeTransfer
-
-    if (finalStatus === 'completed') {
-      if (finalType === 'owner_deposit') {
-        balanceAfterBankAccount = currentBalance.bankAccount + finalAmount
-      } else if (finalType === 'withdrawal') {
-        // Withdrawal — customer sends to owner's bank, owner pays out cash
-        balanceAfterBankAccount = currentBalance.bankAccount + finalAmount
-        balanceAfterTransferCash = currentBalance.transferCash - finalAmount
-
-        // transfer commission = customer also transfers commission via bank → add to bankAccount
-        const finalCommission = validated.commission ?? existing.commission ?? 0
-        const finalCommissionType = validated.commissionType ?? existing.commissionType
-        if (finalCommission > 0) {
-          if (finalCommissionType === 'cash') {
-            balanceAfterServiceFeeCash = currentBalance.serviceFeeCash + finalCommission
-          } else if (finalCommissionType === 'transfer') {
-            balanceAfterBankAccount += finalCommission
-            balanceAfterServiceFeeTransfer = currentBalance.serviceFeeTransfer + finalCommission
-          }
-        }
-      } else {
-        // Transfer — customer gives cash, owner transfers from bank
-        balanceAfterBankAccount = currentBalance.bankAccount - finalAmount
-        balanceAfterTransferCash = currentBalance.transferCash + finalAmount
-
-        const finalCommission = validated.commission ?? existing.commission ?? 0
-        const finalCommissionType = validated.commissionType ?? existing.commissionType
-        if (finalCommission > 0) {
-          if (finalCommissionType === 'cash') {
-            balanceAfterServiceFeeCash = currentBalance.serviceFeeCash + finalCommission
-          } else if (finalCommissionType === 'transfer') {
-            balanceAfterServiceFeeTransfer = currentBalance.serviceFeeTransfer + finalCommission
-          }
-        }
-      }
-    }
-
-    const updates: Record<string, any> = {
-      ...validated,
-      status: finalStatus,
-      balanceImpact: {
-        bankAccountBefore: Number(currentBalance.bankAccount),
-        bankAccountAfter: Number(balanceAfterBankAccount),
-        transferCashBefore: Number(currentBalance.transferCash),
-        transferCashAfter: Number(balanceAfterTransferCash),
-        serviceFeeBeforeCash: Number(currentBalance.serviceFeeCash),
-        serviceFeeAfterCash: Number(balanceAfterServiceFeeCash),
-        serviceFeeBeforeTransfer: Number(currentBalance.serviceFeeTransfer),
-        serviceFeeAfterTransfer: Number(balanceAfterServiceFeeTransfer),
-      },
-    }
-    if (finalStatus === 'completed') {
-      updates.completedAt = new Date().toISOString()
-      updates.draftReason = undefined
-    }
-
-    const updated = await moneyTransferJsonRepository.updateTransaction(id, updates)
-    console.log(`[PUT /api/money-transfer/transactions/${id}] Updated, status=${finalStatus}`)
-
-    // Apply balance if transaction completed
-    if (finalStatus === 'completed') {
-      await moneyTransferJsonRepository.updateBalance(existing.date, {
-        bankAccount: balanceAfterBankAccount,
-        transferCash: balanceAfterTransferCash,
-        serviceFeeCash: balanceAfterServiceFeeCash,
-        serviceFeeTransfer: balanceAfterServiceFeeTransfer,
-      })
-
-      // Update daily summary
-      const summary = await moneyTransferJsonRepository.getDailySummary(existing.date)
-      if (summary) {
-        const transactions = await moneyTransferJsonRepository.getTransactionsByDate(existing.date)
-        const completed = transactions.filter(t => t.status === 'completed')
-        await moneyTransferJsonRepository.updateDailySummary(existing.date, {
-          step1: {
-            ...summary.step1,
-            totalTransactions: transactions.length,
-            completedTransactions: completed.length,
-            draftTransactions: transactions.filter(t => t.status === 'draft').length,
-            totalAmount: completed.reduce((sum, t) => sum + t.amount, 0),
-            totalCommission: completed.reduce((sum, t) => sum + (t.commission || 0), 0),
-          },
-        })
-      }
-    }
-
-    return {
-      success: true,
-      data: updated,
-      message: finalStatus === 'completed'
-        ? 'Transaction updated and completed'
-        : 'Transaction updated as draft',
-    }
+    return { success: true, data: updated, message: 'Draft transaction updated' }
   } catch (error: any) {
     console.error(`[PUT /api/money-transfer/transactions/${id}] Error:`, error)
 

@@ -167,9 +167,32 @@
         "serviceFeeCash": 90
       }
     },
-    "workflowStatus": "step1_completed",
+    "workflowStatus": "step2_completed_with_notes",
     "createdAt": "2026-03-08T09:00:00.000Z",
-    "updatedAt": "2026-03-08T15:30:00.000Z"
+    "updatedAt": "2026-10-17T05:22:46.961Z",
+    "step2": {
+      "status": "completed",
+      "completedAt": "2026-10-17T05:22:46.961Z",
+      "completedBy": "manager",
+      "completedByName": "Manager",
+      "expectedCash": {
+        "transferWithdrawal": 8500,
+        "serviceFee": 90,
+        "total": 8590
+      },
+      "actualCash": {
+        "transferWithdrawal": 8400,
+        "serviceFee": 90,
+        "total": 8490
+      },
+      "differences": {
+        "transferWithdrawal": -100,
+        "serviceFee": 0,
+        "total": -100
+      },
+      "verificationNotes": "เงินสดขาด 100 บาท ทอนลูกค้าเกิน",
+      "hasDiscrepancies": true
+    }
   },
   {
     "id": "mtsum-2026-03-09",
@@ -269,15 +292,62 @@
     "id": "mtsum-2026-03-11",
     "date": "2026-03-11",
     "step1": {
+      "status": "completed",
+      "completedAt": "2026-10-17T05:13:49.839Z",
+      "completedBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
+      "completedByName": "กัลญา ผิวขำทองดี",
+      "totalTransactions": 11,
+      "completedTransactions": 9,
+      "draftTransactions": 0,
+      "totalAmount": 17500,
+      "totalCommission": 110,
+      "finalBalances": {
+        "bankAccount": 7500,
+        "transferCash": 7500,
+        "serviceFeeTransfer": 0,
+        "serviceFeeCash": 110
+      }
+    },
+    "workflowStatus": "step2_completed",
+    "createdAt": "2026-04-14T16:48:13.605Z",
+    "updatedAt": "2026-10-17T05:17:50.484Z",
+    "step2": {
+      "status": "completed",
+      "completedAt": "2026-10-17T05:17:50.484Z",
+      "completedBy": "manager",
+      "completedByName": "Manager",
+      "expectedCash": {
+        "transferWithdrawal": 7500,
+        "serviceFee": 110,
+        "total": 7610
+      },
+      "actualCash": {
+        "transferWithdrawal": 7500,
+        "serviceFee": 110,
+        "total": 7610
+      },
+      "differences": {
+        "transferWithdrawal": 0,
+        "serviceFee": 0,
+        "total": 0
+      },
+      "verificationNotes": "",
+      "hasDiscrepancies": false
+    }
+  },
+  {
+    "id": "mtsum-2026-10-17",
+    "date": "2026-10-17",
+    "step1": {
       "status": "in_progress",
-      "totalTransactions": 4,
-      "completedTransactions": 2,
-      "draftTransactions": 1,
-      "totalAmount": 1250,
-      "totalCommission": 30
+      "totalTransactions": 0,
+      "completedTransactions": 0,
+      "draftTransactions": 0,
+      "totalAmount": 0,
+      "totalCommission": 0
     },
     "workflowStatus": "step1_in_progress",
-    "createdAt": "2026-04-14T16:48:13.605Z",
-    "updatedAt": "2026-10-16T14:00:57.826Z"
+    "createdAt": "2026-10-17T05:59:43.253Z",
+    "updatedAt": "2026-10-17T05:59:43.253Z"
   }
 ]

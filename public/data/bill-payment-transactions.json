@@ -126,5 +126,55 @@
     "timestamp": "2026-04-20T17:26:30.583Z",
     "id": "bptxn-1776705990583-z090fte0r",
     "statusNote": "ระบบธนาคารมีปัญหา"
+  },
+  {
+    "date": "2026-04-01",
+    "transactionType": "bill_payment",
+    "billType": "utility",
+    "amount": 2000,
+    "commission": 20,
+    "customerName": "ทดสอบ A",
+    "recordedBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
+    "recordedAt": "2026-10-17T05:44:40.977Z",
+    "status": "completed",
+    "timestamp": "2026-10-17T05:44:41.107Z",
+    "id": "bptxn-1792215881107-lp1et0cph"
+  },
+  {
+    "date": "2026-04-01",
+    "transactionType": "bill_payment",
+    "billType": "telecom",
+    "amount": 1500,
+    "commission": 20,
+    "recordedBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
+    "recordedAt": "2026-10-17T05:46:04.543Z",
+    "status": "completed",
+    "timestamp": "2026-10-17T05:46:04.554Z",
+    "id": "bptxn-1792215964554-52f7uadd1"
+  },
+  {
+    "date": "2026-04-01",
+    "transactionType": "bill_payment",
+    "billType": "utility",
+    "amount": 350,
+    "commission": 10,
+    "customerName": "ค่าไฟน้ำทดสอบ",
+    "recordedBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
+    "recordedAt": "2026-10-19T13:25:20.038Z",
+    "status": "cancelled",
+    "timestamp": "2026-10-19T12:56:51.903Z",
+    "id": "bptxn-1792414611903-rn5j1ryd2",
+    "statusNote": "ทำรายการในแอปธนาคารไม่สำเร็จ"
+  },
+  {
+    "date": "2026-04-01",
+    "transactionType": "owner_deposit",
+    "amount": 1000,
+    "commission": 0,
+    "recordedBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
+    "recordedAt": "2026-10-19T13:23:01.490Z",
+    "status": "completed",
+    "timestamp": "2026-10-19T13:23:01.500Z",
+    "id": "bptxn-1792416181500-04yt07kji"
   }
 ]

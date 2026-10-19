@@ -39,7 +39,7 @@ export function useBillPaymentHelpers() {
     const map: Record<string, string> = {
       utility: 'สาธารณูปโภค',
       telecom: 'โทรคมนาคม',
-      insurance: 'ประกันภัย',
+      loan: 'สินเชื่อ',
       other: 'อื่นๆ',
     }
     return type ? (map[type] ?? type) : '-'

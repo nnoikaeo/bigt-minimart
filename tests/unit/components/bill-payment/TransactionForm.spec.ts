@@ -94,11 +94,11 @@ describe('TransactionForm', () => {
       expect(wrapper.findAll('input[type="radio"]').some(r => r.element.value === 'owner_deposit')).toBe(true)
     })
 
-    it('renders four transaction status radio options', () => {
+    it('does not render status radios for a new transaction (server queues it)', () => {
       const wrapper = mountForm()
       const statusValues = ['completed', 'draft', 'on_hold', 'cancelled']
       statusValues.forEach(v =>
-        expect(wrapper.findAll('input[type="radio"]').some(r => r.element.value === v)).toBe(true),
+        expect(wrapper.findAll('input[type="radio"]').some(r => r.element.value === v)).toBe(false),
       )
     })
   })
@@ -161,6 +161,13 @@ describe('TransactionForm', () => {
     it('shows เพิ่มรายการ label in add mode (no editingData)', () => {
       const wrapper = mountForm()
       expect(wrapper.text()).toContain('เพิ่มรายการ')
+    })
+
+    it('shows บันทึกเข้าคิว label + queue hint for a new bill_payment', async () => {
+      const wrapper = mountForm({ presetType: 'bill_payment' })
+      await nextTick()
+      expect(wrapper.text()).toContain('บันทึกเข้าคิว')
+      expect(wrapper.text()).toContain('รอดำเนินการ')
     })
   })
 
@@ -240,25 +247,51 @@ describe('TransactionForm', () => {
 
   // ─── statusNote field visibility ────────────────────────────────────────────
 
-  describe('statusNote field', () => {
-    it('hides statusNote input when status is completed (default)', () => {
-      const wrapper = mountForm()
-      // Default: 2 BaseInput (amount + customerName), no statusNote
-      const inputs = wrapper.findAll('.base-input')
-      expect(inputs).toHaveLength(2)
+  describe('status picker + statusNote field', () => {
+    const completedTxn = {
+      id: 'txn-001',
+      date: '2026-04-14',
+      timestamp: '2026-04-14T10:00:00Z',
+      transactionType: 'bill_payment' as const,
+      billType: 'utility' as const,
+      amount: 1500,
+      commission: 30,
+      status: 'completed' as const,
+      recordedBy: 'user-001',
+      recordedAt: '2026-04-14T10:00:00Z',
+    }
+
+    it('hides statusNote input for a new transaction', async () => {
+      const wrapper = mountForm({ presetType: 'bill_payment' })
+      await nextTick()
+      // 2 BaseInput (amount + customerName), no statusNote
+      expect(wrapper.findAll('.base-input')).toHaveLength(2)
     })
 
-    it('shows statusNote input when draft status is selected', async () => {
-      const wrapper = mountForm()
-      const draftRadio = wrapper.findAll('input[type="radio"]').find(r => r.element.value === 'draft')
-      draftRadio.element.checked = true
-      await draftRadio.trigger('change')
-      // Now 3 BaseInputs: amount + customerName + statusNote
-      expect(wrapper.findAll('.base-input')).toHaveLength(3)
+    it('hides customerName input for owner_deposit', async () => {
+      const wrapper = mountForm({ presetType: 'owner_deposit' })
+      await nextTick()
+      // amount only
+      expect(wrapper.findAll('.base-input')).toHaveLength(1)
+    })
+
+    it('renders completed / on_hold / cancelled radios (no draft) when editing a completed record', async () => {
+      const wrapper = mountForm({ editingData: completedTxn })
+      await nextTick()
+      const values = wrapper.findAll('input[type="radio"]').map(r => r.element.value)
+      expect(values).toEqual(expect.arrayContaining(['completed', 'on_hold', 'cancelled']))
+      expect(values).not.toContain('draft')
+    })
+
+    it('hides the status picker when editing a draft (stays in queue)', async () => {
+      const wrapper = mountForm({ editingData: { ...completedTxn, status: 'draft' } })
+      await nextTick()
+      expect(wrapper.findAll('input[type="radio"]').some(r => r.element.value === 'completed')).toBe(false)
     })
 
     it('shows statusNote input when on_hold status is selected', async () => {
-      const wrapper = mountForm()
+      const wrapper = mountForm({ editingData: completedTxn })
+      await nextTick()
       const holdRadio = wrapper.findAll('input[type="radio"]').find(r => r.element.value === 'on_hold')
       holdRadio.element.checked = true
       await holdRadio.trigger('change')
@@ -293,6 +326,16 @@ describe('TransactionForm', () => {
       const emitted = wrapper.emitted('submit')
       expect(emitted).toBeTruthy()
       expect(emitted[0][0].amount).toBe(750)
+    })
+
+    it('does not send a status for a new transaction (server decides draft/completed)', async () => {
+      const wrapper = mountForm({ presetType: 'owner_deposit' })
+      await nextTick()
+      const amountInput = wrapper.findAll('.base-input').find(i => i.attributes('type') === 'number')
+      await amountInput.setValue('500')
+      await wrapper.find('form').trigger('submit')
+      await nextTick()
+      expect(wrapper.emitted('submit')[0][0]).not.toHaveProperty('status')
     })
   })
 })

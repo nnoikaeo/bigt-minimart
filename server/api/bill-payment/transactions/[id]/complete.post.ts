@@ -3,7 +3,8 @@ import { requireServerAuth } from '~/server/utils/serverAuth'
 
 /**
  * POST /api/bill-payment/transactions/[id]/complete
- * Transition a draft transaction to completed status.
+ * Transition a queued draft to completed ("ดำเนินการ") — bill_payment requires
+ * enough bank-account balance.
  */
 export default defineEventHandler(async (event) => {
   try {
@@ -17,6 +18,19 @@ export default defineEventHandler(async (event) => {
     const txn = await billPaymentJsonRepository.getTransaction(id)
     if (txn.status !== 'draft') {
       throw createError({ statusCode: 400, message: `Cannot complete transaction with status '${txn.status}' — only 'draft' transactions can be completed` })
+    }
+
+    // bill_payment is paid from the bank account
+    if (txn.transactionType === 'bill_payment') {
+      const balance = await billPaymentJsonRepository.getCurrentBalance(txn.date)
+      const available = balance.bankAccount ?? 0
+      if (available < txn.amount) {
+        throw createError({
+          statusCode: 400,
+          message: `ยอดในบัญชีไม่พอ (มี ${available} ฿ ขาด ${txn.amount - available} ฿)`,
+          data: { reason: 'insufficient_funds', available, required: txn.amount },
+        })
+      }
     }
 
     const updated = await billPaymentJsonRepository.updateTransaction(id, {

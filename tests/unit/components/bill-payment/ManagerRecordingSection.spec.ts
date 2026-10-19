@@ -5,6 +5,15 @@ import { createTestingPinia } from '@pinia/testing'
 import { useBillPaymentStore } from '~/stores/bill-payment'
 import ManagerRecordingSection from '~/components/bill-payment/ManagerRecordingSection.vue'
 
+// ── Stub Nuxt auto-import: useCommission (favorite commission) ────────────────
+vi.stubGlobal('useCommission', () => ({
+  isManual: ref(false),
+  manualValue: ref(0),
+  autoCommission: ref(10),
+  effectiveCommission: computed(() => 10),
+  reset: vi.fn(),
+}))
+
 // ── Stub module imports ───────────────────────────────────────────────────────
 vi.mock('~/composables/useLogger', () => ({
   useLogger: () => ({ log: vi.fn(), error: vi.fn() }),
@@ -216,9 +225,9 @@ describe('ManagerRecordingSection', () => {
       expect(wrapper.text()).toContain('มีรายการอย่างน้อย 1 รายการ')
     })
 
-    it('shows "ไม่มีรายการ Draft ค้าง" checklist item', () => {
+    it('shows "ไม่มีรายการรอดำเนินการค้าง" checklist item', () => {
       const wrapper = mountSection()
-      expect(wrapper.text()).toContain('ไม่มีรายการ Draft ค้าง')
+      expect(wrapper.text()).toContain('ไม่มีรายการรอดำเนินการค้าง')
     })
 
     it('shows "ไม่มีรายการ On Hold ค้าง" checklist item', () => {
