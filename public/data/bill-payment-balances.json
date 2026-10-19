@@ -55,11 +55,11 @@
   {
     "id": "bpbal-2026-04-01",
     "date": "2026-04-01",
-    "bankAccount": 3300,
-    "billPaymentCash": 0,
-    "serviceFeeCash": 0,
+    "bankAccount": 800,
+    "billPaymentCash": 3500,
+    "serviceFeeCash": 40,
     "history": [],
-    "updatedAt": "2026-10-17T05:46:04.554Z",
+    "updatedAt": "2026-10-19T13:29:38.187Z",
     "openingBalance": 3300,
     "openingBalanceSetAt": "2026-04-20T17:25:27.913Z",
     "openingBalanceSource": "carryover",
@@ -73,5 +73,14 @@
     "serviceFeeCash": 0,
     "history": [],
     "updatedAt": "2026-10-17T05:40:25.631Z"
+  },
+  {
+    "id": "bpbal-2026-10-19",
+    "date": "2026-10-19",
+    "bankAccount": 0,
+    "billPaymentCash": 0,
+    "serviceFeeCash": 0,
+    "history": [],
+    "updatedAt": "2026-10-19T12:54:03.202Z"
   }
 ]

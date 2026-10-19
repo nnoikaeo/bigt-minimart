@@ -250,5 +250,15 @@
     "openingBalanceSetAt": "2026-10-17T05:59:49.928Z",
     "openingBalanceSource": "carryover",
     "openingBalanceSetBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3"
+  },
+  {
+    "id": "mtbal-2026-10-19",
+    "date": "2026-10-19",
+    "bankAccount": 0,
+    "transferCash": 0,
+    "serviceFeeTransfer": 0,
+    "serviceFeeCash": 0,
+    "history": [],
+    "updatedAt": "2026-10-19T13:21:12.810Z"
   }
 ]
