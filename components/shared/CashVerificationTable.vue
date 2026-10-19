@@ -34,8 +34,8 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  'update:managerActual': [rowIndex: number, value: number]
-  'update:auditorActual': [rowIndex: number, value: number]
+  'update:managerActual': [rowIndex: number, value: number | null]
+  'update:auditorActual': [rowIndex: number, value: number | null]
 }>()
 
 // --- helpers ---
@@ -74,6 +74,9 @@ const totalDiff = computed(() => {
   return totalManagerActual.value - totalExpected.value
 })
 
+// Total badge waits until every row has a count
+const allCounted = computed(() => props.rows.every(r => rowDiff(r) != null))
+
 // Any non-matching row counts — a shortfall in one row can offset a surplus in another
 const hasDiscrepancies = computed(
   () => totalDiff.value !== 0 || props.rows.some(r => (rowDiff(r) ?? 0) !== 0),
@@ -98,14 +101,19 @@ function diffVariant(diff: number | null): 'success' | 'error' | 'default' {
 
 // --- input handlers ---
 
+// Empty input → null (not counted yet), so the placeholder shows instead of 0
+function parseCount(event: Event): number | null {
+  const raw = (event.target as HTMLInputElement).value
+  if (raw === '') return null
+  return parseFloat(raw) || 0
+}
+
 function onManagerInput(index: number, event: Event) {
-  const value = parseFloat((event.target as HTMLInputElement).value) || 0
-  emit('update:managerActual', index, value)
+  emit('update:managerActual', index, parseCount(event))
 }
 
 function onAuditorInput(index: number, event: Event) {
-  const value = parseFloat((event.target as HTMLInputElement).value) || 0
-  emit('update:auditorActual', index, value)
+  emit('update:auditorActual', index, parseCount(event))
 }
 </script>
 
@@ -134,6 +142,7 @@ function onAuditorInput(index: number, event: Event) {
               <input
                 v-if="isManagerInput && !row.readOnly"
                 type="number"
+                placeholder="0"
                 :value="row.managerActual ?? ''"
                 class="w-28 text-right border border-gray-300 rounded-lg px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 @input="onManagerInput(idx, $event)"
@@ -148,6 +157,7 @@ function onAuditorInput(index: number, event: Event) {
               <input
                 v-if="isAuditorInput && !row.readOnly"
                 type="number"
+                placeholder="0"
                 :value="row.auditorActual ?? ''"
                 class="w-28 text-right border border-gray-300 rounded-lg px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 @input="onAuditorInput(idx, $event)"
@@ -175,9 +185,10 @@ function onAuditorInput(index: number, event: Event) {
               {{ formatCurrency(totalAuditorActual) }}
             </td>
             <td class="px-4 py-3 text-right">
-              <BaseBadge :variant="hasDiscrepancies ? 'warning' : 'success'" size="sm">
+              <BaseBadge v-if="allCounted" :variant="hasDiscrepancies ? 'warning' : 'success'" size="sm">
                 {{ hasDiscrepancies ? '⚠️ มีผลต่าง' : '✅ ตรงกัน' }}
               </BaseBadge>
+              <span v-else class="text-gray-400">—</span>
             </td>
           </tr>
         </tbody>

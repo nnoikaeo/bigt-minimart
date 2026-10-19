@@ -150,7 +150,7 @@ const bankBalanceDiff = computed(() => bankStatementAmount.value - expectedClosi
 const bankBalanceMatches = computed(() => bankBalanceDiff.value === 0)
 
 // ─── CashVerificationTable event handlers ─────────────────────────────────────
-function onAuditorActualUpdate(rowIndex: number, value: number) {
+function onAuditorActualUpdate(rowIndex: number, value: number | null) {
   if (rowIndex === 0) auditorCashBillPayment.value = value
   else if (rowIndex === 1) auditorCashServiceFee.value = value
 }

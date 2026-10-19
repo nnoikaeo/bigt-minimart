@@ -23,6 +23,14 @@ vi.mock('~/composables/useBillPaymentHelpers', () => ({
   }),
 }))
 
+// Simulate the Manager typing both counts (inputs start empty = null)
+async function enterCounts(wrapper: any, billPayment = 1000, serviceFee = 50) {
+  const table = wrapper.findComponent({ name: 'CashVerificationTable' })
+  table.vm.$emit('update:managerActual', 0, billPayment)
+  table.vm.$emit('update:managerActual', 1, serviceFee)
+  await nextTick()
+}
+
 // ── Component stubs ───────────────────────────────────────────────────────────
 const CashVerificationTableStub = {
   name: 'CashVerificationTable',
@@ -131,9 +139,16 @@ describe('CashVerificationSection', () => {
       expect(btn.exists()).toBe(true)
     })
 
-    it('enables submit button when no discrepancy (form valid by default)', async () => {
+    it('disables submit button until both counts are entered', async () => {
       const { wrapper } = mountActive()
       await nextTick()
+      expect(wrapper.find('.action-btn').attributes('disabled')).toBeDefined()
+    })
+
+    it('enables submit button when counts are entered with no discrepancy', async () => {
+      const { wrapper } = mountActive()
+      await nextTick()
+      await enterCounts(wrapper)
       const btn = wrapper.find('.action-btn')
       expect(btn.attributes('disabled')).toBeUndefined()
     })
@@ -176,6 +191,7 @@ describe('CashVerificationSection', () => {
         updatedAt: new Date().toISOString(),
       }
       await nextTick()
+      await enterCounts(wrapper, 900, 50)
       // Type notes into textarea
       const textarea = wrapper.find('.base-textarea')
       await textarea.setValue('เงินสดขาด 100 บาท')
@@ -187,6 +203,7 @@ describe('CashVerificationSection', () => {
     it('calls store.completeStep2 when submit button is clicked', async () => {
       const { wrapper, store } = mountActive()
       await nextTick()
+      await enterCounts(wrapper)
       const btn = wrapper.find('.action-btn')
       await btn.trigger('click')
       expect(store.completeStep2).toHaveBeenCalledWith('2026-04-14', expect.any(Object))
@@ -195,6 +212,7 @@ describe('CashVerificationSection', () => {
     it('emits step2-completed after successful submission', async () => {
       const { wrapper } = mountActive()
       await nextTick()
+      await enterCounts(wrapper)
       const btn = wrapper.find('.action-btn')
       await btn.trigger('click')
       await nextTick()

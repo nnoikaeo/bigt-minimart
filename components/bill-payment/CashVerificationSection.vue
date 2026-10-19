@@ -41,8 +41,9 @@ const isStep2ReadOnly = computed(() => !!store.currentSummary?.step2CompletedAt)
 const dateTransactions = computed(() => store.getTransactionsByDate(props.date))
 
 // ─── Step 2 form state ────────────────────────────────────────────────────────
-const actualBillPaymentCash = ref<number>(0)
-const actualServiceFeeCash = ref<number>(0)
+// null = not counted yet (input shows placeholder)
+const actualBillPaymentCash = ref<number | null>(null)
+const actualServiceFeeCash = ref<number | null>(null)
 const verificationNotes = ref('')
 const isSubmittingStep2 = ref(false)
 
@@ -51,16 +52,20 @@ const expectedBillPaymentCash = computed(() => expectedCash.value.billPaymentCas
 const expectedServiceFeeCash = computed(() => expectedCash.value.serviceFeeCash)
 
 const diffBillPayment = computed(() =>
-  diffExpectedVsActual(expectedBillPaymentCash.value, actualBillPaymentCash.value)
+  diffExpectedVsActual(expectedBillPaymentCash.value, actualBillPaymentCash.value ?? 0)
 )
 const diffServiceFee = computed(() =>
-  diffExpectedVsActual(expectedServiceFeeCash.value, actualServiceFeeCash.value)
+  diffExpectedVsActual(expectedServiceFeeCash.value, actualServiceFeeCash.value ?? 0)
 )
 const hasAnyDiscrepancy = computed(
-  () => diffBillPayment.value.hasDiscrepancy || diffServiceFee.value.hasDiscrepancy
+  () =>
+    (actualBillPaymentCash.value !== null && diffBillPayment.value.hasDiscrepancy) ||
+    (actualServiceFeeCash.value !== null && diffServiceFee.value.hasDiscrepancy)
 )
 const isStep2FormValid = computed(
   () =>
+    actualBillPaymentCash.value !== null &&
+    actualServiceFeeCash.value !== null &&
     actualBillPaymentCash.value >= 0 &&
     actualServiceFeeCash.value >= 0 &&
     (!hasAnyDiscrepancy.value || verificationNotes.value.trim().length > 0)
@@ -93,7 +98,7 @@ const readOnlyCashVerificationRows = computed<CashVerificationRow[]>(() => [
   },
 ])
 
-function onUpdateManagerActual(rowIndex: number, value: number) {
+function onUpdateManagerActual(rowIndex: number, value: number | null) {
   if (rowIndex === 0) actualBillPaymentCash.value = value
   else if (rowIndex === 1) actualServiceFeeCash.value = value
 }
@@ -117,8 +122,8 @@ async function handleCompleteStep2() {
   errorMessage.value = ''
   try {
     await store.completeStep2(props.date, {
-      step2ActualBillPaymentCash: actualBillPaymentCash.value,
-      step2ActualServiceFeeCash: actualServiceFeeCash.value,
+      step2ActualBillPaymentCash: actualBillPaymentCash.value ?? 0,
+      step2ActualServiceFeeCash: actualServiceFeeCash.value ?? 0,
       step2VerificationNotes: verificationNotes.value || undefined,
       step2CompletedBy: props.currentUser.uid,
       step2CompletedByName: props.currentUser.displayName,
