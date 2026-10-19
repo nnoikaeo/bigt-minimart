@@ -410,11 +410,12 @@
 - [x] กด "ยืนยันบันทึกรายการ" → status = step1_completed
 
 **Step 11: Cash Verification Step 2 (BP)**
-- [ ] **CashVerificationTable** — rows:
+> ผล (19 ต.ค. 2569, 2026-04-01, หลังแก้ BUG-015): ฟอร์มขั้นตอนที่ 2 แสดง (บัญชี 2,300 ไม่ต้องนับ) → กรอก A 2,000 / B 20 ส่วนต่าง 0 → ยืนยัน → `step2_completed` "รอ Auditor ตรวจสอบ" ✅ — ยังไม่ได้ทดสอบกรณีมีส่วนต่าง (`step2_completed_with_notes`)
+- [x] **CashVerificationTable** — rows:
   - A. เงินสดรับชำระบิล
   - B. ค่าธรรมเนียมสะสม
-- [ ] Notes textarea แสดงเสมอ
-- [ ] กด Submit → status = step2_completed (หรือ step2_completed_with_notes)
+- [x] Notes textarea แสดงเสมอ
+- [x] กด Submit → status = step2_completed (หรือ step2_completed_with_notes) — ทดสอบแล้วเฉพาะ step2_completed
 
 ---
 
@@ -766,7 +767,7 @@ Screenshots บันทึกที่: tests/e2e/screenshots/
 | MT-3 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
 | MT-4 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
 | BP-1 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
-| BP-2 | 17-19 ต.ค. 2569 | 🔄 Step 6 คิว draft ✅ 8/8, Step 7 ✅, Step 9 ✅ (ยกเว้น max 10/tab), Step 10 ✅ (19 ต.ค.); Step 11 รอทดสอบหลังแก้ BUG-015; Step 1-5, 8 ยังไม่ได้ติ๊ก | 4 (BUG-012~014 แก้ + ทดสอบผ่าน; BUG-015 แก้แล้วรอทดสอบ) | `feat/draft-queue` |
+| BP-2 | 17-19 ต.ค. 2569 | 🔄 Step 6 คิว draft ✅ 8/8, Step 7 ✅, Step 9 ✅ (ยกเว้น max 10/tab), Step 10 ✅, Step 11 ✅ ยอดตรง (19 ต.ค.); Step 1-5, 8 (pagination) ยังไม่ได้ติ๊ก; ยังไม่ได้ทดสอบ Step 11 กรณีมีส่วนต่าง | 4 (BUG-012~014 แก้ + ทดสอบผ่าน; BUG-015 แก้ + ทดสอบผ่าน) | `feat/draft-queue` |
 | BP-3 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
 | BP-4 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
 | SHARED-1 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
@@ -789,7 +790,7 @@ Screenshots บันทึกที่: tests/e2e/screenshots/
 | BUG-012 | BP-2 Step 6 | UX ฟอร์มรายการโปรด BP: ชื่อรายการโปรด + ชื่อลูกค้าซ้ำซ้อน, ประเภทบิลเป็น dropdown, ช่องยอดเงินเข้าใจยาก (ยอดคงที่ vs ไม่คงที่) + ค่าธรรมเนียมรายการโปรดเป็น 0 ถ้าไม่ได้ตั้งไว้ (ฟอร์มปกติคำนวณอัตโนมัติ) | Low (UX) / Medium | 🔧 แก้แล้ว (`feat/draft-queue`): ช่องชื่อเดียว (ใช้เป็นชื่อลูกค้า), ประเภทบิลเป็นปุ่ม, เลือก "ยอดไม่คงที่ / ยอดคงที่" พร้อมคำอธิบาย, ค่าธรรมเนียมคำนวณอัตโนมัติ (แก้เองได้), ประเภทบิลบังคับเลือก; modal รายการโปรด BP ใช้รูปแบบเดียวกับ MT (Tab #N + จำนวน, รายการ ★N, ปุ่ม "จัดการ" ด้านล่าง, ยืนยันก่อนลบ — เดิมลบทันที) — ✅ ทดสอบผ่าน 19 ต.ค. 2569 (เพิ่มรายการโปรดยอดคงที่ 300, modal, เลือกแล้วเข้าคิว; ยังไม่ได้ลองลบรายการโปรด) |
 | BUG-013 | BP-2 Step 6 | ฟอร์มฝากเงิน (เจ้าของ) แสดงช่อง "ชื่อลูกค้า" — ฝากเงินไม่มีลูกค้า | Low (UX) | 🔧 แก้แล้ว (`feat/draft-queue`): แสดงช่องชื่อลูกค้าเฉพาะรับชำระบิล และไม่ส่งชื่อลูกค้าเมื่อเป็นฝากเงิน (`components/bill-payment/TransactionForm.vue`) — ✅ ทดสอบผ่าน 19 ต.ค. 2569 (ฝากเงินไม่มีช่อง, สลับกลับเป็นรับชำระบิลช่องกลับมา) |
 | BUG-014 | BP-2 Step 9 | Modal รายการโปรดไม่มีปุ่ม ✕ ปิด (header slot แทนที่ header ของ BaseModal) + เส้นขอบ header ซ้อน 2 เส้น — MT เป็นเหมือนกัน | Low (UX) | 🔧 แก้แล้ว (`fix/bp-2-step8-11`): เพิ่มปุ่ม ✕ ข้างยอดเงินในบัญชี + ตัด padding/border ซ้ำ (MT + BP `ManagerRecordingSection.vue`) — ✅ ทดสอบผ่าน 19 ต.ค. 2569 (MT + BP ทุกหน้าจอของ modal) |
-| BUG-015 | BP-2 Step 11 | หลังยืนยัน Step 1 (`step1_completed`) Manager ไม่เห็นฟอร์มตรวจนับเงินสด เห็นแค่ "รอ Manager ตรวจนับเงินสด" — `isStep2Active` เช็ค `step1_in_progress` + `step1CompletedAt` ซึ่งไม่มีทางจริงพร้อมกัน (มีตั้งแต่ #127); unit test ตั้ง fixture ตามบั๊กจึงไม่จับ | High | 🔧 แก้แล้ว (`fix/bp-2-step8-11`): เช็ค `step1_completed` และยังไม่มี `step2CompletedAt` (`components/bill-payment/CashVerificationSection.vue`) + แก้ fixture ใน test (โค้ดเดิม fail 9 test) — รอทดสอบ |
+| BUG-015 | BP-2 Step 11 | หลังยืนยัน Step 1 (`step1_completed`) Manager ไม่เห็นฟอร์มตรวจนับเงินสด เห็นแค่ "รอ Manager ตรวจนับเงินสด" — `isStep2Active` เช็ค `step1_in_progress` + `step1CompletedAt` ซึ่งไม่มีทางจริงพร้อมกัน (มีตั้งแต่ #127); unit test ตั้ง fixture ตามบั๊กจึงไม่จับ | High | 🔧 แก้แล้ว (`fix/bp-2-step8-11`): เช็ค `step1_completed` และยังไม่มี `step2CompletedAt` (`components/bill-payment/CashVerificationSection.vue`) + แก้ fixture ใน test (โค้ดเดิม fail 9 test) — ✅ ทดสอบผ่าน 19 ต.ค. 2569 (Step 11) |
 | BUG-006 | MT-2 Step 8 (อ่านโค้ด) | สงสัย: อยู่หน้า 2 แล้วจำนวนรายการลดจนเหลือ 1 หน้า → `currentPage` ไม่ถูก clamp → ตารางว่าง + pagination หาย | Medium | ✅ ปิด — ไม่เกิดจริง (ทดสอบ 17 ต.ค. 2569: ลบรายการหน้า 2 → กลับหน้า 1 ปกติ) |
 
 ### E2E Test Results
