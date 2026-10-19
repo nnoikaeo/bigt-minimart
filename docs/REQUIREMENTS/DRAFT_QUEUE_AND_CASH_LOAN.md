@@ -1,6 +1,6 @@
 # คิว Draft + สมุดยืม/คืนเงินขาย (Money Transfer & Bill Payment)
 
-> **สถานะ:** ✅ Owner อนุมัติแบบร่าง 16 ต.ค. 2569 — 🔧 PR 1 (คิว draft) implement แล้ว 17 ต.ค. 2569 รอ manual test — ☐ PR 2 ยังไม่ทำ
+> **สถานะ:** ✅ Owner อนุมัติแบบร่าง 16 ต.ค. 2569 — ✅ PR 1 (คิว draft) merged PR #153 (19 ต.ค. 2569), ทดสอบผ่าน MT-2 + BP-2; ปรับ UI คิวเพิ่ม PR #156/#157 — ☐ PR 2 ยังไม่ทำ (ไฟล์นี้ยังใช้งาน — ย้ายไป ARCHIVE เมื่อ PR 2 เสร็จ)
 > **ที่มา:** พบระหว่าง MT-2 Step 8 (BUG-005 ใน `docs/PROGRESS/TESTING_PLAN.md`)
 > **แผน implement:** PR 1 (คิว draft) → PR 2 (สมุดยืม/คืน) → Manual test → อัปเดต TESTING_PLAN
 > เมื่อ implement + ทดสอบเสร็จ → ย้ายไฟล์นี้ไป `docs/ARCHIVE/` และอัปเดต `WORKFLOWS.md` (FLOW 2, FLOW 3)
@@ -57,6 +57,7 @@
 - **BUG-004:** `complete.post.ts` เช็ค `transferCash` สำหรับถอนเงิน (ไม่ใช่ `bankAccount` เสมอ)
 - BP: ทำแบบเดียวกัน (ตรวจ `stores/bill-payment.ts` + `server/api/bill-payment/` ก่อน — ชื่อ method ต่างจาก MT)
 - Tab "รอดำเนินการ" = คิวงาน (มีอยู่แล้ว)
+- ✅ ที่ทำเพิ่มหลังทดสอบ: กด "ดำเนินการ" ยอดไม่พอ → dialog "ดำเนินการไม่ได้" (BUG-007); แถวในคิวแสดง #N (เลขแถวในตาราง tab ทั้งหมด) + เวลา (+ ประเภทบิลใน BP) เรียงจากเก่าสุด (BUG-019); ดำเนินการลำดับไหนก็ได้ — server เช็คยอดทีละรายการ
 
 ## 5. PR 2 — สมุดยืม/คืนเงินขาย (MT เท่านั้น)
 

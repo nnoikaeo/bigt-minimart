@@ -39,7 +39,7 @@ docs/
 | [USE_CASES.md](REQUIREMENTS/USE_CASES.md) | 8 use cases with flows and success criteria |
 | [WORKFLOWS.md](REQUIREMENTS/WORKFLOWS.md) | Flow 1-4: Cash, Money Transfer, Bill Payment, Income/Expense (+ unified status mapping) |
 | [DEVELOPMENT_ROADMAP.md](REQUIREMENTS/DEVELOPMENT_ROADMAP.md) | Original Phase 1-4 roadmap (Jan 2026) + actual-progress banner |
-| [DRAFT_QUEUE_AND_CASH_LOAN.md](REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md) | Approved spec (not yet implemented): draft queue for MT/BP + borrow/repay sales cash |
+| [DRAFT_QUEUE_AND_CASH_LOAN.md](REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md) | Approved spec: draft queue for MT/BP (PR 1 ✅ done, PR #153) + borrow/repay sales cash (PR 2, not yet implemented) |
 
 ---
 
@@ -85,7 +85,7 @@ docs/
 
 | File | Description |
 |------|-------------|
-| [STATUS.md](PROGRESS/STATUS.md) | Current project status dashboard (Weeks 1-11) |
+| [STATUS.md](PROGRESS/STATUS.md) | Current project status dashboard (Weeks 1-12) |
 | [TESTING_PLAN.md](PROGRESS/TESTING_PLAN.md) | Service Harmonization testing plan — 17 tasks (Manual → Bug Fix → E2E) |
 
 ---

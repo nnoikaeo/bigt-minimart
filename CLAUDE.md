@@ -20,7 +20,7 @@ Keep this file short: facts that live in `docs/` are **linked**, not copied.
 - Nuxt 4 + Vue 3 `<script setup lang="ts">` + TypeScript strict, Pinia 3, Tailwind 3
 - Firebase Auth (client) + Firebase Admin token verification (`server/utils/serverAuth.ts`)
 - Data: JSON files in `public/data/` via `server/repositories/*-json.repository.ts` (Firestore repos exist but are not wired)
-- Tests: Vitest (`npm test`) — CI does **not** run tests, so run them locally
+- Tests: Vitest (`npm test`) — CI does **not** run tests, so run them locally; CI **does** run `npm run lint` (nuxt typecheck) — run it before every push (vue-tsc alone missed an error in PR #157)
 - Checks: `npm run lint` (nuxt typecheck), `npm run type-check` (vue-tsc), `npm run build`
 
 ## Finance services (Money Transfer = FLOW 2, Bill Payment = FLOW 3)
@@ -44,7 +44,7 @@ Keep this file short: facts that live in `docs/` are **linked**, not copied.
 - Async: try/catch, set `errorMessage.value = err.message`
 - Destructive actions: `ConfirmDialog`
 - Date pickers: `<input type="date">` in the `#actions` slot of `PageWrapper`
-- TS pitfalls: `split('T')[0]` is `string | undefined` (use `?? ''`); v-for index is `string | number` (use `Number(idx) + 1`); type literal unions with `''` explicitly (`ref<'a' | 'b' | ''>('')`); remove unused computeds
+- TS pitfalls: `split('T')[0]` is `string | undefined` (use `?? ''`); v-for index is `string | number` (use `Number(idx) + 1`); type literal unions with `''` explicitly (`ref<'a' | 'b' | ''>('')`); remove unused computeds; `new Map(arr.map(x => [k, v]))` infers `Map<any, any>`-ish types that fail arithmetic in nuxt typecheck — write `new Map<string, number>(...)`
 
 ## Keeping docs in sync (required)
 
