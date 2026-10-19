@@ -31,8 +31,8 @@ const errorMessage = ref('')
 /** Step 2 editable: step1 done but step2 not yet submitted */
 const isStep2Active = computed(
   () =>
-    store.getCurrentWorkflowStatus === 'step1_in_progress' &&
-    !!store.currentSummary?.step1CompletedAt
+    store.getCurrentWorkflowStatus === 'step1_completed' &&
+    !store.currentSummary?.step2CompletedAt
 )
 /** Step 2 read-only: step2 has been submitted */
 const isStep2ReadOnly = computed(() => !!store.currentSummary?.step2CompletedAt)

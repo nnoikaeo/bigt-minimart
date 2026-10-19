@@ -93,9 +93,9 @@ describe('CashVerificationSection', () => {
         global: { plugins: [pinia], ...globalConfig },
       })
       const store = useBillPaymentStore(pinia)
-      // isStep2Active: getCurrentWorkflowStatus === 'step1_in_progress' && step1CompletedAt set
+      // isStep2Active: getCurrentWorkflowStatus === 'step1_completed' && step2CompletedAt not set
       store.currentSummary = {
-        workflowStatus: 'step1_in_progress',
+        workflowStatus: 'step1_completed',
         step1CompletedAt: '2026-04-14T10:00:00Z',
         step2CompletedAt: null,
         createdAt: new Date().toISOString(),
@@ -148,7 +148,7 @@ describe('CashVerificationSection', () => {
       })
       const store = useBillPaymentStore(pinia)
       store.currentSummary = {
-        workflowStatus: 'step1_in_progress',
+        workflowStatus: 'step1_completed',
         step1CompletedAt: '2026-04-14T10:00:00Z',
         step2CompletedAt: null,
         createdAt: new Date().toISOString(),
@@ -169,7 +169,7 @@ describe('CashVerificationSection', () => {
       })
       const store = useBillPaymentStore(pinia)
       store.currentSummary = {
-        workflowStatus: 'step1_in_progress',
+        workflowStatus: 'step1_completed',
         step1CompletedAt: '2026-04-14T10:00:00Z',
         step2CompletedAt: null,
         createdAt: new Date().toISOString(),
