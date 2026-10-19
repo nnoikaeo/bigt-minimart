@@ -900,7 +900,7 @@ async function handleCompleteStep1() {
     <!-- ══════════════════════════════════════════════════════════════════════ -->
     <BaseModal :open="showFavoriteModal" size="lg" @close="showFavoriteModal = false">
       <template #header>
-        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <div class="flex items-center justify-between gap-4">
           <div class="flex items-center gap-2">
             <StarIcon class="w-5 h-5 text-yellow-500" />
             <h2 class="text-lg font-bold text-gray-900">
@@ -911,11 +911,21 @@ async function handleCompleteStep1() {
               <span v-else>กรอกจำนวนเงิน</span>
             </h2>
           </div>
-          <div class="text-sm text-gray-500">
-            ยอดเงินในบัญชี:
-            <span :class="isInsufficientFunds ? 'text-red-600 font-bold' : 'text-green-700 font-bold'">
-              {{ formatCurrency(store.currentBalance?.bankAccount ?? 0) }}
-            </span>
+          <div class="flex items-center gap-4">
+            <div class="text-sm text-gray-500">
+              ยอดเงินในบัญชี:
+              <span :class="isInsufficientFunds ? 'text-red-600 font-bold' : 'text-green-700 font-bold'">
+                {{ formatCurrency(store.currentBalance?.bankAccount ?? 0) }}
+              </span>
+            </div>
+            <button
+              type="button"
+              aria-label="ปิด"
+              class="text-gray-400 hover:text-gray-600 transition-colors"
+              @click="showFavoriteModal = false"
+            >
+              <XMarkIcon class="w-6 h-6" />
+            </button>
           </div>
         </div>
       </template>
