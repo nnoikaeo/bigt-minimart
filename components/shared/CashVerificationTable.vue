@@ -74,7 +74,10 @@ const totalDiff = computed(() => {
   return totalManagerActual.value - totalExpected.value
 })
 
-const hasDiscrepancies = computed(() => totalDiff.value !== 0)
+// Any non-matching row counts — a shortfall in one row can offset a surplus in another
+const hasDiscrepancies = computed(
+  () => totalDiff.value !== 0 || props.rows.some(r => (rowDiff(r) ?? 0) !== 0),
+)
 
 // --- per-row helpers ---
 
@@ -87,10 +90,10 @@ function rowDiff(row: CashVerificationRow): number | null {
   return row.managerActual - row.expected
 }
 
-function diffClass(diff: number | null): string {
-  if (diff == null) return 'text-gray-400'
-  if (diff === 0) return 'text-green-700'
-  return 'text-red-700'
+function diffVariant(diff: number | null): 'success' | 'error' | 'default' {
+  if (diff == null) return 'default'
+  if (diff === 0) return 'success'
+  return 'error'
 }
 
 // --- input handlers ---
@@ -156,9 +159,9 @@ function onAuditorInput(index: number, event: Event) {
 
             <!-- Diff -->
             <td class="px-4 py-3 text-right">
-              <span v-if="rowDiff(row) != null" :class="['text-sm font-semibold', diffClass(rowDiff(row))]">
+              <BaseBadge v-if="rowDiff(row) != null" :variant="diffVariant(rowDiff(row))" size="sm">
                 {{ formatDiff(rowDiff(row), formatCurrency) }}
-              </span>
+              </BaseBadge>
               <span v-else class="text-gray-400">—</span>
             </td>
           </tr>

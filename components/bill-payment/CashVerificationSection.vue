@@ -209,7 +209,7 @@ async function handleCompleteStep2() {
     <!-- ═══════════════════════════════════════════════════════════════════════
          STEP 2 — Read-only summary (step2 submitted)
     ════════════════════════════════════════════════════════════════════════════ -->
-    <section v-else-if="isStep2ReadOnly" class="mt-2">
+    <section v-else-if="isStep2ReadOnly" class="mt-2 mb-4">
       <div class="mb-3 flex items-center gap-2">
         <CheckCircleIcon class="h-5 w-5 text-green-600" />
         <h2 class="text-base font-semibold text-gray-700">ขั้นตอนที่ 2 — ผลการตรวจนับเงินสด</h2>
