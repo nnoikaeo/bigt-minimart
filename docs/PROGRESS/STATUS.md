@@ -1,10 +1,10 @@
 # Project Status Dashboard
 
-**Last Updated**: Oct 19, 2026
+**Last Updated**: Oct 20, 2026
 **Updated By**: Claude Code
-**Current Branch**: develop (latest merge: PR #155; main: docs synced via PR #150, code at release #148)
+**Current Branch**: develop (latest merge: PR #156; main: docs synced via PR #150, code at release #148)
 **Current Phase**: Testing — Service Harmonization (Manual Test → Bug Fix → E2E)
-**Next Up**: merge `fix/bp-2-step8-11` (BUG-014/015); BP-2 leftovers (Step 1-5 ticks, Step 8 pagination, Step 11 discrepancy path); then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
+**Next Up**: BP-2 leftovers (BUG-016 check, Step 11 discrepancy + BUG-017 red badges) (Step 1-5 ticks, Step 8 pagination, Step 11 discrepancy path); then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
 
 ---
 
@@ -157,7 +157,7 @@ Timeline Status: Money Transfer feature fully shipped ✓
 
 ### Week 12 (Oct 16-19, 2026): Project Re-entry — Docs, Tooling, MT-2 + Draft Queue
 
-**PRs**: #150 (docs → main), #151, #152, #153, #154, #155
+**PRs**: #150 (docs → main), #151, #152, #153, #154, #155, #156
 
 ```
 ✅ Documentation sync (commit 6f19509 + PR #150)
@@ -184,6 +184,12 @@ Timeline Status: Money Transfer feature fully shipped ✓
    ├─ BP bill type "ประกัน" → "สินเชื่อ" (`loan`); fees = utility (10/20/30/40, Owner confirmed Oct 19, PR #154)
    └─ Manual: MT-2 ✅ Step 1-11, BP-2 Step 6 ✅ 8/8
    PR 2 (borrow/repay sales cash) not implemented yet
+
+✅ BP-2 Step 7-11 + fixes (PR #154 loan fee, #155 docs, #156, Oct 19-20)
+   ├─ Loan (สินเชื่อ) fees = utility 10/20/30/40 (#154)
+   ├─ BUG-015 (High): BP Step 2 cash count form never rendered after Step 1 (since #127)
+   ├─ BUG-014 favorites modal close button (MT + BP), BUG-016 redundant waiting banner (MT + BP)
+   └─ BUG-017 CashVerificationTable: offsetting row diffs flagged, row diffs as badges
 ```
 
 ### Week 9 (Mar 23-25): Layout Consistency & Polish
@@ -293,9 +299,9 @@ Components (49 total):
 | Pages | 26 (16 functional, 10 placeholders) | ✅ |
 | Components | 49 | ✅ |
 | API routes | 72 | ✅ |
-| PRs merged (latest) | #155 | ✅ |
+| PRs merged (latest) | #156 | ✅ |
 | TypeScript errors (`nuxt typecheck`) | 0 | ✅ |
-| Unit/Integration tests (`vitest run`) | 285/285 passed (18 files) | ✅ |
+| Unit/Integration tests (`vitest run`) | 287/287 passed (18 files) | ✅ |
 | Production build (`nuxt build`) | Success | ✅ |
 | Money Transfer workflow | 9/9 statuses (unified) | ✅ |
 | Bill Payment workflow | Phase 1-6 Complete (27 Tasks) | ✅ |
@@ -313,7 +319,7 @@ Components (49 total):
    ├─ Manual Test: 10 tasks (MT-1~4, BP-1~4, SHARED-1~2) 🔄 IN PROGRESS
    │     ├─ MT-1 ✅ ผ่าน
    │     ├─ MT-2 ✅ ผ่าน Step 1-11 (17 ต.ค., merged PR #153) — BUG-007~011 แก้แล้ว; BUG-001~003 ยังเปิด; BUG-002 ยังไม่ได้ทดสอบ
-   │     ├─ BP-2 🔄 Step 6, 7, 9, 10, 11 ✅ (19 ต.ค.) — BUG-014 (modal รายการโปรดไม่มีปุ่ม ✕) + BUG-015 (ฟอร์มตรวจนับ Step 2 ไม่แสดง, High) แก้ + ทดสอบผ่าน บน `fix/bp-2-step8-11`; BUG-012 ✅ ทดสอบผ่าน; BUG-013 (ฟอร์มฝากเงินมีช่องชื่อลูกค้า) ✅ แก้ + ทดสอบผ่าน; ประเภทบิล "ประกัน" → "สินเชื่อ" (`loan`) — ค่าธรรมเนียมเท่าสาธารณูปโภค (10/20/30/40, Owner ยืนยัน 19 ต.ค.)
+   │     ├─ BP-2 🔄 Step 6, 7, 9, 10, 11 ✅ (19 ต.ค.) — BUG-014 (modal รายการโปรดไม่มีปุ่ม ✕) + BUG-015 (ฟอร์มตรวจนับ Step 2 ไม่แสดง, High) แก้ + ทดสอบผ่าน (PR #156); BUG-016/017 (กล่องสถานะซ้ำ, ป้ายตารางตรวจนับ) แก้แล้ว (PR #156); BUG-012 ✅ ทดสอบผ่าน; BUG-013 (ฟอร์มฝากเงินมีช่องชื่อลูกค้า) ✅ แก้ + ทดสอบผ่าน; ประเภทบิล "ประกัน" → "สินเชื่อ" (`loan`) — ค่าธรรมเนียมเท่าสาธารณูปโภค (10/20/30/40, Owner ยืนยัน 19 ต.ค.)
    │     └─ MT-3, MT-4, BP-1~4, SHARED-1~2 ☐ NOT STARTED
    ├─ Bug Fix: 2 tasks (BugFix-1, BugFix-2)              ☐ WAITING FOR MANUAL TEST
    ├─ E2E Playwright: 5 tasks (E2E-1~5)                   ☐ WAITING FOR BUG FIX
