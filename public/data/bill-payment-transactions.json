@@ -176,5 +176,18 @@
     "status": "completed",
     "timestamp": "2026-10-19T13:23:01.500Z",
     "id": "bptxn-1792416181500-04yt07kji"
+  },
+  {
+    "date": "2026-04-01",
+    "transactionType": "bill_payment",
+    "billType": "utility",
+    "amount": 300,
+    "commission": 10,
+    "customerName": "ค่าไฟน้ำทดสอบ",
+    "recordedBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
+    "recordedAt": "2026-10-19T13:42:42.177Z",
+    "status": "draft",
+    "timestamp": "2026-10-19T13:42:42.186Z",
+    "id": "bptxn-1792417362186-ll04b0wev"
   }
 ]
