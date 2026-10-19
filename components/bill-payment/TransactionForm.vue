@@ -32,6 +32,11 @@ const BILL_TYPE_OPTIONS = [
   { value: 'other', label: 'อื่นๆ' },
 ] as const
 
+const TRANSACTION_TYPE_OPTIONS = [
+  { value: 'bill_payment', label: 'รับชำระบิล' },
+  { value: 'owner_deposit', label: 'ฝากเงิน (เจ้าของ)' },
+] as const
+
 // ─── Form state ───────────────────────────────────────────────────────────────
 const form = reactive({
   transactionType: '' as 'bill_payment' | 'owner_deposit' | '',
@@ -163,25 +168,20 @@ async function handleSubmit() {
 
     <!-- ── ประเภทรายการ ──────────────────────────────────────────────────── -->
     <FormField label="ประเภทรายการ" required>
-      <div class="flex gap-4">
-        <label class="flex cursor-pointer items-center gap-2">
-          <input
-            v-model="form.transactionType"
-            type="radio"
-            value="bill_payment"
-            class="accent-red-600"
-          />
-          <span class="text-sm">รับชำระบิล</span>
-        </label>
-        <label class="flex cursor-pointer items-center gap-2">
-          <input
-            v-model="form.transactionType"
-            type="radio"
-            value="owner_deposit"
-            class="accent-red-600"
-          />
-          <span class="text-sm">ฝากเงิน (เจ้าของ)</span>
-        </label>
+      <div class="txn-type-group grid grid-cols-2 gap-2">
+        <button
+          v-for="opt in TRANSACTION_TYPE_OPTIONS"
+          :key="opt.value"
+          type="button"
+          :data-value="opt.value"
+          class="rounded-lg border px-2 py-2 text-center text-sm font-medium transition-colors"
+          :class="form.transactionType === opt.value
+            ? 'border-primary bg-primary text-white'
+            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'"
+          @click="form.transactionType = opt.value"
+        >
+          {{ opt.label }}
+        </button>
       </div>
     </FormField>
 
@@ -191,12 +191,12 @@ async function handleSubmit() {
       label="ประเภทบิล"
       required
     >
-      <div class="bill-type-group grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div class="bill-type-group grid grid-cols-2 gap-2">
         <button
           v-for="opt in BILL_TYPE_OPTIONS"
           :key="opt.value"
           type="button"
-          class="rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
+          class="rounded-lg border px-2 py-2 text-center text-sm font-medium transition-colors"
           :class="form.billType === opt.value
             ? 'border-primary bg-primary text-white'
             : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'"
