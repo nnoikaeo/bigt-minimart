@@ -81,10 +81,10 @@ const DEFAULT_BP_FEE_CONFIG: BillPaymentFeeConfig = {
     loan: {
       label: 'สินเชื่อ (บัตรเครดิต/ผ่อนสินค้า)',
       tiers: [
-        { id: 1, label: '1 – 999',        minAmount: 1,    maxAmount: 999,   fee: 15 },
-        { id: 2, label: '1,000 – 3,999',  minAmount: 1000, maxAmount: 3999,  fee: 25 },
-        { id: 3, label: '4,000 – 6,999',  minAmount: 4000, maxAmount: 6999,  fee: 35 },
-        { id: 4, label: '7,000 – 10,000', minAmount: 7000, maxAmount: 10000, fee: 50 },
+        { id: 1, label: '1 – 999',        minAmount: 1,    maxAmount: 999,   fee: 10 },
+        { id: 2, label: '1,000 – 3,999',  minAmount: 1000, maxAmount: 3999,  fee: 20 },
+        { id: 3, label: '4,000 – 6,999',  minAmount: 4000, maxAmount: 6999,  fee: 30 },
+        { id: 4, label: '7,000 – 10,000', minAmount: 7000, maxAmount: 10000, fee: 40 },
       ],
     },
     other: {
