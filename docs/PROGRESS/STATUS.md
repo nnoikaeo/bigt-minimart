@@ -4,7 +4,7 @@
 **Updated By**: Claude Code
 **Current Branch**: develop (latest merge: PR #152; main: docs synced via PR #150, code at release #148)
 **Current Phase**: Testing — Service Harmonization (Manual Test → Bug Fix → E2E)
-**Next Up**: PR 1 — Draft queue (MT + BP) on `feat/draft-queue` (local, not pushed) — MT-2 ✅ passed; BP-2 Step 6 ✅ passed (Oct 19; BUG-013 fix awaiting a quick re-check) → PR to develop; then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
+**Next Up**: PR 1 — Draft queue (MT + BP) on `feat/draft-queue` (local, not pushed) — MT-2 ✅ passed; BP-2 Step 6 ✅ passed (Oct 19, incl. BUG-012/013) → PR to develop; then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
 
 ---
 
@@ -304,7 +304,7 @@ Components (49 total):
    ├─ Manual Test: 10 tasks (MT-1~4, BP-1~4, SHARED-1~2) 🔄 IN PROGRESS
    │     ├─ MT-1 ✅ ผ่าน
    │     ├─ MT-2 ✅ ผ่าน Step 1-11 (17 ต.ค., บน `feat/draft-queue`) — BUG-007~011 แก้แล้ว; BUG-001~003 ยังเปิด; BUG-002 ยังไม่ได้ทดสอบ
-   │     ├─ BP-2 🔄 Step 6 (คิว draft) ✅ ผ่าน 8/8 (19 ต.ค.) — BUG-012 ✅ ทดสอบผ่าน; BUG-013 (ฟอร์มฝากเงินมีช่องชื่อลูกค้า) แก้แล้วรอทดสอบ; ประเภทบิล "ประกัน" → "สินเชื่อ" (`loan`) — ค่าธรรมเนียมยังใช้อัตราเดิมของประกัน (15/25/35/50) รอ Owner ยืนยัน
+   │     ├─ BP-2 🔄 Step 6 (คิว draft) ✅ ผ่าน 8/8 (19 ต.ค.) — BUG-012 ✅ ทดสอบผ่าน; BUG-013 (ฟอร์มฝากเงินมีช่องชื่อลูกค้า) ✅ แก้ + ทดสอบผ่าน; ประเภทบิล "ประกัน" → "สินเชื่อ" (`loan`) — ค่าธรรมเนียมยังใช้อัตราเดิมของประกัน (15/25/35/50) รอ Owner ยืนยัน
    │     └─ MT-3, MT-4, BP-1~4, SHARED-1~2 ☐ NOT STARTED
    ├─ Bug Fix: 2 tasks (BugFix-1, BugFix-2)              ☐ WAITING FOR MANUAL TEST
    ├─ E2E Playwright: 5 tasks (E2E-1~5)                   ☐ WAITING FOR BUG FIX
