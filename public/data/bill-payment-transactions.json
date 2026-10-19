@@ -147,10 +147,11 @@
     "amount": 1500,
     "commission": 20,
     "recordedBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
-    "recordedAt": "2026-10-17T05:46:04.543Z",
-    "status": "completed",
+    "recordedAt": "2026-10-19T15:29:27.948Z",
+    "status": "cancelled",
     "timestamp": "2026-10-17T05:46:04.554Z",
-    "id": "bptxn-1792215964554-52f7uadd1"
+    "id": "bptxn-1792215964554-52f7uadd1",
+    "statusNote": "ทดลองพักรายการ"
   },
   {
     "date": "2026-04-01",

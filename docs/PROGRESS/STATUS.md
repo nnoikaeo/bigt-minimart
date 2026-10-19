@@ -2,7 +2,7 @@
 
 **Last Updated**: Oct 19, 2026
 **Updated By**: Claude Code
-**Current Branch**: develop (latest merge: PR #153; main: docs synced via PR #150, code at release #148)
+**Current Branch**: develop (latest merge: PR #154; main: docs synced via PR #150, code at release #148)
 **Current Phase**: Testing — Service Harmonization (Manual Test → Bug Fix → E2E)
 **Next Up**: BP-2 Step 7-11 manual test (on develop); then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
 
@@ -157,7 +157,7 @@ Timeline Status: Money Transfer feature fully shipped ✓
 
 ### Week 12 (Oct 16-19, 2026): Project Re-entry — Docs, Tooling, MT-2 + Draft Queue
 
-**PRs**: #150 (docs → main), #151, #152, #153
+**PRs**: #150 (docs → main), #151, #152, #153, #154
 
 ```
 ✅ Documentation sync (commit 6f19509 + PR #150)
@@ -181,7 +181,7 @@ Timeline Status: Money Transfer feature fully shipped ✓
    ├─ Draft detail modal slimmed (BUG-008), row click from any cell (BUG-009), "ยกเลิก" tab (BUG-010)
    ├─ MT cash verification with discrepancy (BUG-011)
    ├─ BP favorite form/modal redesign (BUG-012), deposit form without customer name (BUG-013)
-   ├─ BP bill type "ประกัน" → "สินเชื่อ" (`loan`); fees = utility (10/20/30/40, Owner confirmed Oct 19)
+   ├─ BP bill type "ประกัน" → "สินเชื่อ" (`loan`); fees = utility (10/20/30/40, Owner confirmed Oct 19, PR #154)
    └─ Manual: MT-2 ✅ Step 1-11, BP-2 Step 6 ✅ 8/8
    PR 2 (borrow/repay sales cash) not implemented yet
 ```
@@ -293,7 +293,7 @@ Components (49 total):
 | Pages | 26 (16 functional, 10 placeholders) | ✅ |
 | Components | 49 | ✅ |
 | API routes | 72 | ✅ |
-| PRs merged (latest) | #153 | ✅ |
+| PRs merged (latest) | #154 | ✅ |
 | TypeScript errors (`nuxt typecheck`) | 0 | ✅ |
 | Unit/Integration tests (`vitest run`) | 285/285 passed (18 files) | ✅ |
 | Production build (`nuxt build`) | Success | ✅ |
