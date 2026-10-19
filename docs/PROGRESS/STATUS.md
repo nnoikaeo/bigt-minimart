@@ -4,7 +4,7 @@
 **Updated By**: Claude Code
 **Current Branch**: develop (latest merge: PR #156; main: docs synced via PR #150, code at release #148)
 **Current Phase**: Testing — Service Harmonization (Manual Test → Bug Fix → E2E)
-**Next Up**: BP-2 leftovers (BUG-016 check, Step 11 discrepancy + BUG-017 red badges) (Step 1-5 ticks, Step 8 pagination, Step 11 discrepancy path); then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
+**Next Up**: merge `test/bp-2-leftovers` (BUG-018~020 + BP-2 results); BP-3 Auditor (2026-04-01 / 04-02 ready at step2); then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
 
 ---
 
@@ -319,7 +319,7 @@ Components (49 total):
    ├─ Manual Test: 10 tasks (MT-1~4, BP-1~4, SHARED-1~2) 🔄 IN PROGRESS
    │     ├─ MT-1 ✅ ผ่าน
    │     ├─ MT-2 ✅ ผ่าน Step 1-11 (17 ต.ค., merged PR #153) — BUG-007~011 แก้แล้ว; BUG-001~003 ยังเปิด; BUG-002 ยังไม่ได้ทดสอบ
-   │     ├─ BP-2 🔄 Step 6, 7, 9, 10, 11 ✅ (19 ต.ค.) — BUG-014 (modal รายการโปรดไม่มีปุ่ม ✕) + BUG-015 (ฟอร์มตรวจนับ Step 2 ไม่แสดง, High) แก้ + ทดสอบผ่าน (PR #156); BUG-016/017 (กล่องสถานะซ้ำ, ป้ายตารางตรวจนับ) แก้แล้ว (PR #156); BUG-012 ✅ ทดสอบผ่าน; BUG-013 (ฟอร์มฝากเงินมีช่องชื่อลูกค้า) ✅ แก้ + ทดสอบผ่าน; ประเภทบิล "ประกัน" → "สินเชื่อ" (`loan`) — ค่าธรรมเนียมเท่าสาธารณูปโภค (10/20/30/40, Owner ยืนยัน 19 ต.ค.)
+   │     ├─ BP-2 ✅ Step 1-11 (17-20 ต.ค.; เหลือข้อย่อยที่ไม่ได้ลอง ดู TESTING_PLAN) — BUG-018~020 (ปุ่มเลือกประเภท, #N ในคิว, ช่องตรวจนับว่าง) แก้ + ทดสอบผ่าน บน `test/bp-2-leftovers`; BUG-014 (modal รายการโปรดไม่มีปุ่ม ✕) + BUG-015 (ฟอร์มตรวจนับ Step 2 ไม่แสดง, High) แก้ + ทดสอบผ่าน (PR #156); BUG-016/017 (กล่องสถานะซ้ำ, ป้ายตารางตรวจนับ) แก้แล้ว (PR #156); BUG-012 ✅ ทดสอบผ่าน; BUG-013 (ฟอร์มฝากเงินมีช่องชื่อลูกค้า) ✅ แก้ + ทดสอบผ่าน; ประเภทบิล "ประกัน" → "สินเชื่อ" (`loan`) — ค่าธรรมเนียมเท่าสาธารณูปโภค (10/20/30/40, Owner ยืนยัน 19 ต.ค.)
    │     └─ MT-3, MT-4, BP-1~4, SHARED-1~2 ☐ NOT STARTED
    ├─ Bug Fix: 2 tasks (BugFix-1, BugFix-2)              ☐ WAITING FOR MANUAL TEST
    ├─ E2E Playwright: 5 tasks (E2E-1~5)                   ☐ WAITING FOR BUG FIX
