@@ -22,8 +22,8 @@ const canEditCashCount = computed(() => isManagerOrAsst.value && !store.isStep2C
 const errorMessage = ref('')
 
 // ─── Step 2 form state ────────────────────────────────────────────────────────
-const actualTransferWithdrawal = ref<number>(0)
-const actualServiceFee = ref<number>(0)
+const actualTransferWithdrawal = ref<number | ''>('')
+const actualServiceFee = ref<number | ''>('')
 const verificationNotes = ref('')
 const followUpAction = ref('')
 const isSubmittingStep2 = ref(false)
@@ -58,14 +58,19 @@ const expectedServiceFeeTransfer = computed(() =>
 
 const expectedTotal = computed(() => expectedTransferWithdrawal.value + expectedServiceFee.value)
 const actualTotal = computed(() => Number(actualTransferWithdrawal.value) + Number(actualServiceFee.value))
-const diffTransferWithdrawal = computed(() => Number(actualTransferWithdrawal.value) - expectedTransferWithdrawal.value)
-const diffServiceFee = computed(() => Number(actualServiceFee.value) - expectedServiceFee.value)
-const diffTotal = computed(() => actualTotal.value - expectedTotal.value)
-const hasDiscrepancy = computed(() => diffTotal.value !== 0)
+const diffTransferWithdrawal = computed(() =>
+  actualTransferWithdrawal.value === '' ? null : actualTransferWithdrawal.value - expectedTransferWithdrawal.value
+)
+const diffServiceFee = computed(() =>
+  actualServiceFee.value === '' ? null : actualServiceFee.value - expectedServiceFee.value
+)
+const isCountComplete = computed(() => actualTransferWithdrawal.value !== '' && actualServiceFee.value !== '')
+const diffTotal = computed(() => (isCountComplete.value ? actualTotal.value - expectedTotal.value : null))
+const hasDiscrepancy = computed(() => diffTotal.value !== null && diffTotal.value !== 0)
 // Derived from the counted amounts (BUG-011: a watch on hasDiscrepancy never fired when
 // the count was off from the start, leaving the confirm button disabled)
 const verificationStatus = computed<'match' | 'discrepancy' | ''>(() => {
-  if (actualTotal.value <= 0) return ''
+  if (!isCountComplete.value) return ''
   return hasDiscrepancy.value ? 'discrepancy' : 'match'
 })
 
@@ -92,12 +97,14 @@ const mtCashVerificationRows = computed<CashVerificationRow[]>(() => {
 
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function diffClass(diff: number): string {
+function diffClass(diff: number | null): string {
+  if (diff === null) return 'text-gray-400'
   if (diff === 0) return 'text-green-700'
   if (diff > 0) return 'text-blue-700'
   return 'text-red-700'
 }
-function diffSign(diff: number): string {
+function diffSign(diff: number | null): string {
+  if (diff === null) return '—'
   if (diff > 0) return '+' + formatCurrency(diff)
   if (diff < 0) return formatCurrency(diff)
   return '✓ ตรง'
@@ -107,8 +114,8 @@ function diffSign(diff: number): string {
 function loadExistingStep2Data() {
   if (store.currentSummary?.step2) {
     const step2 = store.currentSummary.step2
-    actualTransferWithdrawal.value = step2.actualCash?.transferWithdrawal ?? 0
-    actualServiceFee.value = step2.actualCash?.serviceFee ?? 0
+    actualTransferWithdrawal.value = step2.actualCash?.transferWithdrawal ?? ''
+    actualServiceFee.value = step2.actualCash?.serviceFee ?? ''
     verificationNotes.value = step2.verificationNotes ?? ''
   }
 }

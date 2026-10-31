@@ -100,7 +100,7 @@ const isCompletingStep1 = ref(false)
 // ─── Opening Balance ──────────────────────────────────────────────────────────
 const showOpeningBalanceModal = ref(false)
 const openingSource = ref<'carryover' | 'manual'>('carryover')
-const manualOpeningAmount = ref<number>(0)
+const manualOpeningAmount = ref<number | ''>('')
 const isSettingOpeningBalance = ref(false)
 
 const isOpeningSet = computed(() => store.currentBalance?.openingBalanceSource != null)
@@ -130,7 +130,7 @@ const canCompleteStep1 = computed(
 
 function openOpeningBalanceModal() {
   openingSource.value = 'carryover'
-  manualOpeningAmount.value = 0
+  manualOpeningAmount.value = ''
   showOpeningBalanceModal.value = true
 }
 
@@ -336,7 +336,7 @@ const favStep = ref<1 | 2>(1)
 const favTab = ref<1 | 2 | 3 | 4 | 5>(1)
 const favMode = ref<'select' | 'manage' | 'add' | 'edit'>('select')
 const selectedFavorite = ref<BillPaymentFavorite | null>(null)
-const favAmount = ref<number>(0)
+const favAmount = ref<number | ''>('')
 const editingFavoriteId = ref<string>('')
 const deletingFavoriteId = ref<string>('')
 const isSavingFavorite = ref(false)
@@ -403,14 +403,14 @@ function openFavoriteModal() {
   favTab.value = 1
   deletingFavoriteId.value = ''
   selectedFavorite.value = null
-  favAmount.value = 0
+  favAmount.value = ''
   resetFavCommission()
   showFavoriteModal.value = true
 }
 
 function handleSelectFavorite(fav: BillPaymentFavorite) {
   selectedFavorite.value = fav
-  favAmount.value = fav.defaultAmount ?? 0
+  favAmount.value = fav.defaultAmount ?? ''
   if (fav.defaultCommission != null) {
     favIsCommissionManual.value = true
     favManualCommission.value = fav.defaultCommission
@@ -785,7 +785,7 @@ onMounted(async () => {
     </section>
 
     <!-- ── Step 1 Complete Button ─────────────────────────────────────────── -->
-    <section v-if="isStep1InProgress || isNeedsCorrection" class="flex flex-col items-end gap-3 border-t border-gray-100 pt-4">
+    <section v-if="isStep1InProgress || isNeedsCorrection" class="mb-4 flex flex-col items-end gap-3 border-t border-gray-100 pt-4">
       <!-- Checklist -->
       <div
         class="w-full rounded-xl border px-5 py-4"
@@ -882,7 +882,7 @@ onMounted(async () => {
           <BaseButton variant="secondary" @click="showOpeningBalanceModal = false">ยกเลิก</BaseButton>
           <BaseButton
             variant="primary"
-            :disabled="openingSource === 'manual' && manualOpeningAmount < 0"
+            :disabled="openingSource === 'manual' && (manualOpeningAmount === '' || manualOpeningAmount < 0)"
             :loading="isSettingOpeningBalance"
             @click="handleSetOpeningBalance"
           >
@@ -1144,10 +1144,11 @@ onMounted(async () => {
             <div class="flex items-center gap-3">
               <div class="relative flex-1">
                 <input
-                  :value="favEffectiveCommission"
+                  :value="favEffectiveCommission || ''"
                   type="number"
                   min="0"
                   step="1"
+                  placeholder="0"
                   :disabled="!favIsCommissionManual"
                   class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary disabled:bg-gray-50 disabled:text-gray-500"
                   @input="e => { favManualCommission = Number((e.target as HTMLInputElement).value) }"

@@ -9,9 +9,7 @@ import type { TableColumn } from '~/components/shared/TransactionTable.vue'
 import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
-  ClipboardDocumentCheckIcon,
   XCircleIcon,
-  ArrowUturnLeftIcon,
   EyeIcon,
   ChevronDownIcon,
   ChevronRightIcon,
@@ -21,8 +19,10 @@ const props = defineProps<{
   date: string
 }>()
 
+type AuditOutcome = 'audited' | 'audited_with_issues' | 'needs_correction'
+
 const emit = defineEmits<{
-  'audit-submitted': [outcome: 'audited' | 'audited_with_issues' | 'needs_correction']
+  'audit-submitted': [outcome: AuditOutcome]
 }>()
 
 const logger = useLogger('BPAuditorReviewSection')
@@ -130,23 +130,11 @@ const auditReadonlyRows = computed<CashVerificationRow[]>(() => [
   },
 ])
 
-// Step 2 readonly rows (manager input only)
-const step2ReadonlyRows = computed<CashVerificationRow[]>(() => [
-  {
-    label: 'A. เงินสดรับชำระบิล',
-    expected: store.currentSummary?.step2ExpectedBillPaymentCash ?? 0,
-    managerActual: store.currentSummary?.step2ActualBillPaymentCash ?? null,
-  },
-  {
-    label: 'B. ค่าธรรมเนียม',
-    expected: store.currentSummary?.step2ExpectedServiceFeeCash ?? 0,
-    managerActual: store.currentSummary?.step2ActualServiceFeeCash ?? null,
-  },
-])
-
 // ─── Bank Statement ───────────────────────────────────────────────────────────
-const bankStatementAmount = ref<number>(0)
-const bankBalanceDiff = computed(() => bankStatementAmount.value - expectedClosingBalance.value)
+const bankStatementAmount = ref<number | ''>('')
+const bankBalanceDiff = computed(() =>
+  bankStatementAmount.value === '' ? null : bankStatementAmount.value - expectedClosingBalance.value,
+)
 const bankBalanceMatches = computed(() => bankBalanceDiff.value === 0)
 
 // ─── CashVerificationTable event handlers ─────────────────────────────────────
@@ -157,26 +145,47 @@ function onAuditorActualUpdate(rowIndex: number, value: number | null) {
 
 // ─── Audit narrative fields ───────────────────────────────────────────────────
 const auditFindings = ref('')
-const correctionNotes = ref('')
 const isSubmitting = ref(false)
+const hasFindings = computed(() => auditFindings.value.trim() !== '')
 
-const hasDiscrepancy = computed(
-  () =>
-    !bankBalanceMatches.value ||
-    txnsWithIssues.value > 0 ||
-    (auditorCashBillPayment.value !== null &&
-      auditorCashBillPayment.value !== (store.currentSummary?.step2ActualBillPaymentCash ?? 0)) ||
-    (auditorCashServiceFee.value !== null &&
-      auditorCashServiceFee.value !== (store.currentSummary?.step2ActualServiceFeeCash ?? 0)),
+const canShowAuditForm = computed(
+  () => store.isStep2Complete && (!store.isAudited || isNeedsCorrection.value),
 )
+// Back with the Auditor after a send-back: Manager has re-counted (Step 2 is complete again)
+const isReaudit = computed(() => canShowAuditForm.value && !!store.currentSummary?.correctionNotes)
 
 const canSubmitAudit = computed(
   () =>
-    store.isStep2Complete &&
+    bankStatementAmount.value !== '' &&
     auditorCashBillPayment.value !== null &&
-    auditorCashServiceFee.value !== null &&
-    (!store.isAudited || isNeedsCorrection.value),
+    auditorCashServiceFee.value !== null,
 )
+const hasDiscrepancy = computed(() => {
+  const summary = store.currentSummary
+  return (
+    (bankBalanceDiff.value !== null && bankBalanceDiff.value !== 0) ||
+    txnsWithIssues.value > 0 ||
+    !!summary?.step2HasDiscrepancies ||
+    (auditorCashBillPayment.value !== null && auditorCashBillPayment.value !== summary?.step2ExpectedBillPaymentCash) ||
+    (auditorCashServiceFee.value !== null && auditorCashServiceFee.value !== summary?.step2ExpectedServiceFeeCash)
+  )
+})
+// "ยืนยันการตรวจสอบ" means nothing to report; anything found goes through "ยืนยันพร้อมหมายเหตุ"
+const needsNotedConfirm = computed(() => hasDiscrepancy.value || hasFindings.value)
+const canConfirmClean = computed(() => canSubmitAudit.value && !needsNotedConfirm.value)
+const canSubmitAuditWithIssues = computed(() => canSubmitAudit.value && hasFindings.value)
+
+const auditResultSummary = computed(() => {
+  const summary = store.currentSummary
+  const issues = summary?.auditTransactionsWithIssues ?? 0
+  const cashMatches =
+    summary?.auditorActualBillPaymentCash === summary?.step2ExpectedBillPaymentCash &&
+    summary?.auditorActualServiceFeeCash === summary?.step2ExpectedServiceFeeCash
+  return [
+    issues > 0 ? `${issues} รายการมีปัญหา` : 'ไม่พบปัญหา',
+    cashMatches ? 'ยอดตรงกัน' : 'ยอดไม่ตรงกัน',
+  ].join(' · ')
+})
 
 // ─── TransactionTable columns ─────────────────────────────────────────────────
 const bpColumns: TableColumn[] = [
@@ -189,15 +198,40 @@ const bpColumns: TableColumn[] = [
 ]
 
 // ─── Submit ───────────────────────────────────────────────────────────────────
-function buildAuditData(outcome: 'audited' | 'audited_with_issues' | 'needs_correction') {
+const AUDIT_CONFIRM: Record<AuditOutcome, { title: string; message: string; confirmText: string; variant: 'success' | 'warning' }> = {
+  audited: {
+    title: 'ยืนยันการตรวจสอบ',
+    message: 'ยืนยันผลการ Audit และส่งให้ Owner อนุมัติหรือไม่?',
+    confirmText: 'ยืนยันการตรวจสอบ',
+    variant: 'success',
+  },
+  audited_with_issues: {
+    title: 'ยืนยันพร้อมหมายเหตุ',
+    message: 'ยืนยันผลการ Audit (มีปัญหา/หมายเหตุ) และส่งให้ Owner อนุมัติหรือไม่? Owner จะเห็นหมายเหตุที่ระบุไว้',
+    confirmText: 'ยืนยัน',
+    variant: 'warning',
+  },
+  needs_correction: {
+    title: 'ส่งคืนให้ Manager แก้ไข',
+    message: 'ต้องการส่งคืนรายการนี้ให้ Manager แก้ไขหรือไม่? Manager จะต้องยืนยันและตรวจนับเงินสดใหม่',
+    confirmText: 'ส่งคืนแก้ไข',
+    variant: 'warning',
+  },
+}
+
+const pendingOutcome = ref<AuditOutcome | null>(null)
+const pendingConfirm = computed(() => (pendingOutcome.value ? AUDIT_CONFIRM[pendingOutcome.value] : null))
+
+function buildAuditData(outcome: AuditOutcome) {
   return {
     outcome,
-    auditBankStatementAmount: bankStatementAmount.value,
+    auditBankStatementAmount: bankStatementAmount.value === '' ? undefined : bankStatementAmount.value,
     auditBankBalanceMatches: bankBalanceMatches.value,
-    auditorActualBillPaymentCash: auditorCashBillPayment.value,
-    auditorActualServiceFeeCash: auditorCashServiceFee.value,
+    // Sending back does not require a cash count; the API accepts undefined, not null
+    auditorActualBillPaymentCash: auditorCashBillPayment.value ?? undefined,
+    auditorActualServiceFeeCash: auditorCashServiceFee.value ?? undefined,
     auditExpectedClosingBalance: expectedClosingBalance.value,
-    auditBankStatementVsClosingDiff: bankBalanceDiff.value,
+    auditBankStatementVsClosingDiff: bankBalanceDiff.value ?? undefined,
     auditBankStatementVsClosingMatches: bankBalanceMatches.value,
     auditTxnIssueStatus: Object.keys(txnIssueStatus.value).length > 0
       ? { ...txnIssueStatus.value }
@@ -205,30 +239,24 @@ function buildAuditData(outcome: 'audited' | 'audited_with_issues' | 'needs_corr
     auditFindings: auditFindings.value.trim() || undefined,
     auditTransactionsVerified: auditTransactionList.value.length,
     auditTransactionsWithIssues: txnsWithIssues.value,
-    correctionNotes: outcome === 'needs_correction' ? correctionNotes.value.trim() : undefined,
+    correctionNotes: outcome === 'needs_correction' ? auditFindings.value.trim() : undefined,
   }
 }
 
-async function handleAuditSubmit(outcome: 'audited' | 'audited_with_issues' | 'needs_correction') {
-  if (outcome === 'needs_correction' && !correctionNotes.value.trim()) {
-    errorMessage.value = 'กรุณาระบุหมายเหตุสำหรับการส่งกลับ'
-    return
-  }
-  if (outcome === 'audited_with_issues' && !auditFindings.value.trim()) {
-    errorMessage.value = 'กรุณาระบุรายละเอียดปัญหาที่พบ'
-    return
-  }
+async function handleAuditSubmit() {
+  const outcome = pendingOutcome.value
+  if (!outcome) return
 
   isSubmitting.value = true
   errorMessage.value = ''
   try {
     await store.submitAudit(props.date, buildAuditData(outcome))
-    const labels: Record<string, string> = {
+    const labels: Record<AuditOutcome, string> = {
       audited: 'ยืนยันการตรวจสอบเรียบร้อย',
       audited_with_issues: 'ยืนยันพร้อมหมายเหตุเรียบร้อย',
-      needs_correction: 'ส่งกลับให้ Manager แก้ไขแล้ว',
+      needs_correction: 'ส่งคืนให้ Manager แก้ไขแล้ว',
     }
-    successMessage.value = labels[outcome] ?? ''
+    successMessage.value = labels[outcome]
     logger.log(`Audit submitted: ${outcome} for ${props.date}`)
     emit('audit-submitted', outcome)
   } catch (err: any) {
@@ -236,6 +264,7 @@ async function handleAuditSubmit(outcome: 'audited' | 'audited_with_issues' | 'n
     logger.error('handleAuditSubmit', err)
   } finally {
     isSubmitting.value = false
+    pendingOutcome.value = null
   }
 }
 
@@ -250,8 +279,8 @@ watch(
         auditorCashServiceFee.value = summary.auditorActualServiceFeeCash
       if (summary.auditBankStatementAmount)
         bankStatementAmount.value = summary.auditBankStatementAmount
-      if (summary.auditFindings) auditFindings.value = summary.auditFindings
-      if (summary.correctionNotes) correctionNotes.value = summary.correctionNotes
+      if (summary.auditFindings || summary.correctionNotes)
+        auditFindings.value = summary.auditFindings || summary.correctionNotes || ''
       if (summary.auditTxnIssueStatus)
         txnIssueStatus.value = { ...summary.auditTxnIssueStatus }
     }
@@ -279,140 +308,50 @@ watch(
       @close="errorMessage = ''"
     />
 
-    <!-- ── Needs Correction Context Banner ────────────────────────────────── -->
+    <!-- ── Sent back: waiting for Manager ─────────────────────────────────── -->
     <div
-      v-if="isNeedsCorrection && store.currentSummary?.correctionNotes"
+      v-if="isNeedsCorrection && !store.isStep2Complete"
+      class="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-5 py-4"
+    >
+      <div class="flex items-start gap-3">
+        <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
+        <div>
+          <p class="font-semibold text-amber-800">ส่งคืนให้ Manager แก้ไขแล้ว — รอ Manager ตรวจนับเงินสดใหม่</p>
+          <p v-if="store.currentSummary?.correctionNotes" class="mt-1 text-sm text-amber-700">หมายเหตุ: {{ store.currentSummary.correctionNotes }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Re-audit after Manager's correction ────────────────────────────── -->
+    <div
+      v-if="isReaudit"
       class="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-5 py-4"
     >
       <div class="flex items-start gap-3">
         <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
         <div>
           <p class="font-semibold text-amber-800">ตรวจสอบซ้ำ — Manager แก้ไขแล้ว</p>
-          <p class="mt-1 text-sm text-amber-700">หมายเหตุเดิม: {{ store.currentSummary.correctionNotes }}</p>
+          <p class="mt-1 text-sm text-amber-700">หมายเหตุเดิม: {{ store.currentSummary?.correctionNotes }}</p>
         </div>
       </div>
     </div>
 
     <!-- ── Not ready yet ─────────────────────────────────────────────────── -->
     <BaseAlert
-      v-if="!store.isStep2Complete"
+      v-if="!store.isStep2Complete && !isNeedsCorrection"
       variant="warning"
       message="Manager ยังไม่ได้ตรวจนับเงินสด (ขั้นตอนที่ 2) — ยังไม่สามารถตรวจสอบได้"
       class="mb-4"
     />
 
-    <!-- ── Already audited banner ─────────────────────────────────────────── -->
-    <div
-      v-if="isAlreadyAudited"
-      class="mb-4 rounded-xl border border-green-300 bg-green-50 px-5 py-4"
-    >
-      <div class="flex items-center gap-3">
-        <CheckCircleIcon class="h-5 w-5 flex-shrink-0 text-green-600" />
-        <div>
-          <p class="font-semibold text-green-800">
-            ตรวจสอบแล้ว
-            <span v-if="workflowStatus === 'audited_with_issues'" class="text-amber-700"> (มีหมายเหตุ)</span>
-          </p>
-          <p v-if="store.currentSummary?.auditedByName" class="mt-0.5 text-sm text-green-700">
-            โดย {{ store.currentSummary.auditedByName }}
-            <template v-if="store.currentSummary?.auditedAt">
-              · {{ new Date(store.currentSummary.auditedAt).toLocaleString('th-TH') }}
-            </template>
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══════════════════════════════════════════════════════════════════════
-         STEP 1 — Read-only Transaction List
-    ════════════════════════════════════════════════════════════════════════════ -->
-    <section class="mb-6">
-      <div class="mb-3 flex items-center gap-2">
-        <CheckCircleIcon class="h-5 w-5 text-green-600" />
-        <h2 class="text-base font-semibold text-gray-700">ขั้นตอนที่ 1 — รายการที่บันทึก</h2>
-        <BaseBadge variant="success" size="sm">เสร็จสมบูรณ์</BaseBadge>
-      </div>
-
-      <EmptyState
-        v-if="dateTransactions.length === 0"
-        title="ไม่มีรายการ"
-        description="ไม่พบรายการสำหรับวันที่นี้"
-        class="py-10"
-      />
-
-      <div v-else class="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
-        <table class="w-full text-sm">
-          <thead class="border-b border-gray-100 bg-gray-50 text-xs text-gray-500">
-            <tr>
-              <th class="px-4 py-3 text-left">#</th>
-              <th class="px-4 py-3 text-left">ประเภท</th>
-              <th class="px-4 py-3 text-left">ลูกค้า</th>
-              <th class="px-4 py-3 text-right">จำนวนเงิน</th>
-              <th class="px-4 py-3 text-right">ค่าธรรมเนียม</th>
-              <th class="px-4 py-3 text-center">สถานะ</th>
-              <th class="px-4 py-3 text-left">เวลา</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-            <tr
-              v-for="(txn, idx) in dateTransactions"
-              :key="txn.id"
-              class="hover:bg-gray-50"
-            >
-              <td class="px-4 py-3 text-gray-400">{{ Number(idx) + 1 }}</td>
-              <td class="px-4 py-3">
-                <div class="font-medium text-gray-800">{{ formatTransactionType(txn.transactionType) }}</div>
-                <div v-if="txn.billType" class="text-xs text-gray-400">{{ formatBillType(txn.billType) }}</div>
-              </td>
-              <td class="px-4 py-3 text-gray-600">{{ txn.customerName || '-' }}</td>
-              <td class="px-4 py-3 text-right font-medium text-gray-800">{{ formatAmount(txn.amount) }}</td>
-              <td class="px-4 py-3 text-right text-gray-600">
-                {{ txn.transactionType === 'bill_payment' ? formatAmount(txn.commission) : '-' }}
-              </td>
-              <td class="px-4 py-3 text-center">
-                <BaseBadge :variant="getStatusBadgeVariant(txn.status)">
-                  {{ getStatusLabel(txn.status) }}
-                </BaseBadge>
-              </td>
-              <td class="px-4 py-3 text-gray-500">{{ formatTime(txn.timestamp) }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- ═══════════════════════════════════════════════════════════════════════
-         STEP 2 — Read-only Cash Count Summary
-    ════════════════════════════════════════════════════════════════════════════ -->
-    <section v-if="store.isStep2Complete" class="mb-6">
-      <div class="mb-3 flex items-center gap-2">
-        <CheckCircleIcon class="h-5 w-5 text-green-600" />
-        <h2 class="text-base font-semibold text-gray-700">ขั้นตอนที่ 2 — ผลการตรวจนับเงินสด</h2>
-        <BaseBadge
-          :variant="store.currentSummary?.step2HasDiscrepancies ? 'warning' : 'success'"
-          size="sm"
-        >
-          {{ store.currentSummary?.step2HasDiscrepancies ? 'มีส่วนต่าง' : 'ตรงกัน' }}
-        </BaseBadge>
-      </div>
-
-      <CashVerificationTable :rows="step2ReadonlyRows" mode="manager-readonly" />
-
-      <div v-if="store.currentSummary?.step2VerificationNotes" class="mt-2 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-700">
-        <div class="text-xs text-gray-500">หมายเหตุ Manager</div>
-        <div class="mt-1">{{ store.currentSummary.step2VerificationNotes }}</div>
-      </div>
-    </section>
-
     <!-- ═══════════════════════════════════════════════════════════════════════
          AUDITOR FORM — Active
     ════════════════════════════════════════════════════════════════════════════ -->
-    <section v-if="canSubmitAudit" class="mt-2">
+    <section v-if="canShowAuditForm" class="mt-6">
       <div class="mb-4 flex items-center gap-3">
-        <ClipboardDocumentCheckIcon class="h-5 w-5 text-red-600" />
-        <h2 class="text-base font-semibold text-gray-700">ตรวจสอบโดย Auditor</h2>
-        <BaseBadge v-if="isNeedsCorrection" variant="error" size="sm">🔄 ตรวจสอบซ้ำ</BaseBadge>
-        <BaseBadge v-else variant="warning" size="sm">⏳ รอการตรวจสอบ</BaseBadge>
+        <h2 class="text-base font-semibold text-gray-700">🔍 ตรวจสอบบริการรับชำระบิล</h2>
+        <BaseBadge v-if="isReaudit" variant="error" size="sm">🔄 ตรวจสอบใหม่</BaseBadge>
+        <BaseBadge v-else variant="warning" size="sm">⏳ รอตรวจสอบ</BaseBadge>
       </div>
 
       <!-- Balance Snapshot + Bank Statement -->
@@ -421,7 +360,6 @@ watch(
         <BalanceSnapshot
           :opening-balance="openingBalance"
           :closing-balance="expectedClosingBalance"
-          net-change-label="สุทธิรับชำระ (ระหว่างวัน)"
         >
           <div class="grid grid-cols-2 gap-4 text-sm">
             <FormField label="Bank Statement แสดง">
@@ -433,8 +371,8 @@ watch(
             <div class="mb-1 flex items-center self-end rounded-lg bg-gray-50 p-3">
               <div>
                 <div class="mb-1 text-xs text-gray-500">ผลต่าง (Bank Statement − ยอดปิด)</div>
-                <div :class="['text-base font-bold', bankBalanceDiff === 0 ? 'text-green-700' : 'text-red-700']">
-                  {{ bankBalanceDiff === 0 ? '✅ ตรงกัน' : (bankBalanceDiff > 0 ? '+' : '') + formatDiff(bankBalanceDiff) }}
+                <div :class="['text-base font-bold', bankBalanceDiff === null ? 'text-gray-400' : bankBalanceDiff === 0 ? 'text-green-700' : 'text-red-700']">
+                  {{ bankBalanceDiff === null ? '—' : bankBalanceDiff === 0 ? '✅ ตรงกัน' : (bankBalanceDiff > 0 ? '+' : '') + formatDiff(bankBalanceDiff) }}
                 </div>
               </div>
             </div>
@@ -513,111 +451,96 @@ watch(
 
       <!-- Auditor Cash Count -->
       <div class="mb-5">
-        <h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">ตรวจสอบยอดเงินสด (Auditor นับ)</h3>
+        <h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">ตรวจสอบยอดเงินสด</h3>
         <CashVerificationTable
           :rows="auditorCashRows"
           mode="auditor-input"
           @update:auditor-actual="onAuditorActualUpdate"
         />
-        <p v-if="auditorCashBillPayment === null || auditorCashServiceFee === null" class="mt-2 text-sm text-gray-400">
-          * กรอกยอดเงินสด Auditor นับ ครบทั้ง 2 รายการก่อนดำเนินการต่อ
-        </p>
+        <div v-if="store.currentSummary?.step2VerificationNotes" class="mt-2 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-700">
+          <div class="text-xs text-gray-500">หมายเหตุ Manager</div>
+          <div class="mt-1">{{ store.currentSummary.step2VerificationNotes }}</div>
+        </div>
       </div>
 
-      <!-- Audit Findings -->
-      <div class="mb-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-        <FormField
-          label="ผลการตรวจสอบ / หมายเหตุ"
-          :hint="hasDiscrepancy ? 'จำเป็นต้องระบุเมื่อพบส่วนต่าง' : 'บันทึกข้อสังเกตเพิ่มเติม (ไม่บังคับ)'"
-        >
+      <!-- Issue Details -->
+      <div class="mb-6">
+        <h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">รายละเอียดปัญหาที่พบ (ถ้ามี)</h3>
+        <div class="rounded-xl border border-gray-200 bg-white p-4">
           <BaseTextarea
             v-model="auditFindings"
-            :placeholder="hasDiscrepancy
-              ? 'ระบุรายละเอียดปัญหาที่พบ เช่น ยอดเงินขาด X บาท รายการที่ X ไม่ตรงกับ statement...'
-              : 'บันทึกข้อสังเกตหรือหมายเหตุจากการตรวจสอบ (ไม่บังคับ)'"
+            placeholder="ระบุปัญหาที่พบ เช่น รายการที่ X ยอดเงินไม่ตรงกับ Bank Statement... (ว่างได้ถ้าไม่พบปัญหา)"
             :rows="3"
           />
-        </FormField>
+        </div>
       </div>
 
-      <!-- Correction Notes -->
-      <div
-        v-if="correctionNotes || hasDiscrepancy"
-        class="mb-4 rounded-xl border border-red-100 bg-red-50 p-4"
-      >
-        <FormField
-          label="หมายเหตุสำหรับการส่งกลับ Manager"
-          hint="จำเป็นเมื่อเลือก 'ส่งกลับให้ Manager ปรับแก้'"
-        >
-          <BaseTextarea
-            v-model="correctionNotes"
-            placeholder="ระบุสิ่งที่ต้องการให้ Manager แก้ไข..."
-            :rows="3"
-          />
-        </FormField>
+      <div v-if="txnsWithIssues > 0" class="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-700">
+        ⚠️ พบ {{ txnsWithIssues }} รายการมีปัญหาในรายการธุรกรรม
       </div>
+
+      <p v-if="canSubmitAudit && needsNotedConfirm" class="text-right text-sm text-amber-700">
+        พบผลต่างหรือมีรายละเอียดปัญหา — ใช้ปุ่ม "ยืนยันพร้อมหมายเหตุ"
+      </p>
 
       <!-- Action Buttons -->
-      <div class="flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:justify-end">
+      <div class="flex flex-col items-center justify-between gap-4 py-4 sm:flex-row">
         <ActionButton
           :permission="PERMISSIONS.VIEW_FINANCE"
-          variant="secondary"
-          size="lg"
-          :disabled="isSubmitting"
-          :loading="isSubmitting"
-          class="border-red-200 text-red-700 hover:bg-red-50"
-          @click="handleAuditSubmit('needs_correction')"
+          variant="danger"
+          :disabled="isSubmitting || !hasFindings"
+          :title="!hasFindings ? 'กรอกรายละเอียดปัญหาก่อน' : ''"
+          @click="pendingOutcome = 'needs_correction'"
         >
-          <template #icon><ArrowUturnLeftIcon class="h-5 w-5" /></template>
-          ส่งกลับให้ Manager ปรับแก้
+          <template #icon><XCircleIcon class="h-4 w-4" /></template>
+          ส่งคืนแก้ไข
         </ActionButton>
-
-        <ActionButton
-          :permission="PERMISSIONS.VIEW_FINANCE"
-          variant="secondary"
-          size="lg"
-          :disabled="isSubmitting || !canSubmitAudit"
-          :loading="isSubmitting"
-          class="border-amber-300 text-amber-800 hover:bg-amber-50"
-          @click="handleAuditSubmit('audited_with_issues')"
-        >
-          <template #icon><ExclamationTriangleIcon class="h-5 w-5" /></template>
-          ยืนยันพร้อมหมายเหตุ
-        </ActionButton>
-
-        <ActionButton
-          :permission="PERMISSIONS.VIEW_FINANCE"
-          variant="primary"
-          size="lg"
-          :disabled="isSubmitting || !canSubmitAudit"
-          :loading="isSubmitting"
-          @click="handleAuditSubmit('audited')"
-        >
-          <template #icon><CheckCircleIcon class="h-5 w-5" /></template>
-          {{ isNeedsCorrection ? 'ส่งตรวจสอบใหม่' : 'ยืนยันการตรวจสอบ' }}
-        </ActionButton>
+        <div class="flex flex-col gap-3 sm:flex-row">
+          <ActionButton
+            :permission="PERMISSIONS.VIEW_FINANCE"
+            variant="secondary"
+            class="border border-amber-400 !bg-amber-50 !text-amber-800 hover:!bg-amber-100 disabled:opacity-50"
+            :disabled="isSubmitting || !canSubmitAuditWithIssues"
+            :title="!canSubmitAuditWithIssues ? 'กรอก Bank Statement, ยอดนับ และรายละเอียดปัญหาก่อน' : ''"
+            @click="pendingOutcome = 'audited_with_issues'"
+          >
+            <template #icon><ExclamationTriangleIcon class="h-4 w-4" /></template>
+            ยืนยันพร้อมหมายเหตุ
+          </ActionButton>
+          <ActionButton
+            :permission="PERMISSIONS.VIEW_FINANCE"
+            variant="success"
+            :disabled="isSubmitting || !canConfirmClean"
+            :title="!canSubmitAudit ? 'กรอก Bank Statement และยอดนับให้ครบก่อน' : needsNotedConfirm ? 'พบผลต่างหรือมีรายละเอียดปัญหา — ใช้ ยืนยันพร้อมหมายเหตุ' : ''"
+            @click="pendingOutcome = 'audited'"
+          >
+            <template #icon><CheckCircleIcon class="h-4 w-4" /></template>
+            ยืนยันการตรวจสอบ
+          </ActionButton>
+        </div>
       </div>
     </section>
 
     <!-- ═══════════════════════════════════════════════════════════════════════
          AUDIT RESULT — Read-only
     ════════════════════════════════════════════════════════════════════════════ -->
-    <section v-if="isAlreadyAudited" class="mt-2">
-      <div class="mb-3 flex items-center gap-2">
-        <ClipboardDocumentCheckIcon class="h-5 w-5 text-green-600" />
-        <h2 class="text-base font-semibold text-gray-700">ผลการตรวจสอบ</h2>
-        <BaseBadge :variant="workflowStatus === 'audited' ? 'success' : 'warning'" size="sm">
-          {{ workflowStatus === 'audited' ? '✅ ผ่านการตรวจสอบ' : '⚠️ ผ่าน (มีหมายเหตุ)' }}
-        </BaseBadge>
-      </div>
-
+    <CollapsibleSection
+      v-if="isAlreadyAudited"
+      icon="🔍"
+      title="ผลตรวจสอบ Auditor"
+      :badge="workflowStatus === 'audited'
+        ? { label: '✅ ตรวจสอบแล้ว', variant: 'success' }
+        : { label: '⚠️ ตรวจสอบแล้ว (มีหมายเหตุ)', variant: 'warning' }"
+      :summary="auditResultSummary"
+      :expanded="true"
+      class="mt-4"
+    >
       <!-- Balance Snapshot read-only -->
       <div class="mb-4">
         <h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">ยอดเงินในบัญชี Bank</h3>
         <BalanceSnapshot
           :opening-balance="openingBalance"
           :closing-balance="expectedClosingBalance"
-          net-change-label="สุทธิรับชำระ (ระหว่างวัน)"
         >
           <div v-if="store.currentSummary?.auditBankStatementAmount" class="flex flex-wrap items-center gap-3 rounded-lg bg-gray-50 p-3 text-sm">
             <span class="text-gray-600">Bank Statement:</span>
@@ -699,7 +622,7 @@ watch(
           </template>
         </div>
       </div>
-    </section>
+    </CollapsibleSection>
 
     <!-- ═══════════════════════════════════════════════════════════════════════
          Transaction Detail Modal
@@ -745,7 +668,7 @@ watch(
           <div class="text-gray-900">{{ verifyingTransaction.notes }}</div>
         </div>
         <!-- Issue toggle (only when Auditor form is active) -->
-        <div v-if="canSubmitAudit" class="border-t border-gray-100 pt-3">
+        <div v-if="canShowAuditForm" class="border-t border-gray-100 pt-3">
           <div class="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">ผลการตรวจสอบ</div>
           <div class="flex gap-2">
             <button
@@ -771,5 +694,16 @@ watch(
         </div>
       </template>
     </BaseModal>
+
+    <!-- Audit Confirm -->
+    <ConfirmDialog
+      :open="pendingOutcome !== null"
+      :title="pendingConfirm?.title ?? ''"
+      :message="pendingConfirm?.message ?? ''"
+      :confirm-text="pendingConfirm?.confirmText"
+      :variant="pendingConfirm?.variant"
+      @confirm="handleAuditSubmit"
+      @cancel="pendingOutcome = null"
+    />
   </div>
 </template>

@@ -4,6 +4,7 @@ import { useLogger } from '~/composables/useLogger'
 import { usePermissions } from '~/composables/usePermissions'
 import { ROLES } from '~/types/permissions'
 import type { WorkflowStep } from '~/components/shared/WorkflowProgressBar.vue'
+import type { BalanceCardItem } from '~/components/shared/CompactBalanceSummary.vue'
 import type { BillPaymentWorkflowStatus } from '~/types/bill-payment'
 
 definePageMeta({
@@ -53,8 +54,40 @@ const BP_STATUS_TO_STEP_MAP: Record<BillPaymentWorkflowStatus, number> = {
   audited_with_issues: 3,
   approved: 3,
   approved_with_notes: 3,
-  needs_correction: 2,
+  // Sent back: Step 2 is cleared, so the work is with Manager again
+  needs_correction: 0,
 }
+
+// ─── Balance Cards (non-manager views; Manager section renders its own) ───────
+const bpPrimaryCards = computed<BalanceCardItem[]>(() => [
+  { label: 'เงินในบัญชีเริ่มต้น', value: store.currentBalance?.openingBalance ?? 0, colorClass: 'text-gray-700' },
+  { label: 'รวมรับชำระ', value: store.currentBalance?.billPaymentCash ?? 0, colorClass: 'text-red-600' },
+  {
+    label: 'เงินในบัญชีคงเหลือ',
+    value: store.currentBalance?.bankAccount ?? 0,
+    colorClass: 'text-gray-900',
+    valueSize: 'text-xl',
+    cardClass: 'border-gray-300 bg-gray-50',
+    labelClass: 'text-gray-600 font-medium',
+  },
+  {
+    label: 'เงินสดคงเหลือ',
+    value: (store.currentBalance?.billPaymentCash ?? 0) + (store.currentBalance?.serviceFeeCash ?? 0),
+    colorClass: 'text-blue-800',
+    cardClass: 'border-blue-200 bg-blue-50/40',
+    labelClass: 'text-blue-600 font-medium',
+  },
+])
+const bpSecondaryCards = computed<BalanceCardItem[]>(() => [
+  {
+    label: 'รวมฝากเงิน',
+    value: store.getTransactionsByDate(selectedDate.value)
+      .filter((t: any) => t.status === 'completed' && t.transactionType === 'owner_deposit')
+      .reduce((sum: number, t: any) => sum + t.amount, 0),
+    colorClass: 'text-blue-700',
+  },
+  { label: 'รวมค่าธรรมเนียม', value: store.currentBalance?.serviceFeeCash ?? 0, colorClass: 'text-green-700' },
+])
 
 // ─── Status Banner ────────────────────────────────────────────────────────────
 const showStatusBanner = computed(() => {
@@ -82,9 +115,9 @@ const statusBannerContent = computed(() => {
   if (ws === 'needs_correction')
     return {
       title: '🔄 รอแก้ไข',
-      description: isAuditor.value
-        ? 'Owner ส่งคืนให้ตรวจสอบใหม่ — กรุณาตรวจสอบและส่งผลอีกครั้ง'
-        : 'Owner ส่งคืนให้ Auditor ตรวจสอบใหม่ — รอ Auditor ดำเนินการ',
+      description: isManagerOrAsst.value
+        ? `${store.currentSummary?.needsCorrectionFrom?.startsWith('audited') ? 'Owner' : 'Auditor'} ส่งคืนให้แก้ไข — ตรวจสอบหมายเหตุด้านบน แล้วยืนยันบันทึกรายการและตรวจนับเงินสดใหม่`
+        : 'ส่งคืนให้ Manager แก้ไขแล้ว — รอ Manager ตรวจนับเงินสดใหม่',
       classes: 'border-red-200 bg-red-50 text-red-800',
     }
   return null
@@ -165,6 +198,14 @@ onMounted(async () => {
       :workflow-status="workflowStatus"
       custom-label="ค่าธรรมเนียม"
       class="mb-4"
+    />
+
+    <!-- ── Balance Cards — compact (Auditor / Owner) ───────────────────────── -->
+    <CompactBalanceSummary
+      v-if="!isManagerOrAsst"
+      :primary-cards="bpPrimaryCards"
+      :secondary-cards="bpSecondaryCards"
+      class="mb-6"
     />
 
     <!-- ══════════════════════════════════════════════════════════════════════ -->

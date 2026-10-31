@@ -83,8 +83,22 @@ const BaseModalStub = {
   emits: ['close'],
 }
 
+const ConfirmDialogStub = {
+  name: 'ConfirmDialog',
+  template: '<div v-if="open" class="confirm-dialog"><button class="confirm-ok" @click="$emit(\'confirm\')">{{ confirmText }}</button></div>',
+  props: ['open', 'title', 'message', 'confirmText', 'variant'],
+  emits: ['confirm', 'cancel'],
+}
+const CollapsibleSectionStub = {
+  name: 'CollapsibleSection',
+  template: '<div class="collapsible-section">{{ title }} {{ badge?.label }} {{ summary }}<slot /></div>',
+  props: ['icon', 'title', 'badge', 'summary', 'expanded'],
+}
+
 const globalConfig = {
   stubs: {
+    ConfirmDialog: ConfirmDialogStub,
+    CollapsibleSection: CollapsibleSectionStub,
     ActionButton: ActionButtonStub,
     BaseBadge: BaseBadgeStub,
     BaseAlert: BaseAlertStub,
@@ -98,9 +112,7 @@ const globalConfig = {
     EmptyState: { template: '<div class="empty-state" />', props: ['title', 'description'] },
     CheckCircleIcon: { template: '<span />' },
     ExclamationTriangleIcon: { template: '<span />' },
-    ClipboardDocumentCheckIcon: { template: '<span />' },
     XCircleIcon: { template: '<span />' },
-    ArrowUturnLeftIcon: { template: '<span />' },
     EyeIcon: { template: '<span />' },
     ChevronDownIcon: { template: '<span />' },
     ChevronRightIcon: { template: '<span />' },
@@ -122,22 +134,20 @@ const DEFAULT_PROPS = { date: '2026-04-14' }
  * - auditor cash values are set (triggers the watch to pre-fill component refs)
  * - workflowStatus = 'needs_correction'
  *
- * This is the only state in which the AUDITOR FORM section (canSubmitAudit) is visible,
- * because canSubmitAudit also requires auditorCashBillPayment !== null, which is
- * populated by the watch when workflowStatus === 'needs_correction'.
+ * The pre-filled counts make canSubmitAudit true, so the submit buttons are enabled.
  */
 function buildNeedsCorrectionSummary(overrides = {}) {
   return {
     workflowStatus: 'needs_correction',
     step2CompletedAt: '2026-04-14T11:00:00Z',
     step2ExpectedBillPaymentCash: 1000,
-    step2ActualBillPaymentCash: 950,
+    step2ActualBillPaymentCash: 1000,
     step2ExpectedServiceFeeCash: 50,
-    step2ActualServiceFeeCash: 45,
+    step2ActualServiceFeeCash: 50,
     auditedAt: '2026-04-14T12:00:00Z',
-    auditorActualBillPaymentCash: 950,
-    auditorActualServiceFeeCash: 45,
-    correctionNotes: 'ต้องแก้ไขรายการที่ 2',
+    auditorActualBillPaymentCash: 1000,
+    auditorActualServiceFeeCash: 50,
+    auditBankStatementAmount: 500,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     ...overrides,
@@ -218,7 +228,31 @@ describe('AuditorReviewSection', () => {
     })
   })
 
-  // ─── Auditor form section (canSubmitAudit) ──────────────────────────────────
+  // ─── Auditor form visibility (regression: form was gated on the counts it collects) ──
+
+  describe('auditor form visibility', () => {
+    it('shows the form for step2_completed before any count is entered, with submit disabled', async () => {
+      const pinia = createTestingPinia({ createSpy: vi.fn })
+      const wrapper = mount(AuditorReviewSection, {
+        props: DEFAULT_PROPS,
+        global: { plugins: [pinia], ...globalConfig },
+      })
+      const store = useBillPaymentStore(pinia)
+      store.currentSummary = {
+        workflowStatus: 'step2_completed',
+        step2CompletedAt: '2026-04-14T11:00:00Z',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+      await nextTick()
+      expect(wrapper.text()).toContain('ตรวจสอบบริการรับชำระบิล')
+      expect(wrapper.find('.cash-verification-table[data-mode="auditor-input"]').exists()).toBe(true)
+      const confirmBtn = wrapper.findAll('.action-btn').find(b => b.text().includes('ยืนยันการตรวจสอบ'))
+      expect(confirmBtn.attributes('disabled')).toBeDefined()
+    })
+  })
+
+  // ─── Auditor form section ──────────────────────────────────
 
   describe('auditor form section', () => {
     async function mountWithActiveAudit() {
@@ -229,14 +263,15 @@ describe('AuditorReviewSection', () => {
       })
       const store = useBillPaymentStore(pinia)
       store.currentSummary = buildNeedsCorrectionSummary()
+      store.currentBalance = { openingBalance: 500 }
       store.transactions = []
       await nextTick()
       return { wrapper, store }
     }
 
-    it('shows the auditor form section when canSubmitAudit is true', async () => {
+    it('shows the auditor form section when counts are pre-filled', async () => {
       const { wrapper } = await mountWithActiveAudit()
-      expect(wrapper.text()).toContain('ตรวจสอบโดย Auditor')
+      expect(wrapper.text()).toContain('ตรวจสอบบริการรับชำระบิล')
     })
 
     it('renders CashVerificationTable in auditor-input mode', async () => {
@@ -247,7 +282,7 @@ describe('AuditorReviewSection', () => {
 
     it('renders 3 action buttons in the auditor form section', async () => {
       const { wrapper } = await mountWithActiveAudit()
-      expect(wrapper.text()).toContain('ส่งกลับให้ Manager ปรับแก้')
+      expect(wrapper.text()).toContain('ส่งคืนแก้ไข')
       expect(wrapper.text()).toContain('ยืนยันพร้อมหมายเหตุ')
     })
 
@@ -257,41 +292,63 @@ describe('AuditorReviewSection', () => {
         b.text().includes('ส่งตรวจสอบใหม่') || b.text().includes('ยืนยันการตรวจสอบ'),
       )
       await confirmBtn.trigger('click')
+      expect(store.submitAudit).not.toHaveBeenCalled()
+      await wrapper.find('.confirm-ok').trigger('click')
       expect(store.submitAudit).toHaveBeenCalledWith('2026-04-14', expect.objectContaining({ outcome: 'audited' }))
     })
 
-    it('shows error when needs_correction submitted without correctionNotes', async () => {
-      // Start with a summary that has NO correctionNotes in the component ref
+    it('disables send-back until issue details are entered', async () => {
       const pinia = createTestingPinia({ createSpy: vi.fn })
       const wrapper = mount(AuditorReviewSection, {
         props: DEFAULT_PROPS,
         global: { plugins: [pinia], ...globalConfig },
       })
       const store = useBillPaymentStore(pinia)
-      // Use summary without correctionNotes so the component ref starts empty after watch re-fill
       store.currentSummary = buildNeedsCorrectionSummary({ correctionNotes: undefined })
       await nextTick()
-      const sendBackBtn = wrapper.findAll('.action-btn').find(b =>
-        b.text().includes('ส่งกลับให้ Manager ปรับแก้'),
-      )
-      await sendBackBtn.trigger('click')
-      await nextTick()
-      // Error message should appear (correctionNotes empty)
-      expect(wrapper.find('.base-alert[data-variant="error"]').exists()).toBe(true)
+      const sendBackBtn = wrapper.findAll('.action-btn').find(b => b.text().includes('ส่งคืนแก้ไข'))
+      expect(sendBackBtn.attributes('disabled')).toBeDefined()
     })
 
-    it('calls store.submitAudit with "needs_correction" outcome when correctionNotes filled', async () => {
+    it('sends needs_correction with the issue details as correctionNotes', async () => {
       const { wrapper, store } = await mountWithActiveAudit()
-      // Fill correction notes in the textarea
-      const textareas = wrapper.findAll('.base-textarea')
-      const correctionTextarea = textareas[textareas.length - 1]
-      await correctionTextarea.setValue('แก้ไขรายการที่ 1 ด้วย')
+      await wrapper.find('.base-textarea').setValue('แก้ไขรายการที่ 1 ด้วย')
       await nextTick()
-      const sendBackBtn = wrapper.findAll('.action-btn').find(b =>
-        b.text().includes('ส่งกลับให้ Manager ปรับแก้'),
-      )
+      const sendBackBtn = wrapper.findAll('.action-btn').find(b => b.text().includes('ส่งคืนแก้ไข'))
       await sendBackBtn.trigger('click')
-      expect(store.submitAudit).toHaveBeenCalledWith('2026-04-14', expect.objectContaining({ outcome: 'needs_correction' }))
+      await wrapper.find('.confirm-ok').trigger('click')
+      expect(store.submitAudit).toHaveBeenCalledWith('2026-04-14', expect.objectContaining({
+        outcome: 'needs_correction',
+        correctionNotes: 'แก้ไขรายการที่ 1 ด้วย',
+      }))
+    })
+
+    it('sends audited_with_issues and blocks the clean confirm once details are entered', async () => {
+      const { wrapper, store } = await mountWithActiveAudit()
+      await wrapper.find('.base-textarea').setValue('ยอดไม่ตรงเล็กน้อย')
+      await nextTick()
+      const confirmBtn = wrapper.findAll('.action-btn').find(b => b.text().includes('ยืนยันการตรวจสอบ'))
+      expect(confirmBtn.attributes('disabled')).toBeDefined()
+      const withNotesBtn = wrapper.findAll('.action-btn').find(b => b.text().includes('ยืนยันพร้อมหมายเหตุ'))
+      await withNotesBtn.trigger('click')
+      await wrapper.find('.confirm-ok').trigger('click')
+      expect(store.submitAudit).toHaveBeenCalledWith('2026-04-14', expect.objectContaining({ outcome: 'audited_with_issues' }))
+    })
+
+    it('blocks the clean confirm when Manager count differs from expected', async () => {
+      const { wrapper, store } = await mountWithActiveAudit()
+      store.currentSummary = buildNeedsCorrectionSummary({ step2HasDiscrepancies: true })
+      await nextTick()
+      const confirmBtn = wrapper.findAll('.action-btn').find(b => b.text().includes('ยืนยันการตรวจสอบ'))
+      expect(confirmBtn.attributes('disabled')).toBeDefined()
+    })
+
+    it('disables confirm-with-notes until issue details are entered', async () => {
+      const { wrapper } = await mountWithActiveAudit()
+      await wrapper.find('.base-textarea').setValue('')
+      await nextTick()
+      const withNotesBtn = wrapper.findAll('.action-btn').find(b => b.text().includes('ยืนยันพร้อมหมายเหตุ'))
+      expect(withNotesBtn.attributes('disabled')).toBeDefined()
     })
 
     it('emits audit-submitted with the outcome when store action succeeds', async () => {
@@ -300,6 +357,7 @@ describe('AuditorReviewSection', () => {
         b.text().includes('ส่งตรวจสอบใหม่') || b.text().includes('ยืนยันการตรวจสอบ'),
       )
       await confirmBtn.trigger('click')
+      await wrapper.find('.confirm-ok').trigger('click')
       await nextTick()
       expect(wrapper.emitted('audit-submitted')).toBeTruthy()
     })
@@ -308,14 +366,36 @@ describe('AuditorReviewSection', () => {
   // ─── needs_correction context banner ───────────────────────────────────────
 
   describe('needs_correction context banner', () => {
-    it('shows the needs-correction banner with correction notes', async () => {
+    it('says the day is waiting for Manager while Step 2 is cleared', async () => {
       const pinia = createTestingPinia({ createSpy: vi.fn })
       const wrapper = mount(AuditorReviewSection, {
         props: DEFAULT_PROPS,
         global: { plugins: [pinia], ...globalConfig },
       })
       const store = useBillPaymentStore(pinia)
-      store.currentSummary = buildNeedsCorrectionSummary({ correctionNotes: 'ยอดเงินขาด 100' })
+      store.currentSummary = buildNeedsCorrectionSummary({
+        step2CompletedAt: undefined,
+        correctionNotes: 'ยอดเงินขาด 100',
+      })
+      await nextTick()
+      expect(wrapper.text()).toContain('รอ Manager ตรวจนับเงินสดใหม่')
+      expect(wrapper.text()).toContain('ยอดเงินขาด 100')
+      expect(wrapper.text()).not.toContain('ตรวจสอบซ้ำ')
+      expect(wrapper.text()).not.toContain('Manager ยังไม่ได้ตรวจนับเงินสด')
+    })
+
+    it('shows the old note on the re-audit after Manager re-counted', async () => {
+      const pinia = createTestingPinia({ createSpy: vi.fn })
+      const wrapper = mount(AuditorReviewSection, {
+        props: DEFAULT_PROPS,
+        global: { plugins: [pinia], ...globalConfig },
+      })
+      const store = useBillPaymentStore(pinia)
+      store.currentSummary = buildNeedsCorrectionSummary({
+        workflowStatus: 'step2_completed',
+        auditedAt: undefined,
+        correctionNotes: 'ยอดเงินขาด 100',
+      })
       await nextTick()
       expect(wrapper.text()).toContain('ตรวจสอบซ้ำ — Manager แก้ไขแล้ว')
       expect(wrapper.text()).toContain('ยอดเงินขาด 100')

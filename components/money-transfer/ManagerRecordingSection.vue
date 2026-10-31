@@ -77,19 +77,20 @@ const isCompletingStep1 = ref(false)
 // ─── Favorite Transfer modal state ────────────────────────────────────────────
 const favStep = ref<1 | 2>(1)
 const selectedFavorite = ref<any>(null)
-const favAmount = ref<number>(0)
+const favAmount = ref<number | ''>('')
+const favAmountNumber = computed(() => Number(favAmount.value) || 0)
 const favCommissionType = ref<'cash' | 'transfer'>('cash')
 const {
   isManual: favIsCommissionManual,
   manualValue: favManualCommission,
   effectiveCommission: favEffectiveCommission,
   reset: resetFavCommission,
-} = useCommission(favAmount)
+} = useCommission(favAmountNumber)
 
-const favCommissionInput = computed({
-  get: () => favEffectiveCommission.value,
-  set: (val: number) => {
-    favManualCommission.value = val
+const favCommissionInput = computed<number | ''>({
+  get: () => favEffectiveCommission.value || '',
+  set: (val) => {
+    favManualCommission.value = Number(val) || 0
     favIsCommissionManual.value = true
   },
 })
@@ -103,7 +104,7 @@ const isSavingFavorite = ref(false)
 
 // ─── Opening Balance ──────────────────────────────────────────────────────────
 const openingSource = ref<'carryover' | 'manual'>('carryover')
-const manualOpeningAmount = ref<number>(0)
+const manualOpeningAmount = ref<number | ''>('')
 const isSettingOpeningBalance = ref(false)
 
 // ─── Filter Tabs ──────────────────────────────────────────────────────────────
@@ -316,7 +317,7 @@ function openDetailModal(transaction: any) {
 async function openFavoriteModal() {
   favStep.value = 1
   selectedFavorite.value = null
-  favAmount.value = 0
+  favAmount.value = ''
   resetFavCommission()
   favCommissionType.value = 'cash'
   favTab.value = 1
@@ -327,7 +328,7 @@ async function openFavoriteModal() {
 }
 function openOpeningBalanceModal() {
   openingSource.value = 'carryover'
-  manualOpeningAmount.value = 0
+  manualOpeningAmount.value = ''
   showOpeningBalanceModal.value = true
 }
 function openStatusChange(txn: any) {
@@ -350,7 +351,7 @@ function confirmCancelDraft(transactionId: string) {
 function selectFavorite(fav: any) {
   selectedFavorite.value = fav
   favStep.value = 2
-  favAmount.value = 0
+  favAmount.value = ''
   resetFavCommission()
   favCommissionType.value = 'cash'
 }
@@ -438,7 +439,7 @@ async function confirmDeleteFavorite() {
 }
 
 async function handleSubmitFavorite() {
-  if (!selectedFavorite.value || favAmount.value <= 0) return
+  if (!selectedFavorite.value || favAmountNumber.value <= 0) return
   try {
     const fav = selectedFavorite.value
     const data: Record<string, any> = {
@@ -892,7 +893,7 @@ async function handleCompleteStep1() {
       <template #footer>
         <div class="flex justify-end gap-2">
           <BaseButton variant="secondary" @click="showOpeningBalanceModal = false">ยกเลิก</BaseButton>
-          <BaseButton variant="primary" :disabled="openingSource === 'manual' && manualOpeningAmount < 0" :loading="isSettingOpeningBalance" @click="handleSetOpeningBalance">
+          <BaseButton variant="primary" :disabled="openingSource === 'manual' && (manualOpeningAmount === '' || manualOpeningAmount < 0)" :loading="isSettingOpeningBalance" @click="handleSetOpeningBalance">
             💾 ยืนยันยอดเงินเริ่มต้น
           </BaseButton>
         </div>
@@ -1065,7 +1066,7 @@ async function handleCompleteStep1() {
               <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">บาท</span>
             </div>
             <div v-if="isInsufficientFunds" class="text-amber-700 text-sm mt-1">
-              ยอดในบัญชีตอนนี้ไม่พอ (ขาด {{ formatCurrency(favAmount - (store.currentBalance?.bankAccount ?? 0)) }}) — บันทึกเข้าคิวได้ แต่ต้องมียอดพอก่อนกด "ดำเนินการ"
+              ยอดในบัญชีตอนนี้ไม่พอ (ขาด {{ formatCurrency(favAmountNumber - (store.currentBalance?.bankAccount ?? 0)) }}) — บันทึกเข้าคิวได้ แต่ต้องมียอดพอก่อนกด "ดำเนินการ"
             </div>
           </FormField>
           <FormField :label="favIsCommissionManual ? 'ค่าบริการ' : 'ค่าบริการ (คำนวณอัตโนมัติ)'">
@@ -1091,7 +1092,7 @@ async function handleCompleteStep1() {
               <label class="flex items-center gap-2 cursor-pointer"><input v-model="favCommissionType" type="radio" value="transfer" class="accent-red-500" /><span class="text-sm">โอน</span></label>
             </div>
           </FormField>
-          <div v-if="favAmount > 0" class="bg-gray-50 rounded-lg p-3 text-sm space-y-1">
+          <div v-if="favAmountNumber > 0" class="bg-gray-50 rounded-lg p-3 text-sm space-y-1">
             <div class="flex justify-between">
               <span class="text-gray-500">{{ favBannerInfo.balanceLabel }} ปัจจุบัน</span>
               <span class="font-medium">{{ formatCurrency(favBannerInfo.current) }}</span>
@@ -1119,7 +1120,7 @@ async function handleCompleteStep1() {
               💾 บันทึก
             </BaseButton>
             <!-- Submit transfer -->
-            <ActionButton v-if="favStep === 2" :permission="PERMISSIONS.EDIT_FINANCE" variant="primary" :disabled="favAmount <= 0" @click="handleSubmitFavorite">
+            <ActionButton v-if="favStep === 2" :permission="PERMISSIONS.EDIT_FINANCE" variant="primary" :disabled="favAmountNumber <= 0" @click="handleSubmitFavorite">
               บันทึกเข้าคิว
             </ActionButton>
           </div>
