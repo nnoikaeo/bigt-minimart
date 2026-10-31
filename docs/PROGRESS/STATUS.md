@@ -1,10 +1,10 @@
 # Project Status Dashboard
 
-**Last Updated**: Oct 20, 2026
+**Last Updated**: Oct 31, 2026
 **Updated By**: Claude Code
-**Current Branch**: develop (latest merge: PR #157; main: docs synced via PR #150, code at release #148)
+**Current Branch**: develop (latest merge: PR #159; main: docs synced via PR #150, code at release #148)
 **Current Phase**: Testing — Service Harmonization (Manual Test → Bug Fix → E2E)
-**Next Up**: BP-3 Auditor manual test — plan + data ready (TESTING_PLAN BP-3 "เริ่มจากตรงนี้": 2026-04-01 / 04-02); then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
+**Next Up**: BP-4 Owner manual test — plan + data ready (TESTING_PLAN BP-4 "เริ่มจากตรงนี้": 2026-04-01 / 01-30 / 04-02); then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
 
 ---
 
@@ -23,7 +23,7 @@ PHASE 1: Core Features
 ├─ Week 9: Layout Consistency & Polish            ✅ COMPLETE (100%)
 ├─ Week 5-6 (original plan): Dashboard + Reports ❌ NOT STARTED (0%)
 ├─ Week 10+: Bill Payment Service Harmonization               ✅ COMPLETE (100%)
-├─ Testing: Service Harmonization Testing Plan                 🔄 IN PROGRESS (MT-1 ✅, MT-2 ✅, BP-2 ✅; next BP-3)
+├─ Testing: Service Harmonization Testing Plan                 🔄 IN PROGRESS (MT-1 ✅, MT-2 ✅, BP-2 ✅, BP-3 ✅; next BP-4)
 └─ Overall: PHASE 1 CORE COMPLETE — Harmonization COMPLETE — Testing IN PROGRESS
 
 Timeline Status: Money Transfer feature fully shipped ✓
@@ -196,6 +196,13 @@ Timeline Status: Money Transfer feature fully shipped ✓
    ├─ BUG-019 queue rows show #N (table row), time, bill type; oldest first (MT gets #N)
    ├─ BUG-020 cash count inputs start empty (placeholder 0); no diff until counted
    └─ BP-2 Step 1-11 ✅ (2026-04-01 matching, 2026-04-02 discrepancy) → BP-3 next
+
+✅ BP-3 Auditor manual test + fixes (PR #159, Oct 31)
+   ├─ BUG-021 Auditor form never rendered (gated on its own inputs, since #134); view now follows MT layout
+   ├─ BUG-022 Number inputs start empty with placeholder (BaseInput, MT + BP, DailySalesModal)
+   ├─ BUG-023 Repository ignored outcome: "ยืนยันพร้อมหมายเหตุ" now saves audited_with_issues
+   ├─ BUG-024/025 Send-back messages + progress step; BUG-026 green confirm needs bank statement + nothing to report
+   └─ MT changes (Step 2 count, favorites) and DailySalesModal not manually tested yet → do not release before MT-3
 ```
 
 ### Week 9 (Mar 23-25): Layout Consistency & Polish
@@ -246,7 +253,7 @@ Auth & RBAC ✅
   └─ ⚠️ requireServerAuth on Bill Payment mutations only (Money Transfer routes not yet)
 
 Testing ✅
-  ├─ Vitest: 18 files / 280 tests (unit: shared + BP components, store, helpers; integration: MT, BP, cross-service, daily-sales)
+  ├─ Vitest: 20 files / 303 tests (unit: shared + BP components, store, helpers; integration: MT, BP, cross-service, daily-sales)
   ├─ ⚠️ CI (PR Check) does not run tests yet
   └─ E2E (Playwright): not installed yet
 
@@ -307,11 +314,11 @@ Components (49 total):
 | API routes | 72 | ✅ |
 | PRs merged (latest) | #157 | ✅ |
 | TypeScript errors (`nuxt typecheck`) | 0 | ✅ |
-| Unit/Integration tests (`vitest run`) | 291/291 passed (18 files) | ✅ |
+| Unit/Integration tests (`vitest run`) | 303/303 passed (20 files) | ✅ |
 | Production build (`nuxt build`) | Success | ✅ |
 | Money Transfer workflow | 9/9 statuses (unified) | ✅ |
 | Bill Payment workflow | Phase 1-6 Complete (27 Tasks) | ✅ |
-| Service Harmonization Testing | 3/17 tasks done (MT-1, MT-2, BP-2); next BP-3; open bugs BUG-001~003 | 🔄 |
+| Service Harmonization Testing | 4/17 tasks done (MT-1, MT-2, BP-2, BP-3); next BP-4; open bugs BUG-001~003 | 🔄 |
 | Design System components | 14 ui + 4 layout + 8 shared | ✅ |
 | Mobile responsive | Yes | ✅ |
 | CI (PR Check / Staging / Production) | All green (Oct 16, 2026) | ✅ |
@@ -326,7 +333,8 @@ Components (49 total):
    │     ├─ MT-1 ✅ ผ่าน
    │     ├─ MT-2 ✅ ผ่าน Step 1-11 (17 ต.ค., merged PR #153) — BUG-007~011 แก้แล้ว; BUG-001~003 ยังเปิด; BUG-002 ยังไม่ได้ทดสอบ
    │     ├─ BP-2 ✅ Step 1-11 (17-20 ต.ค.; เหลือข้อย่อยที่ไม่ได้ลอง ดู TESTING_PLAN) — BUG-018~020 (ปุ่มเลือกประเภท, #N ในคิว, ช่องตรวจนับว่าง) แก้ + ทดสอบผ่าน (PR #157); BUG-014 (modal รายการโปรดไม่มีปุ่ม ✕) + BUG-015 (ฟอร์มตรวจนับ Step 2 ไม่แสดง, High) แก้ + ทดสอบผ่าน (PR #156); BUG-016/017 (กล่องสถานะซ้ำ, ป้ายตารางตรวจนับ) แก้แล้ว (PR #156); BUG-012 ✅ ทดสอบผ่าน; BUG-013 (ฟอร์มฝากเงินมีช่องชื่อลูกค้า) ✅ แก้ + ทดสอบผ่าน; ประเภทบิล "ประกัน" → "สินเชื่อ" (`loan`) — ค่าธรรมเนียมเท่าสาธารณูปโภค (10/20/30/40, Owner ยืนยัน 19 ต.ค.)
-   │     └─ MT-3, MT-4, BP-1~4, SHARED-1~2 ☐ NOT STARTED
+   │     ├─ BP-3 ✅ Step 1-6 (31 ต.ค., merged PR #159) — BUG-021~026 แก้แล้ว; เหลือดูจุดย่อย ดู TESTING_PLAN
+   │     └─ MT-3, MT-4, BP-1, BP-4, SHARED-1~2 ☐ NOT STARTED
    ├─ Bug Fix: 2 tasks (BugFix-1, BugFix-2)              ☐ WAITING FOR MANUAL TEST
    ├─ E2E Playwright: 5 tasks (E2E-1~5)                   ☐ WAITING FOR BUG FIX
    └─ Testing Plan: docs/PROGRESS/TESTING_PLAN.md ✅ CREATED
@@ -385,8 +393,8 @@ Phase 4: HR (schedule, leave, overtime)
 
 | Date | Status | Transactions |
 |------|--------|-------------|
-| 2026-04-01 | `step1_in_progress` | 1 (cancelled 1) |
+| 2026-04-01 | `audited` | 5 (completed 2, cancelled 3) |
 | 2026-01-31 | `approved` | 4 (completed 3, cancelled 1) |
-| 2026-01-30 | `step2_completed` | 1 (completed 1) |
+| 2026-01-30 | `audited_with_issues` | 1 (completed 1) |
 | 2026-01-29 | `approved` | 4 (completed 3, cancelled 1) |
 | — | `step1_completed` / `audited` / `needs_correction` | No test data |

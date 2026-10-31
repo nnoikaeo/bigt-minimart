@@ -465,6 +465,13 @@
 
 > **Login ด้วย:** Owner  
 > **เปรียบเทียบกับ:** MT-4
+>
+> **เริ่มจากตรงนี้ (แผน 31 ต.ค. 2569 — ยังไม่ได้เริ่ม):** Login `nop@bigt.co.th` ข้อมูลพร้อม 3 วัน (สร้างจาก BP-3)
+> - **รอบ A — 2026-04-01** (`audited`, ยอดตรง): "อนุมัติ" → `approved`
+> - **รอบ B — 2026-01-30** (`audited_with_issues`, หมายเหตุ "ทดสอบหมายเหตุ"): Owner ต้องเห็นหมายเหตุ Auditor → "อนุมัติพร้อมหมายเหตุ" → `approved_with_notes`
+> - **รอบ C — 2026-04-02** (`audited`, หมายเหตุ "มีปัญหา" จากก่อนแก้ BUG-026): "ขอให้แก้ไข" → `needs_correction` → Manager: ข้อความ "Owner ส่งคืนให้แก้ไข…", ยืนยันใหม่ + นับ 1,100 / 110 → Auditor: Bank Statement 1,200 + นับ 1,100 / 110 → Owner อนุมัติ (full loop, Step 4)
+> - **ดูเก็บตกจาก BP-3:** ระยะห่างกล่องสถานะกับปุ่มยืนยันของ Manager ตอน `needs_correction` (BUG-025), ช่องค่าธรรมเนียมฟอร์ม BP ตอนยังไม่กรอกยอด (BUG-022) — 2026-04-03 ค้าง `needs_correction` จาก Auditor ใช้ดูจุดแรกได้
+> - หน้า Owner เพิ่มการ์ด "ยอดเงิน" ใน PR #159 (เหมือน MT) — ตรวจว่าตัวเลขตรง
 
 #### ขั้นตอนการทดสอบ
 
@@ -749,7 +756,7 @@ Screenshots บันทึกที่: tests/e2e/screenshots/
 | 5 | BP-1 | BP History Page Manual Test | คุณ | — | ☐ |
 | 6 | BP-2 | BP Service Manager Flow | คุณ | — | ✅ (ข้อย่อยค้าง ดูผล) |
 | 7 | BP-3 | BP Auditor Flow | คุณ | — | ✅ |
-| 8 | BP-4 | BP Owner Flow | คุณ | — | ☐ |
+| 8 | BP-4 | BP Owner Flow | คุณ | — | ☐ ถัดไป |
 | 9 | SHARED-1 | Shared Components Consistency | คุณ | — | ☐ |
 | 10 | SHARED-2 | Workflow Status Consistency | คุณ | — | ☐ |
 | 11 | BugFix-1 | Bug Fix รอบ 1 | AI | `refactor` / `review-and-refactor` | ☐ |
