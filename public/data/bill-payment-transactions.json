@@ -309,5 +309,17 @@
     "status": "completed",
     "timestamp": "2026-10-19T17:42:53.401Z",
     "id": "bptxn-1792431773401-cu8powo35"
+  },
+  {
+    "date": "2026-04-03",
+    "transactionType": "bill_payment",
+    "billType": "other",
+    "amount": 100,
+    "commission": 10,
+    "recordedBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
+    "recordedAt": "2026-10-31T13:17:48.057Z",
+    "status": "completed",
+    "timestamp": "2026-10-31T13:17:48.075Z",
+    "id": "bptxn-1793452668075-h1xnl1eku"
   }
 ]

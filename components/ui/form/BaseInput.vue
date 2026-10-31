@@ -26,6 +26,12 @@ const emit = defineEmits<{
   'blur': [event: FocusEvent]
 }>()
 
+// A cleared number input emits '' (not 0) so the placeholder shows again
+function handleInput(event: Event) {
+  const raw = (event.target as HTMLInputElement).value
+  emit('update:modelValue', props.type === 'number' && raw !== '' ? Number(raw) : raw)
+}
+
 const inputClasses = computed(() => {
   const base = 'w-full px-4 py-2 border rounded-lg transition-colors focus:outline-none focus:ring-2'
   const normal = 'border-gray-300 focus:border-red-500 focus:ring-red-100'
@@ -44,7 +50,7 @@ const inputClasses = computed(() => {
     :disabled="disabled"
     :readonly="readonly"
     :class="inputClasses"
-    @input="emit('update:modelValue', type === 'number' ? Number(($event.target as HTMLInputElement).value) : ($event.target as HTMLInputElement).value)"
+    @input="handleInput"
     @focus="emit('focus', $event)"
     @blur="emit('blur', $event)"
   />

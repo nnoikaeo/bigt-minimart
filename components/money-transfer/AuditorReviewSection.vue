@@ -33,7 +33,7 @@ const errorMessage = ref('')
 const txnIssueStatus = ref<Record<string, true>>({})
 const auditorCashTransferWithdrawal = ref<number | null>(null)
 const auditorCashServiceFee = ref<number | null>(null)
-const bankStatementAmount = ref<number>(0)
+const bankStatementAmount = ref<number | ''>('')
 const issueDetails = ref('')
 const showAuditorTransactions = ref(false)
 const showAuditorTxnsReadonly = ref(false)
@@ -122,7 +122,9 @@ const auditorDiffTotal = computed(() =>
     ? (auditorDiffTransferWithdrawal.value ?? 0) + (auditorDiffServiceFee.value ?? 0)
     : null
 )
-const bankBalanceDiff = computed(() => bankStatementAmount.value - closingBalance.value)
+const bankBalanceDiff = computed(() =>
+  bankStatementAmount.value === '' ? null : bankStatementAmount.value - closingBalance.value
+)
 
 const auditResultSummary = computed(() => {
   const audit = store.currentSummary?.auditorVerification
@@ -166,7 +168,7 @@ watch(() => store.currentSummary, (summary) => {
       auditorCashTransferWithdrawal.value = audit.auditorCash.transferWithdrawal ?? null
       auditorCashServiceFee.value = audit.auditorCash.serviceFee ?? null
     }
-    bankStatementAmount.value = audit.bankStatementAmount ?? 0
+    bankStatementAmount.value = audit.bankStatementAmount ?? ''
     issueDetails.value = audit.auditNotes || ''
     if (audit.txnIssueStatus) {
       txnIssueStatus.value = { ...audit.txnIssueStatus }
@@ -219,7 +221,7 @@ async function handleApproveAudit() {
     await store.submitAudit(props.date, {
       transactionsVerified: auditTransactionList.value.length,
       transactionsWithIssues: txnsWithIssues.value,
-      bankStatementVerified: bankStatementAmount.value > 0,
+      bankStatementVerified: Number(bankStatementAmount.value) > 0,
       bankStatementAmount: bankStatementAmount.value || undefined,
       auditorCash: (auditorCashTransferWithdrawal.value !== null && auditorCashServiceFee.value !== null)
         ? {
@@ -251,7 +253,7 @@ async function handleAuditWithIssues() {
     await store.submitAudit(props.date, {
       transactionsVerified: auditTransactionList.value.length,
       transactionsWithIssues: txnsWithIssues.value,
-      bankStatementVerified: bankStatementAmount.value > 0,
+      bankStatementVerified: Number(bankStatementAmount.value) > 0,
       bankStatementAmount: bankStatementAmount.value || undefined,
       auditorCash: (auditorCashTransferWithdrawal.value !== null && auditorCashServiceFee.value !== null)
         ? {
@@ -283,7 +285,7 @@ async function handleRejectAudit() {
     await store.submitAudit(props.date, {
       transactionsVerified: auditTransactionList.value.length,
       transactionsWithIssues: txnsWithIssues.value,
-      bankStatementVerified: bankStatementAmount.value > 0,
+      bankStatementVerified: Number(bankStatementAmount.value) > 0,
       auditResult: 'rejected',
       auditNotes: issueDetails.value || 'ส่งคืน Manager เพื่อแก้ไข',
       issuesFound: issueDetails.value || 'ส่งคืนแก้ไข',
@@ -341,8 +343,8 @@ async function handleRejectAudit() {
             <div class="bg-gray-50 rounded-lg p-3 flex items-center self-end mb-1">
               <div>
                 <div class="text-xs text-gray-500 mb-1">ผลต่าง (Bank Statement − ยอดปิด)</div>
-                <div :class="['font-bold text-base', bankBalanceDiff === 0 ? 'text-green-700' : 'text-red-700']">
-                  {{ bankBalanceDiff === 0 ? '✅ ตรงกัน' : (bankBalanceDiff > 0 ? '+' : '') + formatCurrency(bankBalanceDiff) }}
+                <div :class="['font-bold text-base', bankBalanceDiff === null ? 'text-gray-400' : bankBalanceDiff === 0 ? 'text-green-700' : 'text-red-700']">
+                  {{ bankBalanceDiff === null ? '—' : bankBalanceDiff === 0 ? '✅ ตรงกัน' : (bankBalanceDiff > 0 ? '+' : '') + formatCurrency(bankBalanceDiff) }}
                 </div>
               </div>
             </div>
@@ -496,7 +498,7 @@ async function handleRejectAudit() {
         <div class="flex flex-col sm:flex-row gap-3">
           <BaseButton
             variant="secondary"
-            class="border-amber-400 text-amber-700 hover:bg-amber-50"
+            class="border border-amber-400 !bg-amber-50 !text-amber-800 hover:!bg-amber-100 disabled:opacity-50"
             :disabled="!canSubmitAuditWithIssues"
             :title="!canSubmitAuditWithIssues ? 'กรอกรายละเอียดปัญหาก่อน' : ''"
             @click="showAuditWithIssuesConfirm = true"
@@ -623,7 +625,7 @@ async function handleRejectAudit() {
         <BaseButton
           variant="secondary"
           size="sm"
-          class="border-amber-400 text-amber-700 hover:bg-amber-50"
+          class="border border-amber-400 !bg-amber-50 !text-amber-800 hover:!bg-amber-100 disabled:opacity-50"
           :disabled="!canSubmitAuditWithIssues"
           @click="showAuditWithIssuesConfirm = true"
         >

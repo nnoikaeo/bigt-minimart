@@ -44,6 +44,8 @@ const PROBLEM_TYPES = [
 ] as const
 
 // Helper functions
+const parseAmount = (event: Event): number => Number((event.target as HTMLInputElement).value) || 0
+
 const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('th-TH', {
     style: 'currency',
@@ -455,7 +457,9 @@ const handleClose = () => {
                 <div class="flex items-center gap-2">
                   <span class="text-gray-600">฿</span>
                   <input
-                    v-model.number="formData.expectedCash"
+                    :value="formData.expectedCash || ''"
+                    placeholder="0"
+                    @input="formData.expectedCash = parseAmount($event)"
                     type="number"
                     min="0"
                     step="0.01"
@@ -473,7 +477,9 @@ const handleClose = () => {
                 <div class="flex items-center gap-2">
                   <span class="text-gray-600">฿</span>
                   <input
-                    v-model.number="formData.expectedQR"
+                    :value="formData.expectedQR || ''"
+                    placeholder="0"
+                    @input="formData.expectedQR = parseAmount($event)"
                     type="number"
                     min="0"
                     step="0.01"
@@ -491,7 +497,9 @@ const handleClose = () => {
                 <div class="flex items-center gap-2">
                   <span class="text-gray-600">฿</span>
                   <input
-                    v-model.number="formData.expectedBank"
+                    :value="formData.expectedBank || ''"
+                    placeholder="0"
+                    @input="formData.expectedBank = parseAmount($event)"
                     type="number"
                     min="0"
                     step="0.01"
@@ -509,7 +517,9 @@ const handleClose = () => {
                 <div class="flex items-center gap-2">
                   <span class="text-gray-600">฿</span>
                   <input
-                    v-model.number="formData.expectedGovernment"
+                    :value="formData.expectedGovernment || ''"
+                    placeholder="0"
+                    @input="formData.expectedGovernment = parseAmount($event)"
                     type="number"
                     min="0"
                     step="0.01"
@@ -555,7 +565,9 @@ const handleClose = () => {
                 <div class="flex items-center gap-2">
                   <span class="text-gray-600">฿</span>
                   <input
-                    v-model.number="formData.posData.cash"
+                    :value="formData.posData.cash || ''"
+                    placeholder="0"
+                    @input="formData.posData.cash = parseAmount($event)"
                     type="number"
                     min="0"
                     step="0.01"
@@ -573,7 +585,9 @@ const handleClose = () => {
                 <div class="flex items-center gap-2">
                   <span class="text-gray-600">฿</span>
                   <input
-                    v-model.number="formData.posData.qr"
+                    :value="formData.posData.qr || ''"
+                    placeholder="0"
+                    @input="formData.posData.qr = parseAmount($event)"
                     type="number"
                     min="0"
                     step="0.01"
@@ -591,7 +605,9 @@ const handleClose = () => {
                 <div class="flex items-center gap-2">
                   <span class="text-gray-600">฿</span>
                   <input
-                    v-model.number="formData.posData.bank"
+                    :value="formData.posData.bank || ''"
+                    placeholder="0"
+                    @input="formData.posData.bank = parseAmount($event)"
                     type="number"
                     min="0"
                     step="0.01"
@@ -609,7 +625,9 @@ const handleClose = () => {
                 <div class="flex items-center gap-2">
                   <span class="text-gray-600">฿</span>
                   <input
-                    v-model.number="formData.posData.government"
+                    :value="formData.posData.government || ''"
+                    placeholder="0"
+                    @input="formData.posData.government = parseAmount($event)"
                     type="number"
                     min="0"
                     step="0.01"
@@ -748,7 +766,9 @@ const handleClose = () => {
                 <div class="flex items-center gap-2">
                   <span class="text-gray-600">฿</span>
                   <input
-                    v-model.number="formData.cashReconciliation.expectedAmount"
+                    :value="formData.cashReconciliation.expectedAmount || ''"
+                    placeholder="0"
+                    @input="formData.cashReconciliation.expectedAmount = parseAmount($event)"
                     type="number"
                     min="0"
                     step="0.01"

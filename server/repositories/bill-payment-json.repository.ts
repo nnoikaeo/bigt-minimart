@@ -388,7 +388,7 @@ export class BillPaymentJsonRepository {
       auditTransactionsWithIssues: auditData.auditTransactionsWithIssues,
       workflowStatus: isCorrection
         ? 'needs_correction'
-        : auditData.auditTransactionsWithIssues > 0
+        : auditData.outcome === 'audited_with_issues' || auditData.auditTransactionsWithIssues > 0
           ? 'audited_with_issues'
           : 'audited',
     }

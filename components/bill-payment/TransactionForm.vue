@@ -230,7 +230,7 @@ async function handleSubmit() {
         :class="isCommissionManual ? 'border-amber-400' : 'border-gray-300'"
       >
         <input
-          :value="effectiveCommission"
+          :value="effectiveCommission || ''"
           type="number"
           min="0"
           step="1"

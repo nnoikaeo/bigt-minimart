@@ -206,7 +206,7 @@
 
     <!-- ── ข้อมูลยอดเงิน (ข้อมูลเท่านั้น — ไม่ใช่การตัดสินสถานะ) ───────── -->
     <div
-      v-if="formData.amount > 0"
+      v-if="Number(formData.amount) > 0"
       class="rounded-lg px-3 py-2.5 text-sm space-y-1"
       :class="bannerInfo.ok
         ? 'bg-gray-50 border border-gray-200 text-gray-700'
@@ -300,7 +300,7 @@
         type="button"
         class="flex-1 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         :class="isSubmitting ? 'bg-primary/60' : 'bg-primary hover:bg-primary-dark'"
-        :disabled="isSubmitting || formData.amount <= 0 || alreadyEdited || (isStatusChangeMode && !statusTarget)"
+        :disabled="isSubmitting || Number(formData.amount) <= 0 || alreadyEdited || (isStatusChangeMode && !statusTarget)"
         @click="handleSubmit"
       >
         <svg v-if="isSubmitting" class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
@@ -361,7 +361,7 @@ const formData = ref({
   accountName: props.editingData?.accountName ?? '',
   promptpayIdentifierType: (props.editingData?.promptpayIdentifierType ?? 'phone') as 'phone' | 'id_card',
   promptpayIdentifier: props.editingData?.promptpayIdentifier ?? '',
-  amount: props.editingData?.amount ?? 0,
+  amount: (props.editingData?.amount ?? '') as number | '',
   commissionType: (props.editingData?.commissionType ?? 'cash') as 'cash' | 'transfer',
   notes: props.editingData?.notes ?? '',
 })
@@ -390,10 +390,10 @@ if (props.editingData?.commission != null) {
   isCommissionManual.value = true
 }
 
-const commissionInput = computed({
-  get: () => effectiveCommission.value,
-  set: (val: number) => {
-    manualCommission.value = val
+const commissionInput = computed<number | ''>({
+  get: () => effectiveCommission.value || '',
+  set: (val) => {
+    manualCommission.value = Number(val) || 0
     isCommissionManual.value = true
   },
 })
@@ -486,7 +486,7 @@ const errorMessage = ref('')
 function handleSubmit() {
   errorMessage.value = ''
 
-  if (formData.value.amount <= 0) {
+  if (Number(formData.value.amount) <= 0) {
     errorMessage.value = 'กรุณากรอกจำนวนเงิน'
     return
   }
@@ -529,7 +529,7 @@ function handleSubmit() {
     datetime,
     transactionType: formData.value.transactionType,
     channel: formData.value.transactionType === 'transfer' ? formData.value.channel : undefined,
-    amount: formData.value.amount,
+    amount: Number(formData.value.amount),
     commission: effectiveCommission.value,
     commissionType: formData.value.commissionType,
     notes: formData.value.notes,
@@ -587,7 +587,7 @@ watch(
     formData.value.accountName = val.accountName ?? ''
     formData.value.promptpayIdentifierType = val.promptpayIdentifierType ?? 'phone'
     formData.value.promptpayIdentifier = val.promptpayIdentifier ?? ''
-    formData.value.amount = val.amount ?? 0
+    formData.value.amount = val.amount ?? ''
     formData.value.commissionType = val.commissionType ?? 'cash'
     formData.value.notes = val.notes ?? ''
     if (val.commission != null) {
