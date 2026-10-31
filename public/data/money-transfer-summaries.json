@@ -349,5 +349,20 @@
     "workflowStatus": "step1_in_progress",
     "createdAt": "2026-10-17T05:59:43.253Z",
     "updatedAt": "2026-10-17T05:59:43.253Z"
+  },
+  {
+    "id": "mtsum-2026-10-18",
+    "date": "2026-10-18",
+    "step1": {
+      "status": "in_progress",
+      "totalTransactions": 0,
+      "completedTransactions": 0,
+      "draftTransactions": 0,
+      "totalAmount": 0,
+      "totalCommission": 0
+    },
+    "workflowStatus": "step1_in_progress",
+    "createdAt": "2026-10-31T11:50:46.113Z",
+    "updatedAt": "2026-10-31T11:50:46.113Z"
   }
 ]

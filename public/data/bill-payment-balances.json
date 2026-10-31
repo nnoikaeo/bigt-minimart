@@ -95,5 +95,27 @@
     "openingBalanceSetAt": "2026-10-19T17:23:56.298Z",
     "openingBalanceSource": "carryover",
     "openingBalanceSetBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3"
+  },
+  {
+    "id": "bpbal-2026-10-31",
+    "date": "2026-10-31",
+    "bankAccount": 0,
+    "billPaymentCash": 0,
+    "serviceFeeCash": 0,
+    "history": [],
+    "updatedAt": "2026-10-31T10:20:43.530Z"
+  },
+  {
+    "id": "bpbal-2026-04-03",
+    "date": "2026-04-03",
+    "bankAccount": 1100,
+    "billPaymentCash": 100,
+    "serviceFeeCash": 10,
+    "history": [],
+    "updatedAt": "2026-10-31T13:19:09.843Z",
+    "openingBalance": 1200,
+    "openingBalanceSetAt": "2026-10-31T12:22:42.602Z",
+    "openingBalanceSource": "carryover",
+    "openingBalanceSetBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3"
   }
 ]
