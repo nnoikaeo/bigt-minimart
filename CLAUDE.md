@@ -33,6 +33,8 @@ Keep this file short: facts that live in `docs/` are **linked**, not copied.
 - Stores `stores/money-transfer.ts` and `stores/bill-payment.ts` start with `// @ts-nocheck`.
   **Check the store file before calling a method** — names differ between the two stores, e.g. MT `deleteTransaction(id)` vs BP `deleteDraftTransaction(id)`.
   Shared: `initializeStore`, `fetchTransactionsByDate`, `fetchDailySummary`, `createTransaction`, `updateTransaction`, `completeDraftTransaction`, `changeTransactionStatus`, `setOpeningBalance`, `completeStep1(date)`, `completeStep2(date, data)`, `submitAudit(date, data)`, `submitOwnerApproval(date, data)` (no `completeAudit` / `rejectAudit`).
+- **Keep MT and BP consistent (Owner rule, 2 Nov 2026):** when a change to one service applies to the other, make it in both in the same PR. If it cannot be done or tested yet, log it in the TESTING_PLAN Bug List and say so.
+- Status banners: page-level, above the role sections, for every role (`pages/finance/{money-transfer,bill-payment}-service/index.vue`) — do not add a second "waiting" box inside a section
 - Server auth: BP mutation routes call `requireServerAuth(event)`; BP store uses `getApiFetch()` (adds Firebase ID token via `plugins/apiFetch.client.ts`). MT routes do not yet (known tech debt).
 
 ## Coding conventions
@@ -43,7 +45,8 @@ Keep this file short: facts that live in `docs/` are **linked**, not copied.
 - Logging: `const logger = useLogger('ComponentName')` → `logger.log` / `logger.error`
 - Async: try/catch, set `errorMessage.value = err.message`
 - Destructive actions: `ConfirmDialog`
-- Date pickers: `<input type="date">` in the `#actions` slot of `PageWrapper`
+- Date pickers: `<DateInput v-model>` (`components/ui/form/DateInput.vue`), in the `#actions` slot of `PageWrapper` on service pages — not a raw `<input type="date">`, which shows the browser's format
+- Date display: always dd/mm/พ.ศ. via `formatThaiDate` / `formatThaiDateTime` (`utils/date.ts`); stored values stay ISO
 - TS pitfalls: `split('T')[0]` is `string | undefined` (use `?? ''`); v-for index is `string | number` (use `Number(idx) + 1`); type literal unions with `''` explicitly (`ref<'a' | 'b' | ''>('')`); remove unused computeds; `new Map(arr.map(x => [k, v]))` infers `Map<any, any>`-ish types that fail arithmetic in nuxt typecheck — write `new Map<string, number>(...)`
 
 ## Keeping docs in sync (required)

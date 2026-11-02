@@ -356,7 +356,7 @@ Actual structure (Oct 2026):
 components/
 ├── ui/                              # Design System (no path prefix)
 │   ├── button/    BaseButton, ActionButton (permission-gated)
-│   ├── form/      BaseInput, BaseSelect, BaseTextarea, FormField
+│   ├── form/      BaseInput, BaseSelect, BaseTextarea, FormField, DateInput
 │   ├── table/     BaseTable, DataTable, PaginationControl
 │   ├── feedback/  BaseAlert, BaseModal
 │   └── display/   BaseCard, BaseBadge, CollapsibleSection
@@ -613,7 +613,7 @@ See the full implementation in the [Implementation Plan](#implementation-plan) s
 1. **BaseButton** - Reusable button with variants
 2. **ActionButton** - Button with permission checking
 3. **FormField** - Form field wrapper with label/error
-4. **BaseInput, BaseSelect, BaseTextarea** - Form inputs
+4. **BaseInput, BaseSelect, BaseTextarea, DateInput** - Form inputs
 5. **BaseModal** - Modal dialog
 6. **DataTable** - Advanced table with sort/filter/pagination
 7. **BaseBadge** - Status badges
