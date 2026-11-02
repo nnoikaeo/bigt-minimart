@@ -27,6 +27,9 @@ Deploys use `FirebaseExtended/action-hosting-deploy@v0`.
 
 - Unit/integration tests (`npm test`) are **not** run in CI yet — run them locally before opening a PR.
 - `npm run lint` is `nuxt typecheck` (no ESLint configured).
+- PR Check does not cover deploys. After merging, check that Deploy Staging passed.
+- Deploys run `firebase-tools@latest`, so a new version can need new permissions. The service account in `FIREBASE_SERVICE_ACCOUNT_JSON` (project `bigt-minimart`) needs **Service Usage Consumer**, added on Nov 2, 2026 after deploys failed with a 403 on `serviceusage.services.get`. To fix a similar failure, add the missing role in Google Cloud IAM, then run `gh run rerun <run-id> --failed`.
+- GitHub warns that Node 20 in these workflows is deprecated.
 
 ## Checking runs
 
@@ -37,4 +40,4 @@ gh run view <run-id> --log-failed
 
 ---
 
-**Last Updated**: Oct 16, 2026
+**Last Updated**: Nov 2, 2026

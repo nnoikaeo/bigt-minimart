@@ -2,7 +2,8 @@
 
 > Generated from the actual route files in `server/api/` (Nitro file-based routing).
 > 🔒 = route calls `requireServerAuth(event)` — caller identity comes from the Firebase ID token
-> (sent automatically by the `$apiFetch` plugin), not from the request body.
+> (sent automatically by the `$apiFetch` plugin), not from the request body. The display name comes from `users.json`.
+> It checks login only, not role or workflow status (BUG-037).
 
 ## Base URL
 ```

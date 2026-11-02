@@ -2,9 +2,9 @@
 
 **Last Updated**: Nov 2, 2026
 **Updated By**: Claude Code
-**Current Branch**: develop (latest merge: PR #161; main: docs synced via PR #150, code at release #148)
+**Current Branch**: develop (latest merge: PR #162; main: docs synced via PR #150, code at release #148)
 **Current Phase**: Testing — Service Harmonization (Manual Test → Bug Fix → E2E)
-**Next Up**: Small bug fixes (BUG-001~003 + BP-4 code-reading items: confirm dialog, Step 2 diff sign); then BP-1, MT-3 + MT-4 with BUG-035 (MT send-back flow); then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
+**Next Up**: Small bug fixes (BUG-001~003, BUG-038~040); then BP-1, MT-3 + MT-4 with BUG-035 (MT send-back flow); BUG-037 (server role checks) before release; then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
 
 ---
 
@@ -321,13 +321,13 @@ Components (50 total):
 | Pages | 26 (16 functional, 10 placeholders) | ✅ |
 | Components | 50 | ✅ |
 | API routes | 72 | ✅ |
-| PRs merged (latest) | #161 | ✅ |
+| PRs merged (latest) | #162 | ✅ |
 | TypeScript errors (`nuxt typecheck`) | 0 | ✅ |
 | Unit/Integration tests (`vitest run`) | 334/334 passed (23 files) | ✅ |
 | Production build (`nuxt build`) | Success | ✅ |
 | Money Transfer workflow | 9/9 statuses (unified) | ✅ |
 | Bill Payment workflow | Phase 1-6 Complete (27 Tasks) | ✅ |
-| Service Harmonization Testing | 5/17 tasks done (MT-1, MT-2, BP-2, BP-3, BP-4); open bugs BUG-001~003, BUG-035 | 🔄 |
+| Service Harmonization Testing | 5/17 tasks done (MT-1, MT-2, BP-2, BP-3, BP-4); open bugs BUG-001~003, BUG-035, BUG-037~040 | 🔄 |
 | Design System components | 15 ui + 4 layout + 8 shared | ✅ |
 | Mobile responsive | Yes | ✅ |
 | CI (PR Check / Staging / Production) | PR Check + Staging passing (Nov 2, 2026); Production last ran Oct 16, 2026 | ✅ |

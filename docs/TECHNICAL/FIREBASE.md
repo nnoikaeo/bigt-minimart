@@ -59,6 +59,9 @@ project root (git-ignored). `nuxt.config.ts` also exposes `FIREBASE_SERVICE_ACCO
 If no service account is available, `server/utils/serverAuth.ts` logs a warning and
 **server-side token verification is disabled** (dev mode only — never deploy like this).
 
+Firebase Auth accounts have no display name. `requireServerAuth` takes the name stored on records
+from `public/data/users.json` by `uid`, then falls back to the token name, then the email.
+
 ---
 
 ## Hosting Configuration
