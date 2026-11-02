@@ -144,6 +144,13 @@ export const useBillPaymentStore = defineStore('billPayment', {
     },
 
     /**
+     * Who sent the day back: Owner decides on an audited day, Auditor on a Step 2 one
+     */
+    getCorrectionSource: (state: any) => {
+      return state.currentSummary?.needsCorrectionFrom?.startsWith('audited') ? 'Owner' : 'Auditor'
+    },
+
+    /**
      * Current workflow status (defaults to step1_in_progress if no summary yet)
      */
     getCurrentWorkflowStatus: (state: any) => {

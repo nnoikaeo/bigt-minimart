@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useSalesStore } from '~/stores/sales'
 import { useLogger } from '~/composables/useLogger'
+import { formatThaiDate } from '~/utils/date'
 import { usePermissions } from '~/composables/usePermissions'
 import { PERMISSIONS } from '~/types/permissions'
 import type { DailySalesEntry } from '~/types/repositories'
@@ -219,18 +220,6 @@ const handleConfirmDialogCancel = () => {
 }
 
 // Format date to Thai locale (CE year)
-const formatDate = (dateStr: string): string => {
-  const date = new Date(dateStr + 'T00:00:00')
-  const formatter = new Intl.DateTimeFormat('th-TH', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-  const formatted = formatter.format(date)
-  // Convert Buddhist Era (BE) to Common Era (CE): BE - 543 = CE
-  return formatted.replace(/\d{4}(?=\s|$)/, (year) => String(parseInt(year) - 543))
-}
-
 
 
 // Handle modal close
@@ -286,7 +275,7 @@ const openCreateModal = () => {
     >
       <!-- Date cell with Thai locale formatting -->
       <template #cell-date="{ value }">
-        <span class="font-medium text-gray-900">{{ formatDate(value) }}</span>
+        <span class="font-medium text-gray-900">{{ formatThaiDate(value) }}</span>
       </template>
 
       <!-- Difference cell with conditional styling -->

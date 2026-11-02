@@ -108,19 +108,6 @@ export const useDailySales = () => {
     }).format(amount)
   }
 
-  // Format date to Thai format (DD MMM YYYY)
-  const formatDateThai = (date: string | Date): string => {
-    const d = typeof date === 'string' ? new Date(date) : date
-    const thaiMonths = [
-      'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-      'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
-    ]
-    const day = d.getDate()
-    const month = thaiMonths[d.getMonth()]
-    const year = d.getFullYear() + 543 // Buddhist year
-    return `${day} ${month} ${year}`
-  }
-
   // Format status to Thai
   const formatStatus = (status: string): string => {
     const statusMap: Record<string, string> = {
@@ -245,7 +232,6 @@ export const useDailySales = () => {
     calculateTotal,
     validateEntry,
     formatCurrency,
-    formatDateThai,
     formatStatus,
   }
 }

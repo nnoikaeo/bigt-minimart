@@ -45,9 +45,9 @@ describe('OwnerDecisionCard', () => {
       expect(radios).toHaveLength(3)
     })
 
-    it('renders "อนุมัติ ✅" option', () => {
+    it('renders "อนุมัติ" option', () => {
       const wrapper = mountCard()
-      expect(wrapper.text()).toContain('อนุมัติ ✅')
+      expect(wrapper.text()).toContain('อนุมัติ')
     })
 
     it('renders "อนุมัติพร้อมหมายเหตุ" option', () => {
@@ -113,9 +113,14 @@ describe('OwnerDecisionCard', () => {
   })
 
   describe('submit button label', () => {
-    it('shows "อนุมัติ ✅" label when approved is selected', () => {
+    it('asks for a choice instead of showing "อนุมัติ" when nothing is selected', () => {
+      const wrapper = mountCard({ modelValue: null })
+      expect(wrapper.find('.action-btn').text()).toBe('เลือกการตัดสินใจ')
+    })
+
+    it('shows "อนุมัติ" label without emoji when approved is selected', () => {
       const wrapper = mountCard({ modelValue: 'approved' })
-      expect(wrapper.find('.action-btn').text()).toContain('อนุมัติ ✅')
+      expect(wrapper.find('.action-btn').text()).toBe('อนุมัติ')
     })
 
     it('shows "ส่งคืนแก้ไข" label when needs_correction is selected', () => {
@@ -123,9 +128,21 @@ describe('OwnerDecisionCard', () => {
       expect(wrapper.find('.action-btn').text()).toContain('ส่งคืนแก้ไข')
     })
 
-    it('shows "อนุมัติพร้อมหมายเหตุ ✅" label when approved_with_notes is selected', () => {
+    it('shows "อนุมัติพร้อมหมายเหตุ" label without emoji when approved_with_notes is selected', () => {
       const wrapper = mountCard({ modelValue: 'approved_with_notes' })
-      expect(wrapper.find('.action-btn').text()).toContain('อนุมัติพร้อมหมายเหตุ ✅')
+      expect(wrapper.find('.action-btn').text()).toBe('อนุมัติพร้อมหมายเหตุ')
+    })
+  })
+
+  describe('submit button variant', () => {
+    it.each([
+      [null, 'secondary'],
+      ['approved', 'success'],
+      ['approved_with_notes', 'success'],
+      ['needs_correction', 'primary'],
+    ])('modelValue %s uses variant %s', (modelValue, variant) => {
+      const wrapper = mountCard({ modelValue })
+      expect(wrapper.findComponent({ name: 'ActionButton' }).props('variant')).toBe(variant)
     })
   })
 

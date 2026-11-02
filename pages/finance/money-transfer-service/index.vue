@@ -144,8 +144,8 @@ const statusBannerContent = computed(() => {
   const ws = workflowStatus.value
   if (ws === 'step1_in_progress') return { title: '⏳ Manager กำลังบันทึกรายการ', description: 'Manager/AM กำลังบันทึกรายการโอนเงินประจำวัน', classes: 'border-blue-200 bg-blue-50 text-blue-800' }
   if (ws === 'step1_completed') return { title: '⏳ รอ Manager ตรวจนับเงินสด', description: 'Manager/AM กำลังดำเนินการตรวจนับเงินสด (Step 2)', classes: 'border-blue-200 bg-blue-50 text-blue-800' }
-  if (ws === 'step2_completed') return { title: '⏳ รอ Auditor ตรวจสอบ', description: 'รายการนี้อยู่ระหว่างรอการตรวจสอบจาก Auditor', classes: 'border-orange-200 bg-orange-50 text-orange-800' }
-  if (ws === 'audited' && !isOwner.value) return { title: '⏳ รอ Owner อนุมัติ', description: 'รายการนี้ผ่านการตรวจสอบแล้ว อยู่ระหว่างรอ Owner อนุมัติ', classes: 'border-yellow-200 bg-yellow-50 text-yellow-800' }
+  if (ws === 'step2_completed' || ws === 'step2_completed_with_notes') return { title: '⏳ รอ Auditor ตรวจสอบ', description: 'รายการนี้อยู่ระหว่างรอการตรวจสอบจาก Auditor', classes: 'border-orange-200 bg-orange-50 text-orange-800' }
+  if ((ws === 'audited' || ws === 'audited_with_issues') && !isOwner.value) return { title: '⏳ รอ Owner อนุมัติ', description: 'รายการนี้ผ่านการตรวจสอบแล้ว อยู่ระหว่างรอ Owner อนุมัติ', classes: 'border-yellow-200 bg-yellow-50 text-yellow-800' }
   if (ws === 'needs_correction') return {
     title: '🔄 รอแก้ไข',
     description: isAuditor.value ? 'Owner ส่งคืนให้ตรวจสอบใหม่ — กรุณาตรวจสอบและส่งผลอีกครั้ง' : 'Owner ส่งคืนให้ Auditor ตรวจสอบใหม่ — รอ Auditor ดำเนินการ',
@@ -199,12 +199,7 @@ onMounted(async () => {
       </BaseButton>
       <div class="flex items-center gap-2">
         <label class="text-sm font-medium text-gray-700">วันที่:</label>
-        <input
-          v-model="selectedDate"
-          type="date"
-          class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-500"
-          @change="handleDateChange"
-        />
+        <DateInput v-model="selectedDate" size="sm" class="w-40" @change="handleDateChange" />
       </div>
     </template>
 
@@ -238,6 +233,18 @@ onMounted(async () => {
       :secondary-cards="mtSecondaryCards"
       class="mb-6"
     />
+
+    <!-- ── Status Banner — above the role sections, for every role ─────────── -->
+    <div
+      v-if="showStatusBanner && statusBannerContent"
+      class="rounded-xl border px-5 py-4 flex items-start gap-3 mb-4"
+      :class="statusBannerContent.classes"
+    >
+      <div>
+        <p class="font-semibold">{{ statusBannerContent.title }}</p>
+        <p class="text-sm mt-0.5 opacity-80">{{ statusBannerContent.description }}</p>
+      </div>
+    </div>
 
     <!-- ══════════════════════════════════════════════════════════════════════ -->
     <!-- Owner Approval Section (placed first — most important for Owner role)  -->
@@ -274,16 +281,5 @@ onMounted(async () => {
       :is-needs-correction="isNeedsCorrection"
     />
 
-    <!-- ── Status Banner — no action available ────────────────────────────── -->
-    <div
-      v-if="showStatusBanner && statusBannerContent"
-      class="rounded-xl border px-5 py-4 flex items-start gap-3 mb-4"
-      :class="statusBannerContent.classes"
-    >
-      <div>
-        <p class="font-semibold">{{ statusBannerContent.title }}</p>
-        <p class="text-sm mt-0.5 opacity-80">{{ statusBannerContent.description }}</p>
-      </div>
-    </div>
   </PageWrapper>
 </template>

@@ -4,7 +4,8 @@ import { useLogger } from '~/composables/useLogger'
 import { usePermissions } from '~/composables/usePermissions'
 import { PERMISSIONS, ROLES } from '~/types/permissions'
 import { getWorkflowStatusBadge } from '~/types/shared-workflow'
-import { PlusIcon, CalendarIcon } from '@heroicons/vue/24/outline'
+import { formatThaiDate } from '~/utils/date'
+import { PlusIcon } from '@heroicons/vue/24/outline'
 
 definePageMeta({
   middleware: 'auth',
@@ -121,12 +122,6 @@ function getStatusBadge(status: string): { label: string; class: string } {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('th-TH', {
-    day: 'numeric', month: 'short', year: 'numeric',
-  })
-}
-
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount) + ' ฿'
 }
@@ -301,7 +296,7 @@ onMounted(async () => {
             >
               <!-- Date -->
               <td class="px-5 py-3.5 font-medium text-gray-900 whitespace-nowrap">
-                {{ formatDate(summary.date) }}
+                {{ formatThaiDate(summary.date) }}
               </td>
 
               <!-- Status -->
@@ -365,14 +360,7 @@ onMounted(async () => {
       />
 
       <FormField label="วันที่">
-        <div class="relative">
-          <CalendarIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          <input
-            v-model="newRecordDate"
-            type="date"
-            class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-500"
-          />
-        </div>
+        <DateInput v-model="newRecordDate" />
       </FormField>
     </div>
 

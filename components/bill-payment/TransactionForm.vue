@@ -236,7 +236,7 @@ async function handleSubmit() {
           step="1"
           placeholder="0"
           :disabled="!isCommissionManual"
-          class="flex-1 px-3 py-2 text-center text-sm outline-none min-w-0 bg-white disabled:bg-gray-50 disabled:text-gray-500"
+          class="flex-1 border-0 px-3 py-2 text-center text-sm outline-none focus:ring-0 min-w-0 bg-white disabled:bg-gray-50 disabled:text-gray-500"
           @input="e => { commissionManualValue = Number((e.target as HTMLInputElement).value); isCommissionManual = true }"
         />
         <button

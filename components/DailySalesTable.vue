@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useLogger } from '~/composables/useLogger'
+import { formatThaiDate } from '~/utils/date'
 import { useAuthStore } from '~/stores/auth'
 import { useAccessControlStore } from '~/stores/access-control'
 import type { DailySalesEntry } from '~/types/repositories'
@@ -61,23 +62,8 @@ const formatCurrency = (amount: number): string => {
   }).format(amount)
 }
 
-const formatDate = (dateStr: string): string => {
-  const date = new Date(dateStr + 'T00:00:00')
-  const formatter = new Intl.DateTimeFormat('th-TH', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-  const formatted = formatter.format(date)
-  // Convert Buddhist Year (BE) to Common Era (CE): BE - 543 = CE
-  return formatted.replace(/\d{4}(?=\s|$)/, (year) => String(parseInt(year) - 543))
-}
-
 const formatApprovedDate = (approvedAt: string | Date | undefined): string => {
-  if (!approvedAt) return ''
-  const dateStr = typeof approvedAt === 'string' ? approvedAt : (approvedAt as Date).toISOString()
-  const datePart = dateStr.split('T')[0] || ''
-  return formatDate(datePart)
+  return approvedAt ? formatThaiDate(approvedAt) : ''
 }
 
 const formatStatus = (status: string): string => {
@@ -262,15 +248,7 @@ const closeDetailsModal = () => {
         <!-- Date Search -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">ค้นหาตามวันที่</label>
-          <input
-            v-model="searchDate"
-            type="date"
-            placeholder="วว/ดด/ปปปป"
-            :class="[
-              'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 placeholder-gray-400',
-              searchDate ? 'text-gray-900' : 'text-gray-500'
-            ]"
-          />
+          <DateInput v-model="searchDate" />
         </div>
         <!-- Reset Button -->
         <div>
@@ -332,7 +310,7 @@ const closeDetailsModal = () => {
               <tr class="hover:bg-gray-50 transition-colors">
                 <!-- Date -->
                 <td class="px-6 py-4 text-sm text-gray-900 font-medium">
-                  {{ formatDate(entry.date) }}
+                  {{ formatThaiDate(entry.date) }}
                 </td>
 
                 <!-- Cashier Name -->

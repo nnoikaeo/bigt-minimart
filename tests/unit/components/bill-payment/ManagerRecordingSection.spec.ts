@@ -349,5 +349,28 @@ describe('ManagerRecordingSection', () => {
       expect(wrapper.text()).toContain('ส่งกลับให้แก้ไข')
       expect(wrapper.text()).toContain('ยอดเงินขาด 200 บาท')
     })
+
+    it.each([
+      ['audited', 'Owner'],
+      ['audited_with_issues', 'Owner'],
+      ['step2_completed', 'Auditor'],
+      ['step2_completed_with_notes', 'Auditor'],
+    ])('names the sender when sent back from %s', async (needsCorrectionFrom, sender) => {
+      const pinia = createTestingPinia({ createSpy: vi.fn })
+      const wrapper = mount(ManagerRecordingSection, {
+        props: DEFAULT_PROPS,
+        global: { plugins: [pinia], ...globalConfig },
+      })
+      const store = useBillPaymentStore(pinia)
+      store.currentSummary = {
+        workflowStatus: 'needs_correction',
+        needsCorrectionFrom,
+        correctionNotes: 'ยอดเงินขาด 200 บาท',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+      await nextTick()
+      expect(wrapper.text()).toContain(`ส่งกลับให้แก้ไข — ${sender} ส่งคืน`)
+    })
   })
 })

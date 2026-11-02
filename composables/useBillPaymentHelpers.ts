@@ -1,5 +1,6 @@
 import type { BillPaymentWorkflowStatus, BillPaymentTransactionStatus } from '~/types/bill-payment'
 import { TRANSACTION_STATUS_MAP } from '~/types/shared-workflow'
+import { formatThaiDateTime } from '~/utils/date'
 
 /**
  * Shared formatting, validation, and navigation helpers for the bill payment service.
@@ -25,14 +26,7 @@ export function useBillPaymentHelpers() {
   }
 
   function formatDatetime(datetime: string | Date): string {
-    const d = new Date(datetime)
-    const date = d.toLocaleDateString('th-TH', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    })
-    const time = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
-    return `${date} ${time}`
+    return formatThaiDateTime(datetime)
   }
 
   function formatBillType(type?: string): string {

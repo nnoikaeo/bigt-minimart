@@ -255,6 +255,19 @@ describe('OwnerApprovalSection', () => {
       expect(wrapper.text()).toContain('ผลการตรวจสอบ Auditor')
     })
 
+    it('shows "ไม่มีหมายเหตุ" in the Step 2 details when there is no note', async () => {
+      const { wrapper } = await mountAudited()
+      expect(wrapper.text()).toContain('ไม่มีหมายเหตุ')
+    })
+
+    it('shows the Step 2 note instead of the placeholder when there is one', async () => {
+      const { wrapper, store } = await mountAudited()
+      store.currentSummary = { ...store.currentSummary, step2VerificationNotes: 'เงินขาด 100' }
+      await nextTick()
+      expect(wrapper.text()).toContain('เงินขาด 100')
+      expect(wrapper.text()).not.toContain('ไม่มีหมายเหตุ')
+    })
+
     it('expands step1 section when toggle button is clicked', async () => {
       const { wrapper } = await mountAudited()
       const step1ToggleBtn = wrapper.findAll('button').find(b => b.text().includes('รายการธุรกรรมทั้งหมด'))
@@ -264,6 +277,67 @@ describe('OwnerApprovalSection', () => {
       await nextTick()
       // After toggle, should show empty state or transaction table
       expect(wrapper.find('.empty-state').exists()).toBe(true)
+    })
+  })
+
+  // ─── Step 1 totals + owner deposits ─────────────────────────────────────────
+
+  describe('step 1 with an owner deposit', () => {
+    async function mountWithDeposit(transactions) {
+      const pinia = createTestingPinia({ createSpy: vi.fn })
+      const wrapper = mount(OwnerApprovalSection, {
+        props: DEFAULT_PROPS,
+        global: { plugins: [pinia], ...globalConfig },
+      })
+      const store = useBillPaymentStore(pinia)
+      store.currentSummary = {
+        workflowStatus: 'audited',
+        step1TotalAmount: 3000,
+        auditedAt: '2026-04-14T12:00:00Z',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+      store.transactions = transactions
+      await nextTick()
+      const step1Items = wrapper.findAllComponents({ name: 'WorkflowStepSummaryCard' })[0].props('summaryItems')
+      return { wrapper, step1Items }
+    }
+
+    const bill = { id: 'b1', date: '2026-04-14', transactionType: 'bill_payment', billType: 'utility', status: 'completed', amount: 2000, commission: 20 }
+    const cancelledBill = { id: 'b2', date: '2026-04-14', transactionType: 'bill_payment', billType: 'telecom', status: 'cancelled', amount: 500, commission: 10 }
+    const deposit = { id: 'd1', date: '2026-04-14', transactionType: 'owner_deposit', status: 'completed', amount: 1000, commission: 0 }
+
+    it('lists every transaction, including the deposit', async () => {
+      const { wrapper } = await mountWithDeposit([bill, cancelledBill, deposit])
+      expect(wrapper.findAll('tbody tr')).toHaveLength(3)
+      expect(wrapper.text()).toContain('owner_deposit')
+    })
+
+    it('splits completed bill payments and deposits, ignoring cancelled rows', async () => {
+      const { step1Items } = await mountWithDeposit([bill, cancelledBill, deposit])
+      expect(step1Items.find(i => i.label === 'ยอดรับชำระทั้งหมด').value).toBe('2000 ฿')
+      expect(step1Items.find(i => i.label === 'ฝากเงิน').value).toBe('1000 ฿')
+    })
+
+    it('keeps the deposit card with "-" when the day has no deposit', async () => {
+      const { step1Items } = await mountWithDeposit([bill])
+      expect(step1Items.find(i => i.label === 'ฝากเงิน').value).toBe('-')
+    })
+
+    it('labels cancelled transactions "ยกเลิก", matching the table badge', async () => {
+      const { step1Items } = await mountWithDeposit([bill, cancelledBill])
+      expect(step1Items.some(i => i.label === 'ยกเลิก')).toBe(true)
+      expect(step1Items.some(i => i.label === 'รายการล้มเหลว')).toBe(false)
+    })
+
+    it('lists transactions in time order regardless of stored order', async () => {
+      const { wrapper } = await mountWithDeposit([
+        { ...deposit, timestamp: '2026-04-14T13:00:00Z' },
+        { ...bill, timestamp: '2026-04-14T09:00:00Z' },
+      ])
+      const rows = wrapper.findAll('tbody tr')
+      expect(rows[0].text()).toContain('utility')
+      expect(rows[1].text()).toContain('owner_deposit')
     })
   })
 

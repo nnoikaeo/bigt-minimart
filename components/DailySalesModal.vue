@@ -402,12 +402,7 @@ const handleClose = () => {
               <label class="block text-sm font-medium text-gray-700 mb-1">
                 วันที่ <span class="text-red-500">*</span>
               </label>
-              <input
-                v-model="formData.date"
-                type="date"
-                :disabled="isFormDisabled"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
-              />
+              <DateInput v-model="formData.date" :disabled="isFormDisabled" />
               <p v-if="validationErrors.date" class="text-red-500 text-sm mt-1">
                 {{ validationErrors.date }}
               </p>

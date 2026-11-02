@@ -155,33 +155,16 @@ function buildNeedsCorrectionSummary(overrides = {}) {
 }
 
 describe('AuditorReviewSection', () => {
-  // ─── Not-ready warning ──────────────────────────────────────────────────────
+  // ─── Before Step 2 ──────────────────────────────────────────────────────────
 
-  describe('not-ready warning', () => {
-    it('shows warning when step2 is not complete', () => {
+  describe('before step 2 is complete', () => {
+    it('leaves the waiting message to the page-level status banner', () => {
       const pinia = createTestingPinia({ createSpy: vi.fn })
       const wrapper = mount(AuditorReviewSection, {
         props: DEFAULT_PROPS,
         global: { plugins: [pinia], ...globalConfig },
       })
       // Default: currentSummary null → step2CompletedAt undefined → isStep2Complete = false
-      expect(wrapper.text()).toContain('Manager ยังไม่ได้ตรวจนับเงินสด')
-    })
-
-    it('hides the not-ready warning when step2 is complete', async () => {
-      const pinia = createTestingPinia({ createSpy: vi.fn })
-      const wrapper = mount(AuditorReviewSection, {
-        props: DEFAULT_PROPS,
-        global: { plugins: [pinia], ...globalConfig },
-      })
-      const store = useBillPaymentStore(pinia)
-      store.currentSummary = {
-        workflowStatus: 'step2_completed',
-        step2CompletedAt: '2026-04-14T11:00:00Z',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }
-      await nextTick()
       expect(wrapper.text()).not.toContain('Manager ยังไม่ได้ตรวจนับเงินสด')
     })
   })
@@ -381,7 +364,6 @@ describe('AuditorReviewSection', () => {
       expect(wrapper.text()).toContain('รอ Manager ตรวจนับเงินสดใหม่')
       expect(wrapper.text()).toContain('ยอดเงินขาด 100')
       expect(wrapper.text()).not.toContain('ตรวจสอบซ้ำ')
-      expect(wrapper.text()).not.toContain('Manager ยังไม่ได้ตรวจนับเงินสด')
     })
 
     it('shows the old note on the re-audit after Manager re-counted', async () => {

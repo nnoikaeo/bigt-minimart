@@ -112,6 +112,24 @@ describe('CashVerificationSection', () => {
       return { wrapper, store }
     }
 
+    it('keeps the send-back reason and sender in view while recounting', async () => {
+      const { wrapper, store } = mountActive()
+      store.currentSummary = {
+        ...store.currentSummary,
+        needsCorrectionFrom: 'audited',
+        correctionNotes: 'ยอด A/B สลับกัน',
+      }
+      await nextTick()
+      expect(wrapper.text()).toContain('ตรวจนับใหม่ — Owner ส่งคืน')
+      expect(wrapper.text()).toContain('ยอด A/B สลับกัน')
+    })
+
+    it('shows no send-back box on a first count', async () => {
+      const { wrapper } = mountActive()
+      await nextTick()
+      expect(wrapper.text()).not.toContain('ตรวจนับใหม่')
+    })
+
     it('renders CashVerificationTable with manager-input mode when step2 is active', async () => {
       const { wrapper } = mountActive()
       await nextTick()

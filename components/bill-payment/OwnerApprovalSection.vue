@@ -2,6 +2,7 @@
 import { useBillPaymentStore } from '~/stores/bill-payment'
 import { useLogger } from '~/composables/useLogger'
 import { useBillPaymentHelpers } from '~/composables/useBillPaymentHelpers'
+import { formatThaiDate } from '~/utils/date'
 import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
@@ -40,10 +41,18 @@ const isAlreadyApproved = computed(() => store.isApproved)
 const canSubmitApproval = computed(() => store.isAudited && !isAlreadyApproved.value)
 
 // ─── Transactions ─────────────────────────────────────────────────────────────
-const dateTransactions = computed(() => store.getTransactionsByDate(props.date))
-const billPaymentTransactions = computed(() =>
-  dateTransactions.value.filter((t: any) => t.transactionType === 'bill_payment')
+const dateTransactions = computed(() =>
+  [...store.getTransactionsByDate(props.date)].sort((a: any, b: any) =>
+    (a.timestamp ?? '').localeCompare(b.timestamp ?? '')
+  )
 )
+// step1TotalAmount also counts owner deposits, so split the totals by type here
+const completedAmountByType = (type: string) =>
+  dateTransactions.value
+    .filter((t: any) => t.status === 'completed' && t.transactionType === type)
+    .reduce((sum: number, t: any) => sum + t.amount, 0)
+const totalBillPaymentAmount = computed(() => completedAmountByType('bill_payment'))
+const totalOwnerDepositAmount = computed(() => completedAmountByType('owner_deposit'))
 
 // ─── Decision form ────────────────────────────────────────────────────────────
 type Decision = 'approved' | 'approved_with_notes' | 'needs_correction'
@@ -67,7 +76,12 @@ const step2ServiceFeeDiff = computed(() => {
 const step1SummaryItems = computed(() => [
   {
     label: 'ยอดรับชำระทั้งหมด',
-    value: formatAmount(store.currentSummary?.step1TotalAmount ?? 0),
+    value: formatAmount(totalBillPaymentAmount.value),
+    colorClass: 'bg-blue-50',
+  },
+  {
+    label: 'ฝากเงิน',
+    value: totalOwnerDepositAmount.value > 0 ? formatAmount(totalOwnerDepositAmount.value) : '-',
     colorClass: 'bg-blue-50',
   },
   {
@@ -76,7 +90,7 @@ const step1SummaryItems = computed(() => [
     colorClass: 'bg-green-50',
   },
   {
-    label: 'รายการล้มเหลว',
+    label: 'ยกเลิก',
     value: `${store.currentSummary?.step1FailedTransactions ?? 0} รายการ`,
     colorClass: (store.currentSummary?.step1FailedTransactions ?? 0) > 0 ? 'bg-red-50' : 'bg-gray-50',
   },
@@ -136,7 +150,7 @@ const auditSummaryItems = computed(() => [
     colorClass: 'bg-indigo-50',
   },
   {
-    label: 'Bank Statement',
+    label: 'ยอดรายการเดินบัญชี',
     value: formatAmount(store.currentSummary?.auditBankStatementAmount ?? 0),
     colorClass: 'bg-blue-50',
   },
@@ -215,7 +229,7 @@ async function handleDecisionSubmit(decisionValue: Decision, notes: string) {
       <div>
         <p class="font-semibold text-green-800 text-lg">อนุมัติแล้ว ✅</p>
         <p class="text-sm text-green-700 mt-1">
-          วันที่ {{ date }} — ได้รับการอนุมัติโดย
+          วันที่ {{ formatThaiDate(date) }} — ได้รับการอนุมัติโดย
           {{ store.currentSummary?.approvedByName ?? 'Owner' }}
           <template v-if="store.currentSummary?.approvedAt">
             · {{ formatDatetime(store.currentSummary.approvedAt) }}
@@ -225,7 +239,7 @@ async function handleDecisionSubmit(decisionValue: Decision, notes: string) {
           หมายเหตุ: {{ store.currentSummary.approvalNotes }}
         </p>
         <BaseBadge
-          :variant="workflowStatus === 'approved_with_notes' ? 'default' : 'success'"
+          variant="success"
           size="sm"
           class="mt-2"
         >
@@ -249,13 +263,13 @@ async function handleDecisionSubmit(decisionValue: Decision, notes: string) {
           · {{ store.currentSummary?.step1SuccessTransactions ?? 0 }} สำเร็จ
         </span>
       </template>
-      <EmptyState v-if="billPaymentTransactions.length === 0" title="ไม่มีรายการ" />
+      <EmptyState v-if="dateTransactions.length === 0" title="ไม่มีรายการ" />
       <table v-else class="w-full text-sm">
         <thead>
           <tr class="border-b border-gray-200 text-gray-500 text-xs">
             <th class="py-2 text-left font-medium">#</th>
             <th class="py-2 text-left font-medium">เวลา</th>
-            <th class="py-2 text-left font-medium">ประเภทบิล</th>
+            <th class="py-2 text-left font-medium">ประเภท</th>
             <th class="py-2 text-right font-medium">ยอด</th>
             <th class="py-2 text-right font-medium">ค่าธรรมเนียม</th>
             <th class="py-2 text-center font-medium">สถานะ</th>
@@ -263,15 +277,17 @@ async function handleDecisionSubmit(decisionValue: Decision, notes: string) {
         </thead>
         <tbody>
           <tr
-            v-for="(txn, idx) in billPaymentTransactions"
+            v-for="(txn, idx) in dateTransactions"
             :key="txn.id"
             class="border-b border-gray-100 last:border-0"
           >
             <td class="py-2 text-gray-400">{{ Number(idx) + 1 }}</td>
             <td class="py-2 text-gray-600">{{ formatTime(txn.timestamp) }}</td>
-            <td class="py-2 text-gray-800">{{ formatBillType(txn.billType) }}</td>
+            <td class="py-2 text-gray-800">
+              {{ txn.transactionType === 'owner_deposit' ? formatTransactionType(txn.transactionType) : formatBillType(txn.billType) }}
+            </td>
             <td class="py-2 text-right font-medium text-gray-900">{{ formatAmount(txn.amount) }}</td>
-            <td class="py-2 text-right text-green-700">{{ formatAmount(txn.commission) }}</td>
+            <td class="py-2 text-right text-green-700">{{ formatAmount(txn.commission ?? 0) }}</td>
             <td class="py-2 text-center">
               <BaseBadge :variant="getStatusBadgeVariant(txn.status)" size="sm">
                 {{ getStatusLabel(txn.status) }}
@@ -296,6 +312,7 @@ async function handleDecisionSubmit(decisionValue: Decision, notes: string) {
         <p class="text-xs text-gray-500 mb-1">หมายเหตุ</p>
         <p class="text-gray-700 whitespace-pre-wrap">{{ store.currentSummary.step2VerificationNotes }}</p>
       </div>
+      <p v-else class="text-sm text-gray-500">ไม่มีหมายเหตุ</p>
     </WorkflowStepSummaryCard>
 
     <!-- ═══════════════════════════════════════════════════════════════════════
@@ -315,7 +332,7 @@ async function handleDecisionSubmit(decisionValue: Decision, notes: string) {
             <span class="text-gray-700">{{ formatDatetime(store.currentSummary.auditedAt) }}</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-gray-500">Bank Statement ตรงกัน</span>
+            <span class="text-gray-500">ยอดรายการเดินบัญชีตรงกัน</span>
             <BaseBadge :variant="store.currentSummary?.auditBankBalanceMatches ? 'success' : 'warning'" size="sm">
               {{ store.currentSummary?.auditBankBalanceMatches ? '✅ ตรงกัน' : '⚠️ ไม่ตรงกัน' }}
             </BaseBadge>

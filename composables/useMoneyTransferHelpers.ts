@@ -1,3 +1,5 @@
+import { formatThaiDateTime } from '~/utils/date'
+
 /**
  * Shared formatting utilities and label maps for the money transfer service.
  * Single source of truth — used across transaction-recording.vue, TransactionForm.vue
@@ -20,14 +22,7 @@ export function useMoneyTransferHelpers() {
   }
 
   function formatDatetime(datetime: string | Date): string {
-    const d = new Date(datetime)
-    const date = d.toLocaleDateString('th-TH', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    })
-    const time = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
-    return `${date} ${time}`
+    return formatThaiDateTime(datetime)
   }
 
   function getTransactionTypeLabel(type: string): string {
