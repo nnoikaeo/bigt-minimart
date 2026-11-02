@@ -17,7 +17,7 @@ The design below was written before implementation. What was actually built:
 | `/admin/roles.vue` admin UI | `/admin/access-control` (full UI); `/admin/roles` is a placeholder page |
 | `middleware/role-based-access.ts` | `middleware/auth.ts` (authentication + loads access-control data); sidebar filtered via `GET /api/sidebar/menu` |
 | Page-level permissions only | Plus action-level permissions: `PERMISSIONS.*` in `types/permissions.ts`, `usePermissions().can()`, `<ActionButton :permission>`, `v-can` directive |
-| — | Server-side identity for Bill Payment mutations: `requireServerAuth(event)` (Firebase ID token) |
+| — | Server-side identity for Bill Payment mutations: `requireServerAuth(event)` (Firebase ID token). It checks login only, not role or workflow status (BUG-037) |
 
 Roles (`types/permissions.ts`): `owner`, `manager`, `assistant_manager`, `cashier`, `auditor`.
 

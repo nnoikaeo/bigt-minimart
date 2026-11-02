@@ -65,3 +65,4 @@ Do these as part of the task, not as a follow-up:
 - Work on branches from `develop`; PR → `develop` (squash merge); release = PR `develop` → `main` titled `release: ...` (auto-deploys production)
 - `public/data/*.json` changes during manual testing — commit them separately (`chore(data): ...`), never mix with code
 - Do not merge code to `main` that has not passed its manual test in TESTING_PLAN.md
+- After merging, check Deploy to Staging too (`gh run list`) — PR Check does not cover deploys; see `docs/DEVELOPMENT/CI_CD.md`

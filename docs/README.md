@@ -2,7 +2,7 @@
 
 > Master index for all project documentation. Each folder has one purpose.
 
-**Last Updated**: Oct 16, 2026
+**Last Updated**: Nov 2, 2026
 
 ---
 

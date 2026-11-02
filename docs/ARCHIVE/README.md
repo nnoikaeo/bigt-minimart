@@ -80,4 +80,5 @@ Replaced by single `docs/PROGRESS/STATUS.md`:
 |------|--------|
 | SESSION_SUMMARY_2026_02_09.md | Single session snapshot |
 | SESSION_SUMMARY_2026_10_31_BP3.md | Single session snapshot: BP-3 manual test + BUG-021~026 (PR #159, #160) |
+| SESSION_SUMMARY_2026_11_02_BP4.md | Single session snapshot: BP-4 manual test + BUG-027~036 (PR #161, #162) |
 | CLEANUP_SUMMARY.md | v1.0 → v1.1 reorganization record |
