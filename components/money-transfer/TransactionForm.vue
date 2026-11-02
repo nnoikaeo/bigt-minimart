@@ -127,7 +127,7 @@
             placeholder="0"
             min="0"
             step="1"
-            class="flex-1 px-3 py-2 text-sm outline-none min-w-0"
+            class="flex-1 border-0 px-3 py-2 text-sm outline-none focus:ring-0 min-w-0"
           />
         </div>
       </div>
@@ -157,7 +157,7 @@
             placeholder="0"
             min="0"
             step="1"
-            class="flex-1 px-3 py-2 text-sm outline-none min-w-0"
+            class="flex-1 border-0 px-3 py-2 text-sm outline-none focus:ring-0 min-w-0"
             @input="isCommissionManual = true"
           />
           <!-- Commission type inline buttons — แสดงเฉพาะถอนเงินและเมื่อมีค่าบริการ -->

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useAccessControlStore } from '~/stores/access-control'
+import { formatThaiDate } from '~/utils/date'
 import type { DailySalesEntry } from '~/types/repositories'
 
 interface Props {
@@ -24,23 +25,8 @@ const formatCurrency = (amount: number): string => {
   }).format(amount)
 }
 
-const formatDate = (dateStr: string): string => {
-  const date = new Date(dateStr + 'T00:00:00')
-  const formatter = new Intl.DateTimeFormat('th-TH', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-  const formatted = formatter.format(date)
-  // Convert Buddhist Year (BE) to Common Era (CE): BE - 543 = CE
-  return formatted.replace(/\d{4}(?=\s|$)/, (year) => String(parseInt(year) - 543))
-}
-
 const formatApprovedDate = (approvedAt: string | Date | undefined): string => {
-  if (!approvedAt) return ''
-  const dateStr = typeof approvedAt === 'string' ? approvedAt : (approvedAt as Date).toISOString()
-  const datePart = dateStr.split('T')[0] || ''
-  return formatDate(datePart)
+  return approvedAt ? formatThaiDate(approvedAt) : ''
 }
 
 const getApproverName = (approvedById: string | undefined): string => {
@@ -109,7 +95,7 @@ const handleClose = () => {
 
           <!-- Row 2: Date + Cashier + Status -->
           <div class="flex items-center gap-3 flex-wrap mb-4 ">
-            <span class="text-white text-sm">📅 {{ formatDate(entry.date) }}</span>
+            <span class="text-white text-sm">📅 {{ formatThaiDate(entry.date) }}</span>
             <span class="text-white text-sm">•</span>
             <span class="text-white text-sm">💼 {{ entry.cashierName }}</span>
             <span class="text-white text-sm">•</span>

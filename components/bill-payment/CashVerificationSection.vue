@@ -5,7 +5,7 @@ import { usePermissions } from '~/composables/usePermissions'
 import { useBillPaymentHelpers } from '~/composables/useBillPaymentHelpers'
 import { PERMISSIONS } from '~/types/permissions'
 import type { CashVerificationRow } from '~/components/shared/CashVerificationTable.vue'
-import { CheckCircleIcon, ClipboardDocumentCheckIcon } from '@heroicons/vue/24/outline'
+import { CheckCircleIcon, ClipboardDocumentCheckIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
   date: string
@@ -157,6 +157,20 @@ async function handleCompleteStep2() {
         <ClipboardDocumentCheckIcon class="h-5 w-5 text-blue-600" />
         <h2 class="text-base font-semibold text-gray-700">ขั้นตอนที่ 2 — ตรวจนับเงินสด</h2>
         <BaseBadge variant="warning" size="sm">⏳ รอตรวจนับ</BaseBadge>
+      </div>
+
+      <!-- Recount after a send-back: keep the reason in view while counting -->
+      <div
+        v-if="store.currentSummary?.correctionNotes"
+        class="mb-4 rounded-xl border border-red-300 bg-red-50 px-5 py-4"
+      >
+        <div class="flex items-start gap-3">
+          <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600" />
+          <div>
+            <p class="font-semibold text-red-800">ตรวจนับใหม่ — {{ store.getCorrectionSource }} ส่งคืน</p>
+            <p class="mt-1 text-sm text-red-700 whitespace-pre-wrap">{{ store.currentSummary.correctionNotes }}</p>
+          </div>
+        </div>
       </div>
 
       <!-- Bank Account (read-only, not counted) -->

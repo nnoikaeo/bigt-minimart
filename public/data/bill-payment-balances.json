@@ -117,5 +117,14 @@
     "openingBalanceSetAt": "2026-10-31T12:22:42.602Z",
     "openingBalanceSource": "carryover",
     "openingBalanceSetBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3"
+  },
+  {
+    "id": "bpbal-2026-11-02",
+    "date": "2026-11-02",
+    "bankAccount": 0,
+    "billPaymentCash": 0,
+    "serviceFeeCash": 0,
+    "history": [],
+    "updatedAt": "2026-11-02T08:53:05.351Z"
   }
 ]

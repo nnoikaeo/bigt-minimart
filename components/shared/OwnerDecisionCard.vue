@@ -11,7 +11,7 @@
  *   - update:modelValue   — when radio selection changes
  *   - submit(decision, notes) — when the submit button is clicked
  */
-import { CheckCircleIcon } from '@heroicons/vue/24/outline'
+import { ArrowUturnLeftIcon, CheckCircleIcon } from '@heroicons/vue/24/outline'
 import { PERMISSIONS } from '~/types/permissions'
 
 type Decision = 'approved' | 'approved_with_notes' | 'needs_correction'
@@ -51,14 +51,17 @@ const canSubmit = computed(() => {
 })
 
 const submitLabel = computed(() => {
+  if (!selected.value) return 'เลือกการตัดสินใจ'
   if (selected.value === 'needs_correction') return 'ส่งคืนแก้ไข'
-  if (selected.value === 'approved_with_notes') return 'อนุมัติพร้อมหมายเหตุ ✅'
-  return 'อนุมัติ ✅'
+  if (selected.value === 'approved_with_notes') return 'อนุมัติพร้อมหมายเหตุ'
+  return 'อนุมัติ'
 })
 
-const submitVariant = computed(() =>
-  selected.value === 'needs_correction' ? 'danger' : 'primary'
-)
+// Green = approve, solid red = send back, grey = nothing chosen yet
+const submitVariant = computed<'secondary' | 'primary' | 'success'>(() => {
+  if (!selected.value) return 'secondary'
+  return selected.value === 'needs_correction' ? 'primary' : 'success'
+})
 
 // When selection changes to one that doesn't need notes, clear them
 watch(selected, (val) => {
@@ -87,7 +90,7 @@ function handleSubmit() {
             value="approved"
             class="accent-green-600 shrink-0"
           />
-          <p class="font-medium text-sm text-gray-900">อนุมัติ ✅</p>
+          <p class="font-medium text-sm text-gray-900">อนุมัติ</p>
         </div>
         <p class="text-xs text-gray-500 pl-5">บันทึกเป็นที่สิ้นสุด</p>
       </label>
@@ -95,14 +98,14 @@ function handleSubmit() {
       <!-- Approve with notes -->
       <label
         class="flex flex-col gap-1 p-3 rounded-lg border cursor-pointer transition-colors"
-        :class="selected === 'approved_with_notes' ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:border-gray-300'"
+        :class="selected === 'approved_with_notes' ? 'border-green-400 bg-green-50' : 'border-gray-200 hover:border-gray-300'"
       >
         <div class="flex items-center gap-2">
           <input
             v-model="selected"
             type="radio"
             value="approved_with_notes"
-            class="accent-blue-600 shrink-0"
+            class="accent-green-600 shrink-0"
           />
           <p class="font-medium text-sm text-gray-900">อนุมัติพร้อมหมายเหตุ</p>
         </div>
@@ -151,7 +154,8 @@ function handleSubmit() {
         :disabled="!canSubmit || isSubmitting"
         @click="handleSubmit"
       >
-        <CheckCircleIcon class="w-4 h-4" />
+        <ArrowUturnLeftIcon v-if="selected === 'needs_correction'" class="w-4 h-4" />
+        <CheckCircleIcon v-else class="w-4 h-4" />
         {{ submitLabel }}
       </ActionButton>
     </div>

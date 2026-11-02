@@ -2,6 +2,7 @@
 import { useBillPaymentStore } from '~/stores/bill-payment'
 import { useLogger } from '~/composables/useLogger'
 import { usePermissions } from '~/composables/usePermissions'
+import { formatThaiDate } from '~/utils/date'
 import { useBillPaymentHelpers } from '~/composables/useBillPaymentHelpers'
 import { PERMISSIONS } from '~/types/permissions'
 import type { BillPaymentTransaction, BillPaymentTransactionStatus, BillPaymentFavorite } from '~/types/bill-payment'
@@ -543,14 +544,15 @@ onMounted(async () => {
 
     <!-- ── Needs Correction Banner ─────────────────────────────────────────── -->
     <div
-      v-if="isNeedsCorrection && store.currentSummary?.correctionNotes"
+      v-if="isNeedsCorrection"
       class="mb-4 rounded-xl border border-red-300 bg-red-50 px-5 py-4"
     >
       <div class="flex items-start gap-3">
         <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600" />
         <div>
-          <p class="font-semibold text-red-800">ส่งกลับให้แก้ไข</p>
-          <p class="mt-1 text-sm text-red-700">{{ store.currentSummary.correctionNotes }}</p>
+          <p class="font-semibold text-red-800">ส่งกลับให้แก้ไข — {{ store.getCorrectionSource }} ส่งคืน</p>
+          <p v-if="store.currentSummary?.correctionNotes" class="mt-1 text-sm text-red-700 whitespace-pre-wrap">{{ store.currentSummary.correctionNotes }}</p>
+          <p class="mt-1 text-sm text-red-700 opacity-80">แก้รายการถ้าจำเป็น แล้วยืนยันบันทึกรายการและตรวจนับเงินสดใหม่</p>
         </div>
       </div>
     </div>
@@ -694,7 +696,7 @@ onMounted(async () => {
     <section class="mb-6">
       <div class="mb-3 flex items-center justify-between">
         <h2 class="text-base font-semibold text-gray-700">
-          📝 รายการวันที่ {{ date }}
+          📝 รายการวันที่ {{ formatThaiDate(date) }}
           <span class="ml-1 text-sm font-normal text-gray-400">
             ({{ dateTransactions.length }} รายการ)
           </span>

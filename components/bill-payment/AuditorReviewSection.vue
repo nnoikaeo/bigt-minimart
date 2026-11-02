@@ -2,6 +2,7 @@
 import { useBillPaymentStore } from '~/stores/bill-payment'
 import { useLogger } from '~/composables/useLogger'
 import { usePermissions } from '~/composables/usePermissions'
+import { formatThaiDateTime } from '~/utils/date'
 import { useBillPaymentHelpers } from '~/composables/useBillPaymentHelpers'
 import { PERMISSIONS } from '~/types/permissions'
 import type { CashVerificationRow } from '~/components/shared/CashVerificationTable.vue'
@@ -336,14 +337,6 @@ watch(
       </div>
     </div>
 
-    <!-- ── Not ready yet ─────────────────────────────────────────────────── -->
-    <BaseAlert
-      v-if="!store.isStep2Complete && !isNeedsCorrection"
-      variant="warning"
-      message="Manager ยังไม่ได้ตรวจนับเงินสด (ขั้นตอนที่ 2) — ยังไม่สามารถตรวจสอบได้"
-      class="mb-4"
-    />
-
     <!-- ═══════════════════════════════════════════════════════════════════════
          AUDITOR FORM — Active
     ════════════════════════════════════════════════════════════════════════════ -->
@@ -618,7 +611,7 @@ watch(
         <div class="bg-gray-50 p-4 text-xs text-gray-500">
           ตรวจสอบโดย {{ store.currentSummary?.auditedByName ?? '-' }}
           <template v-if="store.currentSummary?.auditedAt">
-            · {{ new Date(store.currentSummary.auditedAt).toLocaleString('th-TH') }}
+            · {{ formatThaiDateTime(store.currentSummary.auditedAt) }}
           </template>
         </div>
       </div>

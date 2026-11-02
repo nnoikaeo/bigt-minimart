@@ -2,6 +2,7 @@
 import { useMoneyTransferStore } from '~/stores/money-transfer'
 import { useLogger } from '~/composables/useLogger'
 import { usePermissions } from '~/composables/usePermissions'
+import { formatThaiDate } from '~/utils/date'
 import { ROLES } from '~/types/permissions'
 import { CheckCircleIcon } from '@heroicons/vue/24/outline'
 
@@ -100,7 +101,7 @@ const auditSummaryItems = computed(() => {
   if (!a) return []
   return [
     { label: 'Auditor', value: a.completedByName ?? '-', colorClass: 'bg-indigo-50' },
-    { label: 'Bank Statement', value: formatCurrency(a.bankStatementAmount ?? 0), colorClass: 'bg-blue-50' },
+    { label: 'ยอดรายการเดินบัญชี', value: formatCurrency(a.bankStatementAmount ?? 0), colorClass: 'bg-blue-50' },
     { label: 'รายการที่ตรวจ', value: `${a.transactionsVerified} รายการ`, colorClass: 'bg-gray-50' },
     { label: 'พบปัญหา', value: `${a.transactionsWithIssues} รายการ`, colorClass: a.transactionsWithIssues > 0 ? 'bg-orange-50' : 'bg-gray-50' },
   ]
@@ -183,7 +184,7 @@ async function handleConfirmedSubmit() {
       <CheckCircleIcon class="w-8 h-8 text-green-600 shrink-0 mt-0.5" />
       <div>
         <p class="font-semibold text-green-800 text-lg">อนุมัติแล้ว ✅</p>
-        <p class="text-sm text-green-700 mt-1">วันที่ {{ date }} — ได้รับการอนุมัติเรียบร้อยแล้ว</p>
+        <p class="text-sm text-green-700 mt-1">วันที่ {{ formatThaiDate(date) }} — ได้รับการอนุมัติเรียบร้อยแล้ว</p>
         <p v-if="store.currentSummary?.ownerApproval?.ownerNotes" class="text-sm text-green-700 mt-1">
           หมายเหตุ: {{ store.currentSummary?.ownerApproval?.ownerNotes }}
         </p>

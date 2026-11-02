@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import type { UnifiedWorkflowStatus } from '~/types/shared-workflow'
 import { getWorkflowStatusConfig } from '~/types/shared-workflow'
+import { formatThaiDate } from '~/utils/date'
 
 interface Props {
   date: string
@@ -17,13 +18,7 @@ const props = withDefaults(defineProps<Props>(), {
   customLabel: 'ค่าบริการ',
 })
 
-const formattedDate = computed(() => {
-  return new Date(props.date).toLocaleDateString('th-TH', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  })
-})
+const formattedDate = computed(() => formatThaiDate(props.date))
 
 function formatCurrency(amount: number): string {
   return (

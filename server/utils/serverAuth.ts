@@ -1,4 +1,7 @@
 import type { H3Event } from 'h3'
+import { AccessControlJsonRepository } from '~/server/repositories/access-control-json.repository'
+
+const usersRepository = new AccessControlJsonRepository()
 
 export interface ServerAuthUser {
   uid: string
@@ -25,6 +28,17 @@ async function loadAdminAuth(): Promise<any | null> {
     _cached = { adminAuth: null }
   }
   return _cached.adminAuth
+}
+
+// Firebase accounts have no display name, so the name stored on records comes from users.json
+async function findDisplayName(uid: string): Promise<string | undefined> {
+  try {
+    const user = await usersRepository.getUserById(uid)
+    return user?.displayName || undefined
+  } catch (error) {
+    console.warn('[serverAuth] Could not read display name for', uid, error)
+    return undefined
+  }
 }
 
 /**
@@ -60,16 +74,18 @@ export async function requireServerAuth(event: H3Event): Promise<ServerAuthUser>
     throw createError({ statusCode: 401, message: 'Authentication required' })
   }
 
+  let decoded: any
   try {
-    const decoded = await adminAuth.verifyIdToken(token)
-    const user: ServerAuthUser = {
-      uid: decoded.uid,
-      email: decoded.email,
-      name: decoded.name ?? decoded.email,
-    }
-    event.context.user = user
-    return user
+    decoded = await adminAuth.verifyIdToken(token)
   } catch {
     throw createError({ statusCode: 401, message: 'Invalid or expired token' })
   }
+
+  const user: ServerAuthUser = {
+    uid: decoded.uid,
+    email: decoded.email,
+    name: (await findDisplayName(decoded.uid)) ?? decoded.name ?? decoded.email,
+  }
+  event.context.user = user
+  return user
 }
