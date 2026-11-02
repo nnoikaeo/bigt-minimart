@@ -330,7 +330,7 @@ Components (50 total):
 | Service Harmonization Testing | 5/17 tasks done (MT-1, MT-2, BP-2, BP-3, BP-4); open bugs BUG-001~003, BUG-035 | 🔄 |
 | Design System components | 15 ui + 4 layout + 8 shared | ✅ |
 | Mobile responsive | Yes | ✅ |
-| CI (PR Check / Staging / Production) | All green (Oct 16, 2026) | ✅ |
+| CI (PR Check / Staging / Production) | PR Check passing; Staging deploy failing since Oct 31, 2026 (403, see Tech debt); Production last ran Oct 16, 2026 | ⚠️ |
 
 ---
 
@@ -368,6 +368,7 @@ Components (50 total):
 ✅ Dead code cleanup — no `v-if="false"` blocks left in pages/components (MT index.vue split into 4 sub-components, PR #123)
 
 ⚠️ Tech debt (found Oct 16, 2026)
+   ├─ Staging deploy fails with 403 on `serviceusage.services.get` since Oct 31, 2026; the last success used firebase-tools 15.34.0, the failures 15.34.2 (the workflow runs `@latest`). The build passes. Production uses the same service account, so fix before release.
    ├─ Money Transfer mutation APIs don't call requireServerAuth (Bill Payment does); neither service checks role or workflow status on the server — fix before release
    ├─ PR Check workflow doesn't run `npm test`
    ├─ Firestore migration not started (all data in public/data/*.json)
