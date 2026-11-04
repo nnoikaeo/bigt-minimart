@@ -1,10 +1,10 @@
 # Project Status Dashboard
 
-**Last Updated**: Nov 2, 2026
+**Last Updated**: Nov 4, 2026
 **Updated By**: Claude Code
-**Current Branch**: develop (latest merge: PR #162; main: docs synced via PR #150, code at release #148)
+**Current Branch**: develop (latest merge: PR #164; main: docs synced via PR #150, code at release #148)
 **Current Phase**: Testing — Service Harmonization (Manual Test → Bug Fix → E2E)
-**Next Up**: Small bug fixes (BUG-001~003, BUG-038~040); then BP-1, MT-3 + MT-4 with BUG-035 (MT send-back flow); BUG-037 (server role checks) before release; then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
+**Next Up**: BP-1, MT-3 + MT-4 with BUG-035 (MT send-back flow); BUG-037 (server role checks) before release; then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
 
 ---
 
@@ -23,7 +23,7 @@ PHASE 1: Core Features
 ├─ Week 9: Layout Consistency & Polish            ✅ COMPLETE (100%)
 ├─ Week 5-6 (original plan): Dashboard + Reports ❌ NOT STARTED (0%)
 ├─ Week 10+: Bill Payment Service Harmonization               ✅ COMPLETE (100%)
-├─ Testing: Service Harmonization Testing Plan                 🔄 IN PROGRESS (MT-1 ✅, MT-2 ✅, BP-2 ✅, BP-3 ✅, BP-4 ✅; next bug fixes, BP-1, MT-3)
+├─ Testing: Service Harmonization Testing Plan                 🔄 IN PROGRESS (MT-1 ✅, MT-2 ✅, BP-2 ✅, BP-3 ✅, BP-4 ✅; next BP-1, MT-3)
 └─ Overall: PHASE 1 CORE COMPLETE — Harmonization COMPLETE — Testing IN PROGRESS
 
 Timeline Status: Money Transfer feature fully shipped ✓
@@ -212,6 +212,13 @@ Timeline Status: Money Transfer feature fully shipped ✓
    ├─ BUG-033/034 Status boxes above the role sections for every role; send-back reason stays visible while recounting
    ├─ BUG-030/031/036 "ไม่มีหมายเหตุ", green approved badge, fee + amount input border
    └─ BUG-035 (High, open): MT sends an Owner correction to the Auditor, and approve with notes saves `approved` → separate PR with MT-3/MT-4
+
+✅ Small MT + BP bug fixes (PR #164, Nov 4)
+   ├─ BUG-001 MT edit form for a completed record backs its own amount out of the balance before → after
+   ├─ BUG-002 MT "ยืนยันบันทึกรายการ" disabled while records are on hold (same as BP)
+   ├─ BUG-003 MT + BP form close button "ปิด" (was "ยกเลิก", same as a status option)
+   ├─ BUG-038 BP Owner ConfirmDialog before every decision; BUG-039 Step 2 diffs actual − expected; BUG-040 send-back message names Manager
+   └─ Manual: MT 2026-10-17 (Nov 3) + BP 2026-04-03 (Nov 4, left in needs_correction) all passed
 ```
 
 ### Week 9 (Mar 23-25): Layout Consistency & Polish
@@ -321,13 +328,13 @@ Components (50 total):
 | Pages | 26 (16 functional, 10 placeholders) | ✅ |
 | Components | 50 | ✅ |
 | API routes | 72 | ✅ |
-| PRs merged (latest) | #162 | ✅ |
+| PRs merged (latest) | #164 | ✅ |
 | TypeScript errors (`nuxt typecheck`) | 0 | ✅ |
-| Unit/Integration tests (`vitest run`) | 334/334 passed (23 files) | ✅ |
+| Unit/Integration tests (`vitest run`) | 357/357 passed (25 files) | ✅ |
 | Production build (`nuxt build`) | Success | ✅ |
 | Money Transfer workflow | 9/9 statuses (unified) | ✅ |
 | Bill Payment workflow | Phase 1-6 Complete (27 Tasks) | ✅ |
-| Service Harmonization Testing | 5/17 tasks done (MT-1, MT-2, BP-2, BP-3, BP-4); open bugs BUG-001~003, BUG-035, BUG-037~040 | 🔄 |
+| Service Harmonization Testing | 5/17 tasks done (MT-1, MT-2, BP-2, BP-3, BP-4); open bugs BUG-035, BUG-037 | 🔄 |
 | Design System components | 15 ui + 4 layout + 8 shared | ✅ |
 | Mobile responsive | Yes | ✅ |
 | CI (PR Check / Staging / Production) | PR Check + Staging passing (Nov 2, 2026); Production last ran Oct 16, 2026 | ✅ |
@@ -340,10 +347,10 @@ Components (50 total):
 🔄 Service Harmonization Testing (17 Tasks)
    ├─ Manual Test: 10 tasks (MT-1~4, BP-1~4, SHARED-1~2) 🔄 IN PROGRESS
    │     ├─ MT-1 ✅ ผ่าน
-   │     ├─ MT-2 ✅ ผ่าน Step 1-11 (17 ต.ค., merged PR #153) — BUG-007~011 แก้แล้ว; BUG-001~003 ยังเปิด; BUG-002 ยังไม่ได้ทดสอบ
+   │     ├─ MT-2 ✅ ผ่าน Step 1-11 (17 ต.ค., merged PR #153) — BUG-007~011 แก้แล้ว; BUG-001~003 แก้ + ทดสอบผ่าน (3 พ.ย., PR #164)
    │     ├─ BP-2 ✅ Step 1-11 (17-20 ต.ค.; เหลือข้อย่อยที่ไม่ได้ลอง ดู TESTING_PLAN) — BUG-018~020 (ปุ่มเลือกประเภท, #N ในคิว, ช่องตรวจนับว่าง) แก้ + ทดสอบผ่าน (PR #157); BUG-014 (modal รายการโปรดไม่มีปุ่ม ✕) + BUG-015 (ฟอร์มตรวจนับ Step 2 ไม่แสดง, High) แก้ + ทดสอบผ่าน (PR #156); BUG-016/017 (กล่องสถานะซ้ำ, ป้ายตารางตรวจนับ) แก้แล้ว (PR #156); BUG-012 ✅ ทดสอบผ่าน; BUG-013 (ฟอร์มฝากเงินมีช่องชื่อลูกค้า) ✅ แก้ + ทดสอบผ่าน; ประเภทบิล "ประกัน" → "สินเชื่อ" (`loan`) — ค่าธรรมเนียมเท่าสาธารณูปโภค (10/20/30/40, Owner ยืนยัน 19 ต.ค.)
    │     ├─ BP-3 ✅ Step 1-6 (31 ต.ค., merged PR #159) — BUG-021~026 แก้แล้ว; เหลือดูจุดย่อย ดู TESTING_PLAN
-   │     ├─ BP-4 ✅ Step 1-4 (2 พ.ย., merged PR #161) — BUG-027~034, 036 แก้แล้ว; BUG-035 ฝั่ง MT ยังเปิด
+   │     ├─ BP-4 ✅ Step 1-4 (2 พ.ย., merged PR #161) — BUG-027~034, 036 แก้แล้ว; BUG-038~040 แก้ + ทดสอบผ่าน (4 พ.ย., PR #164); BUG-035 ฝั่ง MT ยังเปิด
    │     └─ MT-3, MT-4, BP-1, SHARED-1~2 ☐ NOT STARTED
    ├─ Bug Fix: 2 tasks (BugFix-1, BugFix-2)              ☐ WAITING FOR MANUAL TEST
    ├─ E2E Playwright: 5 tasks (E2E-1~5)                   ☐ WAITING FOR BUG FIX
