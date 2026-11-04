@@ -294,7 +294,7 @@
         class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
         @click="emit('cancel')"
       >
-        ยกเลิก
+        ปิด
       </button>
       <button
         type="button"
@@ -405,11 +405,23 @@ const commissionInput = computed<number | ''>({
  * ฝากเงิน  → เพิ่มยอดในบัญชีเสมอ
  * ใช้แสดงข้อมูลเท่านั้น — การเช็คจริงทำตอนกด "ดำเนินการ" (POST /:id/complete)
  */
+// รายการ completed ถูกนับในยอดปัจจุบันแล้ว — ถอยยอดเดิมออกก่อน ไม่งั้นหักซ้ำ (draft/on_hold ยังไม่นับยอด)
+const ownCountedAmount = computed(() =>
+  props.editingData?.status === 'completed' ? Number(props.editingData.amount) : 0
+)
+const bankAccountBeforeTxn = computed(() => {
+  const bankAccount = Number(props.currentBalance.bankAccount)
+  return formData.value.transactionType === 'transfer'
+    ? bankAccount + ownCountedAmount.value
+    : bankAccount - ownCountedAmount.value
+})
+const transferCashBeforeTxn = computed(() => Number(props.currentBalance.transferCash) + ownCountedAmount.value)
+
 const hasSufficientBalance = computed(() => {
   const { transactionType } = formData.value
   const amt = Number(formData.value.amount)
-  if (transactionType === 'transfer') return Number(props.currentBalance.bankAccount) >= amt
-  if (transactionType === 'withdrawal') return Number(props.currentBalance.transferCash) >= amt
+  if (transactionType === 'transfer') return bankAccountBeforeTxn.value >= amt
+  if (transactionType === 'withdrawal') return transferCashBeforeTxn.value >= amt
   return true // owner_deposit always completes
 })
 
@@ -417,8 +429,8 @@ const hasSufficientBalance = computed(() => {
 const bannerInfo = computed(() => {
   const { transactionType } = formData.value
   const amt = Number(formData.value.amount)
-  const bankAccount = Number(props.currentBalance.bankAccount)
-  const transferCash = Number(props.currentBalance.transferCash)
+  const bankAccount = bankAccountBeforeTxn.value
+  const transferCash = transferCashBeforeTxn.value
 
   if (transactionType === 'transfer') {
     return {

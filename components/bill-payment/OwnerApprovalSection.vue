@@ -57,19 +57,23 @@ const totalOwnerDepositAmount = computed(() => completedAmountByType('owner_depo
 // ─── Decision form ────────────────────────────────────────────────────────────
 type Decision = 'approved' | 'approved_with_notes' | 'needs_correction'
 const decisionCard = ref<Decision | null>(null)
+const pendingDecision = ref<Decision | null>(null)
+const pendingNotes = ref('')
+const showConfirmDialog = ref(false)
 const isSubmitting = ref(false)
 
 // ─── Summary diffs ────────────────────────────────────────────────────────────
+// actual − expected, same as CashVerificationTable: short = negative
 const step2BillPaymentDiff = computed(() => {
   const expected = store.currentSummary?.step2ExpectedBillPaymentCash ?? 0
   const actual = store.currentSummary?.step2ActualBillPaymentCash ?? 0
-  return expected - actual
+  return actual - expected
 })
 
 const step2ServiceFeeDiff = computed(() => {
   const expected = store.currentSummary?.step2ExpectedServiceFeeCash ?? 0
   const actual = store.currentSummary?.step2ActualServiceFeeCash ?? 0
-  return expected - actual
+  return actual - expected
 })
 
 // ─── WorkflowStepSummaryCard data ─────────────────────────────────────────────
@@ -166,19 +170,48 @@ const auditSummaryItems = computed(() => [
   },
 ])
 
+// ─── Confirm dialog helpers ───────────────────────────────────────────────────
+const confirmTitle = computed(() => {
+  if (pendingDecision.value === 'needs_correction') return 'ยืนยันส่งคืนแก้ไข?'
+  if (pendingDecision.value === 'approved_with_notes') return 'ยืนยันการอนุมัติพร้อมหมายเหตุ?'
+  return 'ยืนยันการอนุมัติ?'
+})
+
+const confirmMessage = computed(() => {
+  if (pendingDecision.value === 'needs_correction') return 'ต้องการส่งคืนให้ Manager แก้ไขใช่หรือไม่?'
+  return 'ต้องการอนุมัติรายการประจำวันนี้ใช่หรือไม่? การดำเนินการนี้ไม่สามารถยกเลิกได้'
+})
+
+const confirmText = computed(() =>
+  pendingDecision.value === 'needs_correction' ? 'ส่งคืนแก้ไข' : 'ยืนยันอนุมัติ'
+)
+
+const confirmVariant = computed(() =>
+  pendingDecision.value === 'needs_correction' ? 'danger' : 'warning'
+)
+
 // ─── Submit ───────────────────────────────────────────────────────────────────
-async function handleDecisionSubmit(decisionValue: Decision, notes: string) {
+function handleDecisionSubmit(decisionValue: Decision, notes: string) {
+  pendingDecision.value = decisionValue
+  pendingNotes.value = notes
+  showConfirmDialog.value = true
+}
+
+async function handleConfirmedSubmit() {
+  const decisionValue = pendingDecision.value
+  if (!decisionValue) return
+  showConfirmDialog.value = false
   isSubmitting.value = true
   errorMessage.value = ''
   try {
     await store.submitOwnerApproval(props.date, {
       decision: decisionValue,
-      approvalNotes: notes || undefined,
+      approvalNotes: pendingNotes.value || undefined,
     })
     const labels: Record<Decision, string> = {
       approved: 'อนุมัติเรียบร้อยแล้ว ✅',
       approved_with_notes: 'อนุมัติพร้อมหมายเหตุเรียบร้อยแล้ว ✅',
-      needs_correction: 'ส่งกลับให้ Auditor แก้ไขแล้ว',
+      needs_correction: 'ส่งกลับให้ Manager แก้ไขแล้ว',
     }
     successMessage.value = labels[decisionValue]
     decisionCard.value = null
@@ -186,7 +219,7 @@ async function handleDecisionSubmit(decisionValue: Decision, notes: string) {
     emit('approval-submitted', decisionValue)
   } catch (err: any) {
     errorMessage.value = err.message ?? 'เกิดข้อผิดพลาด'
-    logger.error('handleDecisionSubmit', err)
+    logger.error('handleConfirmedSubmit', err)
   } finally {
     isSubmitting.value = false
   }
@@ -365,5 +398,16 @@ async function handleDecisionSubmit(decisionValue: Decision, notes: string) {
         />
       </div>
     </section>
+
+    <!-- ── Confirm Dialog ──────────────────────────────────────────────────── -->
+    <ConfirmDialog
+      :open="showConfirmDialog"
+      :title="confirmTitle"
+      :message="confirmMessage"
+      :confirm-text="confirmText"
+      :variant="confirmVariant"
+      @confirm="handleConfirmedSubmit"
+      @cancel="showConfirmDialog = false"
+    />
   </div>
 </template>

@@ -327,7 +327,7 @@ async function handleSubmit() {
     <!-- ── Actions ────────────────────────────────────────────────────────── -->
     <div class="flex justify-end gap-3 pt-2">
       <BaseButton variant="secondary" type="button" @click="emit('cancel')">
-        ยกเลิก
+        ปิด
       </BaseButton>
       <BaseButton
         variant="primary"
