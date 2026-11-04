@@ -2,7 +2,7 @@
 
 > **วันที่จัดทำ:** 14 เมษายน 2569  
 > **อ้างอิง:** `docs/ARCHIVE/PROGRESS/SERVICE_HARMONIZATION_PLAN.md` (archived — implementation complete)  
-> **อัปเดตล่าสุด:** 20 ต.ค. 2569  
+> **อัปเดตล่าสุด:** 5 พ.ย. 2569  
 > **สถานะ implement:** Phase 1-6 เสร็จสมบูรณ์ (27 Tasks, PRs #127-#140)  
 > **เป้าหมาย:** ทดสอบทุก feature ที่ implement เพื่อยืนยันว่าทำงานถูกต้องก่อน deploy
 
@@ -105,7 +105,7 @@
 
 **Step 6: ทดสอบด้วย Auditor (logout → login Auditor)**
 - [x] เห็น Pending Inbox → Auditor card แสดง count ถูกต้อง
-- [x] Inbox count นับ: step2_completed + step2_completed_with_notes + needs_correction
+- [x] Inbox count นับ: step2_completed + step2_completed_with_notes + needs_correction — ⚠️ BP-1 (5 พ.ย. 2569): needs_correction เป็นงานของ Manager ไม่ใช่ Auditor ดู BUG-043
 - [x] กด Action → ไปหน้า Service ในมุมมอง Auditor
 
 **Step 7: ทดสอบด้วย Owner (logout → login Owner)**
@@ -322,18 +322,20 @@
 
 #### ขั้นตอนการทดสอบ
 
+> ผลรอบ 1 (4-5 พ.ย. 2569): ✅ ผ่าน Step 1-6 — Manager: การ์ด 1/0/0 (03-04 needs_correction), กรองการ์ดได้, ปุ่ม ทำงาน/แก้ไข/ดูรายละเอียด ไปถูกวัน; เพิ่มรายการ + เตือนวันย้อนหลัง ✅; Auditor: 2 การ์ด 0/0, กรองแล้วขึ้น "ไม่มีรายการที่ตรงกัน"; Owner: 3 การ์ด 2/0/0, ทุกแถว "ดูรายละเอียด"; MT (Owner) การ์ด 2/4/0 — พบ BUG-041~045 (ทุกตัวเป็นทั้ง MT และ BP)
+
 **Step 1-5: เหมือน MT-1 แต่สำหรับ Bill Payment**
 
-- [ ] เปิดหน้า Bill Payment History
-- [ ] เห็น Pending Inbox cards 3 role
-- [ ] ตาราง มี columns เหมือน MT
-- [ ] Status Badge สีถูกต้อง
-- [ ] ปุ่ม Action → **navigate ไป URL เดียว** `/finance/bill-payment-service?date=X` (ทุก role ไป URL เดียวกัน)
+- [x] เปิดหน้า Bill Payment History
+- [x] เห็น Pending Inbox cards 3 role (Manager/Owner เห็น 3 การ์ด, Auditor เห็น 2 การ์ด — ไม่มี "รอดำเนินการ" เหมือน MT)
+- [x] ตาราง มี columns เหมือน MT
+- [x] Status Badge สีถูกต้อง
+- [x] ปุ่ม Action → **navigate ไป URL เดียว** `/finance/bill-payment-service?date=X` (ทุก role ไป URL เดียวกัน) — ปุ่ม "ตรวจสอบใหม่" ของ Auditor บน needs_correction ไม่ควรมี (BUG-043); แค่เปิดหน้า Service ก็สร้างแถววันใหม่ (BUG-042)
 
 **Step 6: เปรียบเทียบกับ MT**
-- [ ] Layout, สี, spacing เหมือน MT History Page
-- [ ] Pending Inbox cards format เดียวกัน
-- [ ] Status badge ใช้สีเดียวกันสำหรับ status เดียวกัน
+- [x] Layout, สี, spacing เหมือน MT History Page — ต่างกันที่ breadcrumb: MT "บริการโอนเงิน", BP "ประวัติบริการรับชำระบิล"; ปุ่มใน modal เพิ่มรายการติดกันทั้งคู่ (BUG-041)
+- [x] Pending Inbox cards format เดียวกัน — แต่นับสถานะต่างกัน (BUG-043)
+- [x] Status badge ใช้สีเดียวกันสำหรับ status เดียวกัน (กำลังบันทึก เหลือง, อนุมัติแล้ว เขียว)
 
 ---
 
@@ -749,7 +751,7 @@ Screenshots บันทึกที่: tests/e2e/screenshots/
 | 2 | MT-2 | MT Service Manager Flow | คุณ | — | ✅ |
 | 3 | MT-3 | MT Auditor Flow | คุณ | — | ☐ |
 | 4 | MT-4 | MT Owner Flow | คุณ | — | ☐ |
-| 5 | BP-1 | BP History Page Manual Test | คุณ | — | ☐ |
+| 5 | BP-1 | BP History Page Manual Test | คุณ | — | ✅ |
 | 6 | BP-2 | BP Service Manager Flow | คุณ | — | ✅ (ข้อย่อยค้าง ดูผล) |
 | 7 | BP-3 | BP Auditor Flow | คุณ | — | ✅ |
 | 8 | BP-4 | BP Owner Flow | คุณ | — | ✅ |
@@ -777,7 +779,7 @@ Screenshots บันทึกที่: tests/e2e/screenshots/
 | MT-2 | 15-27 เม.ย. 2569, 16-17 ต.ค. 2569, 3 พ.ย. 2569 | ✅ ผ่าน (Step 1-11) — Step 6 คิว draft 14/14, Step 8 pagination + tab ยกเลิก, Step 11 ทั้งยอดตรง (2026-03-11) และมีผลต่าง (2026-03-08); ทดสอบซ้ำ 3 พ.ย. บนวันที่ 2026-10-17: BUG-001, BUG-002, BUG-003 ผ่าน | 11 (BUG-001~005, 007~011); BUG-006 ไม่เกิดจริง | PR #147, #149, #153 (คิว draft + BUG-004/007/008/009/010/011) |
 | MT-3 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
 | MT-4 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
-| BP-1 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
+| BP-1 | 4-5 พ.ย. 2569 | ✅ ผ่าน Step 1-6 — 3 role (Manager 1/0/0, Auditor 0/0, Owner 2/0/0 หลังเกิดแถว 04/11 จาก BUG-042), กรองการ์ด, ปุ่มจัดการ, เพิ่มรายการ + เตือนย้อนหลัง, เทียบ MT | 5 (BUG-041~045, ทั้ง MT + BP) | ยังไม่แก้ |
 | BP-2 | 17-20 ต.ค. 2569 | ✅ ผ่าน Step 1-11 — Step 6 คิว draft ✅ 8/8, Step 1-5 ✅ (เหลือย่อย: alert ก่อนตั้งยอด, กำหนดเอง, expand/collapse, disabled ก่อนตั้งยอด, toggle ค่าธรรมเนียม), Step 6-8 ✅, Step 9 ✅ (ยกเว้น max 10/tab), Step 10-11 ✅ ทั้งยอดตรง (04-01) และมีผลต่าง (04-02) | 9 (BUG-012~020 แก้ + ทดสอบผ่านบน BP; MT ยังไม่ได้ดู BUG-016/019) | PR #153, #154 (ค่าธรรมเนียมสินเชื่อ), #156, #157 |
 | BP-3 | 31 ต.ค. 2569 | ✅ ผ่าน Step 1-6 — ยืนยัน → `audited` (04-01), ส่งคืน → Manager แก้ → กลับ Auditor (04-02, 04-03), ยืนยันพร้อมหมายเหตุ → `audited_with_issues` (01-30) | BUG-021~026 | #159 |
 | BP-4 | 2 พ.ย. 2569, 4 พ.ย. 2569 | ✅ ผ่าน Step 1-4 — อนุมัติ → `approved` (04-01), อนุมัติพร้อมหมายเหตุ → `approved_with_notes` (01-30), ส่งคืนครบวง → `approved` (04-02), ส่งคืน → `needs_correction` (04-03); ทดสอบซ้ำ 4 พ.ย. บน 04-03 (นับบิลขาด 50 → Auditor พร้อมหมายเหตุ → Owner ส่งคืน): BUG-038, BUG-039, BUG-040 ผ่าน | BUG-027~034 (BP); BUG-035 ฝั่ง MT ยังเปิด | PR #161 |
@@ -827,6 +829,11 @@ Screenshots บันทึกที่: tests/e2e/screenshots/
 | BUG-038 | BP-4 (อ่านโค้ด) | BP ไม่มี `ConfirmDialog` ก่อน Owner ส่งการตัดสินใจ แต่ MT มี — กดส่งแล้วมีผลทันที | Medium | 🔧 แก้แล้ว (PR #164): เพิ่ม `ConfirmDialog` ข้อความเดียวกับ MT ยกเว้นส่งคืนระบุ "Manager" (`components/bill-payment/OwnerApprovalSection.vue`) — ✅ ทดสอบผ่าน 4 พ.ย. 2569 (อนุมัติ / อนุมัติพร้อมหมายเหตุ / ขอให้แก้ไข ขึ้นหน้าต่างยืนยันทุกแบบ; กดยกเลิกแล้วสถานะไม่เปลี่ยน) |
 | BUG-039 | BP-4 (อ่านโค้ด) | ส่วนต่าง Step 2 หน้า Owner BP คำนวณ expected − actual กลับกับ `CashVerificationTable` (actual − expected) — เงินขาด 100 จะขึ้น +100; 3 วันที่ทดสอบยอดตรงหมดจึงไม่เห็น | Medium | 🔧 แก้แล้ว (PR #164): ใช้ actual − expected ทั้งยอดบิลและค่าธรรมเนียม (`components/bill-payment/OwnerApprovalSection.vue`) — ✅ ทดสอบผ่าน 4 พ.ย. 2569 (2026-04-03 นับบิลขาด 50: Owner เห็น −50 ตรงกับตาราง Manager/Auditor) |
 | BUG-040 | BP-4 (อ่านโค้ด) | ข้อความสำเร็จตอน Owner ส่งคืนเขียน "ส่งกลับให้ Auditor" แต่งานไป Manager และ section หายทันทีหลังส่ง Owner จึงไม่เห็นข้อความนี้ | Low | 🔧 แก้แล้ว (PR #164): แก้ข้อความเป็น "Manager"; Owner รู้ผลจากกล่องสถานะบนหน้า "รอแก้ไข — ส่งคืนให้ Manager แก้ไขแล้ว" ซึ่งแสดงอยู่แล้ว จึงไม่เพิ่มข้อความซ้ำ — ✅ ทดสอบผ่าน 4 พ.ย. 2569 (หน้าต่างถาม "ส่งคืนให้ Manager แก้ไข", หลังส่งป้าย "ส่งกลับแก้ไข" + กล่อง "รอแก้ไข") |
+| BUG-041 | BP-1 Step 2 | ปุ่ม "ยกเลิก" กับ "ไปบันทึกรายการ →" ใน modal เพิ่มรายการติดกันและชิดซ้าย — footer ของ `BaseModal` ไม่มี flex/gap และหน้าประวัติไม่ครอบปุ่มด้วย `<div class="flex justify-end gap-2">` แบบ modal อื่น (MT + BP: `pages/finance/{money-transfer,bill-payment}-history.vue`) | Low | ☐ เปิด |
+| BUG-042 | BP-1 Step 2 | แค่เปิดหน้า Service (หรือเปลี่ยนวันที่ในหน้า) ก็สร้าง daily summary สถานะ `step1_in_progress` ลงไฟล์ทันที — เกิดแถว 0 รายการในหน้าประวัติและนับในการ์ด "รอดำเนินการ" (เกิด 04/11/2569 ตอนทดสอบ; MT 17-18/10/2569 น่าจะมาจากเหตุเดียวกัน) — `initDailySummary` ใน `onMounted` + `handleDateChange` ของ `pages/finance/{money-transfer,bill-payment}-service/index.vue` | Medium | ☐ เปิด — **Owner ตัดสินใจ 5 พ.ย. 2569:** สร้าง summary เมื่อเริ่มทำงานจริง (ตั้งยอดเริ่มต้น / บันทึกรายการแรก) ไม่ใช่ตอนเปิดหน้า — แก้ทั้ง MT + BP; หน้าที่เปิดวันที่ยังไม่มี summary ต้องแสดงได้โดยไม่ error (store ใช้ค่าเริ่มต้น `step1_in_progress` อยู่แล้ว); ลบแถวว่าง MT 17-18/10/2569 ถ้าไม่มีรายการ (commit `chore(data)` แยก) |
+| BUG-043 | BP-1 Step 4 | Auditor เห็นปุ่มแดง "ตรวจสอบใหม่" บนวันที่ `needs_correction` แต่หน้า Service บอก "รอ Manager ตรวจนับเงินสดใหม่" ไม่มีงานให้ทำ; การ์ด Inbox นับไม่ตรงกัน — MT นับ needs_correction ในการ์ด Auditor (ไม่นับ step1_completed ในการ์ด Manager), BP ไม่นับ (`composables/useBillPaymentHelpers.ts` getSmartActionButton, `pages/finance/money-transfer-history.vue` ~L47-60, L103) | Medium | ☐ เปิด — **Owner ตัดสินใจ 5 พ.ย. 2569: ใช้หลักของ BP เป็นมาตรฐาน และ MT + BP ต้องใช้กติกาเดียวกัน** ขอบเขตแก้ (diff หน้าประวัติ MT/BP แล้ว): (1) Auditor บน needs_correction = "ดูรายละเอียด" (outline) ทั้งคู่ — BP `useBillPaymentHelpers.ts` ~L219 ก็ต้องแก้; (2) การ์ด/ตัวกรอง MT: Manager = step1_in_progress + step1_completed + needs_correction, Auditor = step2_completed + step2_completed_with_notes; (3) ปุ่ม Manager ของ MT ขาด "ตรวจนับเงิน" (step1_completed) และ "แก้ไข" (needs_correction) — MT ตอนนี้ขึ้น "ดูรายละเอียด"; (4) ชื่อปุ่มต่างกัน: MT "ตรวจสอบ (มีหมายเหตุ)", "อนุมัติ (มีปัญหา)" ส่วน BP ไม่มีวงเล็บ — เลือกแบบเดียว; (5) คำอธิบายใต้การ์ด + ข้อความเตือนย้อนหลังให้ตรงกัน; แนะนำย้ายกติกาปุ่ม + การนับการ์ดไปไว้ที่เดียว (เช่น `utils/` หรือ composable shared) ให้สองหน้าเรียกใช้ แทนเขียนแยก; แก้ข้อความ MT-1 Step 6 ตาม |
+| BUG-044 | BP-1 Step 5 | กล่องสถานะ needs_correction ต่างกันตาม role: Manager แดง + เหตุผล, Auditor เหลือง + หมายเหตุ, Owner ชมพู "รอแก้ไข" **ไม่แสดงเหตุผล** ทั้งที่ Owner เป็นคนส่งคืน (`pages/finance/bill-payment-service/index.vue` status banners) | Low | ☐ เปิด — ตรวจฝั่ง MT ตอน MT-4 |
+| BUG-045 | BP-1 Step 6 | "วันนี้" คิดจากเวลา UTC (`new Date().toISOString().split('T')[0]`) — 00:00-07:00 น. ค่าเริ่มต้นช่องวันที่เป็นเมื่อวาน และเลือกเมื่อวานไม่ขึ้นเตือนย้อนหลัง (เห็นจริง 5 พ.ย. 2569 00:27 น.: modal ขึ้น 04/11/2569); หน้าประวัติ + ค่าเริ่มต้นหน้า Service ของ MT + BP (ทั้งโปรเจกต์ใช้ 11 จุด) | Medium | ☐ เปิด — เสนอเพิ่ม helper วันที่ท้องถิ่นใน `utils/date.ts` |
 | BUG-006 | MT-2 Step 8 (อ่านโค้ด) | สงสัย: อยู่หน้า 2 แล้วจำนวนรายการลดจนเหลือ 1 หน้า → `currentPage` ไม่ถูก clamp → ตารางว่าง + pagination หาย | Medium | ✅ ปิด — ไม่เกิดจริง (ทดสอบ 17 ต.ค. 2569: ลบรายการหน้า 2 → กลับหน้า 1 ปกติ) |
 
 ### E2E Test Results
