@@ -195,8 +195,8 @@
     "date": "2026-04-03",
     "workflowStatus": "needs_correction",
     "createdAt": "2026-10-31T11:48:54.321Z",
-    "updatedAt": "2026-11-02T12:15:16.394Z",
-    "step1CompletedAt": "2026-10-31T13:26:53.449Z",
+    "updatedAt": "2026-11-04T15:15:46.198Z",
+    "step1CompletedAt": "2026-11-04T14:54:41.997Z",
     "step1CompletedBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
     "step1CompletedByName": "กัลญา ผิวขำทองดี",
     "step1TotalTransactions": 1,
@@ -207,16 +207,16 @@
     "auditBankBalanceMatches": true,
     "auditTransactionsVerified": 1,
     "auditTransactionsWithIssues": 0,
-    "needsCorrectionFrom": "audited",
-    "correctionNotes": "ทดสอบกล่องเดียว",
-    "correctionRequestedAt": "2026-11-02T12:15:16.394Z",
+    "needsCorrectionFrom": "audited_with_issues",
+    "correctionNotes": "ทดสอบส่งคืน",
+    "correctionRequestedAt": "2026-11-04T15:15:46.198Z",
     "correctionRequestedBy": "Ve1ykzh3vFNKiPsUhw5HgK13H6r2",
     "auditBankStatementAmount": 1100,
-    "auditorActualBillPaymentCash": 100,
+    "auditorActualBillPaymentCash": 50,
     "auditorActualServiceFeeCash": 10,
     "auditExpectedClosingBalance": 1100,
     "auditBankStatementVsClosingDiff": 0,
     "auditBankStatementVsClosingMatches": true,
-    "approvalNotes": "ทดสอบกล่องเดียว"
+    "approvalNotes": "ทดสอบส่งคืน"
   }
 ]
