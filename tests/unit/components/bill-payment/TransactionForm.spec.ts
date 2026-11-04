@@ -181,11 +181,16 @@ describe('TransactionForm', () => {
   // ─── Cancel button ──────────────────────────────────────────────────────────
 
   describe('cancel button', () => {
-    it('emits cancel when cancel button is clicked', async () => {
+    it('emits cancel when the close button is clicked', async () => {
       const wrapper = mountForm()
-      const cancelBtn = wrapper.findAll('.base-btn').find(b => b.text().includes('ยกเลิก'))
-      await cancelBtn.trigger('click')
+      const closeBtn = wrapper.findAll('.base-btn').find(b => b.text() === 'ปิด')
+      await closeBtn.trigger('click')
       expect(wrapper.emitted('cancel')).toBeTruthy()
+    })
+
+    it('does not label the close button "ยกเลิก", which is also a status choice', () => {
+      const wrapper = mountForm()
+      expect(wrapper.findAll('.base-btn').some(b => b.text() === 'ยกเลิก')).toBe(false)
     })
   })
 

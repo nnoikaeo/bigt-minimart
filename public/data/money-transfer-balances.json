@@ -240,12 +240,12 @@
   {
     "id": "mtbal-2026-10-17",
     "date": "2026-10-17",
-    "bankAccount": 7500,
-    "transferCash": 0,
+    "bankAccount": 8000,
+    "transferCash": 500,
     "serviceFeeTransfer": 0,
-    "serviceFeeCash": 0,
+    "serviceFeeCash": 20,
     "history": [],
-    "updatedAt": "2026-10-17T05:59:49.928Z",
+    "updatedAt": "2026-11-02T17:52:59.552Z",
     "openingBalance": 7500,
     "openingBalanceSetAt": "2026-10-17T05:59:49.928Z",
     "openingBalanceSource": "carryover",
@@ -284,5 +284,15 @@
     "openingBalanceSetAt": "2026-10-31T12:26:09.811Z",
     "openingBalanceSource": "manual",
     "openingBalanceSetBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3"
+  },
+  {
+    "id": "mtbal-2026-11-02",
+    "date": "2026-11-02",
+    "bankAccount": 0,
+    "transferCash": 0,
+    "serviceFeeTransfer": 0,
+    "serviceFeeCash": 0,
+    "history": [],
+    "updatedAt": "2026-11-02T13:25:03.603Z"
   }
 ]

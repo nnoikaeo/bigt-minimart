@@ -1,6 +1,6 @@
 /* eslint-disable */
 // @ts-nocheck
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import { useBillPaymentStore } from '~/stores/bill-payment'
 import OwnerApprovalSection from '~/components/bill-payment/OwnerApprovalSection.vue'
@@ -52,8 +52,16 @@ const WorkflowStepSummaryCardStub = {
   props: ['stepNumber', 'title', 'summaryItems', 'badge'],
 }
 
+const ConfirmDialogStub = {
+  name: 'ConfirmDialog',
+  template: '<div v-if="open" class="confirm-dialog">{{ title }} {{ message }}</div>',
+  props: ['open', 'title', 'message', 'confirmText', 'variant'],
+  emits: ['confirm', 'cancel'],
+}
+
 const globalConfig = {
   stubs: {
+    ConfirmDialog: ConfirmDialogStub,
     OwnerDecisionCard: OwnerDecisionCardStub,
     BaseBadge: BaseBadgeStub,
     BaseAlert: BaseAlertStub,
@@ -362,17 +370,51 @@ describe('OwnerApprovalSection', () => {
       return { wrapper, store }
     }
 
-    it('calls store.submitOwnerApproval when OwnerDecisionCard emits submit', async () => {
+    async function decide(wrapper, decision, notes = '') {
+      await wrapper.findComponent({ name: 'OwnerDecisionCard' }).vm.$emit('submit', decision, notes)
+      await nextTick()
+    }
+
+    async function confirm(wrapper) {
+      await wrapper.findComponent({ name: 'ConfirmDialog' }).vm.$emit('confirm')
+      await flushPromises()
+    }
+
+    it('asks for confirmation and does not submit until confirmed', async () => {
       const { wrapper, store } = await mountReadyToApprove()
-      const decisionCard = wrapper.findComponent({ name: 'OwnerDecisionCard' })
-      await decisionCard.vm.$emit('submit', 'approved', '')
+      await decide(wrapper, 'approved')
+      expect(wrapper.find('.confirm-dialog').exists()).toBe(true)
+      expect(store.submitOwnerApproval).not.toHaveBeenCalled()
+    })
+
+    it('does not submit when the confirmation is cancelled', async () => {
+      const { wrapper, store } = await mountReadyToApprove()
+      await decide(wrapper, 'approved')
+      await wrapper.findComponent({ name: 'ConfirmDialog' }).vm.$emit('cancel')
+      await nextTick()
+      expect(wrapper.find('.confirm-dialog').exists()).toBe(false)
+      expect(store.submitOwnerApproval).not.toHaveBeenCalled()
+    })
+
+    it('says the day goes back to Manager when confirming a send-back', async () => {
+      const { wrapper } = await mountReadyToApprove()
+      await decide(wrapper, 'needs_correction', 'ต้องแก้')
+      expect(wrapper.find('.confirm-dialog').text()).toContain('Manager')
+      expect(wrapper.find('.confirm-dialog').text()).not.toContain('Auditor')
+    })
+
+    it('calls store.submitOwnerApproval after confirming', async () => {
+      const { wrapper, store } = await mountReadyToApprove()
+      await decide(wrapper, 'approved')
+      await confirm(wrapper)
       expect(store.submitOwnerApproval).toHaveBeenCalledWith('2026-04-14', expect.objectContaining({ decision: 'approved' }))
+      expect(wrapper.find('.confirm-dialog').exists()).toBe(false)
     })
 
     it('calls store.submitOwnerApproval with notes for approved_with_notes decision', async () => {
       const { wrapper, store } = await mountReadyToApprove()
-      const decisionCard = wrapper.findComponent({ name: 'OwnerDecisionCard' })
-      await decisionCard.vm.$emit('submit', 'approved_with_notes', 'ยอดตรงแต่มีหมายเหตุ')
+      await decide(wrapper, 'approved_with_notes', 'ยอดตรงแต่มีหมายเหตุ')
+      await confirm(wrapper)
       expect(store.submitOwnerApproval).toHaveBeenCalledWith('2026-04-14', expect.objectContaining({
         decision: 'approved_with_notes',
         approvalNotes: 'ยอดตรงแต่มีหมายเหตุ',
@@ -381,20 +423,70 @@ describe('OwnerApprovalSection', () => {
 
     it('emits approval-submitted with the decision value on success', async () => {
       const { wrapper } = await mountReadyToApprove()
-      const decisionCard = wrapper.findComponent({ name: 'OwnerDecisionCard' })
-      await decisionCard.vm.$emit('submit', 'approved', '')
-      await nextTick()
+      await decide(wrapper, 'approved')
+      await confirm(wrapper)
       expect(wrapper.emitted('approval-submitted')).toBeTruthy()
       expect(wrapper.emitted('approval-submitted')[0][0]).toBe('approved')
     })
 
     it('emits approval-submitted with needs_correction on correction submit', async () => {
       const { wrapper } = await mountReadyToApprove()
-      const decisionCard = wrapper.findComponent({ name: 'OwnerDecisionCard' })
-      await decisionCard.vm.$emit('submit', 'needs_correction', 'ต้องแก้')
-      await nextTick()
+      await decide(wrapper, 'needs_correction', 'ต้องแก้')
+      await confirm(wrapper)
       expect(wrapper.emitted('approval-submitted')).toBeTruthy()
       expect(wrapper.emitted('approval-submitted')[0][0]).toBe('needs_correction')
+    })
+
+    it('shows the server error once the confirmation has closed', async () => {
+      const { wrapper, store } = await mountReadyToApprove()
+      store.submitOwnerApproval.mockRejectedValueOnce(new Error('บันทึกไม่สำเร็จ'))
+      await decide(wrapper, 'approved')
+      await confirm(wrapper)
+      expect(wrapper.find('.confirm-dialog').exists()).toBe(false)
+      expect(wrapper.find('.base-alert[data-variant="error"]').text()).toContain('บันทึกไม่สำเร็จ')
+      expect(wrapper.emitted('approval-submitted')).toBeFalsy()
+    })
+  })
+
+  // ─── Step 2 diff sign ───────────────────────────────────────────────────────
+
+  describe('step 2 diff', () => {
+    async function step2Items(summary) {
+      const pinia = createTestingPinia({ createSpy: vi.fn })
+      const wrapper = mount(OwnerApprovalSection, {
+        props: DEFAULT_PROPS,
+        global: { plugins: [pinia], ...globalConfig },
+      })
+      const store = useBillPaymentStore(pinia)
+      store.currentSummary = {
+        workflowStatus: 'audited',
+        auditedAt: '2026-04-14T12:00:00Z',
+        ...summary,
+      }
+      await nextTick()
+      return wrapper.findAllComponents({ name: 'WorkflowStepSummaryCard' })[1].props('summaryItems')
+    }
+
+    it('is negative when the counted cash is short, same as CashVerificationTable', async () => {
+      const items = await step2Items({
+        step2ExpectedBillPaymentCash: 2000,
+        step2ActualBillPaymentCash: 1900,
+        step2ExpectedServiceFeeCash: 40,
+        step2ActualServiceFeeCash: 30,
+      })
+      expect(items.find(i => i.label === 'ส่วนต่าง (บิล)').value).toBe('-100')
+      expect(items.find(i => i.label === 'ส่วนต่าง (ค่าธรรมเนียม)').value).toBe('-10')
+    })
+
+    it('is positive when the counted cash is over', async () => {
+      const items = await step2Items({
+        step2ExpectedBillPaymentCash: 2000,
+        step2ActualBillPaymentCash: 2100,
+        step2ExpectedServiceFeeCash: 40,
+        step2ActualServiceFeeCash: 50,
+      })
+      expect(items.find(i => i.label === 'ส่วนต่าง (บิล)').value).toBe('100')
+      expect(items.find(i => i.label === 'ส่วนต่าง (ค่าธรรมเนียม)').value).toBe('10')
     })
   })
 })

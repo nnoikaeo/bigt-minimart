@@ -849,7 +849,7 @@ async function handleCompleteStep1() {
             :permission="PERMISSIONS.EDIT_FINANCE"
             variant="primary"
             size="lg"
-            :disabled="hasDrafts || todayStats.total === 0 || !isOpeningSet"
+            :disabled="!canCompleteStep1"
             :loading="isCompletingStep1"
             @click="handleCompleteStep1"
           >
