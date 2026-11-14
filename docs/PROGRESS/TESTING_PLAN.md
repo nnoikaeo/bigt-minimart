@@ -291,31 +291,31 @@
 > **เลือกวันที่:** status = audited หรือ audited_with_issues
 >
 > **แผน (14 พ.ย. 2569, ข้อมูลจาก MT-3):** รอบ A 09/03 (`audited`) → อนุมัติ; รอบ B 08/03 (`audited_with_issues`) → อนุมัติพร้อมหมายเหตุ; รอบ C 10/03 (`audited`) → ขอให้แก้ไข → Manager → Auditor → Owner อนุมัติ
-> - **รอบ A (กำลังทดสอบ):** การ์ด Step 1: ยอดโอน 3,300 · ยอดถอน 400 · ฝากเงิน "-" · ค่าบริการ 50 · ยกเลิก 0 รายการ, badge "5 / 5 รายการ สำเร็จ", ตารางรายละเอียดมีเวลา (21:49 → 21:59) เรียงตามเวลา ✅ (BUG-035 ข้อ 3); การ์ด Step 2: คาดหวัง 2,950 / นับจริง 2,950 / ส่วนต่าง 0 "ตรงกัน" ✅; การ์ด Audit: "ผ่าน", Auditor "พรทิพย์ เรือนสุข" (BUG-029 ✅ ฝั่ง MT), รายการที่ตรวจ 5, พบปัญหา 0 — "ยอดรายการเดินบัญชี" ขึ้น 0 ฿ ทั้งที่ไม่ได้กรอก (BUG-051)
+> - **รอบ A 09/03 (14 พ.ย. 2569) ✅:** การ์ด Step 1: ยอดโอน 3,300 · ยอดถอน 400 · ฝากเงิน "-" · ค่าบริการ 50 · ยกเลิก 0 รายการ, badge "5 / 5 รายการ สำเร็จ", ตารางรายละเอียดมีเวลา (21:49 → 21:59) เรียงตามเวลา ✅ (BUG-035 ข้อ 3); การ์ด Step 2: คาดหวัง 2,950 / นับจริง 2,950 / ส่วนต่าง 0 "ตรงกัน" ✅; การ์ด Audit: "ผ่าน", Auditor "พรทิพย์ เรือนสุข" (BUG-029 ✅ ฝั่ง MT), รายการที่ตรวจ 5, พบปัญหา 0 — "ยอดรายการเดินบัญชี" ขึ้น 0 ฿ ทั้งที่ไม่ได้กรอก (BUG-051); รายละเอียด Step 2 "ไม่มีหมายเหตุ" ✅; รายละเอียด Audit "ยอดรายการเดินบัญชีตรงกัน ⚠️ ไม่ตรงกัน" ✅ (ข้อมูลแก้เป็น `false` ใน PR #169 / BUG-048); กาง/ยุบการ์ดได้ ✅; ยังไม่เลือก = ปุ่มสีเทา "เลือกการตัดสินใจ" ✅ (BUG-028 ✅ ฝั่ง MT); "อนุมัติ" → หน้าต่าง "ยืนยันการอนุมัติ?" → `approved`, กล่อง "อนุมัติแล้ว ✅ วันที่ 09/03/2569 — ได้รับการอนุมัติเรียบร้อยแล้ว", progress bar ซ่อนเมื่ออนุมัติแล้ว (เหมือน BP) — กล่องอนุมัติไม่บอกชื่อผู้อนุมัติ/เวลา ต่างจาก BP เพราะ MT บันทึก `completedByName: 'Owner'` ตายตัว (BUG-052)
 
 #### ขั้นตอนการทดสอบ
 
 **Step 1: เปิดหน้า Service (Owner view)**
-- [ ] **QuickGlanceSummary** แสดงข้อมูลครบ
-- [ ] **Workflow Progress Bar** ขั้นตอน "Owner" highlight
+- [x] **QuickGlanceSummary** แสดงข้อมูลครบ
+- [x] **Workflow Progress Bar** ขั้นตอน "Owner" highlight
 
 **Step 2: ตรวจสอบ Expandable Summary Cards**
-- [ ] เห็น 3 cards:
+- [x] เห็น 3 cards:
   1. **Step 1 Card** ("Manager บันทึกรายการ") — มี badge แสดงจำนวนรายการ
   2. **Step 2 Card** ("Manager ตรวจนับเงิน") — มี badge "ตรงกัน ✅" หรือ "มีส่วนต่าง ⚠️"
   3. **Audit Card** ("ผลการตรวจสอบ Auditor") — มี badge "ผ่าน ✅" หรือ "มีปัญหา ⚠️"
-- [ ] กด card → expand → เห็นรายละเอียดใน card
-- [ ] กดอีกครั้ง → collapse
+- [x] กด card → expand → เห็นรายละเอียดใน card
+- [x] กดอีกครั้ง → collapse
 
 **Step 3: ตรวจสอบ Decision Card (Radio Card)**
-- [ ] เห็น 3-column radio card:
+- [x] เห็น 3-column radio card:
   1. 🟢 "อนุมัติ" (green border)
   2. 🔵 "อนุมัติพร้อมหมายเหตุ" (blue border)
   3. 🔴 "ขอให้แก้ไข" (red border)
-- [ ] **"ขอให้แก้ไข" ใช้ได้เสมอ** (ไม่มีเงื่อนไข disabled)
+- [x] **"ขอให้แก้ไข" ใช้ได้เสมอ** (ไม่มีเงื่อนไข disabled)
 - [ ] เลือก "อนุมัติพร้อมหมายเหตุ" → ต้องกรอก notes
 - [ ] เลือก "ขอให้แก้ไข" → ต้องกรอก notes
-- [ ] กด Submit → สถานะเปลี่ยนตาม decision
+- [ ] กด Submit → สถานะเปลี่ยนตาม decision ("อนุมัติ" → `approved` ✅ รอบ A 09/03; เหลืออนุมัติพร้อมหมายเหตุ + ขอให้แก้ไข)
 
 **Step 4: ทดสอบ Needs Correction Flow**
 - [ ] เลือก "ขอให้แก้ไข" → กรอก notes → Submit
@@ -850,6 +850,7 @@ Screenshots บันทึกที่: tests/e2e/screenshots/
 | BUG-049 | MT-3 รอบ A (14 พ.ย. 2569) | console: `[Vue warn] Extraneous non-props attributes (loading)` ตอนเปิด ConfirmDialog — `components/ConfirmDialog.vue` ไม่มี prop `loading`; รอบ B เพิ่ม `confirm-label` (MT Auditor "ยืนยันพร้อมหมายเหตุ" ใช้ชื่อผิด ต้องเป็น `confirm-text` — ปุ่มจึงขึ้น "ตกลง" แทน "ยืนยัน") (จัดการ loading เอง) แต่ส่ง `:loading` มา 6 ที่ (MT Auditor / Owner / Manager, BP Manager, `pages/admin/users.vue`, `pages/sales/daily-sales.vue`) — ปุ่มจึงไม่แสดง loading ตามสถานะจริงของการส่ง | Low | 🔧 แก้แล้ว (PR #169): ConfirmDialog มี prop `loading` (ปิดทั้ง 2 ปุ่ม + ขึ้น "กำลังประมวลผล..." ระหว่างส่ง), แก้ `confirm-label` → `confirm-text` — ✅ ไม่มี warning แล้ว (MT-3 รอบ C 14 พ.ย. 2569; ส่ง `:loading` มา 5 ที่ ไม่ใช่ 6) |
 | BUG-050 | MT-3 รอบ C (14 พ.ย. 2569) | ฟอร์ม "แก้ไขรายการและเปลี่ยนสถานะ" ของ MT: กล่องยอด "ยอดเงินในบัญชี ก่อน → หลัง" แสดงผลของรายการเองเสมอ (รายการโอน 1,000: 8,934 → 7,934) แม้เลือก "พักรายการ" หรือ "ยกเลิก" ซึ่งจริง ๆ จะคืนยอด (7,934 → 8,934) — อาจทำให้เข้าใจผิด (`components/money-transfer/TransactionForm.vue` `bannerInfo`; BP ไม่มีกล่องนี้) | Low (UX) | ☐ เปิด — เสนอซ่อนกล่องเมื่อเลือกพัก/ยกเลิก หรือแสดงยอดหลังคืน |
 | BUG-051 | MT-4 รอบ A (14 พ.ย. 2569) | การ์ด Owner "ยอดรายการเดินบัญชี" ขึ้น "0 ฿" เมื่อ Auditor ไม่ได้กรอก Bank Statement (`bankStatementAmount ?? 0`) — อ่านเหมือนบัญชีมี 0 บาท (MT `components/money-transfer/OwnerApprovalSection.vue`, BP เขียนแบบเดียวกัน `auditBankStatementAmount ?? 0`) — หลัง PR #169 MT บังคับกรอกแล้ว จะเกิดกับข้อมูลเก่า / BP ที่ไม่มีค่า | Low (UX) | ☐ เปิด — เสนอแสดง "ไม่ได้กรอก" หรือ "-" เมื่อไม่มีค่า (MT + BP) |
+| BUG-052 | MT-4 รอบ A (14 พ.ย. 2569) | กล่อง "อนุมัติแล้ว" ของ MT ไม่บอกชื่อผู้อนุมัติ + เวลา (BP บอก) และข้อมูลบันทึก `completedBy: 'owner'`, `completedByName: 'Owner'` ตายตัว — route MT (`approve`, `complete-step2`) ยังไม่ใช้ `requireServerAuth` จึงไม่รู้ว่าใครกด (tech debt เดิมใน CLAUDE.md) | Low | ☐ เปิด — แก้พร้อมงานใส่ `requireServerAuth` ให้ route MT (เกี่ยวกับ BUG-037) แล้วแสดงชื่อ + เวลาแบบ BP |
 | BUG-006 | MT-2 Step 8 (อ่านโค้ด) | สงสัย: อยู่หน้า 2 แล้วจำนวนรายการลดจนเหลือ 1 หน้า → `currentPage` ไม่ถูก clamp → ตารางว่าง + pagination หาย | Medium | ✅ ปิด — ไม่เกิดจริง (ทดสอบ 17 ต.ค. 2569: ลบรายการหน้า 2 → กลับหน้า 1 ปกติ) |
 
 ### E2E Test Results
