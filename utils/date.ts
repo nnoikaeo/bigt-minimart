@@ -25,3 +25,16 @@ export function formatThaiDateTime(value: string | Date): string {
   if (!d) return '-'
   return `${formatThaiDate(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
+
+/**
+ * Today's date as YYYY-MM-DD in shop time (Asia/Bangkok), on the client and the server.
+ * `new Date().toISOString()` is UTC, so from 00:00 to 07:00 it still gives yesterday.
+ */
+export function todayISO(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Bangkok',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now)
+}

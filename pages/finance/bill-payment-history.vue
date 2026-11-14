@@ -5,7 +5,9 @@ import { useLogger } from '~/composables/useLogger'
 import { usePermissions } from '~/composables/usePermissions'
 import { PERMISSIONS, ROLES } from '~/types/permissions'
 import { getWorkflowStatusBadge } from '~/types/shared-workflow'
-import { formatThaiDate } from '~/utils/date'
+import { formatThaiDate, todayISO } from '~/utils/date'
+import { HISTORY_INBOX_STATUSES, countInbox } from '~/utils/finance-history'
+import type { HistoryInbox, HistoryRole } from '~/utils/finance-history'
 import { PlusIcon } from '@heroicons/vue/24/outline'
 
 definePageMeta({
@@ -21,7 +23,7 @@ const { getSmartActionButton, formatWorkflowStatus, formatAmount } = useBillPaym
 // ─── State ────────────────────────────────────────────────────────────────────
 const errorMessage = ref('')
 const showAddModal = ref(false)
-const newRecordDate = ref<string>(new Date().toISOString().split('T')[0] ?? '')
+const newRecordDate = ref<string>(todayISO())
 
 // ─── Computed ─────────────────────────────────────────────────────────────────
 const isManagerOrAM = computed(() =>
@@ -29,65 +31,39 @@ const isManagerOrAM = computed(() =>
 )
 const isAuditor = computed(() => hasAnyRole([ROLES.AUDITOR]))
 
-const today = new Date().toISOString().split('T')[0] ?? ''
-
 const isBackdated = computed(() =>
-  !!newRecordDate.value && newRecordDate.value < today
+  !!newRecordDate.value && newRecordDate.value < todayISO()
 )
 
 /** Active inbox filter (click card to filter table) */
-const activeFilter = ref<'manager' | 'auditor' | 'owner' | null>(null)
+const activeFilter = ref<HistoryInbox | null>(null)
 
-function toggleFilter(role: 'manager' | 'auditor' | 'owner') {
+function toggleFilter(role: HistoryInbox) {
   activeFilter.value = activeFilter.value === role ? null : role
 }
 
-/** Pending Inbox counts by role */
-const pendingForManager = computed(() =>
-  store.summaries.filter(
-    (s: any) =>
-      s.workflowStatus === 'step1_in_progress' ||
-      s.workflowStatus === 'step1_completed' ||
-      s.workflowStatus === 'needs_correction'
-  ).length
-)
-const pendingForAuditor = computed(() =>
-  store.summaries.filter(
-    (s: any) =>
-      s.workflowStatus === 'step2_completed' ||
-      s.workflowStatus === 'step2_completed_with_notes'
-  ).length
-)
-const pendingForOwner = computed(() =>
-  store.summaries.filter(
-    (s: any) =>
-      s.workflowStatus === 'audited' || s.workflowStatus === 'audited_with_issues'
-  ).length
-)
+/** Pending Inbox counts by role (rules shared with MT: utils/finance-history.ts) */
+const pendingForManager = computed(() => countInbox(store.summaries, 'manager'))
+const pendingForAuditor = computed(() => countInbox(store.summaries, 'auditor'))
+const pendingForOwner = computed(() => countInbox(store.summaries, 'owner'))
 
 /** Filtered summaries based on active inbox filter */
 const filteredSummaries = computed(() => {
   if (!activeFilter.value) return store.summaries
-  const statusSets: Record<string, string[]> = {
-    manager: ['step1_in_progress', 'step1_completed', 'needs_correction'],
-    auditor: ['step2_completed', 'step2_completed_with_notes'],
-    owner: ['audited', 'audited_with_issues'],
-  }
-  const allowed = statusSets[activeFilter.value] ?? []
+  const allowed: string[] = HISTORY_INBOX_STATUSES[activeFilter.value]
   return store.summaries.filter((s: any) => allowed.includes(s.workflowStatus))
 })
 
 // ─── Smart Action Button ───────────────────────────────────────────────────────
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'success' | 'ghost'
-type ValidRole = 'manager' | 'assistant_manager' | 'auditor' | 'owner'
 
 const actionButtonMap = computed(() => {
   const role = userRole.value
   const map = new Map<string, { label: string; route: string; variant: ButtonVariant }>()
   if (!role || role === 'unknown') return map
   for (const summary of store.summaries) {
-    const btn = getSmartActionButton(role as ValidRole, summary.workflowStatus, summary.date)
-    // SmartActionVariant includes 'outline' which BaseButton doesn't support — map to 'secondary'
+    const btn = getSmartActionButton(role as HistoryRole, summary.workflowStatus, summary.date)
+    // HistoryActionVariant includes 'outline' which BaseButton doesn't support — map to 'secondary'
     const variant: ButtonVariant = btn.variant === 'outline' ? 'secondary' : btn.variant
     map.set(summary.date, { ...btn, variant })
   }
@@ -102,7 +78,7 @@ function getStatusBadgeClass(status: string): string {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 // ─── Actions ──────────────────────────────────────────────────────────────────
 function openAddModal() {
-  newRecordDate.value = new Date().toISOString().split('T')[0] ?? ''
+  newRecordDate.value = todayISO()
   showAddModal.value = true
 }
 
@@ -323,14 +299,16 @@ onMounted(async () => {
     </div>
 
     <template #footer>
-      <BaseButton variant="secondary" @click="showAddModal = false">ยกเลิก</BaseButton>
-      <BaseButton
-        variant="primary"
-        :disabled="!newRecordDate"
-        @click="navigateToAddRecord"
-      >
-        ไปบันทึกรายการ →
-      </BaseButton>
+      <div class="flex justify-end gap-2">
+        <BaseButton variant="secondary" @click="showAddModal = false">ยกเลิก</BaseButton>
+        <BaseButton
+          variant="primary"
+          :disabled="!newRecordDate"
+          @click="navigateToAddRecord"
+        >
+          ไปบันทึกรายการ →
+        </BaseButton>
+      </div>
     </template>
   </BaseModal>
 </template>

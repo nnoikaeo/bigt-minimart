@@ -1,4 +1,5 @@
 ﻿import { moneyTransferJsonRepository } from '~/server/repositories/money-transfer-json.repository'
+import { todayISO } from '~/utils/date'
 /**
  * GET /api/money-transfer/balances/current
  *
@@ -14,7 +15,7 @@ export default defineEventHandler(async (event) => {
     await moneyTransferJsonRepository.init()
 
     // Get today's date
-    const today = new Date().toISOString().split('T')[0]
+    const today = todayISO()
     if (!today) {
       throw createError({
         statusCode: 500,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatThaiDate, formatThaiDateTime } from '~/utils/date'
+import { formatThaiDate, formatThaiDateTime, todayISO } from '~/utils/date'
 
 describe('formatThaiDate', () => {
   it('shows a stored date as dd/mm/Buddhist year', () => {
@@ -26,5 +26,17 @@ describe('formatThaiDateTime', () => {
 
   it('returns "-" for an invalid value', () => {
     expect(formatThaiDateTime('not-a-date')).toBe('-')
+  })
+})
+
+describe('todayISO', () => {
+  it('uses Thai time, not UTC, just after midnight', () => {
+    // 5 Nov 2026 00:27 in Bangkok = 4 Nov 17:27 UTC
+    expect(todayISO(new Date('2026-11-04T17:27:00Z'))).toBe('2026-11-05')
+  })
+
+  it('stays on the same day late in the evening', () => {
+    // 5 Nov 2026 23:59 in Bangkok = 5 Nov 16:59 UTC
+    expect(todayISO(new Date('2026-11-05T16:59:00Z'))).toBe('2026-11-05')
   })
 })

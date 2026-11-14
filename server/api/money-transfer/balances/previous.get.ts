@@ -1,4 +1,5 @@
 import { moneyTransferJsonRepository } from '~/server/repositories/money-transfer-json.repository'
+import { todayISO } from '~/utils/date'
 
 /**
  * GET /api/money-transfer/balances/previous?date=YYYY-MM-DD
@@ -13,7 +14,7 @@ export default defineEventHandler(async (event) => {
     await moneyTransferJsonRepository.init()
 
     const query = getQuery(event)
-    const date = (query.date as string) || (new Date().toISOString().split('T')[0] as string)
+    const date = (query.date as string) || todayISO()
 
     console.log(`[GET /api/money-transfer/balances/previous] Fetching previous day balance for ${date}`)
 
