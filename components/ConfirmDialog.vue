@@ -13,12 +13,13 @@
  *   confirm-text="ลบ"
  *   cancel-text="ยกเลิก"
  *   variant="danger"
+ *   :loading="isDeleting"
  *   @confirm="handleDelete"
  *   @cancel="showConfirm = false"
  * />
  */
 
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 interface Props {
   open: boolean
@@ -27,12 +28,15 @@ interface Props {
   confirmText?: string
   cancelText?: string
   variant?: 'danger' | 'warning' | 'info' | 'success'
+  /** Parent's async state — disables the buttons and shows "กำลังประมวลผล..." while the action runs */
+  loading?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   confirmText: 'ตกลง',
   cancelText: 'ยกเลิก',
   variant: 'warning',
+  loading: false,
 })
 
 const emit = defineEmits<{
@@ -40,18 +44,21 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
-const isLoading = ref(false)
+const isEmitting = ref(false)
+const isLoading = computed(() => props.loading || isEmitting.value)
 
 const handleConfirm = () => {
-  isLoading.value = true
+  if (isLoading.value) return
+  isEmitting.value = true
   try {
     emit('confirm')
   } finally {
-    isLoading.value = false
+    isEmitting.value = false
   }
 }
 
 const handleCancel = () => {
+  if (isLoading.value) return
   emit('cancel')
 }
 
@@ -125,7 +132,8 @@ const getIcon = () => {
           <button
             @click="handleCancel"
             type="button"
-            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 transition-colors"
+            :disabled="isLoading"
+            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {{ cancelText }}
           </button>
