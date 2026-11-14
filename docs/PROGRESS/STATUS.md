@@ -4,7 +4,7 @@
 **Updated By**: Claude Code
 **Current Branch**: develop (latest merge: PR #168; main: docs synced via PR #150, code at release #148)
 **Current Phase**: Testing — Service Harmonization (Manual Test → Bug Fix → E2E)
-**Next Up**: MT-3 + MT-4 manual test (BUG-035 fixed in PR #168 — round A of MT-3 passed Nov 14); BUG-037 (server role checks) before release; then history summary columns (MT + BP, see "Planned" below); small: BUG-046 (carry-over label) + BUG-047 (URL date) MT + BP; then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
+**Next Up**: MT-4 manual test (MT-3 passed Nov 14; BUG-035 PR #168, BUG-026 MT / 048 / 049 PR #169); BUG-037 (server role checks) before release; then history summary columns (MT + BP, see "Planned" below); small: BUG-046 (carry-over label) + BUG-047 (URL date) MT + BP; then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
 
 ---
 
@@ -23,7 +23,7 @@ PHASE 1: Core Features
 ├─ Week 9: Layout Consistency & Polish            ✅ COMPLETE (100%)
 ├─ Week 5-6 (original plan): Dashboard + Reports ❌ NOT STARTED (0%)
 ├─ Week 10+: Bill Payment Service Harmonization               ✅ COMPLETE (100%)
-├─ Testing: Service Harmonization Testing Plan                 🔄 IN PROGRESS (MT-1 ✅, MT-2 ✅, BP-2 ✅, BP-3 ✅, BP-4 ✅, BP-1 ✅; MT-3 🔄, MT-4 next)
+├─ Testing: Service Harmonization Testing Plan                 🔄 IN PROGRESS (MT-1 ✅, MT-2 ✅, BP-2 ✅, BP-3 ✅, BP-4 ✅, BP-1 ✅; MT-3 ✅, MT-4 next)
 └─ Overall: PHASE 1 CORE COMPLETE — Harmonization COMPLETE — Testing IN PROGRESS
 
 Timeline Status: Money Transfer feature fully shipped ✓
