@@ -346,6 +346,8 @@ export interface MoneyTransferDailySummary {
   workflowStatus: UnifiedWorkflowStatus
 
   // Correction tracking (set when auditor or owner sends back for correction)
+  /** Status the day was in when it was sent back (audited* → Owner, step2* → Auditor) */
+  needsCorrectionFrom?: UnifiedWorkflowStatus
   correctionNotes?: string
   correctionRequestedAt?: string | Date
   correctionRequestedBy?: string
@@ -436,8 +438,6 @@ export interface IMoneyTransferRepository {
   // Workflow operations
   completeStep1(date: string, userId: string, userName: string): Promise<MoneyTransferDailySummary>
   completeStep2(date: string, step2Data: MoneyTransferDailySummary['step2']): Promise<MoneyTransferDailySummary>
-  completeAudit(date: string, auditData: MoneyTransferDailySummary['auditorVerification']): Promise<MoneyTransferDailySummary>
-  approveByOwner(date: string, approvalData: MoneyTransferDailySummary['ownerApproval']): Promise<MoneyTransferDailySummary>
 
   // Favorites CRUD
   getFavorites(): Promise<FavoriteTransfer[]>

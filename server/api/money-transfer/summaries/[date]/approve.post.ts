@@ -104,6 +104,26 @@ export default defineEventHandler(async (event) => {
       `[POST /api/money-transfer/summaries/[date]/approve] Owner decision: ${validated.decision}`
     )
 
+    // Send back to Manager (same as BP): keep Step 1, clear Step 2 + audit + decision
+    if (workflowStatus === 'needs_correction') {
+      const correctedSummary = await moneyTransferJsonRepository.requestCorrection(date, {
+        notes: validated.ownerNotes || '',
+        requestedBy: 'owner',
+      })
+      setResponseStatus(event, 200)
+      return {
+        success: true,
+        data: correctedSummary,
+        message: 'Sent back to Manager for correction.',
+        approval: {
+          decision: validated.decision,
+          decisionLabel: '🔄 Correction Requested',
+          ownerNotes: validated.ownerNotes,
+          completedAt: new Date().toISOString(),
+        },
+      }
+    }
+
     const now = new Date().toISOString()
 
     const updatePayload: Record<string, any> = {
@@ -121,13 +141,6 @@ export default defineEventHandler(async (event) => {
         ownerNotes: validated.ownerNotes,
       },
       workflowStatus,
-    }
-
-    // Track correction request metadata
-    if (workflowStatus === 'needs_correction') {
-      updatePayload.correctionNotes = validated.ownerNotes || ''
-      updatePayload.correctionRequestedAt = now
-      updatePayload.correctionRequestedBy = 'owner'
     }
 
     // Update summary with owner approval data

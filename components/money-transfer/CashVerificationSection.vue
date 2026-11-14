@@ -4,7 +4,7 @@ import { useLogger } from '~/composables/useLogger'
 import { usePermissions } from '~/composables/usePermissions'
 import { PERMISSIONS, ROLES } from '~/types/permissions'
 import type { CashVerificationRow } from '~/components/shared/CashVerificationTable.vue'
-import { CheckCircleIcon } from '@heroicons/vue/24/outline'
+import { CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{ date: string }>()
 
@@ -16,7 +16,10 @@ const { hasAnyRole } = usePermissions()
 const isManagerOrAsst = computed(() => hasAnyRole([ROLES.MANAGER, ROLES.ASSISTANT_MANAGER]))
 const isAuditor = computed(() => hasAnyRole([ROLES.AUDITOR]))
 const isOwner = computed(() => hasAnyRole([ROLES.OWNER]))
-const canEditCashCount = computed(() => isManagerOrAsst.value && !store.isStep2Complete)
+// Sent back (needs_correction): Manager re-confirms Step 1 first, then the count form opens (same as BP)
+const canEditCashCount = computed(
+  () => isManagerOrAsst.value && !store.isStep2Complete && store.getCurrentWorkflowStatus !== 'needs_correction'
+)
 
 // ─── Alert ────────────────────────────────────────────────────────────────────
 const errorMessage = ref('')
@@ -162,6 +165,20 @@ async function handleConfirmVerification() {
       <div class="flex items-center gap-3 mb-4">
         <h2 class="text-base font-semibold text-gray-700">💵 ผลการตรวจนับเงินสด</h2>
         <BaseBadge variant="warning" size="sm">⏳ รอตรวจนับ</BaseBadge>
+      </div>
+
+      <!-- Recount after a send-back: keep the reason in view while counting -->
+      <div
+        v-if="store.currentSummary?.correctionNotes"
+        class="mb-4 rounded-xl border border-red-300 bg-red-50 px-5 py-4"
+      >
+        <div class="flex items-start gap-3">
+          <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600" />
+          <div>
+            <p class="font-semibold text-red-800">ตรวจนับใหม่ — {{ store.getCorrectionSource }} ส่งคืน</p>
+            <p class="mt-1 text-sm text-red-700 whitespace-pre-wrap">{{ store.currentSummary.correctionNotes }}</p>
+          </div>
+        </div>
       </div>
 
       <div class="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100 mb-4">

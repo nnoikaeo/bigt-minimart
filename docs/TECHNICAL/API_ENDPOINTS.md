@@ -48,6 +48,11 @@ POST   /api/money-transfer/summaries/:date/audit        Auditor: audited / audit
 POST   /api/money-transfer/summaries/:date/approve      Owner: approved / approved_with_notes / needs_correction
 ```
 
+`needs_correction` (Auditor or Owner) sends the day back to Manager, same as BP: keeps Step 1 and the
+transactions, clears `step2` / `auditorVerification` / `ownerApproval`, and stores `correctionNotes`,
+`needsCorrectionFrom` (status it was sent back from) and `correctionRequestedAt/By`
+(`moneyTransferJsonRepository.requestCorrection`).
+
 ### Favorites
 ```
 GET    /api/money-transfer/favorites

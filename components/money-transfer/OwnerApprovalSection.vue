@@ -1,21 +1,15 @@
 <script setup lang="ts">
 import { useMoneyTransferStore } from '~/stores/money-transfer'
 import { useLogger } from '~/composables/useLogger'
-import { usePermissions } from '~/composables/usePermissions'
 import { formatThaiDate } from '~/utils/date'
-import { ROLES } from '~/types/permissions'
 import { CheckCircleIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps<{
   date: string
-  isNeedsCorrection: boolean
 }>()
 
 const logger = useLogger('OwnerApprovalSection')
 const store = useMoneyTransferStore()
-const { hasAnyRole } = usePermissions()
-
-const isOwner = computed(() => hasAnyRole([ROLES.OWNER]))
 
 // ─── Alerts ───────────────────────────────────────────────────────────────────
 const successMessage = ref('')
@@ -32,7 +26,20 @@ const isSubmitting = ref(false)
 const { formatCurrency, formatDatetime, formatTime, getStatusBadgeVariant, getStatusLabel, getTransactionTypeLabel } = useMoneyTransferHelpers()
 
 // ─── Transactions ─────────────────────────────────────────────────────────────
-const dateTransactions = computed(() => store.getTransactionsByDate(props.date))
+const dateTransactions = computed(() =>
+  [...store.getTransactionsByDate(props.date)].sort((a: any, b: any) =>
+    (a.datetime ?? '').localeCompare(b.datetime ?? '')
+  )
+)
+// step1.totalAmount adds every completed type together, so split the totals by type here (same as BP)
+const completedAmountByType = (type: string) =>
+  dateTransactions.value
+    .filter((t: any) => t.status === 'completed' && t.transactionType === type)
+    .reduce((sum: number, t: any) => sum + t.amount, 0)
+const totalTransferAmount = computed(() => completedAmountByType('transfer'))
+const totalWithdrawalAmount = computed(() => completedAmountByType('withdrawal'))
+const totalOwnerDepositAmount = computed(() => completedAmountByType('owner_deposit'))
+const cancelledCount = computed(() => dateTransactions.value.filter((t: any) => t.status === 'cancelled').length)
 
 // ─── Step 2 diffs ─────────────────────────────────────────────────────────────
 const step2 = computed(() => store.currentSummary?.step2)
@@ -56,9 +63,15 @@ const step1SummaryItems = computed(() => {
   const s1 = store.currentSummary?.step1
   if (!s1) return []
   return [
-    { label: 'ยอดรวมโอน', value: formatCurrency(s1.totalAmount), colorClass: 'bg-blue-50' },
+    { label: 'ยอดโอน', value: formatCurrency(totalTransferAmount.value), colorClass: 'bg-blue-50' },
+    { label: 'ยอดถอน', value: formatCurrency(totalWithdrawalAmount.value), colorClass: 'bg-purple-50' },
+    {
+      label: 'ฝากเงิน',
+      value: totalOwnerDepositAmount.value > 0 ? formatCurrency(totalOwnerDepositAmount.value) : '-',
+      colorClass: 'bg-blue-50',
+    },
     { label: 'ค่าบริการ', value: formatCurrency(s1.totalCommission), colorClass: 'bg-green-50' },
-    { label: 'Draft / ยกเลิก', value: `${s1.draftTransactions} รายการ`, colorClass: s1.draftTransactions > 0 ? 'bg-yellow-50' : 'bg-gray-50' },
+    { label: 'ยกเลิก', value: `${cancelledCount.value} รายการ`, colorClass: cancelledCount.value > 0 ? 'bg-red-50' : 'bg-gray-50' },
   ]
 })
 
@@ -115,7 +128,7 @@ const confirmTitle = computed(() => {
 })
 
 const confirmMessage = computed(() => {
-  if (pendingDecision.value === 'needs_correction') return 'ต้องการส่งคืนให้ Auditor/Manager แก้ไขใช่หรือไม่?'
+  if (pendingDecision.value === 'needs_correction') return 'ต้องการส่งคืนให้ Manager แก้ไขใช่หรือไม่?'
   return 'ต้องการอนุมัติรายการประจำวันนี้ใช่หรือไม่? การดำเนินการนี้ไม่สามารถยกเลิกได้'
 })
 
@@ -153,7 +166,7 @@ async function handleConfirmedSubmit() {
     const labels: Record<CardDecision, string> = {
       approved: 'อนุมัติเรียบร้อยแล้ว ✅',
       approved_with_notes: 'อนุมัติพร้อมหมายเหตุเรียบร้อยแล้ว ✅',
-      needs_correction: 'ส่งคืนแก้ไขเรียบร้อย',
+      needs_correction: 'ส่งกลับให้ Manager แก้ไขแล้ว',
     }
     successMessage.value = labels[pendingDecision.value]
     showConfirmDialog.value = false
@@ -191,14 +204,6 @@ async function handleConfirmedSubmit() {
       </div>
     </div>
 
-    <!-- Needs Correction Banner -->
-    <BaseAlert
-      v-if="isNeedsCorrection && !store.isApproved"
-      variant="warning"
-      message="ส่งคืนแก้ไขแล้ว — รอ Auditor/Manager ดำเนินการ"
-      class="mb-4"
-    />
-
     <!-- ── Step 1 Summary Card ──────────────────────────────────────────────── -->
     <WorkflowStepSummaryCard
       :step-number="1"
@@ -226,7 +231,7 @@ async function handleConfirmedSubmit() {
             class="border-b border-gray-100 last:border-0"
           >
             <td class="py-2 text-gray-400">{{ Number(idx) + 1 }}</td>
-            <td class="py-2 text-gray-600">{{ formatTime(txn.timestamp) }}</td>
+            <td class="py-2 text-gray-600">{{ formatTime(txn.datetime) }}</td>
             <td class="py-2 text-gray-800">{{ getTransactionTypeLabel(txn.transactionType) }}</td>
             <td class="py-2 text-right font-medium text-gray-900">{{ formatCurrency(txn.amount) }}</td>
             <td class="py-2 text-right text-green-700">{{ formatCurrency(txn.commission ?? 0) }}</td>
@@ -270,6 +275,7 @@ async function handleConfirmedSubmit() {
           <p class="text-xs text-gray-500 mb-1">หมายเหตุ</p>
           <p class="text-gray-700 whitespace-pre-wrap">{{ step2.verificationNotes }}</p>
         </div>
+        <p v-else class="text-sm text-gray-500">ไม่มีหมายเหตุ</p>
       </div>
       <EmptyState v-else title="ยังไม่มีข้อมูลตรวจนับ" />
     </WorkflowStepSummaryCard>
@@ -289,7 +295,7 @@ async function handleConfirmedSubmit() {
             <span class="text-gray-700">{{ formatDatetime(auditData.completedAt as string) }}</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-gray-500">Bank Balance ตรงกัน</span>
+            <span class="text-gray-500">ยอดรายการเดินบัญชีตรงกัน</span>
             <BaseBadge :variant="auditData.bankBalanceMatches ? 'success' : 'warning'" size="sm">
               {{ auditData.bankBalanceMatches ? '✅ ตรงกัน' : '⚠️ ไม่ตรงกัน' }}
             </BaseBadge>

@@ -97,6 +97,11 @@ const canSubmitAudit = computed(
 const canSubmitAuditWithIssues = computed(
   () => canSubmitAudit.value && issueDetails.value.trim() !== ''
 )
+// Send-back needs a reason (same as BP)
+const canSendBack = computed(() => issueDetails.value.trim() !== '')
+// Audit form after Manager fixed a sent-back day (correctionNotes kept from the send-back)
+const canShowAuditForm = computed(() => store.isStep2Complete && !store.isAudited)
+const isReaudit = computed(() => canShowAuditForm.value && !!store.currentSummary?.correctionNotes)
 const openingBalance = computed(() => store.currentBalance?.openingBalance ?? 0)
 const closingBalance = computed(
   () => store.currentSummary?.step1?.finalBalances?.bankAccount ?? store.currentBalance?.bankAccount ?? 0
@@ -148,7 +153,7 @@ const mtAuditCashVerificationRows = computed<CashVerificationRow[]>(() => {
 })
 
 const showStickyAuditorActions = computed(
-  () => store.isStep2Complete && (!store.isAudited || props.isNeedsCorrection) && !isAuditorActionsVisible.value
+  () => canShowAuditForm.value && !isAuditorActionsVisible.value
 )
 
 const mtColumns: TableColumn[] = [
@@ -159,22 +164,6 @@ const mtColumns: TableColumn[] = [
   { key: 'commission', label: 'ค่าบริการ', align: 'right', component: 'commission' },
   { key: 'status', label: 'สถานะ', align: 'center', component: 'status' },
 ]
-
-// ─── Pre-fill when returning to needs_correction ──────────────────────────────
-watch(() => store.currentSummary, (summary) => {
-  if (summary?.workflowStatus === 'needs_correction' && summary.auditorVerification) {
-    const audit = summary.auditorVerification
-    if (audit.auditorCash) {
-      auditorCashTransferWithdrawal.value = audit.auditorCash.transferWithdrawal ?? null
-      auditorCashServiceFee.value = audit.auditorCash.serviceFee ?? null
-    }
-    bankStatementAmount.value = audit.bankStatementAmount ?? ''
-    issueDetails.value = audit.auditNotes || ''
-    if (audit.txnIssueStatus) {
-      txnIssueStatus.value = { ...audit.txnIssueStatus }
-    }
-  }
-}, { immediate: true })
 
 // ─── Sticky observer ──────────────────────────────────────────────────────────
 onMounted(() => {
@@ -311,21 +300,38 @@ async function handleRejectAudit() {
     <!-- Auditor Active Form                                                    -->
     <!-- Visible: Auditor + (step2 complete & NOT audited) OR needs_correction  -->
     <!-- ══════════════════════════════════════════════════════════════════════ -->
-    <section v-if="store.isStep2Complete && (!store.isAudited || isNeedsCorrection)" class="mt-6">
-      <!-- Owner correction reason banner -->
-      <div v-if="isNeedsCorrection && store.currentSummary?.ownerApproval?.ownerNotes" class="mb-4 p-4 rounded-xl border border-red-200 bg-red-50">
-        <div class="flex items-start gap-3">
-          <ExclamationTriangleIcon class="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-          <div>
-            <p class="font-semibold text-red-800 text-sm">Owner ขอให้แก้ไข</p>
-            <p class="text-sm text-red-700 mt-1">{{ store.currentSummary.ownerApproval.ownerNotes }}</p>
-          </div>
+    <!-- Sent back: waiting for Manager (same as BP) -->
+    <div
+      v-if="isNeedsCorrection && !store.isStep2Complete"
+      class="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-5 py-4"
+    >
+      <div class="flex items-start gap-3">
+        <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
+        <div>
+          <p class="font-semibold text-amber-800">ส่งคืนให้ Manager แก้ไขแล้ว — รอ Manager ตรวจนับเงินสดใหม่</p>
+          <p v-if="store.currentSummary?.correctionNotes" class="mt-1 text-sm text-amber-700 whitespace-pre-wrap">หมายเหตุ: {{ store.currentSummary.correctionNotes }}</p>
         </div>
       </div>
+    </div>
 
+    <!-- Re-audit after Manager's correction -->
+    <div
+      v-if="isReaudit"
+      class="mt-6 mb-4 rounded-xl border border-amber-300 bg-amber-50 px-5 py-4"
+    >
+      <div class="flex items-start gap-3">
+        <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
+        <div>
+          <p class="font-semibold text-amber-800">ตรวจสอบซ้ำ — Manager แก้ไขแล้ว</p>
+          <p class="mt-1 text-sm text-amber-700 whitespace-pre-wrap">หมายเหตุเดิม: {{ store.currentSummary?.correctionNotes }}</p>
+        </div>
+      </div>
+    </div>
+
+    <section v-if="canShowAuditForm" class="mt-6">
       <div class="flex items-center gap-3 mb-4">
         <h2 class="text-base font-semibold text-gray-700">🔍 ตรวจสอบบริการโอนเงิน</h2>
-        <BaseBadge v-if="isNeedsCorrection" variant="error" size="sm">🔄 ตรวจสอบใหม่</BaseBadge>
+        <BaseBadge v-if="isReaudit" variant="error" size="sm">🔄 ตรวจสอบซ้ำ</BaseBadge>
         <BaseBadge v-else variant="warning" size="sm">⏳ รอตรวจสอบ</BaseBadge>
       </div>
 
@@ -491,7 +497,7 @@ async function handleRejectAudit() {
 
       <!-- Action Buttons -->
       <div ref="auditorActionsRef" class="flex flex-col sm:flex-row items-center justify-between gap-4 py-4">
-        <BaseButton variant="danger" :disabled="isNeedsCorrection" @click="showAuditRejectConfirm = true">
+        <BaseButton variant="danger" :disabled="!canSendBack" :title="!canSendBack ? 'กรอกรายละเอียดปัญหาก่อน' : ''" @click="showAuditRejectConfirm = true">
           <XCircleIcon class="w-4 h-4" />
           ส่งคืนแก้ไข
         </BaseButton>
@@ -508,7 +514,7 @@ async function handleRejectAudit() {
           </BaseButton>
           <BaseButton variant="success" :disabled="!canSubmitAudit" @click="showAuditApproveConfirm = true">
             <CheckCircleIcon class="w-4 h-4" />
-            {{ isNeedsCorrection ? 'ส่งตรวจสอบใหม่' : 'ยืนยันการตรวจสอบ' }}
+            ยืนยันการตรวจสอบ
           </BaseButton>
         </div>
       </div>
@@ -518,7 +524,7 @@ async function handleRejectAudit() {
     <!-- Audit Result — Read-only CollapsibleSection                            -->
     <!-- ══════════════════════════════════════════════════════════════════════ -->
     <CollapsibleSection
-      v-if="store.isAudited && !(isAuditor && isNeedsCorrection)"
+      v-if="store.isAudited"
       icon="🔍"
       title="ผลตรวจสอบ Auditor"
       :badge="{ label: '✅ ตรวจสอบแล้ว', variant: 'success' }"
@@ -618,7 +624,7 @@ async function handleRejectAudit() {
         v-if="showStickyAuditorActions"
         class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg px-4 py-3 flex items-center justify-between gap-2 z-50 sm:hidden"
       >
-        <BaseButton variant="danger" size="sm" :disabled="isNeedsCorrection" @click="showAuditRejectConfirm = true">
+        <BaseButton variant="danger" size="sm" :disabled="!canSendBack" @click="showAuditRejectConfirm = true">
           <XCircleIcon class="w-4 h-4" />
           ส่งคืนแก้ไข
         </BaseButton>
@@ -634,7 +640,7 @@ async function handleRejectAudit() {
         </BaseButton>
         <BaseButton variant="success" size="sm" :disabled="!canSubmitAudit" @click="showAuditApproveConfirm = true">
           <CheckCircleIcon class="w-4 h-4" />
-          {{ isNeedsCorrection ? 'ส่งใหม่' : 'ยืนยัน' }}
+          ยืนยัน
         </BaseButton>
       </div>
     </Teleport>

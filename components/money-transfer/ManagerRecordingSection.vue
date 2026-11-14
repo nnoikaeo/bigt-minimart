@@ -36,6 +36,9 @@ const { can, hasAnyRole } = usePermissions()
 // ─── Role ─────────────────────────────────────────────────────────────────────
 const isManagerOrAsst = computed(() => hasAnyRole([ROLES.MANAGER, ROLES.ASSISTANT_MANAGER]))
 const isStep1InProgress = computed(() => store.getCurrentWorkflowStatus === 'step1_in_progress')
+const isNeedsCorrection = computed(() => store.getCurrentWorkflowStatus === 'needs_correction')
+// Manager can add/edit only while the day is still open (Step 1) or sent back for correction (same as BP)
+const canManagerEdit = computed(() => isStep1InProgress.value || isNeedsCorrection.value)
 
 // ─── Alert messages ───────────────────────────────────────────────────────────
 const successMessage = ref('')
@@ -184,7 +187,7 @@ const todayStats = computed(() => {
 })
 
 const isOpeningSet = computed(() => store.currentBalance?.openingBalanceSource != null)
-const canAddTransaction = computed(() => isOpeningSet.value && !store.isStep1Complete)
+const canAddTransaction = computed(() => isOpeningSet.value && canManagerEdit.value)
 const canCompleteStep1 = computed(
   () => isOpeningSet.value && todayStats.value.total > 0 && !hasDrafts.value && !hasOnHold.value
 )
@@ -596,6 +599,21 @@ async function handleCompleteStep1() {
     <BaseAlert v-if="successMessage" variant="success" :message="successMessage" :auto-close="true" class="mb-4" @close="successMessage = ''" />
     <BaseAlert v-if="errorMessage" variant="error" :message="errorMessage" class="mb-4" @close="errorMessage = ''" />
 
+    <!-- ── Needs Correction Banner (same as BP) ───────────────────────────── -->
+    <div
+      v-if="isNeedsCorrection"
+      class="mb-4 rounded-xl border border-red-300 bg-red-50 px-5 py-4"
+    >
+      <div class="flex items-start gap-3">
+        <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600" />
+        <div>
+          <p class="font-semibold text-red-800">ส่งกลับให้แก้ไข — {{ store.getCorrectionSource }} ส่งคืน</p>
+          <p v-if="store.currentSummary?.correctionNotes" class="mt-1 text-sm text-red-700 whitespace-pre-wrap">{{ store.currentSummary.correctionNotes }}</p>
+          <p class="mt-1 text-sm text-red-700 opacity-80">แก้รายการถ้าจำเป็น แล้วยืนยันบันทึกรายการและตรวจนับเงินสดใหม่</p>
+        </div>
+      </div>
+    </div>
+
     <!-- ── Opening Balance prompt ──────────────────────────────────────────── -->
     <section v-if="!isOpeningSet" class="mb-4">
       <div class="flex items-center justify-between gap-4 bg-blue-50 border border-blue-300 rounded-xl px-5 py-4">
@@ -611,7 +629,7 @@ async function handleCompleteStep1() {
 
     <!-- ── Balance Cards — CompactBalanceSummary with expand/collapse ──────── -->
     <CompactBalanceSummary
-      v-if="isStep1InProgress"
+      v-if="canManagerEdit"
       :primary-cards="mtPrimaryCards"
       :secondary-cards="mtSecondaryCards"
       title="📊 ยอดเงินปัจจุบัน"
@@ -631,7 +649,7 @@ async function handleCompleteStep1() {
     </div>
 
     <!-- ── Quick Actions ───────────────────────────────────────────────────── -->
-    <section v-if="isStep1InProgress" class="mb-6">
+    <section v-if="canManagerEdit" class="mb-6">
       <h2 class="text-base font-semibold text-gray-700 mb-3">⚡ รายการด่วน</h2>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <button
@@ -715,7 +733,7 @@ async function handleCompleteStep1() {
     </section>
 
     <!-- ── Transactions Table ─────────────────────────────────────────────── -->
-    <section v-if="isStep1InProgress" class="mb-6">
+    <section v-if="canManagerEdit" class="mb-6">
       <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-b border-gray-100">
           <h2 class="text-base font-semibold text-gray-700">📋 รายการธุรกรรมวันนี้</h2>
@@ -769,7 +787,7 @@ async function handleCompleteStep1() {
               <EyeIcon class="w-4 h-4" />
             </button>
             <ActionButton
-              v-if="(txn.status === 'completed' || txn.status === 'on_hold') && !store.isStep1Complete"
+              v-if="(txn.status === 'completed' || txn.status === 'on_hold') && canManagerEdit"
               :permission="PERMISSIONS.EDIT_FINANCE"
               variant="ghost"
               size="sm"
@@ -809,7 +827,7 @@ async function handleCompleteStep1() {
     </section>
 
     <!-- ── Step 1 Completion Checklist ────────────────────────────────────── -->
-    <section v-if="!store.isStep1Complete" class="py-4">
+    <section v-if="canManagerEdit" class="py-4">
       <div
         class="max-w-lg mx-auto border-2 rounded-2xl p-5 mb-5 transition-colors duration-300"
         :class="canCompleteStep1 ? 'border-green-400 bg-green-50' : 'border-amber-300 bg-amber-50'"
@@ -1232,7 +1250,7 @@ async function handleCompleteStep1() {
           </div>
         </div>
         <div
-          v-else-if="viewingTransaction && (viewingTransaction.status === 'completed' || viewingTransaction.status === 'on_hold') && !store.isStep1Complete"
+          v-else-if="viewingTransaction && (viewingTransaction.status === 'completed' || viewingTransaction.status === 'on_hold') && canManagerEdit"
           class="flex justify-end"
         >
           <ActionButton

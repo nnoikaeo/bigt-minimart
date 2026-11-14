@@ -55,7 +55,7 @@ const MT_STATUS_TO_STEP_MAP: Record<UnifiedWorkflowStatus, number> = {
   audited_with_issues: 3,
   approved: 3,
   approved_with_notes: 3,
-  needs_correction: 2,
+  needs_correction: 0,
 }
 
 // ─── CompactBalanceSummary cards (for non-manager views) ─────────────────────
@@ -132,6 +132,8 @@ const mtSecondaryCards = computed<BalanceCardItem[]>(() => [
 const showStatusBanner = computed(() => {
   if (isApproved.value) return false
   if (isAuditor.value && isNeedsCorrection.value) return false
+  // needs_correction: Manager/AM sees who sent it back and why in the box above their section
+  if (isManagerOrAsst.value && isNeedsCorrection.value) return false
   // step1_completed: Manager/AM sees the Step 2 form itself, so no "waiting" banner
   if (isManagerOrAsst.value && !isStep1InProgress.value && !store.isStep2Complete && workflowStatus.value !== 'step1_completed') return true
   if (isManagerOrAsst.value && store.isStep2Complete) return true
@@ -149,7 +151,7 @@ const statusBannerContent = computed(() => {
   if ((ws === 'audited' || ws === 'audited_with_issues') && !isOwner.value) return { title: '⏳ รอ Owner อนุมัติ', description: 'รายการนี้ผ่านการตรวจสอบแล้ว อยู่ระหว่างรอ Owner อนุมัติ', classes: 'border-yellow-200 bg-yellow-50 text-yellow-800' }
   if (ws === 'needs_correction') return {
     title: '🔄 รอแก้ไข',
-    description: isAuditor.value ? 'Owner ส่งคืนให้ตรวจสอบใหม่ — กรุณาตรวจสอบและส่งผลอีกครั้ง' : 'Owner ส่งคืนให้ Auditor ตรวจสอบใหม่ — รอ Auditor ดำเนินการ',
+    description: 'ส่งคืนให้ Manager แก้ไขแล้ว — รอ Manager ตรวจนับเงินสดใหม่',
     reason: store.currentSummary?.correctionNotes || '',
     classes: 'border-red-200 bg-red-50 text-red-800',
   }
@@ -228,7 +230,7 @@ onMounted(async () => {
 
     <!-- ── Balance Cards — compact (non-manager step1 views) ─────────────── -->
     <CompactBalanceSummary
-      v-if="!(isManagerOrAsst && isStep1InProgress)"
+      v-if="!(isManagerOrAsst && (isStep1InProgress || isNeedsCorrection))"
       :primary-cards="mtPrimaryCards"
       :secondary-cards="mtSecondaryCards"
       class="mb-6"
@@ -255,7 +257,6 @@ onMounted(async () => {
     <MoneyTransferOwnerApprovalSection
       v-if="(isOwner && store.isAudited) || isApproved"
       :date="selectedDate"
-      :is-needs-correction="isNeedsCorrection"
     />
 
     <!-- ══════════════════════════════════════════════════════════════════════ -->
