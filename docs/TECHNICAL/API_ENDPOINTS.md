@@ -17,7 +17,7 @@
 ### Transactions
 ```
 GET    /api/money-transfer/transactions                 List (query: date, status, type)
-POST   /api/money-transfer/transactions                 Create (transfer/withdrawal → draft; owner_deposit → completed)
+POST   /api/money-transfer/transactions                 Create (transfer/withdrawal → draft; owner_deposit → completed); creates the day's summary if missing
 PUT    /api/money-transfer/transactions/:id             Update transaction (a draft stays draft)
 DELETE /api/money-transfer/transactions/:id             Delete (draft) transaction
 POST   /api/money-transfer/transactions/:id/complete    Draft → completed ("ดำเนินการ"; checks funds)
@@ -34,14 +34,14 @@ PUT    /api/money-transfer/transactions/:id/status      Change status (+ statusN
 GET    /api/money-transfer/balances/current             Current balance
 GET    /api/money-transfer/balances/previous            Previous day balance (carryover)
 GET    /api/money-transfer/balances/:date               Balance for date
-POST   /api/money-transfer/balances/opening             Set opening balance (carryover / manual)
+POST   /api/money-transfer/balances/opening             Set opening balance (carryover / manual); creates the day's summary if missing
 ```
 
 ### Daily Summaries (Workflow)
 ```
 GET    /api/money-transfer/summaries                    List summaries (history page)
 GET    /api/money-transfer/summaries/:date              Summary for date
-POST   /api/money-transfer/summaries/:date/init         Initialize day
+POST   /api/money-transfer/summaries/:date/init         Initialize day (not called on page load — BUG-042)
 POST   /api/money-transfer/summaries/:date/complete-step1   Manager: finish recording
 POST   /api/money-transfer/summaries/:date/complete-step2   Manager: cash count
 POST   /api/money-transfer/summaries/:date/audit        Auditor: audited / audited_with_issues / needs_correction
@@ -65,7 +65,7 @@ DELETE /api/money-transfer/favorites/:id
 ### Transactions
 ```
 GET    /api/bill-payment/transactions                   List
-POST   /api/bill-payment/transactions               🔒  Create (bill_payment → draft; owner_deposit → completed)
+POST   /api/bill-payment/transactions               🔒  Create (bill_payment → draft; owner_deposit → completed); creates the day's summary if missing
 PUT    /api/bill-payment/transactions/:id           🔒  Update transaction (a draft stays draft)
 DELETE /api/bill-payment/transactions/:id           🔒  Delete (draft) transaction
 POST   /api/bill-payment/transactions/:id/complete  🔒  Draft → completed ("ดำเนินการ"; bill_payment checks bankAccount)
@@ -79,14 +79,14 @@ Same draft queue as Money Transfer: `POST` decides the status server-side; `/com
 GET    /api/bill-payment/balances/current
 GET    /api/bill-payment/balances/previous
 GET    /api/bill-payment/balances/:date
-POST   /api/bill-payment/balances/opening               Set opening balance
+POST   /api/bill-payment/balances/opening               Set opening balance; creates the day's summary if missing
 ```
 
 ### Daily Summaries (Workflow)
 ```
 GET    /api/bill-payment/summaries
 GET    /api/bill-payment/summaries/:date
-POST   /api/bill-payment/summaries/:date/init
+POST   /api/bill-payment/summaries/:date/init           Initialize day (not called on page load — BUG-042)
 POST   /api/bill-payment/summaries/:date/complete-step1   🔒
 POST   /api/bill-payment/summaries/:date/complete-step2   🔒
 POST   /api/bill-payment/summaries/:date/audit            🔒

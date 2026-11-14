@@ -4,7 +4,7 @@
 **Updated By**: Claude Code
 **Current Branch**: develop (latest merge: PR #164; main: docs synced via PR #150, code at release #148)
 **Current Phase**: Testing — Service Harmonization (Manual Test → Bug Fix → E2E)
-**Next Up**: MT-3 + MT-4 with BUG-035 (MT send-back flow); fix BP-1 bugs BUG-041~045 together in MT + BP (Owner decided BUG-042/043 on 5 Nov: BP rules are the standard); BUG-037 (server role checks) before release; then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
+**Next Up**: MT-3 + MT-4 with BUG-035 (MT send-back flow); manual-test BUG-041~045 fixes (PR #166, MT + BP); BUG-037 (server role checks) before release; then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
 
 ---
 
@@ -330,7 +330,7 @@ Components (50 total):
 | API routes | 72 | ✅ |
 | PRs merged (latest) | #164 | ✅ |
 | TypeScript errors (`nuxt typecheck`) | 0 | ✅ |
-| Unit/Integration tests (`vitest run`) | 357/357 passed (25 files) | ✅ |
+| Unit/Integration tests (`vitest run`) | 367/367 passed (26 files) | ✅ |
 | Production build (`nuxt build`) | Success | ✅ |
 | Money Transfer workflow | 9/9 statuses (unified) | ✅ |
 | Bill Payment workflow | Phase 1-6 Complete (27 Tasks) | ✅ |
@@ -351,7 +351,7 @@ Components (50 total):
    │     ├─ BP-2 ✅ Step 1-11 (17-20 ต.ค.; เหลือข้อย่อยที่ไม่ได้ลอง ดู TESTING_PLAN) — BUG-018~020 (ปุ่มเลือกประเภท, #N ในคิว, ช่องตรวจนับว่าง) แก้ + ทดสอบผ่าน (PR #157); BUG-014 (modal รายการโปรดไม่มีปุ่ม ✕) + BUG-015 (ฟอร์มตรวจนับ Step 2 ไม่แสดง, High) แก้ + ทดสอบผ่าน (PR #156); BUG-016/017 (กล่องสถานะซ้ำ, ป้ายตารางตรวจนับ) แก้แล้ว (PR #156); BUG-012 ✅ ทดสอบผ่าน; BUG-013 (ฟอร์มฝากเงินมีช่องชื่อลูกค้า) ✅ แก้ + ทดสอบผ่าน; ประเภทบิล "ประกัน" → "สินเชื่อ" (`loan`) — ค่าธรรมเนียมเท่าสาธารณูปโภค (10/20/30/40, Owner ยืนยัน 19 ต.ค.)
    │     ├─ BP-3 ✅ Step 1-6 (31 ต.ค., merged PR #159) — BUG-021~026 แก้แล้ว; เหลือดูจุดย่อย ดู TESTING_PLAN
    │     ├─ BP-4 ✅ Step 1-4 (2 พ.ย., merged PR #161) — BUG-027~034, 036 แก้แล้ว; BUG-038~040 แก้ + ทดสอบผ่าน (4 พ.ย., PR #164); BUG-035 ฝั่ง MT ยังเปิด
-   │     ├─ BP-1 ✅ Step 1-6 (4-5 พ.ย.) — 3 role + เทียบ MT ผ่าน; พบ BUG-041~045 (ทั้ง MT + BP) ยังไม่แก้
+   │     ├─ BP-1 ✅ Step 1-6 (4-5 พ.ย.) — 3 role + เทียบ MT ผ่าน; พบ BUG-041~045 (ทั้ง MT + BP) — แก้แล้วใน PR #166 รอทดสอบ
    │     └─ MT-3, MT-4, SHARED-1~2 ☐ NOT STARTED
    ├─ Bug Fix: 2 tasks (BugFix-1, BugFix-2)              ☐ WAITING FOR MANUAL TEST
    ├─ E2E Playwright: 5 tasks (E2E-1~5)                   ☐ WAITING FOR BUG FIX
