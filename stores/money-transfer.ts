@@ -8,6 +8,7 @@
  */
 
 import { defineStore } from 'pinia'
+import { todayISO } from '~/utils/date'
 import type {
   MoneyTransferTransaction,
   MoneyTransferDailySummary,
@@ -123,7 +124,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
      * Get today's transaction statistics
      */
     getTodayStats: (state: any) => {
-      const today = new Date().toISOString().split('T')[0]
+      const today = todayISO()
       const todayTxns = state.transactions.filter((t: any) => t.date === today)
 
       return {
@@ -250,7 +251,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
       this.error = null
 
       try {
-        const today = new Date().toISOString().split('T')[0]
+        const today = todayISO()
         await this.fetchTransactionsByDate(today)
         await this.fetchCurrentBalanceAction()
         await this.fetchDailySummary(today)

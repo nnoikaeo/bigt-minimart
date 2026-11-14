@@ -1,4 +1,5 @@
 import { moneyTransferJsonRepository } from '~/server/repositories/money-transfer-json.repository'
+import { todayISO } from '~/utils/date'
 
 /**
  * POST /api/money-transfer/balances/opening
@@ -15,7 +16,7 @@ export default defineEventHandler(async (event) => {
 
     const body = await readBody(event)
     const { amount, source, userId } = body
-    const date: string = body.date || new Date().toISOString().split('T')[0]
+    const date: string = body.date || todayISO()
 
     if (amount === undefined || amount === null || amount < 0) {
       throw createError({ statusCode: 400, message: 'amount ต้องมีค่า >= 0' })
@@ -27,6 +28,11 @@ export default defineEventHandler(async (event) => {
     console.log(`[POST /api/money-transfer/balances/opening] date=${date}, amount=${amount}, source=${source}`)
 
     const balance = await moneyTransferJsonRepository.setOpeningBalance(date, amount, source, userId)
+
+    // The day's summary starts with real work (opening balance / first transaction), not on page view
+    if (!(await moneyTransferJsonRepository.getDailySummary(date))) {
+      await moneyTransferJsonRepository.createDailySummary(date)
+    }
 
     console.log(`[POST /api/money-transfer/balances/opening] Opening balance set:`, balance.bankAccount)
 

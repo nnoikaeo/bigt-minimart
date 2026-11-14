@@ -4,7 +4,9 @@ import { useLogger } from '~/composables/useLogger'
 import { usePermissions } from '~/composables/usePermissions'
 import { PERMISSIONS, ROLES } from '~/types/permissions'
 import { getWorkflowStatusBadge } from '~/types/shared-workflow'
-import { formatThaiDate } from '~/utils/date'
+import { formatThaiDate, todayISO } from '~/utils/date'
+import { HISTORY_INBOX_STATUSES, countInbox, getHistoryActionButton } from '~/utils/finance-history'
+import type { HistoryInbox, HistoryRole } from '~/utils/finance-history'
 import { PlusIcon } from '@heroicons/vue/24/outline'
 
 definePageMeta({
@@ -14,106 +16,61 @@ definePageMeta({
 const logger = useLogger('MoneyTransferHistory')
 const store = useMoneyTransferStore()
 const router = useRouter()
-const { can, hasAnyRole, userRole } = usePermissions()
+const { hasAnyRole, userRole } = usePermissions()
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const errorMessage = ref('')
 const showAddModal = ref(false)
-const newRecordDate = ref<string>(new Date().toISOString().split('T')[0] ?? '')
+const newRecordDate = ref<string>(todayISO())
 
 // ─── Computed ─────────────────────────────────────────────────────────────────
-const canEdit = computed(() => can(PERMISSIONS.EDIT_FINANCE))
-
 const isManagerOrAM = computed(() =>
   hasAnyRole([ROLES.MANAGER, ROLES.ASSISTANT_MANAGER, ROLES.OWNER])
 )
 const isAuditor = computed(() => hasAnyRole([ROLES.AUDITOR]))
-const isOwner = computed(() => hasAnyRole([ROLES.OWNER]))
-
-const today = new Date().toISOString().split('T')[0] ?? ''
 
 const isBackdated = computed(() =>
-  !!newRecordDate.value && newRecordDate.value < today
+  !!newRecordDate.value && newRecordDate.value < todayISO()
 )
 
 /** Active inbox filter (click card to filter table) */
-const activeFilter = ref<'manager' | 'auditor' | 'owner' | null>(null)
+const activeFilter = ref<HistoryInbox | null>(null)
 
-function toggleFilter(role: 'manager' | 'auditor' | 'owner') {
+function toggleFilter(role: HistoryInbox) {
   activeFilter.value = activeFilter.value === role ? null : role
 }
 
-/** Pending Inbox counts by role */
-const pendingForManager = computed(() =>
-  store.summaries.filter(
-    (s: any) =>
-      s.workflowStatus === 'step1_in_progress' ||
-      s.workflowStatus === 'needs_correction'
-  ).length
-)
-const pendingForAuditor = computed(() =>
-  store.summaries.filter((s: any) =>
-    s.workflowStatus === 'step2_completed' ||
-    s.workflowStatus === 'step2_completed_with_notes' ||
-    s.workflowStatus === 'needs_correction'
-  ).length
-)
-const pendingForOwner = computed(() =>
-  store.summaries.filter((s: any) =>
-    s.workflowStatus === 'audited' ||
-    s.workflowStatus === 'audited_with_issues'
-  ).length
-)
+/** Pending Inbox counts by role (rules shared with BP: utils/finance-history.ts) */
+const pendingForManager = computed(() => countInbox(store.summaries, 'manager'))
+const pendingForAuditor = computed(() => countInbox(store.summaries, 'auditor'))
+const pendingForOwner = computed(() => countInbox(store.summaries, 'owner'))
 
 /** Filtered summaries based on active inbox filter */
 const filteredSummaries = computed(() => {
   if (!activeFilter.value) return store.summaries
-  const statusSets: Record<string, string[]> = {
-    manager: ['step1_in_progress', 'needs_correction'],
-    auditor: ['step2_completed', 'step2_completed_with_notes', 'needs_correction'],
-    owner: ['audited', 'audited_with_issues'],
-  }
-  const allowed = statusSets[activeFilter.value] ?? []
+  const allowed: string[] = HISTORY_INBOX_STATUSES[activeFilter.value]
   return store.summaries.filter((s: any) => allowed.includes(s.workflowStatus))
 })
 
-/** Pending count relevant to current user's role */
-const myPendingCount = computed(() => {
-  const role = userRole.value
-  if (role === ROLES.AUDITOR) return pendingForAuditor.value
-  if (role === ROLES.OWNER) return pendingForOwner.value
-  // manager / assistant_manager
-  return pendingForManager.value
-})
-
 // ─── Smart Action Button ───────────────────────────────────────────────────────
-function getActionButton(summary: any): { label: string; route: string; variant: 'primary' | 'secondary' | 'danger' } | null {
+type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'success' | 'ghost'
+
+const actionButtonMap = computed(() => {
   const role = userRole.value
-  const status = summary.workflowStatus
-  const date = summary.date
-
-  if (role === ROLES.MANAGER || role === ROLES.ASSISTANT_MANAGER) {
-    if (status === 'step1_in_progress') return { label: 'ทำงาน', route: `/finance/money-transfer-service?date=${date}`, variant: 'primary' }
-    return { label: 'ดูรายละเอียด', route: `/finance/money-transfer-service?date=${date}`, variant: 'secondary' }
+  const map = new Map<string, { label: string; route: string; variant: ButtonVariant }>()
+  if (!role || role === 'unknown') return map
+  for (const summary of store.summaries) {
+    const btn = getHistoryActionButton(
+      role as HistoryRole,
+      summary.workflowStatus,
+      `/finance/money-transfer-service?date=${summary.date}`,
+    )
+    // HistoryActionVariant includes 'outline' which BaseButton doesn't support — map to 'secondary'
+    const variant: ButtonVariant = btn.variant === 'outline' ? 'secondary' : btn.variant
+    map.set(summary.date, { ...btn, variant })
   }
-
-  if (role === ROLES.AUDITOR) {
-    if (status === 'step2_completed') return { label: 'ตรวจสอบ', route: `/finance/money-transfer-service?date=${date}`, variant: 'primary' }
-    if (status === 'step2_completed_with_notes') return { label: 'ตรวจสอบ (มีหมายเหตุ)', route: `/finance/money-transfer-service?date=${date}`, variant: 'primary' }
-    if (status === 'needs_correction') return { label: 'ตรวจสอบใหม่', route: `/finance/money-transfer-service?date=${date}`, variant: 'danger' }
-    if (status === 'audited' || status === 'audited_with_issues') return { label: 'ดูการตรวจสอบ', route: `/finance/money-transfer-service?date=${date}`, variant: 'secondary' }
-    return { label: 'ดูรายละเอียด', route: `/finance/money-transfer-service?date=${date}`, variant: 'secondary' }
-  }
-
-  if (role === ROLES.OWNER) {
-    if (status === 'audited') return { label: 'อนุมัติ', route: `/finance/money-transfer-service?date=${date}`, variant: 'primary' }
-    if (status === 'audited_with_issues') return { label: 'อนุมัติ (มีปัญหา)', route: `/finance/money-transfer-service?date=${date}`, variant: 'primary' }
-    if (status === 'approved' || status === 'approved_with_notes') return { label: 'ดูรายละเอียด', route: `/finance/money-transfer-service?date=${date}`, variant: 'secondary' }
-    return { label: 'ดูรายละเอียด', route: `/finance/money-transfer-service?date=${date}`, variant: 'secondary' }
-  }
-
-  return { label: 'ดูรายละเอียด', route: `/finance/money-transfer-service?date=${date}`, variant: 'secondary' }
-}
+  return map
+})
 
 // ─── Status Badge (uses shared WORKFLOW_STATUS_MAP) ──────────────────────────
 function getStatusBadge(status: string): { label: string; class: string } {
@@ -128,7 +85,7 @@ function formatCurrency(amount: number): string {
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
 function openAddModal() {
-  newRecordDate.value = new Date().toISOString().split('T')[0] ?? ''
+  newRecordDate.value = todayISO()
   showAddModal.value = true
 }
 
@@ -192,7 +149,7 @@ onMounted(async () => {
         </div>
         <div>
           <div class="text-sm font-semibold text-gray-800">รอดำเนินการ</div>
-          <div class="text-xs text-gray-500">กำลังบันทึก / ส่งกลับแก้ไข</div>
+          <div class="text-xs text-gray-500">กำลังบันทึก / รอตรวจนับ / ส่งกลับแก้ไข</div>
         </div>
       </div>
 
@@ -208,29 +165,13 @@ onMounted(async () => {
         </div>
         <div>
           <div class="text-sm font-semibold text-gray-800">รอตรวจสอบ</div>
-          <div class="text-xs text-gray-500">รอตรวจสอบ / ส่งกลับแก้ไข</div>
+          <div class="text-xs text-gray-500">รอตรวจสอบ / มีหมายเหตุ</div>
         </div>
       </div>
 
-      <!-- Owner card -->
+      <!-- Owner card (visible to managers, owners, and auditors) -->
       <div
-        v-if="isOwner || isManagerOrAM"
-        class="bg-white border rounded-xl p-4 flex items-center gap-4 cursor-pointer transition-all"
-        :class="activeFilter === 'owner' ? 'border-yellow-400 ring-2 ring-yellow-100' : 'border-gray-200 hover:border-gray-300'"
-        @click="toggleFilter('owner')"
-      >
-        <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 text-lg font-bold flex-shrink-0">
-          {{ pendingForOwner }}
-        </div>
-        <div>
-          <div class="text-sm font-semibold text-gray-800">รออนุมัติ</div>
-          <div class="text-xs text-gray-500">ตรวจสอบแล้ว / มีปัญหา</div>
-        </div>
-      </div>
-
-      <!-- Auditor-only: pending owner approval card -->
-      <div
-        v-if="isAuditor && !isManagerOrAM"
+        v-if="isManagerOrAM || isAuditor"
         class="bg-white border rounded-xl p-4 flex items-center gap-4 cursor-pointer transition-all"
         :class="activeFilter === 'owner' ? 'border-yellow-400 ring-2 ring-yellow-100' : 'border-gray-200 hover:border-gray-300'"
         @click="toggleFilter('owner')"
@@ -326,13 +267,13 @@ onMounted(async () => {
 
               <!-- Action button -->
               <td class="px-5 py-3.5 text-center">
-                <template v-if="getActionButton(summary)">
+                <template v-if="actionButtonMap.get(summary.date)">
                   <BaseButton
-                    :variant="getActionButton(summary)!.variant"
+                    :variant="actionButtonMap.get(summary.date)!.variant"
                     size="sm"
-                    @click="router.push(getActionButton(summary)!.route)"
+                    @click="router.push(actionButtonMap.get(summary.date)!.route)"
                   >
-                    {{ getActionButton(summary)!.label }}
+                    {{ actionButtonMap.get(summary.date)!.label }}
                   </BaseButton>
                 </template>
               </td>
@@ -356,7 +297,7 @@ onMounted(async () => {
       <BaseAlert
         v-if="isBackdated"
         variant="warning"
-        message="คุณกำลังบันทึกรายการย้อนหลัง กรุณาตรวจสอบวันที่ให้ถูกต้อง"
+        message="คุณกำลังเลือกวันที่ย้อนหลัง รายการนี้จะถูกบันทึกเป็นรายการย้อนหลัง"
       />
 
       <FormField label="วันที่">
@@ -365,14 +306,16 @@ onMounted(async () => {
     </div>
 
     <template #footer>
-      <BaseButton variant="secondary" @click="showAddModal = false">ยกเลิก</BaseButton>
-      <BaseButton
-        variant="primary"
-        :disabled="!newRecordDate"
-        @click="navigateToAddRecord"
-      >
-        ไปบันทึกรายการ →
-      </BaseButton>
+      <div class="flex justify-end gap-2">
+        <BaseButton variant="secondary" @click="showAddModal = false">ยกเลิก</BaseButton>
+        <BaseButton
+          variant="primary"
+          :disabled="!newRecordDate"
+          @click="navigateToAddRecord"
+        >
+          ไปบันทึกรายการ →
+        </BaseButton>
+      </div>
     </template>
   </BaseModal>
 </template>

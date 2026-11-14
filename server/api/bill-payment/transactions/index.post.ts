@@ -40,6 +40,11 @@ export default defineEventHandler(async (event) => {
       recordedBy: authUser.uid, // server-verified identity overrides client-supplied value
     })
 
+    // First transaction of the day starts its summary (see balances/opening.post.ts)
+    if (!(await billPaymentJsonRepository.getDailySummary(validated.date))) {
+      await billPaymentJsonRepository.createDailySummary(validated.date)
+    }
+
     setResponseStatus(event, 201)
     return { success: true, data: txn }
   } catch (error: any) {

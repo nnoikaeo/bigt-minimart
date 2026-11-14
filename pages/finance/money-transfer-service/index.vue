@@ -3,6 +3,7 @@ import { useMoneyTransferStore } from '~/stores/money-transfer'
 import { useDailyRecordSettingsStore } from '~/stores/daily-record-settings'
 import { useLogger } from '~/composables/useLogger'
 import { usePermissions } from '~/composables/usePermissions'
+import { todayISO } from '~/utils/date'
 import { ROLES } from '~/types/permissions'
 import type { UnifiedWorkflowStatus } from '~/types/shared-workflow'
 import type { WorkflowStep } from '~/components/shared/WorkflowProgressBar.vue'
@@ -23,7 +24,7 @@ const { formatCurrency } = useMoneyTransferHelpers()
 
 // ─── Date ─────────────────────────────────────────────────────────────────────
 const selectedDate = ref<string>(
-  (route.query.date as string) || (new Date().toISOString().split('T')[0] ?? '')
+  (route.query.date as string) || todayISO()
 )
 
 // ─── Page-level alerts ────────────────────────────────────────────────────────
@@ -149,6 +150,7 @@ const statusBannerContent = computed(() => {
   if (ws === 'needs_correction') return {
     title: '🔄 รอแก้ไข',
     description: isAuditor.value ? 'Owner ส่งคืนให้ตรวจสอบใหม่ — กรุณาตรวจสอบและส่งผลอีกครั้ง' : 'Owner ส่งคืนให้ Auditor ตรวจสอบใหม่ — รอ Auditor ดำเนินการ',
+    reason: store.currentSummary?.correctionNotes || '',
     classes: 'border-red-200 bg-red-50 text-red-800',
   }
   return null
@@ -160,7 +162,6 @@ async function handleDateChange() {
     await store.fetchTransactionsByDate(selectedDate.value)
     await store.fetchBalanceByDate(selectedDate.value)
     await store.fetchPreviousDayBalance(selectedDate.value)
-    await store.initDailySummary(selectedDate.value)
     await store.fetchDailySummary(selectedDate.value)
   } catch (err: any) {
     errorMessage.value = err.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูล'
@@ -175,7 +176,6 @@ onMounted(async () => {
       await store.fetchTransactionsByDate(selectedDate.value)
       await store.fetchBalanceByDate(selectedDate.value)
       await store.fetchPreviousDayBalance(selectedDate.value)
-      await store.initDailySummary(selectedDate.value)
       await store.fetchDailySummary(selectedDate.value)
     }
     await settingsStore.fetchMoneyTransferFees()
@@ -243,6 +243,9 @@ onMounted(async () => {
       <div>
         <p class="font-semibold">{{ statusBannerContent.title }}</p>
         <p class="text-sm mt-0.5 opacity-80">{{ statusBannerContent.description }}</p>
+        <p v-if="'reason' in statusBannerContent && statusBannerContent.reason" class="text-sm mt-1 whitespace-pre-wrap">
+          เหตุผล: {{ statusBannerContent.reason }}
+        </p>
       </div>
     </div>
 

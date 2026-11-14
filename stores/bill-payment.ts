@@ -8,6 +8,7 @@
  */
 
 import { defineStore } from 'pinia'
+import { todayISO } from '~/utils/date'
 import type {
   BillPaymentTransaction,
   BillPaymentDailySummary,
@@ -200,7 +201,7 @@ export const useBillPaymentStore = defineStore('billPayment', {
       this.error = null
 
       try {
-        const today = new Date().toISOString().split('T')[0]
+        const today = todayISO()
         await Promise.all([
           this.fetchTransactionsByDate(today),
           this.fetchCurrentBalanceAction(),

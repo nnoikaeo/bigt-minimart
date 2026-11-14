@@ -2,6 +2,7 @@
 import { useBillPaymentStore } from '~/stores/bill-payment'
 import { useLogger } from '~/composables/useLogger'
 import { usePermissions } from '~/composables/usePermissions'
+import { todayISO } from '~/utils/date'
 import { ROLES } from '~/types/permissions'
 import type { WorkflowStep } from '~/components/shared/WorkflowProgressBar.vue'
 import type { BalanceCardItem } from '~/components/shared/CompactBalanceSummary.vue'
@@ -20,7 +21,7 @@ const { currentUser } = useCurrentUser()
 
 // ─── Date ─────────────────────────────────────────────────────────────────────
 const selectedDate = ref<string>(
-  (route.query.date as string) || (new Date().toISOString().split('T')[0] ?? '')
+  (route.query.date as string) || todayISO()
 )
 
 // ─── Page-level alerts ────────────────────────────────────────────────────────
@@ -118,6 +119,7 @@ const statusBannerContent = computed(() => {
     return {
       title: '🔄 รอแก้ไข',
       description: 'ส่งคืนให้ Manager แก้ไขแล้ว — รอ Manager ตรวจนับเงินสดใหม่',
+      reason: store.currentSummary?.correctionNotes || '',
       classes: 'border-red-200 bg-red-50 text-red-800',
     }
   return null
@@ -128,7 +130,6 @@ async function handleDateChange() {
   try {
     await store.fetchTransactionsByDate(selectedDate.value)
     await store.fetchBalanceByDate(selectedDate.value)
-    await store.initDailySummary(selectedDate.value)
     await store.fetchDailySummary(selectedDate.value)
   } catch (err: any) {
     errorMessage.value = err.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูล'
@@ -143,7 +144,6 @@ onMounted(async () => {
     if (selectedDate.value) {
       await store.fetchTransactionsByDate(selectedDate.value)
       await store.fetchBalanceByDate(selectedDate.value)
-      await store.initDailySummary(selectedDate.value)
       await store.fetchDailySummary(selectedDate.value)
     }
   } catch (err: any) {
@@ -212,6 +212,9 @@ onMounted(async () => {
       <div>
         <p class="font-semibold">{{ statusBannerContent.title }}</p>
         <p class="text-sm mt-0.5 opacity-80">{{ statusBannerContent.description }}</p>
+        <p v-if="'reason' in statusBannerContent && statusBannerContent.reason" class="text-sm mt-1 whitespace-pre-wrap">
+          เหตุผล: {{ statusBannerContent.reason }}
+        </p>
       </div>
     </div>
 

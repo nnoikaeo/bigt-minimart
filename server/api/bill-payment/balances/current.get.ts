@@ -1,4 +1,5 @@
 import { billPaymentJsonRepository } from '~/server/repositories/bill-payment-json.repository'
+import { todayISO } from '~/utils/date'
 
 /**
  * GET /api/bill-payment/balances/current
@@ -8,7 +9,7 @@ export default defineEventHandler(async (event) => {
   try {
     await billPaymentJsonRepository.init()
 
-    const today = new Date().toISOString().split('T')[0]!
+    const today = todayISO()
     const balance = await billPaymentJsonRepository.getCurrentBalance(today)
 
     return { success: true, data: balance }

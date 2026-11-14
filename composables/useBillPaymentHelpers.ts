@@ -1,6 +1,8 @@
 import type { BillPaymentWorkflowStatus, BillPaymentTransactionStatus } from '~/types/bill-payment'
 import { TRANSACTION_STATUS_MAP } from '~/types/shared-workflow'
 import { formatThaiDateTime } from '~/utils/date'
+import { getHistoryActionButton } from '~/utils/finance-history'
+import type { HistoryActionButton, HistoryRole } from '~/utils/finance-history'
 
 /**
  * Shared formatting, validation, and navigation helpers for the bill payment service.
@@ -176,63 +178,19 @@ export function useBillPaymentHelpers() {
 
   // ─── Smart Navigation helper ─────────────────────────────────────────────
 
-  type Role = 'manager' | 'assistant_manager' | 'auditor' | 'owner'
-  type SmartActionVariant = 'primary' | 'secondary' | 'outline'
-
-  interface SmartActionButton {
-    label: string
-    route: string
-    variant: SmartActionVariant
-  }
-
   /**
    * Returns the correct action button (label, route, variant) for the History Page
    * based on the current user's role and the daily record's workflowStatus.
-   * Mirrors the WF 3.0 table in WORKFLOWS.md.
+   * Rules are shared with Money Transfer (`utils/finance-history.ts`).
    *
    * @param date - 'YYYY-MM-DD' — appended as query param to the route
    */
   function getSmartActionButton(
-    role: Role,
+    role: HistoryRole,
     workflowStatus: BillPaymentWorkflowStatus,
     date: string,
-  ): SmartActionButton {
-    const serviceRoute = `/finance/bill-payment-service?date=${date}`
-
-    if (role === 'manager' || role === 'assistant_manager') {
-      if (workflowStatus === 'step1_in_progress') {
-        return { label: 'ทำงาน', route: serviceRoute, variant: 'primary' }
-      }
-      if (workflowStatus === 'step1_completed') {
-        return { label: 'ตรวจนับเงิน', route: serviceRoute, variant: 'primary' }
-      }
-      if (workflowStatus === 'needs_correction') {
-        return { label: 'แก้ไข', route: serviceRoute, variant: 'secondary' }
-      }
-      return { label: 'ดูรายละเอียด', route: serviceRoute, variant: 'outline' }
-    }
-
-    if (role === 'auditor') {
-      if (workflowStatus === 'step2_completed' || workflowStatus === 'step2_completed_with_notes') {
-        return { label: 'ตรวจสอบ', route: serviceRoute, variant: 'primary' }
-      }
-      if (workflowStatus === 'needs_correction') {
-        return { label: 'ตรวจสอบใหม่', route: serviceRoute, variant: 'primary' }
-      }
-      if (workflowStatus === 'audited' || workflowStatus === 'audited_with_issues') {
-        return { label: 'ดูการตรวจสอบ', route: serviceRoute, variant: 'outline' }
-      }
-      return { label: 'ดูรายละเอียด', route: serviceRoute, variant: 'outline' }
-    }
-
-    // role === 'owner'
-    if (workflowStatus === 'audited' || workflowStatus === 'audited_with_issues') {
-      return { label: 'อนุมัติ', route: serviceRoute, variant: 'primary' }
-    }
-    if (workflowStatus === 'approved' || workflowStatus === 'approved_with_notes') {
-      return { label: 'ดูรายละเอียด', route: serviceRoute, variant: 'outline' }
-    }
-    return { label: 'ดูรายละเอียด', route: serviceRoute, variant: 'outline' }
+  ): HistoryActionButton {
+    return getHistoryActionButton(role, workflowStatus, `/finance/bill-payment-service?date=${date}`)
   }
 
   return {

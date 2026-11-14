@@ -20,6 +20,11 @@ export default defineEventHandler(async (event) => {
 
     const balance = await billPaymentJsonRepository.setOpeningBalance(date, amount, source, userId)
 
+    // The day's summary starts with real work (opening balance / first transaction), not on page view
+    if (!(await billPaymentJsonRepository.getDailySummary(date))) {
+      await billPaymentJsonRepository.createDailySummary(date)
+    }
+
     return { success: true, data: balance }
   } catch (error: any) {
     if (error instanceof z.ZodError) {
