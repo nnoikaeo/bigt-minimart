@@ -237,18 +237,21 @@
 
 > **Login ด้วย:** Auditor  
 > **เลือกวันที่:** status = step2_completed หรือ step2_completed_with_notes
+>
+> **แผนทดสอบหลังแก้ BUG-035 (PR #168):** รอบ A 2026-03-09 → `audited`; รอบ B 2026-03-08 (เงินขาด 100) → `audited_with_issues`; รอบ C 2026-03-10 → Auditor ส่งคืน → Manager แก้ → Auditor ตรวจซ้ำ → `audited` (ทั้ง 3 วันใช้ต่อใน MT-4)
+> - **รอบ A (14 พ.ย. 2569) ✅:** 09/03 Snapshot 6,260 → −2,900 → 3,360; ลอง Auditor นับ 2,850 / 60 → ส่วนต่าง −50 / +10 / รวม −40 คำนวณเอง; นับ 2,900 / 50 → ตรงกัน; ช่องรายละเอียดว่าง → "ส่งคืนแก้ไข" + "ยืนยันพร้อมหมายเหตุ" กดไม่ได้; "ยืนยันการตรวจสอบ" → ConfirmDialog → `audited`, Auditor เห็นกล่อง "รอ Owner อนุมัติ" + ผลตรวจแบบอ่านอย่างเดียว — ไม่ได้กรอก Bank Statement (ผลตรวจขึ้น "รายการเดินบัญชี: ไม่ได้ตรวจสอบ", ข้อมูล `bankStatementVerified: false`) แต่ปุ่มเขียวยังกดได้ → ตัดสินใจ BUG-026 ฝั่ง MT; console มี warning `loading` ของ ConfirmDialog (BUG-049)
 
 #### ขั้นตอนการทดสอบ
 
 **Step 1: เปิดหน้า Service (Auditor view)**
-- [ ] **QuickGlanceSummary** แสดง: วันที่, จำนวนรายการ, สำเร็จ, ค่าบริการ
-- [ ] **Workflow Progress Bar** ขั้นตอน "Auditor" highlight
-- [ ] Step 1 + Step 2 แสดงเป็น read-only (ดูได้อย่างเดียว)
+- [x] **QuickGlanceSummary** แสดง: วันที่, จำนวนรายการ, สำเร็จ, ค่าบริการ
+- [x] **Workflow Progress Bar** ขั้นตอน "Auditor" highlight
+- [x] Step 1 + Step 2 แสดงเป็น read-only (ดูได้อย่างเดียว) — เหมือน BP: ไม่มีตาราง Step 1 / Step 2 แยก รายการอยู่ในแถบ "รายการธุรกรรม" ยอด Manager อยู่ในตารางตรวจนับ
 
 **Step 2: ตรวจสอบ Balance Snapshot**
-- [ ] เห็น 3 cards: Opening Balance → Net Change → Expected Closing
-- [ ] ตัวเลข Net Change = Closing - Opening (ถูกต้อง)
-- [ ] สีถูกต้อง: + เขียว, - แดง
+- [x] เห็น 3 cards: Opening Balance → Net Change → Expected Closing
+- [x] ตัวเลข Net Change = Closing - Opening (ถูกต้อง) — 3,360 − 6,260 = −2,900
+- [x] สีถูกต้อง: + เขียว, - แดง (เห็นฝั่งลบ)
 
 **Step 3: ตรวจสอบ Bank Statement Input**
 - [ ] เห็นช่องกรอก "ยอด Bank Statement"
@@ -263,18 +266,18 @@
 - [ ] กด eye icon → ดูรายละเอียด transaction
 
 **Step 5: Auditor Cash Verification**
-- [ ] เห็น **CashVerificationTable** แบบ 5 คอลัมน์
+- [x] เห็น **CashVerificationTable** แบบ 5 คอลัมน์
   - คาดหวัง / Manager นับ / Auditor นับ [input] / ส่วนต่าง
-- [ ] กรอก Auditor นับจริง → ส่วนต่างคำนวณอัตโนมัติ
+- [x] กรอก Auditor นับจริง → ส่วนต่างคำนวณอัตโนมัติ
 
 **Step 6: ทดสอบ 3 ปุ่ม Action**
-- [ ] เห็น 3 ปุ่ม:
+- [x] เห็น 3 ปุ่ม:
   1. 🔴 "ส่งคืนแก้ไข" → needs_correction
   2. 🟡 "ยืนยันพร้อมหมายเหตุ" → audited_with_issues
   3. 🟢 "ยืนยันการตรวจสอบ" → audited
 - [ ] กด "ส่งคืนแก้ไข" → ต้องกรอก findings → สถานะ = needs_correction
 - [ ] กด "ยืนยันพร้อมหมายเหตุ" → ต้องกรอก findings → สถานะ = audited_with_issues
-- [ ] กด "ยืนยันการตรวจสอบ" → สถานะ = audited
+- [x] กด "ยืนยันการตรวจสอบ" → สถานะ = audited (รอบ A 09/03)
 
 ---
 
@@ -777,7 +780,7 @@ Screenshots บันทึกที่: tests/e2e/screenshots/
 |---|---|---|---|---|
 | MT-1 | 15 เม.ย. 2569 | ✅ ผ่าน | 3 (แก้แล้ว) | PR #143, #144 — แก้ status labels/colors, เพิ่ม card filtering, แก้ column header |
 | MT-2 | 15-27 เม.ย. 2569, 16-17 ต.ค. 2569, 3 พ.ย. 2569 | ✅ ผ่าน (Step 1-11) — Step 6 คิว draft 14/14, Step 8 pagination + tab ยกเลิก, Step 11 ทั้งยอดตรง (2026-03-11) และมีผลต่าง (2026-03-08); ทดสอบซ้ำ 3 พ.ย. บนวันที่ 2026-10-17: BUG-001, BUG-002, BUG-003 ผ่าน | 11 (BUG-001~005, 007~011); BUG-006 ไม่เกิดจริง | PR #147, #149, #153 (คิว draft + BUG-004/007/008/009/010/011) |
-| MT-3 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
+| MT-3 | 14 พ.ย. 2569 (รอบ A) | 🔄 รอบ A ผ่าน — 09/03 → `audited` (ยังไม่ได้ลอง Bank Statement + toggle รายการ); เหลือรอบ B, C | BUG-049 (ConfirmDialog warning); BUG-026 MT รอตัดสินใจ | PR #168 |
 | MT-4 | | ☐ ผ่าน / ☐ ไม่ผ่าน | | |
 | BP-1 | 4-5 พ.ย. 2569 | ✅ ผ่าน Step 1-6 — 3 role (Manager 1/0/0, Auditor 0/0, Owner 2/0/0 หลังเกิดแถว 04/11 จาก BUG-042), กรองการ์ด, ปุ่มจัดการ, เพิ่มรายการ + เตือนย้อนหลัง, เทียบ MT | 5 (BUG-041~045, ทั้ง MT + BP) — แก้ + ทดสอบผ่าน 14 พ.ย. 2569 (BUG-044 ฝั่ง MT รอ MT-4) | PR #166 |
 | BP-2 | 17-20 ต.ค. 2569 | ✅ ผ่าน Step 1-11 — Step 6 คิว draft ✅ 8/8, Step 1-5 ✅ (เหลือย่อย: alert ก่อนตั้งยอด, กำหนดเอง, expand/collapse, disabled ก่อนตั้งยอด, toggle ค่าธรรมเนียม), Step 6-8 ✅, Step 9 ✅ (ยกเว้น max 10/tab), Step 10-11 ✅ ทั้งยอดตรง (04-01) และมีผลต่าง (04-02) | 9 (BUG-012~020 แก้ + ทดสอบผ่านบน BP; MT ยังไม่ได้ดู BUG-016/019) | PR #153, #154 (ค่าธรรมเนียมสินเชื่อ), #156, #157 |
@@ -837,6 +840,7 @@ Screenshots บันทึกที่: tests/e2e/screenshots/
 | BUG-046 | BUG-041~045 retest (14 พ.ย. 2569) | หน้าต่างตั้งยอดเริ่มต้น ตัวเลือก Carry-over เขียน "ยอดคงเหลือ ณ สิ้นวันเมื่อวาน" แต่ยอดมาจากวันล่าสุดก่อนหน้าที่ตั้งยอดไว้ (`getPreviousDayBalance`) — ตั้งยอด 13/11/2569 ได้ยอดของ 18/10 (MT 1,000) และ 02/04 (BP 1,100) โดยไม่บอกวันที่ (MT + BP) | Low | ☐ เปิด — เสนอแสดงวันที่ต้นทาง เช่น "ยอดคงเหลือ ณ สิ้นวัน 18/10/2569" |
 | BUG-047 | BUG-041~045 retest (14 พ.ย. 2569) | เปลี่ยนวันที่ในหน้า Service แล้ว URL ยังเป็น `?date=` เดิม (เห็น 13/11 แต่ URL `date=2026-11-14`) — รีเฟรชหรือแชร์ลิงก์แล้วกลับไปวันเดิม (MT + BP: `handleDateChange` ใน `pages/finance/{money-transfer,bill-payment}-service/index.vue`) | Low | ☐ เปิด — เสนอ `router.replace({ query: { date } })` ตอนเปลี่ยนวันที่ |
 | BUG-048 | BUG-035 (อ่านโค้ด, 14 พ.ย. 2569) | การ์ด Owner MT "ยอดรายการเดินบัญชีตรงกัน" ขึ้น ✅ เสมอ — route audit ของ MT บันทึก `bankBalanceMatches: true` ตายตัว (`// TODO`) ไม่ได้เทียบยอดที่ Auditor กรอกกับยอดปิดที่คาดไว้ (BP เทียบจริง: `auditBankStatementVsClosingMatches`) | Medium | ☐ เปิด — ดูตอน MT-4 Step 2 ว่าเกิดจริง แล้วแก้ให้ฝั่ง client ส่งผลเทียบมาเหมือน BP |
+| BUG-049 | MT-3 รอบ A (14 พ.ย. 2569) | console: `[Vue warn] Extraneous non-props attributes (loading)` ตอนเปิด ConfirmDialog — `components/ConfirmDialog.vue` ไม่มี prop `loading` (จัดการ loading เอง) แต่ส่ง `:loading` มา 6 ที่ (MT Auditor / Owner / Manager, BP Manager, `pages/admin/users.vue`, `pages/sales/daily-sales.vue`) — ปุ่มจึงไม่แสดง loading ตามสถานะจริงของการส่ง | Low | ☐ เปิด — เสนอเพิ่ม prop `loading` ให้ ConfirmDialog (ใช้แทน state ภายในเมื่อส่งมา) แก้ทีเดียวทุกหน้า |
 | BUG-006 | MT-2 Step 8 (อ่านโค้ด) | สงสัย: อยู่หน้า 2 แล้วจำนวนรายการลดจนเหลือ 1 หน้า → `currentPage` ไม่ถูก clamp → ตารางว่าง + pagination หาย | Medium | ✅ ปิด — ไม่เกิดจริง (ทดสอบ 17 ต.ค. 2569: ลบรายการหน้า 2 → กลับหน้า 1 ปกติ) |
 
 ### E2E Test Results
