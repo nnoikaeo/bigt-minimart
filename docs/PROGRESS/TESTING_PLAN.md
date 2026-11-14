@@ -289,6 +289,9 @@
 
 > **Login ด้วย:** Owner  
 > **เลือกวันที่:** status = audited หรือ audited_with_issues
+>
+> **แผน (14 พ.ย. 2569, ข้อมูลจาก MT-3):** รอบ A 09/03 (`audited`) → อนุมัติ; รอบ B 08/03 (`audited_with_issues`) → อนุมัติพร้อมหมายเหตุ; รอบ C 10/03 (`audited`) → ขอให้แก้ไข → Manager → Auditor → Owner อนุมัติ
+> - **รอบ A (กำลังทดสอบ):** การ์ด Step 1: ยอดโอน 3,300 · ยอดถอน 400 · ฝากเงิน "-" · ค่าบริการ 50 · ยกเลิก 0 รายการ, badge "5 / 5 รายการ สำเร็จ", ตารางรายละเอียดมีเวลา (21:49 → 21:59) เรียงตามเวลา ✅ (BUG-035 ข้อ 3); การ์ด Step 2: คาดหวัง 2,950 / นับจริง 2,950 / ส่วนต่าง 0 "ตรงกัน" ✅; การ์ด Audit: "ผ่าน", Auditor "พรทิพย์ เรือนสุข" (BUG-029 ✅ ฝั่ง MT), รายการที่ตรวจ 5, พบปัญหา 0 — "ยอดรายการเดินบัญชี" ขึ้น 0 ฿ ทั้งที่ไม่ได้กรอก (BUG-051)
 
 #### ขั้นตอนการทดสอบ
 
@@ -846,6 +849,7 @@ Screenshots บันทึกที่: tests/e2e/screenshots/
 | BUG-048 | BUG-035 (อ่านโค้ด, 14 พ.ย. 2569) | การ์ด Owner MT "ยอดรายการเดินบัญชีตรงกัน" ขึ้น ✅ เสมอ — route audit ของ MT บันทึก `bankBalanceMatches: true` ตายตัว (`// TODO`) ไม่ได้เทียบยอดที่ Auditor กรอกกับยอดปิดที่คาดไว้ (BP เทียบจริง: `auditBankStatementVsClosingMatches`) | Medium | 🔧 แก้แล้ว (PR #169) — ✅ บันทึกค่าจริงผ่าน MT-3 รอบ C (10/03: `true`), การ์ด Owner ดูตอน MT-4: ฟอร์ม Auditor ส่ง `bankBalanceMatches` (Bank Statement = ยอดปิดที่คาดไว้) และ route บันทึกค่านั้นแทน `true` — เกิดจริงในข้อมูล 08/03 + 09/03 (ไม่ได้กรอก Bank Statement แต่บันทึก `true`) จึงแก้ข้อมูลสองวันนี้เป็น `false` ให้ตรงกับที่ไม่ได้ตรวจ |
 | BUG-049 | MT-3 รอบ A (14 พ.ย. 2569) | console: `[Vue warn] Extraneous non-props attributes (loading)` ตอนเปิด ConfirmDialog — `components/ConfirmDialog.vue` ไม่มี prop `loading`; รอบ B เพิ่ม `confirm-label` (MT Auditor "ยืนยันพร้อมหมายเหตุ" ใช้ชื่อผิด ต้องเป็น `confirm-text` — ปุ่มจึงขึ้น "ตกลง" แทน "ยืนยัน") (จัดการ loading เอง) แต่ส่ง `:loading` มา 6 ที่ (MT Auditor / Owner / Manager, BP Manager, `pages/admin/users.vue`, `pages/sales/daily-sales.vue`) — ปุ่มจึงไม่แสดง loading ตามสถานะจริงของการส่ง | Low | 🔧 แก้แล้ว (PR #169): ConfirmDialog มี prop `loading` (ปิดทั้ง 2 ปุ่ม + ขึ้น "กำลังประมวลผล..." ระหว่างส่ง), แก้ `confirm-label` → `confirm-text` — ✅ ไม่มี warning แล้ว (MT-3 รอบ C 14 พ.ย. 2569; ส่ง `:loading` มา 5 ที่ ไม่ใช่ 6) |
 | BUG-050 | MT-3 รอบ C (14 พ.ย. 2569) | ฟอร์ม "แก้ไขรายการและเปลี่ยนสถานะ" ของ MT: กล่องยอด "ยอดเงินในบัญชี ก่อน → หลัง" แสดงผลของรายการเองเสมอ (รายการโอน 1,000: 8,934 → 7,934) แม้เลือก "พักรายการ" หรือ "ยกเลิก" ซึ่งจริง ๆ จะคืนยอด (7,934 → 8,934) — อาจทำให้เข้าใจผิด (`components/money-transfer/TransactionForm.vue` `bannerInfo`; BP ไม่มีกล่องนี้) | Low (UX) | ☐ เปิด — เสนอซ่อนกล่องเมื่อเลือกพัก/ยกเลิก หรือแสดงยอดหลังคืน |
+| BUG-051 | MT-4 รอบ A (14 พ.ย. 2569) | การ์ด Owner "ยอดรายการเดินบัญชี" ขึ้น "0 ฿" เมื่อ Auditor ไม่ได้กรอก Bank Statement (`bankStatementAmount ?? 0`) — อ่านเหมือนบัญชีมี 0 บาท (MT `components/money-transfer/OwnerApprovalSection.vue`, BP เขียนแบบเดียวกัน `auditBankStatementAmount ?? 0`) — หลัง PR #169 MT บังคับกรอกแล้ว จะเกิดกับข้อมูลเก่า / BP ที่ไม่มีค่า | Low (UX) | ☐ เปิด — เสนอแสดง "ไม่ได้กรอก" หรือ "-" เมื่อไม่มีค่า (MT + BP) |
 | BUG-006 | MT-2 Step 8 (อ่านโค้ด) | สงสัย: อยู่หน้า 2 แล้วจำนวนรายการลดจนเหลือ 1 หน้า → `currentPage` ไม่ถูก clamp → ตารางว่าง + pagination หาย | Medium | ✅ ปิด — ไม่เกิดจริง (ทดสอบ 17 ต.ค. 2569: ลบรายการหน้า 2 → กลับหน้า 1 ปกติ) |
 
 ### E2E Test Results
