@@ -530,11 +530,15 @@ export class MoneyTransferJsonRepository implements IMoneyTransferRepository {
   }
 
   /**
-   * WRITE: Complete audit (Workflow 2.2)
+   * WRITE: Send the day back to Manager (Auditor or Owner, FLOW 2 — same as BP)
+   * - keeps Step 1 and the transactions
+   * - clears Step 2, the audit and the owner decision so the day goes
+   *   Manager (re-confirm Step 1 + recount) → Auditor → Owner again
+   * - stores the reason in correctionNotes and who/what it came from
    */
-  async completeAudit(
+  async requestCorrection(
     date: string,
-    auditData: MoneyTransferDailySummary['auditorVerification']
+    data: { notes: string; requestedBy: string }
   ): Promise<MoneyTransferDailySummary> {
     const summary = await this.getDailySummary(date)
     if (!summary) {
@@ -542,55 +546,14 @@ export class MoneyTransferJsonRepository implements IMoneyTransferRepository {
     }
 
     return this.updateDailySummary(date, {
-      auditorVerification: {
-        status: 'completed',
-        completedAt: auditData?.completedAt,
-        completedBy: auditData?.completedBy,
-        completedByName: auditData?.completedByName,
-        transactionsVerified: auditData?.transactionsVerified ?? 0,
-        transactionsWithIssues: auditData?.transactionsWithIssues ?? 0,
-        bankStatementVerified: auditData?.bankStatementVerified ?? false,
-        bankBalanceMatches: auditData?.bankBalanceMatches ?? false,
-        auditNotes: auditData?.auditNotes ?? '',
-        issuesFound: auditData?.issuesFound,
-        auditResult: auditData?.auditResult ?? 'no_issues',
-      },
-      workflowStatus: 'audited',
-    })
-  }
-
-  /**
-   * WRITE: Owner approval (Workflow 2.3)
-   */
-  async approveByOwner(
-    date: string,
-    approvalData: MoneyTransferDailySummary['ownerApproval']
-  ): Promise<MoneyTransferDailySummary> {
-    const summary = await this.getDailySummary(date)
-    if (!summary) {
-      throw new Error(`Summary for ${date} not found`)
-    }
-
-    // Determine workflow status and approval status based on decision
-    const decision = approvalData?.decision ?? 'approve'
-    const workflowStatus: MoneyTransferDailySummary['workflowStatus'] = decision === 'request_correction' ? 'needs_correction' : 'approved'
-    const approvalStatus: 'approved' | 'approved_with_notes' | 'correction_requested' =
-      decision === 'approve'
-        ? 'approved'
-        : decision === 'approve_with_notes'
-          ? 'approved_with_notes'
-          : 'correction_requested'
-
-    return this.updateDailySummary(date, {
-      ownerApproval: {
-        status: approvalStatus,
-        completedAt: approvalData?.completedAt,
-        completedBy: approvalData?.completedBy,
-        completedByName: approvalData?.completedByName,
-        decision,
-        ownerNotes: approvalData?.ownerNotes,
-      },
-      workflowStatus,
+      workflowStatus: 'needs_correction',
+      needsCorrectionFrom: summary.workflowStatus,
+      correctionNotes: data.notes,
+      correctionRequestedAt: new Date().toISOString(),
+      correctionRequestedBy: data.requestedBy,
+      step2: undefined,
+      auditorVerification: undefined,
+      ownerApproval: undefined,
     })
   }
 

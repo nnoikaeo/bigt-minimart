@@ -55,10 +55,11 @@ const stubs = {
 const DATE = '2026-03-11'
 const txn = (id, status) => ({ id, date: DATE, status, transactionType: 'withdrawal', amount: 500, commission: 10 })
 
-async function mountSection({ transactions = [], openingSet = true } = {}) {
+async function mountSection({ transactions = [], openingSet = true, summary = null } = {}) {
   const pinia = createTestingPinia({ createSpy: vi.fn })
   const store = useMoneyTransferStore(pinia)
   store.transactions = transactions
+  store.currentSummary = summary
   store.currentBalance = { openingBalanceSource: openingSet ? 'manual' : null, bankAccount: 7000, transferCash: 750 }
   const wrapper = mount(ManagerRecordingSection, {
     props: { date: DATE, currentUser: { uid: 'u1', displayName: 'Manager' } },
@@ -72,6 +73,40 @@ const completeButton = (wrapper) =>
   wrapper.findAll('.action-btn').find(b => b.text().includes('ยืนยันบันทึกรายการ'))
 
 describe('money-transfer ManagerRecordingSection', () => {
+  describe('sent back for correction (BUG-035)', () => {
+    const sentBack = (needsCorrectionFrom) => ({
+      date: DATE,
+      workflowStatus: 'needs_correction',
+      needsCorrectionFrom,
+      correctionNotes: 'นับเงินถอนใหม่',
+      step1: { status: 'completed' },
+    })
+
+    it('shows who sent it back and why', async () => {
+      const wrapper = await mountSection({ transactions: [txn('a', 'completed')], summary: sentBack('audited') })
+      expect(wrapper.text()).toContain('ส่งกลับให้แก้ไข — Owner ส่งคืน')
+      expect(wrapper.text()).toContain('นับเงินถอนใหม่')
+    })
+
+    it('names the Auditor when sent back from Step 2', async () => {
+      const wrapper = await mountSection({ transactions: [txn('a', 'completed')], summary: sentBack('step2_completed') })
+      expect(wrapper.text()).toContain('ส่งกลับให้แก้ไข — Auditor ส่งคืน')
+    })
+
+    it('lets the Manager re-confirm Step 1', async () => {
+      const wrapper = await mountSection({ transactions: [txn('a', 'completed')], summary: sentBack('audited') })
+      expect(completeButton(wrapper).attributes('disabled')).toBeUndefined()
+    })
+
+    it('hides the Step 1 button once Step 1 is confirmed again', async () => {
+      const wrapper = await mountSection({
+        transactions: [txn('a', 'completed')],
+        summary: { date: DATE, workflowStatus: 'step1_completed', step1: { status: 'completed' } },
+      })
+      expect(completeButton(wrapper)).toBeUndefined()
+    })
+  })
+
   describe('"ยืนยันบันทึกรายการ" button', () => {
     it('is enabled when the checklist is complete', async () => {
       const wrapper = await mountSection({ transactions: [txn('a', 'completed')] })

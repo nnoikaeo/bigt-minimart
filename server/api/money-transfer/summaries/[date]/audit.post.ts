@@ -101,7 +101,6 @@ export default defineEventHandler(async (event) => {
     )
 
     const isRejected = validated.auditResult === 'rejected'
-    const isResubmission = summary.workflowStatus === 'needs_correction'
 
     // Determine workflow status: explicit outcome takes priority
     let newWorkflowStatus: 'audited' | 'audited_with_issues' | 'needs_correction'
@@ -109,6 +108,20 @@ export default defineEventHandler(async (event) => {
       newWorkflowStatus = validated.outcome
     } else {
       newWorkflowStatus = isRejected ? 'needs_correction' : 'audited'
+    }
+
+    // Send back to Manager (same as BP): keep Step 1, clear Step 2 + audit
+    if (newWorkflowStatus === 'needs_correction') {
+      const correctedSummary = await moneyTransferJsonRepository.requestCorrection(date, {
+        notes: validated.issuesFound || validated.auditNotes || '',
+        requestedBy: validated.completedBy || 'auditor',
+      })
+      setResponseStatus(event, 200)
+      return {
+        success: true,
+        data: correctedSummary,
+        message: 'Sent back to Manager for correction.',
+      }
     }
 
     const now = new Date().toISOString()
@@ -132,18 +145,6 @@ export default defineEventHandler(async (event) => {
         txnIssueStatus: validated.txnIssueStatus,
       },
       workflowStatus: newWorkflowStatus,
-    }
-
-    // Track correction request metadata
-    if (newWorkflowStatus === 'needs_correction') {
-      updatePayload.correctionNotes = validated.auditNotes || validated.issuesFound || ''
-      updatePayload.correctionRequestedAt = now
-      updatePayload.correctionRequestedBy = validated.completedBy || 'auditor'
-    }
-
-    // Clear previous owner approval when auditor re-submits after correction
-    if (isResubmission) {
-      updatePayload.ownerApproval = null
     }
 
     // Update summary with auditor verification data

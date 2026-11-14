@@ -203,6 +203,13 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
     },
 
     /**
+     * Who sent the day back: Owner decides on an audited day, Auditor on a Step 2 one (same as BP)
+     */
+    getCorrectionSource: (state: any) => {
+      return state.currentSummary?.needsCorrectionFrom?.startsWith('audited') ? 'Owner' : 'Auditor'
+    },
+
+    /**
      * Get loading state
      */
     getIsLoading: (state: any) => state.isLoading,
