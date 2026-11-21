@@ -81,7 +81,7 @@ const totalCash = computed(() =>
 )
 const openingBalance = computed(() => store.currentBalance?.openingBalance ?? 0)
 const openingSourceLabel = computed(() => {
-  const map: Record<string, string> = { carryover: 'จากเมื่อวาน', manual: 'กำหนดเอง' }
+  const map: Record<string, string> = { carryover: 'ยกยอดมา', manual: 'กำหนดเอง' }
   return map[store.currentBalance?.openingBalanceSource ?? ''] || ''
 })
 const totalCommission = computed(() =>
@@ -160,6 +160,8 @@ const statusBannerContent = computed(() => {
 
 // ─── Date change ──────────────────────────────────────────────────────────────
 async function handleDateChange() {
+  // เก็บวันที่ไว้ใน URL — รีเฟรช/แชร์ลิงก์แล้วได้วันเดียวกัน (BUG-047)
+  router.replace({ query: { ...route.query, date: selectedDate.value } })
   try {
     await store.fetchTransactionsByDate(selectedDate.value)
     await store.fetchBalanceByDate(selectedDate.value)

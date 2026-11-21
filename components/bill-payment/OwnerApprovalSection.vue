@@ -155,7 +155,9 @@ const auditSummaryItems = computed(() => [
   },
   {
     label: 'ยอดรายการเดินบัญชี',
-    value: formatAmount(store.currentSummary?.auditBankStatementAmount ?? 0),
+    value: store.currentSummary?.auditBankStatementAmount != null
+      ? formatAmount(store.currentSummary.auditBankStatementAmount)
+      : 'ไม่ได้กรอก',
     colorClass: 'bg-blue-50',
   },
   {

@@ -73,6 +73,38 @@ const completeButton = (wrapper) =>
   wrapper.findAll('.action-btn').find(b => b.text().includes('ยืนยันบันทึกรายการ'))
 
 describe('money-transfer ManagerRecordingSection', () => {
+  describe('carry-over option in the opening balance modal (BUG-046)', () => {
+    async function openModal(previousDayBalance) {
+      const pinia = createTestingPinia({ createSpy: vi.fn })
+      const store = useMoneyTransferStore(pinia)
+      store.transactions = []
+      store.currentBalance = null
+      store.previousDayBalance = previousDayBalance
+      const wrapper = mount(ManagerRecordingSection, {
+        props: { date: DATE, currentUser: { uid: 'u1', displayName: 'Manager' } },
+        global: {
+          plugins: [pinia],
+          stubs: { ...stubs, BaseModal: { template: '<div v-if="open" class="base-modal"><slot /></div>', props: ['open', 'title', 'size'] } },
+        },
+      })
+      wrapper.vm.openOpeningBalanceModal()
+      await nextTick()
+      return wrapper.find('.base-modal').text()
+    }
+
+    it('names the day the balance comes from instead of "yesterday"', async () => {
+      const text = await openModal({ date: '2026-10-18', bankAccount: 1000, openingBalanceSource: 'manual' })
+      expect(text).toContain('ยอดคงเหลือ ณ สิ้นวัน 18/10/2569')
+      expect(text).not.toContain('เมื่อวาน')
+    })
+
+    it('shows "ไม่พบข้อมูลวันก่อนหน้า" and no date when there is no earlier balance', async () => {
+      const text = await openModal(null)
+      expect(text).toContain('ไม่พบข้อมูลวันก่อนหน้า')
+      expect(text).not.toContain('ณ สิ้นวัน')
+    })
+  })
+
   describe('sent back for correction (BUG-035)', () => {
     const sentBack = (needsCorrectionFrom) => ({
       date: DATE,

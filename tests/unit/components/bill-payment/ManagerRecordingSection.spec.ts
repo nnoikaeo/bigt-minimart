@@ -166,6 +166,35 @@ describe('ManagerRecordingSection', () => {
     })
   })
 
+  // ─── Carry-over option (BUG-046) ────────────────────────────────────────────
+
+  describe('carry-over option in the opening balance modal (BUG-046)', () => {
+    async function openModal(previousDayBalance) {
+      const pinia = createTestingPinia({ createSpy: vi.fn })
+      const wrapper = mount(ManagerRecordingSection, {
+        props: DEFAULT_PROPS,
+        global: { plugins: [pinia], ...globalConfig },
+      })
+      const store = useBillPaymentStore(pinia)
+      store.previousDayBalance = previousDayBalance
+      wrapper.vm.openOpeningBalanceModal()
+      await nextTick()
+      return wrapper.find('.base-modal').text()
+    }
+
+    it('names the day the balance comes from instead of "yesterday"', async () => {
+      const text = await openModal({ date: '2026-04-02', bankAccount: 1100, openingBalanceSource: 'manual' })
+      expect(text).toContain('ยอดคงเหลือ ณ สิ้นวัน 02/04/2569')
+      expect(text).not.toContain('เมื่อวาน')
+    })
+
+    it('shows "ไม่พบข้อมูลวันก่อนหน้า" and no date when there is no earlier balance', async () => {
+      const text = await openModal(null)
+      expect(text).toContain('ไม่พบข้อมูลวันก่อนหน้า')
+      expect(text).not.toContain('ณ สิ้นวัน')
+    })
+  })
+
   // ─── Draft / On-Hold alert ──────────────────────────────────────────────────
 
   describe('draft / on-hold alert', () => {

@@ -4,7 +4,7 @@
 **Updated By**: Claude Code
 **Current Branch**: develop (latest merge: PR #170; main: docs synced via PR #150, code at release #148)
 **Current Phase**: Testing — Service Harmonization (Manual Test → Bug Fix → E2E)
-**Next Up**: small UX PR — BUG-050 (MT on-hold balance box) + BUG-051 (bank statement "0 ฿") + BUG-046 / 047 (MT + BP); BUG-037 (server role checks) + `requireServerAuth` on MT routes (fixes BUG-052) before release; SHARED-1~2 manual test; then history summary columns (MT + BP, see "Planned" below); small: BUG-046 (carry-over label) + BUG-047 (URL date) MT + BP; then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
+**Next Up**: manual test of the small UX PR (BUG-046 / 047 / 050 / 051 / 053 / 054 / 055); then MT detail balance + negative-cash warning PR (BUG-056 option ก, BUG-057 warn-only); BUG-037 (server role checks) + `requireServerAuth` on MT routes (fixes BUG-052) before release; SHARED-1~2 manual test; then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
 
 ---
 

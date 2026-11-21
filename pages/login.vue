@@ -102,6 +102,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { safeRedirectPath } from '~/utils/redirect'
 
 // Use auth layout for login page (no sidebar, minimal design)
 definePageMeta({
@@ -110,6 +111,7 @@ definePageMeta({
 
 // Setup
 const router = useRouter()
+const route = useRoute()
 const { login } = useAuth()
 
 // Form state
@@ -127,8 +129,8 @@ const handleLogin = async () => {
     const result = await login(email.value, password.value)
     
     if (result.success) {
-      // Redirect to dashboard
-      await router.push('/')
+      // Back to the page that sent us here (auth middleware adds ?redirect=), else the dashboard
+      await router.push(safeRedirectPath(route.query.redirect))
     } else {
       error.value = result.error || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ'
     }

@@ -129,6 +129,7 @@ import { useUIStore } from '~/stores/ui'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { logout } = useAuth()
 const uiStore = useUIStore()
 
 // State
@@ -164,7 +165,9 @@ const toggleMobileSidebar = (): void => {
 
 const handleLogout = async (): Promise<void> => {
   try {
-    await authStore.logout()
+    // ต้องออกจาก Firebase ด้วย (signOut) — ล้างแค่ store แล้ว session ยังอยู่ เปิดลิงก์ตรงก็เข้าได้ (BUG-055)
+    const result = await logout()
+    if (!result.success) throw new Error(result.error)
     isDropdownOpen.value = false
     router.push('/login')
   } catch (error) {
