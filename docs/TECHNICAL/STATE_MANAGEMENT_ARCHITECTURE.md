@@ -28,6 +28,10 @@ Differences from the original plan:
   patterns below are not in use yet.
 - `finance.ts`, `users.ts`, `reports.ts`, `settings.ts` were not created; finance is split into the
   `money-transfer` and `bill-payment` stores.
+- Shared workflow getters in both finance stores: `isStep1Complete`, `isStep2Complete`, `isAudited`,
+  `isApproved`, `getCurrentWorkflowStatus`, `getCorrectionSource` (`'Owner'` when the day was sent back
+  from `audited*`, else `'Auditor'`). MT reads nested fields (`step2.status`), BP flat ones
+  (`step2CompletedAt`).
 
 ---
 
