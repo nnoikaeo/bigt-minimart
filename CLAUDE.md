@@ -34,7 +34,9 @@ Keep this file short: facts that live in `docs/` are **linked**, not copied.
   **Check the store file before calling a method** — names differ between the two stores, e.g. MT `deleteTransaction(id)` vs BP `deleteDraftTransaction(id)`.
   Shared: `initializeStore`, `fetchTransactionsByDate`, `fetchDailySummary`, `createTransaction`, `updateTransaction`, `completeDraftTransaction`, `changeTransactionStatus`, `setOpeningBalance`, `completeStep1(date)`, `completeStep2(date, data)`, `submitAudit(date, data)`, `submitOwnerApproval(date, data)` (no `completeAudit` / `rejectAudit`).
 - **Keep MT and BP consistent (Owner rule, 2 Nov 2026):** when a change to one service applies to the other, make it in both in the same PR. If it cannot be done or tested yet, log it in the TESTING_PLAN Bug List and say so.
-- Status banners: page-level, above the role sections, for every role (`pages/finance/{money-transfer,bill-payment}-service/index.vue`) — do not add a second "waiting" box inside a section
+- Send-back (`needs_correction`, from Auditor or Owner) always returns the day to **Manager** in both services: keeps Step 1 + transactions, clears Step 2 / audit / owner decision, stores `correctionNotes` + `needsCorrectionFrom`. Store getter `getCorrectionSource` → `'Owner'` / `'Auditor'`. MT: `moneyTransferJsonRepository.requestCorrection`; BP: repo `submitAudit` / `submitOwnerApproval`
+- Auditor buttons (MT + BP): "ยืนยันการตรวจสอบ" only when Bank Statement + both counts are filled and nothing to report (no difference, no flagged transaction, no issue details); otherwise "ยืนยันพร้อมหมายเหตุ" (needs issue details); "ส่งคืนแก้ไข" needs issue details
+- Status banners: page-level, above the role sections, for every role (`pages/finance/{money-transfer,bill-payment}-service/index.vue`) — do not add a second "waiting" box inside a section. Exception, `needs_correction`: the page banner is hidden for Manager and Auditor, who see the reason box in their own section (Owner keeps the page banner with "เหตุผล: …")
 - Server auth: BP mutation routes call `requireServerAuth(event)`; BP store uses `getApiFetch()` (adds Firebase ID token via `plugins/apiFetch.client.ts`). MT routes do not yet (known tech debt).
 
 ## Coding conventions
@@ -44,7 +46,7 @@ Keep this file short: facts that live in `docs/` are **linked**, not copied.
 - Icons: `@heroicons/vue/24/outline` — never emoji on action buttons
 - Logging: `const logger = useLogger('ComponentName')` → `logger.log` / `logger.error`
 - Async: try/catch, set `errorMessage.value = err.message`
-- Destructive actions: `ConfirmDialog`
+- Destructive actions: `ConfirmDialog` (props `confirm-text`, `cancel-text`, `variant`, `:loading` for the parent's async state)
 - Date pickers: `<DateInput v-model>` (`components/ui/form/DateInput.vue`), in the `#actions` slot of `PageWrapper` on service pages — not a raw `<input type="date">`, which shows the browser's format
 - Date display: always dd/mm/พ.ศ. via `formatThaiDate` / `formatThaiDateTime` (`utils/date.ts`); stored values stay ISO
 - TS pitfalls: `split('T')[0]` is `string | undefined` (use `?? ''`); v-for index is `string | number` (use `Number(idx) + 1`); type literal unions with `''` explicitly (`ref<'a' | 'b' | ''>('')`); remove unused computeds; `new Map(arr.map(x => [k, v]))` infers `Map<any, any>`-ish types that fail arithmetic in nuxt typecheck — write `new Map<string, number>(...)`

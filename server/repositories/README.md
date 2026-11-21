@@ -38,9 +38,21 @@ export default defineEventHandler(async (event) => {
 })
 ```
 
+## 🔁 Workflow send-back (`needs_correction`)
+
+Auditor or Owner sending a day back goes to Manager in both services — the repository keeps Step 1
+and the transactions, clears Step 2 / audit / owner decision and stores `correctionNotes` +
+`needsCorrectionFrom` (the status it was sent back from).
+
+| Service | Method |
+|---|---|
+| Money Transfer | `moneyTransferJsonRepository.requestCorrection(date, { notes, requestedBy })` — JSON repo only, not in `IMoneyTransferRepository` yet |
+| Bill Payment | `billPaymentJsonRepository.submitAudit` / `submitOwnerApproval` with outcome / decision `needs_correction` |
+
 ## 🔥 Migrating to Firestore (future)
 
-1. Implement the missing Firestore repositories (Bill Payment, Access Control) against the same interface
+1. Implement the missing Firestore repositories (Bill Payment, Access Control) against the same interface;
+   add `requestCorrection` to `IMoneyTransferRepository` + the MT Firestore repo (clearing fields needs `FieldValue.delete()`)
 2. Add a Bill Payment interface (`IBillPaymentRepository`) so both implementations share a contract
 3. Write role-based `firestore.rules` for each collection
 4. Seed data: `POST /api/admin/seed-firestore` (development only)
@@ -61,5 +73,5 @@ export default defineEventHandler(async (event) => {
 
 ---
 
-**Last Updated**: Oct 16, 2026
+**Last Updated**: Nov 21, 2026
 **Status**: JSON repositories active for all domains; Firestore migration not started

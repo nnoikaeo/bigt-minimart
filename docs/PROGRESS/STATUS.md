@@ -2,7 +2,7 @@
 
 **Last Updated**: Nov 21, 2026
 **Updated By**: Claude Code
-**Current Branch**: develop (latest merge: PR #169; main: docs synced via PR #150, code at release #148)
+**Current Branch**: develop (latest merge: PR #170; main: docs synced via PR #150, code at release #148)
 **Current Phase**: Testing — Service Harmonization (Manual Test → Bug Fix → E2E)
 **Next Up**: small UX PR — BUG-050 (MT on-hold balance box) + BUG-051 (bank statement "0 ฿") + BUG-046 / 047 (MT + BP); BUG-037 (server role checks) + `requireServerAuth` on MT routes (fixes BUG-052) before release; SHARED-1~2 manual test; then history summary columns (MT + BP, see "Planned" below); small: BUG-046 (carry-over label) + BUG-047 (URL date) MT + BP; then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
 
@@ -349,7 +349,7 @@ Components (50 total):
 | Pages | 26 (16 functional, 10 placeholders) | ✅ |
 | Components | 50 | ✅ |
 | API routes | 72 | ✅ |
-| PRs merged (latest) | #169 | ✅ |
+| PRs merged (latest) | #170 | ✅ |
 | TypeScript errors (`nuxt typecheck`) | 0 | ✅ |
 | Unit/Integration tests (`vitest run`) | 387/387 passed (29 files) | ✅ |
 | Production build (`nuxt build`) | Success | ✅ |
