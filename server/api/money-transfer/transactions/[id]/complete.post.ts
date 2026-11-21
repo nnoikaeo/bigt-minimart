@@ -1,4 +1,5 @@
 import { moneyTransferJsonRepository } from '~/server/repositories/money-transfer-json.repository'
+import { requireServerAuth } from '~/server/utils/serverAuth'
 
 /**
  * POST /api/money-transfer/transactions/[id]/complete
@@ -14,6 +15,7 @@ import { moneyTransferJsonRepository } from '~/server/repositories/money-transfe
  */
 
 export default defineEventHandler(async (event) => {
+  await requireServerAuth(event)
   try {
     // Initialize repository
     await moneyTransferJsonRepository.init()

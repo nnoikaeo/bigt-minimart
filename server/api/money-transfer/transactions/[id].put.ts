@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { requireServerAuth } from '~/server/utils/serverAuth'
 import { moneyTransferJsonRepository } from '~/server/repositories/money-transfer-json.repository'
 
 /**
@@ -34,14 +35,14 @@ const updateTransactionSchema = z.object({
   // Metadata
   notes: z.string().optional(),
   statusNote: z.string().optional(),
-  recordedBy: z.string().optional(),
-  recordedByName: z.string().optional(),
+  // recordedBy / recordedByName are not editable — zod strips them, the original recorder stays (BUG-052)
 
   // Status from client (server may override based on balance check)
   status: z.enum(['draft', 'completed', 'on_hold']).optional(),
 })
 
 export default defineEventHandler(async (event) => {
+  await requireServerAuth(event)
   const id = getRouterParam(event, 'id')
 
   if (!id) {

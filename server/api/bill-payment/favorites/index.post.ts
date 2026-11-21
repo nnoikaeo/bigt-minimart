@@ -1,7 +1,9 @@
 import { billPaymentJsonRepository } from '~/server/repositories/bill-payment-json.repository'
+import { requireServerAuth } from '~/server/utils/serverAuth'
 import type { BillPaymentFavorite } from '~/types/bill-payment'
 
 export default defineEventHandler(async (event) => {
+  await requireServerAuth(event)
   try {
     const body = await readBody(event)
 

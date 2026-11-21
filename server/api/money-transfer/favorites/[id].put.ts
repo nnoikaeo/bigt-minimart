@@ -1,6 +1,8 @@
 import { moneyTransferJsonRepository } from '~/server/repositories/money-transfer-json.repository'
+import { requireServerAuth } from '~/server/utils/serverAuth'
 
 export default defineEventHandler(async (event) => {
+  await requireServerAuth(event)
   try {
     const id = getRouterParam(event, 'id')
     if (!id) throw createError({ statusCode: 400, statusMessage: 'id is required' })

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { requireServerAuth } from '~/server/utils/serverAuth'
 import { moneyTransferJsonRepository } from '~/server/repositories/money-transfer-json.repository'
 
 /**
@@ -26,6 +27,7 @@ const approvalSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
+  const authUser = await requireServerAuth(event)
   try {
     // Initialize repository
     await moneyTransferJsonRepository.init()
@@ -108,7 +110,7 @@ export default defineEventHandler(async (event) => {
     if (workflowStatus === 'needs_correction') {
       const correctedSummary = await moneyTransferJsonRepository.requestCorrection(date, {
         notes: validated.ownerNotes || '',
-        requestedBy: 'owner',
+        requestedBy: authUser.uid,
       })
       setResponseStatus(event, 200)
       return {
@@ -135,8 +137,8 @@ export default defineEventHandler(async (event) => {
               ? 'approved_with_notes'
               : 'correction_requested',
         completedAt: now,
-        completedBy: 'owner', // TODO: Get from auth context
-        completedByName: 'Owner', // TODO: Get from auth context
+        completedBy: authUser.uid,
+        completedByName: authUser.name ?? 'Owner',
         decision: validated.decision,
         ownerNotes: validated.ownerNotes,
       },

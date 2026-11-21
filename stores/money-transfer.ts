@@ -9,6 +9,7 @@
 
 import { defineStore } from 'pinia'
 import { todayISO } from '~/utils/date'
+import { getApiFetch } from '~/utils/api-fetch'
 import type {
   MoneyTransferTransaction,
   MoneyTransferDailySummary,
@@ -278,7 +279,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
       this.isLoading = true
 
       try {
-        const response = await $fetch(`/api/money-transfer/transactions`, {
+        const response = await getApiFetch()(`/api/money-transfer/transactions`, {
           params: { date },
         })
 
@@ -305,7 +306,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
       this.isLoading = true
 
       try {
-        const response = await $fetch('/api/money-transfer/transactions', {
+        const response = await getApiFetch()('/api/money-transfer/transactions', {
           method: 'POST',
           body: transactionData,
         })
@@ -343,7 +344,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
       this.isLoading = true
 
       try {
-        const response = await $fetch(`/api/money-transfer/transactions/${id}`, {
+        const response = await getApiFetch()(`/api/money-transfer/transactions/${id}`, {
           method: 'PUT',
           body: updates,
         })
@@ -377,7 +378,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
       this.isLoading = true
 
       try {
-        const response = await $fetch(`/api/money-transfer/transactions/${id}/complete`, {
+        const response = await getApiFetch()(`/api/money-transfer/transactions/${id}/complete`, {
           method: 'POST',
         })
 
@@ -418,7 +419,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
       this.isLoading = true
 
       try {
-        const response = await $fetch(`/api/money-transfer/transactions/${id}/status`, {
+        const response = await getApiFetch()(`/api/money-transfer/transactions/${id}/status`, {
           method: 'PUT',
           body: { status, statusNote },
         })
@@ -456,7 +457,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
       this.isLoading = true
 
       try {
-        await $fetch(`/api/money-transfer/transactions/${id}`, {
+        await getApiFetch()(`/api/money-transfer/transactions/${id}`, {
           method: 'DELETE',
         })
 
@@ -482,7 +483,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
      */
     async fetchCurrentBalanceAction(): Promise<void> {
       try {
-        const response = await $fetch('/api/money-transfer/balances/current')
+        const response = await getApiFetch()('/api/money-transfer/balances/current')
         this.currentBalance = response.data
 
         console.log('[fetchCurrentBalance] Updated balance:', this.currentBalance)
@@ -498,7 +499,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
      */
     async fetchBalanceByDate(date: string): Promise<void> {
       try {
-        const response = await $fetch(`/api/money-transfer/balances/${date}`)
+        const response = await getApiFetch()(`/api/money-transfer/balances/${date}`)
         this.currentBalance = response.data
         console.log('[fetchBalanceByDate] Balance for', date, this.currentBalance)
       } catch (error: any) {
@@ -512,7 +513,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
      */
     async fetchAllSummaries(): Promise<void> {
       try {
-        const response = await $fetch('/api/money-transfer/summaries')
+        const response = await getApiFetch()('/api/money-transfer/summaries')
         this.summaries = response.data
       } catch (error: any) {
         this.error = `Failed to fetch summaries: ${error.message}`
@@ -525,7 +526,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
      */
     async fetchDailySummary(date: string): Promise<void> {
       try {
-        const response = await $fetch(`/api/money-transfer/summaries/${date}`)
+        const response = await getApiFetch()(`/api/money-transfer/summaries/${date}`)
         this.currentSummary = response.data
 
         console.log('[fetchDailySummary] Fetched summary for', date, this.currentSummary)
@@ -542,7 +543,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
      */
     async initDailySummary(date: string): Promise<void> {
       try {
-        const response = await $fetch(`/api/money-transfer/summaries/${date}/init`, { method: 'POST' })
+        const response = await getApiFetch()(`/api/money-transfer/summaries/${date}/init`, { method: 'POST' })
         this.currentSummary = response.data
         console.log('[initDailySummary]', response.created ? 'Created' : 'Already exists', date)
       } catch (error: any) {
@@ -555,7 +556,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
      */
     async fetchPreviousDayBalance(date: string): Promise<void> {
       try {
-        const response = await $fetch('/api/money-transfer/balances/previous', {
+        const response = await getApiFetch()('/api/money-transfer/balances/previous', {
           params: { date },
         })
         this.previousDayBalance = response.data
@@ -576,7 +577,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
       userId?: string
     ): Promise<void> {
       try {
-        const response = await $fetch('/api/money-transfer/balances/opening', {
+        const response = await getApiFetch()('/api/money-transfer/balances/opening', {
           method: 'POST',
           body: { date, amount, source, userId },
         })
@@ -596,16 +597,10 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
       this.isLoading = true
 
       try {
-        const authStore = useAuthStore()
-        const response = await $fetch(
+        // Who completed Step 1 comes from the ID token on the server (BUG-052)
+        const response = await getApiFetch()(
           `/api/money-transfer/summaries/${date}/complete-step1`,
-          {
-            method: 'POST',
-            body: {
-              userId: authStore.user?.uid || 'system',
-              userName: authStore.user?.displayName || 'Manager',
-            },
-          }
+          { method: 'POST' }
         )
 
         this.currentSummary = response.data
@@ -628,7 +623,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
       this.isLoading = true
 
       try {
-        const response = await $fetch(
+        const response = await getApiFetch()(
           `/api/money-transfer/summaries/${date}/complete-step2`,
           {
             method: 'POST',
@@ -656,14 +651,10 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
       this.isLoading = true
 
       try {
-        const authStore = useAuthStore()
-        const response = await $fetch(`/api/money-transfer/summaries/${date}/audit`, {
+        // Auditor identity comes from the ID token on the server (BUG-052)
+        const response = await getApiFetch()(`/api/money-transfer/summaries/${date}/audit`, {
           method: 'POST',
-          body: {
-            ...auditData,
-            completedBy: authStore.user?.uid || 'auditor',
-            completedByName: authStore.user?.displayName || 'Auditor',
-          },
+          body: auditData,
         })
 
         this.currentSummary = response.data
@@ -686,7 +677,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
       this.isLoading = true
 
       try {
-        const response = await $fetch(`/api/money-transfer/summaries/${date}/approve`, {
+        const response = await getApiFetch()(`/api/money-transfer/summaries/${date}/approve`, {
           method: 'POST',
           body: approvalData,
         })
@@ -718,7 +709,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
      */
     async loadFavorites(): Promise<void> {
       try {
-        const response = await $fetch<{ success: boolean; data: FavoriteTransfer[] }>(
+        const response = await getApiFetch()<{ success: boolean; data: FavoriteTransfer[] }>(
           '/api/money-transfer/favorites'
         )
         this.favorites = response.data
@@ -731,7 +722,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
      * Add a new favorite
      */
     async addFavorite(data: Omit<FavoriteTransfer, 'id' | 'createdAt'>): Promise<FavoriteTransfer> {
-      const response = await $fetch<{ success: boolean; data: FavoriteTransfer }>(
+      const response = await getApiFetch()<{ success: boolean; data: FavoriteTransfer }>(
         '/api/money-transfer/favorites',
         { method: 'POST', body: data }
       )
@@ -743,7 +734,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
      * Update an existing favorite
      */
     async updateFavorite(id: string, data: Partial<Omit<FavoriteTransfer, 'id' | 'createdAt'>>): Promise<FavoriteTransfer> {
-      const response = await $fetch<{ success: boolean; data: FavoriteTransfer }>(
+      const response = await getApiFetch()<{ success: boolean; data: FavoriteTransfer }>(
         `/api/money-transfer/favorites/${id}`,
         { method: 'PUT', body: data }
       )
@@ -756,7 +747,7 @@ export const useMoneyTransferStore = defineStore('moneyTransfer', {
      * Delete a favorite
      */
     async deleteFavorite(id: string): Promise<void> {
-      await $fetch(`/api/money-transfer/favorites/${id}`, { method: 'DELETE' })
+      await getApiFetch()(`/api/money-transfer/favorites/${id}`, { method: 'DELETE' })
       this.favorites = this.favorites.filter((f: any) => f.id !== id)
     },
 

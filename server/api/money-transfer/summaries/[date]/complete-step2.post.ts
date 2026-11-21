@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { requireServerAuth } from '~/server/utils/serverAuth'
 import { moneyTransferJsonRepository } from '~/server/repositories/money-transfer-json.repository'
 
 /**
@@ -32,6 +33,7 @@ const step2Schema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
+  const authUser = await requireServerAuth(event)
   try {
     // Initialize repository
     await moneyTransferJsonRepository.init()
@@ -115,8 +117,8 @@ export default defineEventHandler(async (event) => {
       step2: {
         status: 'completed',
         completedAt: new Date().toISOString(),
-        completedBy: 'manager', // TODO: Get from auth context
-        completedByName: 'Manager', // TODO: Get from auth context
+        completedBy: authUser.uid,
+        completedByName: authUser.name ?? 'Manager',
         expectedCash,
         actualCash: actualCashWithTotal,
         differences,

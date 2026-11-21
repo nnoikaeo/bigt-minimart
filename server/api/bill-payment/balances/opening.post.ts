@@ -1,24 +1,25 @@
 import { z } from 'zod'
+import { requireServerAuth } from '~/server/utils/serverAuth'
 import { billPaymentJsonRepository } from '~/server/repositories/bill-payment-json.repository'
 
 const schema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   amount: z.number().nonnegative(),
   source: z.enum(['carryover', 'manual']),
-  userId: z.string().optional(),
 })
 
 /**
  * POST /api/bill-payment/balances/opening
  */
 export default defineEventHandler(async (event) => {
+  const authUser = await requireServerAuth(event)
   try {
     await billPaymentJsonRepository.init()
 
     const body = await readBody(event)
-    const { date, amount, source, userId } = schema.parse(body)
+    const { date, amount, source } = schema.parse(body)
 
-    const balance = await billPaymentJsonRepository.setOpeningBalance(date, amount, source, userId)
+    const balance = await billPaymentJsonRepository.setOpeningBalance(date, amount, source, authUser.uid)
 
     // The day's summary starts with real work (opening balance / first transaction), not on page view
     if (!(await billPaymentJsonRepository.getDailySummary(date))) {

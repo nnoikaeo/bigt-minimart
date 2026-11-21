@@ -9,24 +9,13 @@
 
 import { defineStore } from 'pinia'
 import { todayISO } from '~/utils/date'
+import { getApiFetch } from '~/utils/api-fetch'
 import type {
   BillPaymentTransaction,
   BillPaymentDailySummary,
   BillPaymentBalance,
   BillPaymentFavorite,
 } from '~/types/bill-payment'
-
-/**
- * Returns $apiFetch (with Authorization header) when running in browser,
- * falls back to $fetch for any SSR context (bill-payment APIs are client-only).
- */
-function getApiFetch(): typeof $fetch {
-  if (process.client) {
-    const { $apiFetch } = useNuxtApp()
-    if ($apiFetch) return $apiFetch as typeof $fetch
-  }
-  return $fetch
-}
 
 /**
  * Bill Payment Service Store

@@ -1,10 +1,12 @@
 import { billPaymentJsonRepository } from '~/server/repositories/bill-payment-json.repository'
+import { requireServerAuth } from '~/server/utils/serverAuth'
 
 /**
  * POST /api/bill-payment/summaries/[date]/init
  * Idempotent: creates summary if not exists
  */
 export default defineEventHandler(async (event) => {
+  await requireServerAuth(event)
   try {
     await billPaymentJsonRepository.init()
 

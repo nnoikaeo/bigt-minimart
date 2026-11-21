@@ -1,4 +1,5 @@
 import { moneyTransferJsonRepository } from '~/server/repositories/money-transfer-json.repository'
+import { requireServerAuth } from '~/server/utils/serverAuth'
 import { todayISO } from '~/utils/date'
 
 /**
@@ -7,15 +8,16 @@ import { todayISO } from '~/utils/date'
  * Set the opening balance (bankAccount) for a given date.
  * Other balance fields (transferCash, serviceFeeTransfer, serviceFeeCash) always start at 0.
  *
- * Body: { date?: string, amount: number, source: 'carryover' | 'manual', userId?: string }
+ * Body: { date?: string, amount: number, source: 'carryover' | 'manual' } (who set it comes from the ID token)
  * Response: { success: boolean, data: MoneyTransferBalance }
  */
 export default defineEventHandler(async (event) => {
+  const authUser = await requireServerAuth(event)
   try {
     await moneyTransferJsonRepository.init()
 
     const body = await readBody(event)
-    const { amount, source, userId } = body
+    const { amount, source } = body
     const date: string = body.date || todayISO()
 
     if (amount === undefined || amount === null || amount < 0) {
@@ -27,7 +29,7 @@ export default defineEventHandler(async (event) => {
 
     console.log(`[POST /api/money-transfer/balances/opening] date=${date}, amount=${amount}, source=${source}`)
 
-    const balance = await moneyTransferJsonRepository.setOpeningBalance(date, amount, source, userId)
+    const balance = await moneyTransferJsonRepository.setOpeningBalance(date, amount, source, authUser.uid)
 
     // The day's summary starts with real work (opening balance / first transaction), not on page view
     if (!(await moneyTransferJsonRepository.getDailySummary(date))) {

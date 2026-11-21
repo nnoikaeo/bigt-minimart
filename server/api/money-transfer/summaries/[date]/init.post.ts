@@ -1,4 +1,5 @@
 import { moneyTransferJsonRepository } from '~/server/repositories/money-transfer-json.repository'
+import { requireServerAuth } from '~/server/utils/serverAuth'
 
 /**
  * POST /api/money-transfer/summaries/[date]/init
@@ -10,6 +11,7 @@ import { moneyTransferJsonRepository } from '~/server/repositories/money-transfe
  * Response: { success: boolean, data: MoneyTransferDailySummary, created: boolean }
  */
 export default defineEventHandler(async (event) => {
+  await requireServerAuth(event)
   try {
     await moneyTransferJsonRepository.init()
 
