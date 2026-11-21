@@ -2,9 +2,9 @@
 
 **Last Updated**: Nov 21, 2026
 **Updated By**: Claude Code
-**Current Branch**: develop (latest merge: PR #174; main: docs synced via PR #150, code at release #148)
+**Current Branch**: develop (latest merge: PR #176; main: docs synced via PR #150, code at release #148)
 **Current Phase**: Testing — Service Harmonization (Manual Test → Bug Fix → E2E)
-**Next Up**: BUG-037 (server role checks) + `requireServerAuth` on MT routes (fixes BUG-052) before release; SHARED-1~2 manual test; then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
+**Next Up**: manual test of BUG-052 (PR #176); BUG-037 PR 2 — `requireServerRole` + server-side day-status checks (MT + BP; decisions in the TESTING_PLAN BUG-037 row) before release; SHARED-1~2 manual test; then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
 
 ---
 
@@ -255,6 +255,12 @@ Timeline Status: Money Transfer feature fully shipped ✓
    ├─ BUG-056 utils/money-transfer-balance.ts: transactionEffect + computeBalanceImpacts (opening + completed, completedAt order); Manager detail + Auditor verify modals; not-counted note for draft / on hold / cancelled
    ├─ BUG-056 status route: on_hold → completed sets a new completedAt
    └─ BUG-057 status-change form warns when holding makes bank / transfer cash negative (still saves)
+
+🔧 Server auth on all MT write routes — BUG-037 PR 1 + BUG-052 (PR #176, merged Nov 21 — manual test pending)
+   ├─ requireServerAuth on all 14 MT write routes + BP opening / init / favorites (guard test: every MT/BP write route)
+   ├─ BUG-052 who recorded / set opening / Step 1 / Step 2 / audited / approved / sent back comes from the token, not the body
+   ├─ MT store uses getApiFetch() (utils/api-fetch.ts, shared with BP)
+   └─ MT "อนุมัติแล้ว" banner shows approver name + time (same as BP)
 ```
 
 ### Week 9 (Mar 23-25): Layout Consistency & Polish
@@ -302,7 +308,7 @@ Auth & RBAC ✅
   ├─ Permission-gated ActionButton component + v-can directive
   ├─ middleware/auth on all finance pages
   ├─ PERMISSIONS.EDIT_FINANCE / VIEW_FINANCE
-  └─ ⚠️ requireServerAuth on Bill Payment mutations only (Money Transfer routes not yet); it checks login, not role or workflow status
+  └─ ⚠️ requireServerAuth on every MT + BP write route (PR #176); it checks login, not role or workflow status (BUG-037 PR 2)
 
 Testing ✅
   ├─ Vitest: 23 files / 334 tests (unit: shared + BP components, store, helpers; integration: MT, BP, cross-service, daily-sales)
@@ -364,16 +370,16 @@ Components (50 total):
 | Pages | 26 (16 functional, 10 placeholders) | ✅ |
 | Components | 50 | ✅ |
 | API routes | 72 | ✅ |
-| PRs merged (latest) | #170 | ✅ |
+| PRs merged (latest) | #176 | ✅ |
 | TypeScript errors (`nuxt typecheck`) | 0 | ✅ |
-| Unit/Integration tests (`vitest run`) | 387/387 passed (29 files) | ✅ |
+| Unit/Integration tests (`vitest run`) | 461/461 passed (34 files) | ✅ |
 | Production build (`nuxt build`) | Success | ✅ |
 | Money Transfer workflow | 9/9 statuses (unified) | ✅ |
 | Bill Payment workflow | Phase 1-6 Complete (27 Tasks) | ✅ |
-| Service Harmonization Testing | 8/17 tasks done (MT-1~4, BP-1~4); open bugs BUG-037, BUG-052 | 🔄 |
+| Service Harmonization Testing | 8/17 tasks done (MT-1~4, BP-1~4); open bugs BUG-037 (PR 2: role + day-status), BUG-052 (fixed, test pending) | 🔄 |
 | Design System components | 15 ui + 4 layout + 8 shared | ✅ |
 | Mobile responsive | Yes | ✅ |
-| CI (PR Check / Staging / Production) | PR Check + Staging passing (Nov 21, 2026, PR #169); Production last ran Oct 16, 2026 | ✅ |
+| CI (PR Check / Staging / Production) | PR Check + Staging passing (Nov 21, 2026, PR #176); Production last ran Oct 16, 2026 | ✅ |
 
 ---
 
@@ -414,7 +420,7 @@ Components (50 total):
 ⚠️ Tech debt (found Oct 16, 2026)
    ├─ Deploy workflows run `firebase-tools@latest`, so a new version can need new IAM roles: Staging failed with 403 on `serviceusage.services.get` from Oct 31, 2026 until the service account got "Service Usage Consumer" (Nov 2). Check Staging after each merge — PR Check does not cover deploys.
    ├─ GitHub warns that Node.js 20 in the workflows is deprecated
-   ├─ Money Transfer mutation APIs don't call requireServerAuth (Bill Payment does); neither service checks role or workflow status on the server — fix before release
+   ├─ All MT + BP write routes check login (PR #176), but neither service checks role or workflow status on the server (BUG-037 PR 2) — fix before release; GET routes do not require login yet
    ├─ PR Check workflow doesn't run `npm test`
    ├─ Firestore migration not started (all data in public/data/*.json)
    ├─ ⚠️ Unverified: production (Cloud Functions `nuxtServer`) may not persist JSON writes —
