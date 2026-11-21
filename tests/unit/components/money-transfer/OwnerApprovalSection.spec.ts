@@ -20,7 +20,7 @@ vi.mock('~/composables/useLogger', () => ({
 
 const DATE = '2026-03-09'
 
-async function mountAudited(auditorVerification) {
+async function mountAudited(auditorVerification, summaryOverrides = {}) {
   const pinia = createTestingPinia({ createSpy: vi.fn })
   const store = useMoneyTransferStore(pinia)
   store.transactions = []
@@ -34,6 +34,7 @@ async function mountAudited(auditorVerification) {
       transactionsWithIssues: 0,
       ...auditorVerification,
     },
+    ...summaryOverrides,
   }
   const wrapper = shallowMount(OwnerApprovalSection, {
     props: { date: DATE },
@@ -72,6 +73,33 @@ describe('money-transfer OwnerApprovalSection', () => {
     it('still shows a real 0 as an amount', async () => {
       const wrapper = await mountAudited({ bankStatementAmount: 0 })
       expect(bankStatementItem(wrapper).value).toBe('0 ฿')
+    })
+  })
+
+  describe('approved banner shows who approved and when (BUG-052)', () => {
+    it('shows the approver name and time from ownerApproval', async () => {
+      const wrapper = await mountAudited({}, {
+        workflowStatus: 'approved',
+        ownerApproval: {
+          status: 'approved',
+          decision: 'approve',
+          completedBy: 'uid-owner',
+          completedByName: 'สมชาย ใจดี',
+          completedAt: '2026-03-09T15:30:00.000Z',
+        },
+      })
+      const text = wrapper.find('[data-testid="approved-by"]').text()
+      expect(text).toContain('ได้รับการอนุมัติโดย')
+      expect(text).toContain('สมชาย ใจดี')
+      expect(text).toContain('2026-03-09T15:30:00.000Z')
+    })
+
+    it('falls back to "Owner" when the record has no name', async () => {
+      const wrapper = await mountAudited({}, {
+        workflowStatus: 'approved',
+        ownerApproval: { status: 'approved', decision: 'approve' },
+      })
+      expect(wrapper.find('[data-testid="approved-by"]').text()).toContain('Owner')
     })
   })
 })

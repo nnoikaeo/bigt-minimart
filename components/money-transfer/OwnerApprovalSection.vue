@@ -197,7 +197,13 @@ async function handleConfirmedSubmit() {
       <CheckCircleIcon class="w-8 h-8 text-green-600 shrink-0 mt-0.5" />
       <div>
         <p class="font-semibold text-green-800 text-lg">อนุมัติแล้ว ✅</p>
-        <p class="text-sm text-green-700 mt-1">วันที่ {{ formatThaiDate(date) }} — ได้รับการอนุมัติเรียบร้อยแล้ว</p>
+        <p class="text-sm text-green-700 mt-1" data-testid="approved-by">
+          วันที่ {{ formatThaiDate(date) }} — ได้รับการอนุมัติโดย
+          {{ store.currentSummary?.ownerApproval?.completedByName ?? 'Owner' }}
+          <template v-if="store.currentSummary?.ownerApproval?.completedAt">
+            · {{ formatDatetime(store.currentSummary.ownerApproval.completedAt as string) }}
+          </template>
+        </p>
         <p v-if="store.currentSummary?.ownerApproval?.ownerNotes" class="text-sm text-green-700 mt-1">
           หมายเหตุ: {{ store.currentSummary?.ownerApproval?.ownerNotes }}
         </p>

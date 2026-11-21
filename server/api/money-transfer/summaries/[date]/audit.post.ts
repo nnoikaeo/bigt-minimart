@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { requireServerAuth } from '~/server/utils/serverAuth'
 import { moneyTransferJsonRepository } from '~/server/repositories/money-transfer-json.repository'
 
 /**
@@ -43,11 +44,10 @@ const auditSchema = z.object({
   auditNotes: z.string().optional().default(''),
   issuesFound: z.string().optional(),
   txnIssueStatus: z.record(z.string(), z.literal(true)).optional(),
-  completedBy: z.string().optional(),
-  completedByName: z.string().optional(),
 })
 
 export default defineEventHandler(async (event) => {
+  const authUser = await requireServerAuth(event)
   try {
     // Initialize repository
     await moneyTransferJsonRepository.init()
@@ -116,7 +116,7 @@ export default defineEventHandler(async (event) => {
     if (newWorkflowStatus === 'needs_correction') {
       const correctedSummary = await moneyTransferJsonRepository.requestCorrection(date, {
         notes: validated.issuesFound || validated.auditNotes || '',
-        requestedBy: validated.completedBy || 'auditor',
+        requestedBy: authUser.uid,
       })
       setResponseStatus(event, 200)
       return {
@@ -133,8 +133,8 @@ export default defineEventHandler(async (event) => {
       auditorVerification: {
         status: 'completed',
         completedAt: now,
-        completedBy: validated.completedBy || 'auditor',
-        completedByName: validated.completedByName || 'Auditor',
+        completedBy: authUser.uid,
+        completedByName: authUser.name ?? 'Auditor',
         transactionsVerified: validated.transactionsVerified,
         transactionsWithIssues: validated.transactionsWithIssues,
         bankStatementVerified: validated.bankStatementVerified,

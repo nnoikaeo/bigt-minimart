@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { requireServerAuth } from '~/server/utils/serverAuth'
 import { moneyTransferJsonRepository } from '~/server/repositories/money-transfer-json.repository'
 import type { MoneyTransferTransaction } from '~/types/repositories'
 
@@ -40,14 +41,16 @@ const createTransactionSchema = z.object({
   customerName: z.string().optional(),
 
   // User tracking
-  recordedBy: z.string().min(1, 'RecordedBy is required'),
-  recordedByName: z.string().min(1, 'RecordedByName is required'),
+  // Ignored — the server sets these from the verified ID token (BUG-052)
+  recordedBy: z.string().optional(),
+  recordedByName: z.string().optional(),
 
   // Notes
   notes: z.string().optional(),
 })
 
 export default defineEventHandler(async (event) => {
+  const authUser = await requireServerAuth(event)
   try {
     // Initialize repository
     await moneyTransferJsonRepository.init()
@@ -131,8 +134,8 @@ export default defineEventHandler(async (event) => {
       commissionType: validatedData.transactionType === 'owner_deposit' ? undefined : validatedData.commissionType,
       customerName: validatedData.customerName,
       status: finalStatus,
-      recordedBy: validatedData.recordedBy,
-      recordedByName: validatedData.recordedByName,
+      recordedBy: authUser.uid, // server-verified identity overrides client-supplied value
+      recordedByName: authUser.name ?? validatedData.recordedByName ?? authUser.uid,
       notes: validatedData.notes,
       balanceImpact: {
         bankAccountBefore: Number(currentBalance.bankAccount),

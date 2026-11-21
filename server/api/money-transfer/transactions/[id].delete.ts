@@ -1,4 +1,5 @@
 import { moneyTransferJsonRepository } from '~/server/repositories/money-transfer-json.repository'
+import { requireServerAuth } from '~/server/utils/serverAuth'
 
 /**
  * DELETE /api/money-transfer/transactions/:id
@@ -7,6 +8,7 @@ import { moneyTransferJsonRepository } from '~/server/repositories/money-transfe
  * Only draft transactions can be deleted.
  */
 export default defineEventHandler(async (event) => {
+  await requireServerAuth(event)
   const id = getRouterParam(event, 'id')
 
   if (!id) {

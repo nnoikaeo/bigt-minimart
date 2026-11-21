@@ -21,8 +21,9 @@
 | `daily-record-settings` | `stores/daily-record-settings.ts` | Fee configuration |
 
 Differences from the original plan:
-- Stores call the Nitro API (`$fetch`, or `getApiFetch()` / `$apiFetch` which adds the Firebase ID
-  token) — they do **not** call repositories or Firestore directly.
+- Stores call the Nitro API — they do **not** call repositories or Firestore directly. The
+  `money-transfer` and `bill-payment` stores use `getApiFetch()` (`utils/api-fetch.ts`) for every call:
+  in the browser it returns `$apiFetch`, which adds the Firebase ID token; in SSR / tests it falls back to `$fetch`.
 - Data is stored in JSON files (`public/data/`) behind server repositories — see
   [server/repositories/README.md](../../server/repositories/README.md). The Firestore sync/caching
   patterns below are not in use yet.

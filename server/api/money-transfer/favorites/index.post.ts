@@ -1,7 +1,9 @@
 import { moneyTransferJsonRepository } from '~/server/repositories/money-transfer-json.repository'
+import { requireServerAuth } from '~/server/utils/serverAuth'
 import type { FavoriteTransfer } from '~/types/repositories'
 
 export default defineEventHandler(async (event) => {
+  await requireServerAuth(event)
   try {
     const body = await readBody(event)
 

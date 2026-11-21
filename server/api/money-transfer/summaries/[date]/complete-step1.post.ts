@@ -1,4 +1,5 @@
 import { moneyTransferJsonRepository } from '~/server/repositories/money-transfer-json.repository'
+import { requireServerAuth } from '~/server/utils/serverAuth'
 
 /**
  * POST /api/money-transfer/summaries/[date]/complete-step1
@@ -13,6 +14,7 @@ import { moneyTransferJsonRepository } from '~/server/repositories/money-transfe
  */
 
 export default defineEventHandler(async (event) => {
+  const authUser = await requireServerAuth(event)
   try {
     // Initialize repository
     await moneyTransferJsonRepository.init()
@@ -29,10 +31,9 @@ export default defineEventHandler(async (event) => {
 
     console.log('[POST /api/money-transfer/summaries/[date]/complete-step1] Date:', date)
 
-    // Get current user info from request body (optional but recommended)
-    const body = (await readBody(event).catch(() => ({}))) ?? {}
-    const userId = body.userId || 'system'
-    const userName = body.userName || 'Manager'
+    // Identity comes from the verified ID token, not the request body (BUG-052)
+    const userId = authUser.uid
+    const userName = authUser.name ?? 'Manager'
 
     // Get or create summary
     let summary = await moneyTransferJsonRepository.getDailySummary(date)
