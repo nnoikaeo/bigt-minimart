@@ -6,6 +6,7 @@ import { usePermissions } from '~/composables/usePermissions'
 import { PERMISSIONS, ROLES } from '~/types/permissions'
 import { BANK_LIST } from '~/constants/banks'
 import { formatThaiDate } from '~/utils/date'
+import { computeBalanceImpacts } from '~/utils/money-transfer-balance'
 import type { TableColumn } from '~/components/shared/TransactionTable.vue'
 import type { BalanceCardItem } from '~/components/shared/CompactBalanceSummary.vue'
 import {
@@ -60,8 +61,22 @@ const editingTransaction = ref<any>(null)
 const viewingTransaction = ref<any>(null)
 
 // Balance Impact rows สำหรับแสดงใน Detail Modal (Bank Reconciliation)
+// คำนวณใหม่จากยอดเริ่มต้น + รายการที่สำเร็จตามลำดับเวลาที่ดำเนินการ — ตรงกับยอดปัจจุบันเสมอ
+// แม้มีรายการก่อนหน้าถูกพัก/ยกเลิกทีหลัง (BUG-056); ไม่มียอดเริ่มต้น (ข้อมูลเก่า) → ใช้ snapshot ที่บันทึกไว้
+const liveBalanceImpacts = computed(() => {
+  const opening = store.currentBalance?.openingBalance
+  if (opening == null) return null
+  return computeBalanceImpacts(store.getTransactionsByDate(props.date), opening)
+})
+const viewingNotCountedLabel = computed(() => {
+  const status = viewingTransaction.value?.status
+  if (!status || status === 'completed') return ''
+  return ({ draft: 'รอดำเนินการ', on_hold: 'พักรายการ', cancelled: 'ยกเลิก' } as Record<string, string>)[status] ?? status
+})
 const balanceImpactRows = computed(() => {
-  const bi = viewingTransaction.value?.balanceImpact
+  const txn = viewingTransaction.value
+  if (!txn || txn.status !== 'completed') return []
+  const bi = liveBalanceImpacts.value?.get(txn.id) ?? txn.balanceImpact
   if (!bi) return []
   return [
     { label: 'บัญชีธนาคาร',      before: bi.bankAccountBefore         ?? 0, after: bi.bankAccountAfter         ?? 0 },
@@ -1217,7 +1232,10 @@ async function handleCompleteStep1() {
         </div>
 
         <!-- Balance Impact (สำหรับ Bank Reconciliation) -->
-        <div v-if="viewingTransaction.balanceImpact" class="border-t border-gray-200 pt-3">
+        <div v-if="viewingNotCountedLabel" class="border-t border-gray-200 pt-3 text-xs text-gray-500" data-testid="balance-not-counted">
+          🏦 รายการนี้ไม่นับยอด ({{ viewingNotCountedLabel }})
+        </div>
+        <div v-else-if="balanceImpactRows.length" class="border-t border-gray-200 pt-3" data-testid="balance-impact">
           <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">🏦 ผลกระทบต่อยอดเงิน (Bank Reconciliation)</div>
           <div class="grid grid-cols-3 gap-2 text-xs">
             <div class="font-medium text-gray-500">ประเภทยอด</div>

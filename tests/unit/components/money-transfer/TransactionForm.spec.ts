@@ -114,6 +114,39 @@ describe('money-transfer TransactionForm', () => {
     })
   })
 
+  describe('negative balance warning when putting on hold (BUG-057)', () => {
+    async function holdForm(transactionType, amount, balance = BALANCE) {
+      const wrapper = mountForm({
+        currentBalance: balance,
+        editingData: { ...baseTxn, transactionType, status: 'completed', amount },
+        statusChange: { currentStatus: 'completed' },
+      })
+      await wrapper.find('input[type="radio"][value="on_hold"]').setValue(true)
+      return wrapper
+    }
+
+    it('warns that transfer cash goes negative but still lets the user save', async () => {
+      // Cash 500 now; holding an 800 transfer takes 800 back out → -300
+      const wrapper = await holdForm('transfer', 800, { ...BALANCE, transferCash: 500 })
+      const warnings = wrapper.findAll('[data-testid="negative-after-hold"]').map(w => w.text())
+      expect(warnings).toEqual([expect.stringContaining('ยอดเงินสด (โอน)จะติดลบ (-300 ฿)')])
+      expect(warnings[0]).toContain('ยังบันทึกได้')
+      const save = wrapper.findAll('button').find(b => b.text() === 'บันทึกและเปลี่ยนสถานะ')
+      expect(save.attributes('disabled')).toBeUndefined()
+    })
+
+    it('warns that the bank goes negative when holding a deposit', async () => {
+      const wrapper = await holdForm('owner_deposit', 8000)
+      expect(wrapper.find('[data-testid="negative-after-hold"]').text()).toContain('ยอดเงินในบัญชีจะติดลบ (-1000 ฿)')
+    })
+
+    it('stays quiet when nothing goes negative', async () => {
+      const wrapper = await holdForm('transfer', 500)
+      expect(wrapper.find('[data-testid="negative-after-hold"]').exists()).toBe(false)
+      expect(wrapper.text()).not.toContain('ไม่พอ')
+    })
+  })
+
   describe('insufficient balance warning', () => {
     it('stays quiet when the balance only looks short because the record is already counted', () => {
       // Current cash 750 < 1,000, but the 1,000 is this record's own: cash was 1,750 before it

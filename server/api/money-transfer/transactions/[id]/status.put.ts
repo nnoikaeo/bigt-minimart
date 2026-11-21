@@ -125,6 +125,11 @@ export default defineEventHandler(async (event) => {
     const updated = await moneyTransferJsonRepository.updateTransaction(id, {
       status: validated.status,
       statusNote: validated.statusNote,
+      // on_hold → completed hits the balance again now — record when, so the before → after
+      // replay (utils/money-transfer-balance.ts) follows bank-statement order (BUG-056)
+      ...(transaction.status === 'on_hold' && validated.status === 'completed'
+        ? { completedAt: new Date().toISOString() }
+        : {}),
     })
 
     // ── Update balance ───────────────────────────────────────────────────────

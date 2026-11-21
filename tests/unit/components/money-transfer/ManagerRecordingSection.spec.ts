@@ -73,6 +73,55 @@ const completeButton = (wrapper) =>
   wrapper.findAll('.action-btn').find(b => b.text().includes('ยืนยันบันทึกรายการ'))
 
 describe('money-transfer ManagerRecordingSection', () => {
+  describe('detail modal before → after (BUG-056)', () => {
+    // MT 17/10/2569 from the manual test: opening 7,500; transfer completed after the deposit, then cancelled
+    const day = (transferStatus = 'cancelled') => [
+      { id: 'transfer', date: DATE, transactionType: 'transfer', status: transferStatus, amount: 800, commission: 10, commissionType: 'cash',
+        createdAt: '2026-11-02T13:26:49Z', completedAt: '2026-11-02T13:33:12Z',
+        balanceImpact: { bankAccountBefore: 8500, bankAccountAfter: 7700, transferCashBefore: 0, transferCashAfter: 800 } },
+      { id: 'withdrawal', date: DATE, transactionType: 'withdrawal', status: 'completed', amount: 300, commission: 10, commissionType: 'cash',
+        createdAt: '2026-11-02T13:28:04Z', completedAt: '2026-11-02T13:34:05Z',
+        balanceImpact: { bankAccountBefore: 7700, bankAccountAfter: 8000, transferCashBefore: 800, transferCashAfter: 500 } },
+      { id: 'deposit', date: DATE, transactionType: 'owner_deposit', status: 'completed', amount: 1000, commission: 0,
+        createdAt: '2026-11-02T13:28:37Z',
+        balanceImpact: { bankAccountBefore: 7500, bankAccountAfter: 8500 } },
+    ]
+
+    async function openDetail(id, { transactions = day(), openingBalance = 7500 } = {}) {
+      const pinia = createTestingPinia({ createSpy: vi.fn })
+      const store = useMoneyTransferStore(pinia)
+      store.transactions = transactions
+      store.currentBalance = { openingBalanceSource: 'carryover', openingBalance, bankAccount: 8800, transferCash: -300 }
+      const wrapper = mount(ManagerRecordingSection, {
+        props: { date: DATE, currentUser: { uid: 'u1', displayName: 'Manager' } },
+        global: {
+          plugins: [pinia],
+          stubs: { ...stubs, BaseModal: { template: '<div v-if="open" class="base-modal"><slot /><slot name="footer" /></div>', props: ['open', 'title', 'size'] } },
+        },
+      })
+      wrapper.vm.openDetailModal(transactions.find(t => t.id === id))
+      await nextTick()
+      return wrapper
+    }
+
+    it('recomputes the withdrawal after the earlier transfer was cancelled (8,500 → 8,800, not 7,700 → 8,000)', async () => {
+      const text = (await openDetail('withdrawal')).find('[data-testid="balance-impact"]').text()
+      expect(text).toMatch(/8500 ฿\s*8800 ฿/)
+      expect(text).not.toContain('7700 ฿')
+    })
+
+    it('says a cancelled transaction does not count instead of showing its old -800', async () => {
+      const wrapper = await openDetail('transfer')
+      expect(wrapper.find('[data-testid="balance-impact"]').exists()).toBe(false)
+      expect(wrapper.find('[data-testid="balance-not-counted"]').text()).toContain('ไม่นับยอด (ยกเลิก)')
+    })
+
+    it('falls back to the stored snapshot when the day has no opening balance (old data)', async () => {
+      const text = (await openDetail('withdrawal', { openingBalance: null })).find('[data-testid="balance-impact"]').text()
+      expect(text).toMatch(/7700 ฿\s*8000 ฿/)
+    })
+  })
+
   describe('carry-over option in the opening balance modal (BUG-046)', () => {
     async function openModal(previousDayBalance) {
       const pinia = createTestingPinia({ createSpy: vi.fn })

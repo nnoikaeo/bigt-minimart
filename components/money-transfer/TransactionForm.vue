@@ -228,7 +228,15 @@
         <span class="opacity-50">→</span>
         <span class="font-semibold">{{ formatCurrency(bannerInfo.after) }}</span>
       </div>
-      <p v-if="!bannerInfo.ok" class="text-xs">
+      <p
+        v-for="b in negativeAfterHold"
+        :key="b.label"
+        class="text-xs"
+        data-testid="negative-after-hold"
+      >
+        หลังพักรายการ {{ b.label }}จะติดลบ ({{ formatCurrency(b.value) }}) — ยังบันทึกได้
+      </p>
+      <p v-if="!bannerInfo.ok && !balancesAfterHold" class="text-xs">
         {{ bannerInfo.balanceLabel }}ตอนนี้ไม่พอ — บันทึกเข้าคิวได้ แต่ต้องมียอดพอก่อนกด "ดำเนินการ"
       </p>
     </div>
@@ -326,6 +334,7 @@
 <script setup lang="ts">
 import type { MoneyTransferBalance } from '~/types/repositories'
 import { BANK_LIST } from '~/constants/banks'
+import { addBalances, transactionEffect } from '~/utils/money-transfer-balance'
 
 // ── Props & Emits ─────────────────────────────────────────────
 interface Props {
@@ -434,6 +443,27 @@ const hasSufficientBalance = computed(() => {
   return true // owner_deposit always completes
 })
 
+// completed → พักรายการ: server คืนยอดของรายการตามที่บันทึกไว้ — ยอดหลังคืน = ยอดปัจจุบัน − ผลของรายการ
+const balancesAfterHold = computed(() => {
+  if (statusTarget.value !== 'on_hold' || !props.editingData) return null
+  const current = {
+    bankAccount: Number(props.currentBalance.bankAccount) || 0,
+    transferCash: Number(props.currentBalance.transferCash) || 0,
+    serviceFeeCash: Number(props.currentBalance.serviceFeeCash) || 0,
+    serviceFeeTransfer: Number(props.currentBalance.serviceFeeTransfer) || 0,
+  }
+  return addBalances(current, transactionEffect(props.editingData), -1)
+})
+// ยอดที่จะติดลบหลังพักรายการ — เตือนแต่ยังบันทึกได้ (BUG-057, Owner 21 พ.ย. 2569)
+const negativeAfterHold = computed(() => {
+  const after = balancesAfterHold.value
+  if (!after) return []
+  return [
+    { label: 'ยอดเงินในบัญชี', value: after.bankAccount },
+    { label: 'ยอดเงินสด (โอน)', value: after.transferCash },
+  ].filter(b => b.value < 0)
+})
+
 /** ข้อความและยอดที่แสดงใน banner ตามประเภทรายการ */
 const bannerInfo = computed(() => {
   const { transactionType } = formData.value
@@ -442,13 +472,13 @@ const bannerInfo = computed(() => {
   const transferCash = transferCashBeforeTxn.value
 
   // completed → พักรายการ: ยอดของรายการถูกคืน — แสดงยอดปัจจุบัน → ยอดหลังคืน (BUG-050)
-  if (statusTarget.value === 'on_hold') {
+  if (balancesAfterHold.value) {
     const useCash = transactionType === 'withdrawal'
     return {
       balanceLabel: useCash ? 'ยอดเงินสด' : 'ยอดเงินในบัญชี',
       current: Number(useCash ? props.currentBalance.transferCash : props.currentBalance.bankAccount),
-      after: useCash ? transferCash : bankAccount,
-      ok: true,
+      after: useCash ? balancesAfterHold.value.transferCash : balancesAfterHold.value.bankAccount,
+      ok: negativeAfterHold.value.length === 0,
     }
   }
 
