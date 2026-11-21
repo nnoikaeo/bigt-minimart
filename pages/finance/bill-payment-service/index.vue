@@ -127,9 +127,13 @@ const statusBannerContent = computed(() => {
 
 // ─── Date change ──────────────────────────────────────────────────────────────
 async function handleDateChange() {
+  // เก็บวันที่ไว้ใน URL — รีเฟรช/แชร์ลิงก์แล้วได้วันเดียวกัน (BUG-047)
+  router.replace({ query: { ...route.query, date: selectedDate.value } })
   try {
     await store.fetchTransactionsByDate(selectedDate.value)
     await store.fetchBalanceByDate(selectedDate.value)
+    // ยอด Carry-over ของวันใหม่ — ManagerRecordingSection โหลดแค่ตอน mount (BUG-053)
+    await store.fetchPreviousDayBalance(selectedDate.value)
     await store.fetchDailySummary(selectedDate.value)
   } catch (err: any) {
     errorMessage.value = err.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูล'

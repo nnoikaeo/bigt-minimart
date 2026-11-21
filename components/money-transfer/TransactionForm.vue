@@ -205,8 +205,17 @@
     </div>
 
     <!-- ── ข้อมูลยอดเงิน (ข้อมูลเท่านั้น — ไม่ใช่การตัดสินสถานะ) ───────── -->
+    <!-- on_hold → ยกเลิก: รายการพักยังไม่นับยอด จึงไม่มียอดก่อน → หลัง (BUG-050) -->
+    <p
+      v-if="isCancelHold"
+      class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-700"
+      data-testid="balance-no-effect"
+    >
+      ไม่กระทบยอด (รายการพักยังไม่นับยอด)
+    </p>
     <div
-      v-if="Number(formData.amount) > 0"
+      v-else-if="Number(formData.amount) > 0"
+      data-testid="balance-banner"
       class="rounded-lg px-3 py-2.5 text-sm space-y-1"
       :class="bannerInfo.ok
         ? 'bg-gray-50 border border-gray-200 text-gray-700'
@@ -432,6 +441,17 @@ const bannerInfo = computed(() => {
   const bankAccount = bankAccountBeforeTxn.value
   const transferCash = transferCashBeforeTxn.value
 
+  // completed → พักรายการ: ยอดของรายการถูกคืน — แสดงยอดปัจจุบัน → ยอดหลังคืน (BUG-050)
+  if (statusTarget.value === 'on_hold') {
+    const useCash = transactionType === 'withdrawal'
+    return {
+      balanceLabel: useCash ? 'ยอดเงินสด' : 'ยอดเงินในบัญชี',
+      current: Number(useCash ? props.currentBalance.transferCash : props.currentBalance.bankAccount),
+      after: useCash ? transferCash : bankAccount,
+      ok: true,
+    }
+  }
+
   if (transactionType === 'transfer') {
     return {
       balanceLabel: 'ยอดเงินในบัญชี',
@@ -470,6 +490,9 @@ const previousStatusNote = computed(() => props.editingData?.statusNote ?? '')
 const alreadyEdited = computed(() => isEditOnly.value && !!previousStatusNote.value)
 const isStatusChangeMode = computed(() => !!props.statusChange)
 const isEditOnly = computed(() => statusTarget.value === 'edit_only')
+const isCancelHold = computed(
+  () => props.statusChange?.currentStatus === 'on_hold' && statusTarget.value === 'cancelled'
+)
 // Lock ประเภทรายการเมื่ออยู่ในโหมดแก้ไข/เปลี่ยนสถานะ หรือ preset มา
 const isTypeLocked = computed(() => isStatusChangeMode.value || !!props.editingData || !!props.presetType)
 

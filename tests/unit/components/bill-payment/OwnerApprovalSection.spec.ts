@@ -276,6 +276,23 @@ describe('OwnerApprovalSection', () => {
       expect(wrapper.text()).not.toContain('ไม่มีหมายเหตุ')
     })
 
+    function bankStatementItem(wrapper) {
+      const cards = wrapper.findAllComponents({ name: 'WorkflowStepSummaryCard' })
+      return cards.flatMap(c => c.props('summaryItems') ?? []).find(i => i.label === 'ยอดรายการเดินบัญชี')
+    }
+
+    it('shows "ไม่ได้กรอก" for the bank statement when the Auditor left it empty (BUG-051)', async () => {
+      const { wrapper } = await mountAudited()
+      expect(bankStatementItem(wrapper).value).toBe('ไม่ได้กรอก')
+    })
+
+    it('still shows a real 0 bank statement as an amount (BUG-051)', async () => {
+      const { wrapper, store } = await mountAudited()
+      store.currentSummary = { ...store.currentSummary, auditBankStatementAmount: 0 }
+      await nextTick()
+      expect(bankStatementItem(wrapper).value).toBe('0 ฿')
+    })
+
     it('expands step1 section when toggle button is clicked', async () => {
       const { wrapper } = await mountAudited()
       const step1ToggleBtn = wrapper.findAll('button').find(b => b.text().includes('รายการธุรกรรมทั้งหมด'))

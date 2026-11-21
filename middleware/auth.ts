@@ -27,8 +27,13 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       return
     }
 
-    // Check if there's a session in localStorage (persistent login)
+    // Check if there's a session in localStorage (persistent login).
+    // On a full page load (refresh / pasted link) Firebase restores the session asynchronously,
+    // so wait for the first auth state before deciding — otherwise a logged-in user lands on /login (BUG-054)
     const auth = useNuxtApp().$auth
+    if (auth && typeof auth === 'object' && 'authStateReady' in auth) {
+      await (auth as { authStateReady: () => Promise<void> }).authStateReady()
+    }
     if (auth && typeof auth === 'object' && 'currentUser' in auth && auth.currentUser) {
       // Firebase says we're authenticated — check isActive if store has user
       if (authStore.getCurrentUser?.isActive === false) {
@@ -40,8 +45,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       return
     }
 
-    // Not authenticated - redirect to login
-    return navigateTo('/login')
+    // Not authenticated - redirect to login, then come back to this page after login
+    return navigateTo({ path: '/login', query: { redirect: to.fullPath } })
   } catch (error) {
     // On any error, redirect to login for safety
     console.warn('[Auth] Middleware error, redirecting to login:', error)

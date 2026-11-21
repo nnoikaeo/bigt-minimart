@@ -114,7 +114,7 @@ const auditSummaryItems = computed(() => {
   if (!a) return []
   return [
     { label: 'Auditor', value: a.completedByName ?? '-', colorClass: 'bg-indigo-50' },
-    { label: 'ยอดรายการเดินบัญชี', value: formatCurrency(a.bankStatementAmount ?? 0), colorClass: 'bg-blue-50' },
+    { label: 'ยอดรายการเดินบัญชี', value: a.bankStatementAmount != null ? formatCurrency(a.bankStatementAmount) : 'ไม่ได้กรอก', colorClass: 'bg-blue-50' },
     { label: 'รายการที่ตรวจ', value: `${a.transactionsVerified} รายการ`, colorClass: 'bg-gray-50' },
     { label: 'พบปัญหา', value: `${a.transactionsWithIssues} รายการ`, colorClass: a.transactionsWithIssues > 0 ? 'bg-orange-50' : 'bg-gray-50' },
   ]

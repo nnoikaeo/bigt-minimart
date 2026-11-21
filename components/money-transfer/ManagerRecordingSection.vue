@@ -5,6 +5,7 @@ import { useLogger } from '~/composables/useLogger'
 import { usePermissions } from '~/composables/usePermissions'
 import { PERMISSIONS, ROLES } from '~/types/permissions'
 import { BANK_LIST } from '~/constants/banks'
+import { formatThaiDate } from '~/utils/date'
 import type { TableColumn } from '~/components/shared/TransactionTable.vue'
 import type { BalanceCardItem } from '~/components/shared/CompactBalanceSummary.vue'
 import {
@@ -192,9 +193,13 @@ const canCompleteStep1 = computed(
   () => isOpeningSet.value && todayStats.value.total > 0 && !hasDrafts.value && !hasOnHold.value
 )
 const carryoverAmount = computed(() => store.previousDayBalance?.bankAccount ?? 0)
+// ยอดยกมาจากวันล่าสุดก่อนหน้าที่ตั้งยอดไว้ (ไม่ใช่เมื่อวานเสมอไป) — บอกวันที่ต้นทาง (BUG-046)
+const carryoverDateLabel = computed(() =>
+  store.previousDayBalance?.date ? formatThaiDate(store.previousDayBalance.date) : ''
+)
 const openingBalance = computed(() => store.currentBalance?.openingBalance ?? 0)
 const openingSourceLabel = computed(() => {
-  const map: Record<string, string> = { carryover: 'จากเมื่อวาน', manual: 'กำหนดเอง' }
+  const map: Record<string, string> = { carryover: 'ยกยอดมา', manual: 'กำหนดเอง' }
   return map[store.currentBalance?.openingBalanceSource ?? ''] || ''
 })
 
@@ -886,8 +891,8 @@ async function handleCompleteStep1() {
         <label :class="['flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-colors', openingSource === 'carryover' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300']">
           <input v-model="openingSource" type="radio" value="carryover" class="mt-0.5 accent-blue-600" />
           <div class="flex-1">
-            <div class="font-semibold text-gray-900">🔄 ใช้ยอดคงเหลือจากเมื่อวาน (Carry-over)</div>
-            <div class="text-sm text-gray-500 mt-0.5">ยอดเงินคงเหลือ ณ สิ้นวันเมื่อวาน</div>
+            <div class="font-semibold text-gray-900">🔄 ใช้ยอดคงเหลือยกมา (Carry-over)</div>
+            <div v-if="carryoverDateLabel" class="text-sm text-gray-500 mt-0.5">ยอดคงเหลือ ณ สิ้นวัน {{ carryoverDateLabel }}</div>
             <div class="mt-2 font-bold text-lg text-blue-700">
               <span v-if="store.previousDayBalance">{{ formatCurrency(carryoverAmount) }}</span>
               <span v-else class="text-sm font-normal text-gray-400">ไม่พบข้อมูลวันก่อนหน้า</span>

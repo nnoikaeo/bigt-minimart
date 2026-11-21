@@ -118,6 +118,10 @@ const disableReason = computed(() => {
 })
 const isRowActionDisabled = computed(() => !canManagerEdit.value || needsOpeningBalance.value)
 const carryoverAmount = computed(() => store.previousDayBalance?.bankAccount ?? 0)
+// ยอดยกมาจากวันล่าสุดก่อนหน้าที่ตั้งยอดไว้ (ไม่ใช่เมื่อวานเสมอไป) — บอกวันที่ต้นทาง (BUG-046)
+const carryoverDateLabel = computed(() =>
+  store.previousDayBalance?.date ? formatThaiDate(store.previousDayBalance.date) : ''
+)
 const noDraftPending = computed(() => store.getDraftTransactions.length === 0)
 const noOnHoldPending = computed(() => store.getOnHoldTransactions.length === 0)
 const canCompleteStep1 = computed(
@@ -857,8 +861,8 @@ onMounted(async () => {
         <label :class="['flex cursor-pointer items-start gap-3 rounded-xl border-2 p-4 transition-colors', openingSource === 'carryover' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300']">
           <input v-model="openingSource" type="radio" value="carryover" class="mt-0.5 accent-blue-600" />
           <div class="flex-1">
-            <div class="font-semibold text-gray-900">🔄 ใช้ยอดคงเหลือจากเมื่อวาน (Carry-over)</div>
-            <div class="mt-0.5 text-sm text-gray-500">ยอดเงินคงเหลือ ณ สิ้นวันเมื่อวาน</div>
+            <div class="font-semibold text-gray-900">🔄 ใช้ยอดคงเหลือยกมา (Carry-over)</div>
+            <div v-if="carryoverDateLabel" class="mt-0.5 text-sm text-gray-500">ยอดคงเหลือ ณ สิ้นวัน {{ carryoverDateLabel }}</div>
             <div class="mt-2 text-lg font-bold text-blue-700">
               <span v-if="store.previousDayBalance">{{ formatAmount(carryoverAmount) }}</span>
               <span v-else class="text-sm font-normal text-gray-400">ไม่พบข้อมูลวันก่อนหน้า</span>

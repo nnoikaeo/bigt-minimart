@@ -76,6 +76,44 @@ describe('money-transfer TransactionForm', () => {
     })
   })
 
+  describe('balance banner when changing status (BUG-050)', () => {
+    async function pick(wrapper, value) {
+      await wrapper.find(`input[type="radio"][value="${value}"]`).setValue(true)
+    }
+
+    it('shows the amount coming back when a completed transfer is put on hold', async () => {
+      const wrapper = editForm('transfer', 'completed')
+      await pick(wrapper, 'on_hold')
+      // 7,000 now → 7,500 after the 500 transfer is returned
+      expect(wrapper.find('[data-testid="balance-banner"]').text()).toMatch(/7000 ฿\s*→\s*7500 ฿/)
+    })
+
+    it('shows the cash coming back when a completed withdrawal is put on hold', async () => {
+      const wrapper = editForm('withdrawal', 'completed')
+      await pick(wrapper, 'on_hold')
+      expect(wrapper.find('[data-testid="balance-banner"]').text()).toMatch(/750 ฿\s*→\s*1250 ฿/)
+    })
+
+    it('shows the deposit coming out when a completed owner deposit is put on hold', async () => {
+      const wrapper = editForm('owner_deposit', 'completed')
+      await pick(wrapper, 'on_hold')
+      expect(wrapper.find('[data-testid="balance-banner"]').text()).toMatch(/7000 ฿\s*→\s*6500 ฿/)
+    })
+
+    it('hides the banner and says the balance does not change when an on-hold record is cancelled', async () => {
+      const wrapper = editForm('transfer', 'on_hold')
+      await pick(wrapper, 'cancelled')
+      expect(wrapper.find('[data-testid="balance-banner"]').exists()).toBe(false)
+      expect(wrapper.find('[data-testid="balance-no-effect"]').text()).toContain('ไม่กระทบยอด')
+    })
+
+    it('keeps the normal banner when an on-hold record is completed', async () => {
+      const wrapper = editForm('transfer', 'on_hold')
+      await pick(wrapper, 'completed')
+      expect(wrapper.find('[data-testid="balance-banner"]').text()).toMatch(/7000 ฿\s*→\s*6500 ฿/)
+    })
+  })
+
   describe('insufficient balance warning', () => {
     it('stays quiet when the balance only looks short because the record is already counted', () => {
       // Current cash 750 < 1,000, but the 1,000 is this record's own: cash was 1,750 before it
