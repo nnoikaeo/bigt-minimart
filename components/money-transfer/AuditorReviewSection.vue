@@ -3,6 +3,7 @@ import { useMoneyTransferStore } from '~/stores/money-transfer'
 import { useLogger } from '~/composables/useLogger'
 import { usePermissions } from '~/composables/usePermissions'
 import { ROLES } from '~/types/permissions'
+import { computeBalanceImpacts } from '~/utils/money-transfer-balance'
 import type { TableColumn } from '~/components/shared/TransactionTable.vue'
 import type { CashVerificationRow } from '~/components/shared/CashVerificationTable.vue'
 import {
@@ -45,6 +46,17 @@ const isSubmittingAction = ref(false)
 // ─── Verify modal ─────────────────────────────────────────────────────────────
 const showVerifyModal = ref(false)
 const verifyingTransaction = ref<any>(null)
+// ยอดก่อน → หลัง คำนวณใหม่จากยอดเริ่มต้น + รายการที่สำเร็จตามลำดับเวลาที่ดำเนินการ (BUG-056)
+// ไม่มียอดเริ่มต้น (ข้อมูลเก่า) → ใช้ snapshot ที่บันทึกไว้
+const verifyingImpact = computed(() => {
+  const txn = verifyingTransaction.value
+  if (!txn || txn.status !== 'completed') return null
+  const opening = store.currentBalance?.openingBalance
+  const live = opening != null
+    ? computeBalanceImpacts(store.getTransactionsByDate(props.date), opening).get(txn.id)
+    : undefined
+  return live ?? txn.balanceImpact ?? null
+})
 
 // ─── Sticky action bar ────────────────────────────────────────────────────────
 const auditorActionsRef = ref<HTMLElement | null>(null)
@@ -707,7 +719,7 @@ async function handleRejectAudit() {
           <div class="text-gray-900">{{ verifyingTransaction.notes }}</div>
         </div>
         <!-- Balance Impact -->
-        <div v-if="verifyingTransaction.balanceImpact && verifyingTransaction.status === 'completed'" class="border-t border-gray-100 pt-3">
+        <div v-if="verifyingImpact" class="border-t border-gray-100 pt-3" data-testid="balance-impact">
           <div class="text-gray-500 text-xs font-medium mb-2 uppercase tracking-wide">ผลกระทบต่อยอดเงิน</div>
           <div class="bg-gray-50 rounded-lg p-3 space-y-2 text-sm">
             <div class="grid grid-cols-3 gap-2 text-xs text-gray-400 font-medium pb-1 border-b border-gray-200">
@@ -715,13 +727,13 @@ async function handleRejectAudit() {
             </div>
             <div class="grid grid-cols-3 gap-2">
               <span class="text-gray-600">เงินในบัญชี</span>
-              <span class="text-right text-gray-700">{{ formatCurrency(verifyingTransaction.balanceImpact.bankAccountBefore) }}</span>
-              <span class="text-right font-semibold" :class="verifyingTransaction.balanceImpact.bankAccountAfter === verifyingTransaction.balanceImpact.bankAccountBefore ? 'text-gray-900' : verifyingTransaction.balanceImpact.bankAccountAfter > verifyingTransaction.balanceImpact.bankAccountBefore ? 'text-green-700' : 'text-red-600'">{{ formatCurrency(verifyingTransaction.balanceImpact.bankAccountAfter) }}</span>
+              <span class="text-right text-gray-700">{{ formatCurrency(verifyingImpact.bankAccountBefore) }}</span>
+              <span class="text-right font-semibold" :class="verifyingImpact.bankAccountAfter === verifyingImpact.bankAccountBefore ? 'text-gray-900' : verifyingImpact.bankAccountAfter > verifyingImpact.bankAccountBefore ? 'text-green-700' : 'text-red-600'">{{ formatCurrency(verifyingImpact.bankAccountAfter) }}</span>
             </div>
             <div class="grid grid-cols-3 gap-2">
               <span class="text-gray-600">เงินสด (โอน/ถอน)</span>
-              <span class="text-right text-gray-700">{{ formatCurrency(verifyingTransaction.balanceImpact.transferCashBefore) }}</span>
-              <span class="text-right font-semibold" :class="verifyingTransaction.balanceImpact.transferCashAfter === verifyingTransaction.balanceImpact.transferCashBefore ? 'text-gray-900' : verifyingTransaction.balanceImpact.transferCashAfter > verifyingTransaction.balanceImpact.transferCashBefore ? 'text-green-700' : 'text-red-600'">{{ formatCurrency(verifyingTransaction.balanceImpact.transferCashAfter) }}</span>
+              <span class="text-right text-gray-700">{{ formatCurrency(verifyingImpact.transferCashBefore) }}</span>
+              <span class="text-right font-semibold" :class="verifyingImpact.transferCashAfter === verifyingImpact.transferCashBefore ? 'text-gray-900' : verifyingImpact.transferCashAfter > verifyingImpact.transferCashBefore ? 'text-green-700' : 'text-red-600'">{{ formatCurrency(verifyingImpact.transferCashAfter) }}</span>
             </div>
           </div>
         </div>

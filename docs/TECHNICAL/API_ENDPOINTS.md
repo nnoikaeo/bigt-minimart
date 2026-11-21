@@ -27,7 +27,7 @@ PUT    /api/money-transfer/transactions/:id/status      Change status (+ statusN
 **Draft queue** (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`):
 - `POST` ignores any client `status` — the server decides: transfer/withdrawal start as `draft` (no balance impact), `owner_deposit` is `completed` immediately.
 - `/complete` checks the source of funds: transfer → `bankAccount`, withdrawal → `transferCash`. Not enough → `400` with Thai message and `data: { reason: 'insufficient_funds', available, required }`.
-- `/status` transitions: `completed → on_hold`, `on_hold → completed | cancelled`, `draft → cancelled` (bank-app step failed; no balance change).
+- `/status` transitions: `completed → on_hold`, `on_hold → completed | cancelled`, `draft → cancelled` (bank-app step failed; no balance change). `on_hold → completed` also sets a new `completedAt` (order of the before → after replay).
 
 ### Balances
 ```

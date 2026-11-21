@@ -150,4 +150,34 @@ describe('money-transfer AuditorReviewSection — confirm buttons (BUG-026)', ()
     await fill(wrapper, { bank: null, notes: 'เงินสดขาด 100' })
     expect(notedButton(wrapper).attributes('disabled')).toBeDefined()
   })
+
+  describe('verify modal before → after (BUG-056)', () => {
+    it('recomputes from the opening balance and completed transactions in completion order', async () => {
+      const pinia = createTestingPinia({ createSpy: vi.fn })
+      const store = useMoneyTransferStore(pinia)
+      const day = [
+        { id: 'transfer', date: DATE, transactionType: 'transfer', status: 'cancelled', amount: 800, commission: 10, commissionType: 'cash',
+          createdAt: '2026-11-02T13:26:49Z', completedAt: '2026-11-02T13:33:12Z' },
+        { id: 'withdrawal', date: DATE, transactionType: 'withdrawal', status: 'completed', amount: 300, commission: 10, commissionType: 'cash',
+          createdAt: '2026-11-02T13:28:04Z', completedAt: '2026-11-02T13:34:05Z',
+          balanceImpact: { bankAccountBefore: 7700, bankAccountAfter: 8000, transferCashBefore: 800, transferCashAfter: 500 } },
+        { id: 'deposit', date: DATE, transactionType: 'owner_deposit', status: 'completed', amount: 1000, createdAt: '2026-11-02T13:28:37Z' },
+      ]
+      store.transactions = day
+      store.currentBalance = { openingBalance: 7500, bankAccount: 8800 }
+      store.currentSummary = summary()
+      const wrapper = mount(AuditorReviewSection, {
+        props: { date: DATE, isNeedsCorrection: false },
+        global: {
+          plugins: [pinia],
+          stubs: { ...stubs, BaseModal: { template: '<div v-if="open" class="base-modal"><slot /><slot name="footer" /></div>', props: ['open', 'title', 'size'] } },
+        },
+      })
+      wrapper.vm.openVerifyModal(day[1])
+      await nextTick()
+      const text = wrapper.find('[data-testid="balance-impact"]').text()
+      expect(text).toMatch(/8500 ฿\s*8800 ฿/)
+      expect(text).toMatch(/0 ฿\s*-300 ฿/)
+    })
+  })
 })
