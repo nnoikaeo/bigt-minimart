@@ -1164,8 +1164,8 @@
     },
     "id": "mts-1793626084940-p08z3disf",
     "createdAt": "2026-11-02T13:28:04.940Z",
-    "updatedAt": "2026-11-02T17:52:59.510Z",
-    "completedAt": "2026-11-02T13:34:05.716Z",
+    "updatedAt": "2026-11-21T09:36:04.339Z",
+    "completedAt": "2026-11-21T09:36:04.339Z",
     "statusNote": "สำเร็จ"
   },
   {
@@ -1191,5 +1191,34 @@
     "id": "mts-1793626117935-79snas2cf",
     "createdAt": "2026-11-02T13:28:37.935Z",
     "updatedAt": "2026-11-02T13:28:37.935Z"
+  },
+  {
+    "date": "2026-10-17",
+    "datetime": "2026-11-21T09:31:06.731Z",
+    "transactionType": "transfer",
+    "channel": "bank",
+    "bankName": "ธนาคารกรุงไทย (KTB)",
+    "accountNumber": "7300278264",
+    "accountName": "น้ำอ้อย",
+    "amount": 800,
+    "commission": 10,
+    "commissionType": "cash",
+    "status": "completed",
+    "recordedBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
+    "recordedByName": "กัลญา ผิวขำทองดี",
+    "balanceImpact": {
+      "bankAccountBefore": 8800,
+      "bankAccountAfter": 8000,
+      "transferCashBefore": -300,
+      "transferCashAfter": 500,
+      "serviceFeeBeforeCash": 10,
+      "serviceFeeAfterCash": 20,
+      "serviceFeeBeforeTransfer": 0,
+      "serviceFeeAfterTransfer": 0
+    },
+    "id": "mts-1795253466743-zes4z2bhx",
+    "createdAt": "2026-11-21T09:31:06.743Z",
+    "updatedAt": "2026-11-21T09:31:36.136Z",
+    "completedAt": "2026-11-21T09:31:36.136Z"
   }
 ]
