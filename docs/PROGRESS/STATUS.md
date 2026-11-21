@@ -2,9 +2,9 @@
 
 **Last Updated**: Nov 21, 2026
 **Updated By**: Claude Code
-**Current Branch**: develop (latest merge: PR #170; main: docs synced via PR #150, code at release #148)
+**Current Branch**: develop (latest merge: PR #172; main: docs synced via PR #150, code at release #148)
 **Current Phase**: Testing — Service Harmonization (Manual Test → Bug Fix → E2E)
-**Next Up**: manual test of the small UX PR (BUG-046 / 047 / 050 / 051 / 053 / 054 / 055); then MT detail balance + negative-cash warning PR (BUG-056 option ก, BUG-057 warn-only); BUG-037 (server role checks) + `requireServerAuth` on MT routes (fixes BUG-052) before release; SHARED-1~2 manual test; then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
+**Next Up**: MT detail balance + negative-cash warning PR (BUG-056 option ก, BUG-057 warn-only); BUG-037 (server role checks) + `requireServerAuth` on MT routes (fixes BUG-052) before release; SHARED-1~2 manual test; then history summary columns (MT + BP, see "Planned" below); then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
 
 ---
 
@@ -240,6 +240,16 @@ Timeline Status: Money Transfer feature fully shipped ✓
    ├─ BUG-048 audit route stores the real bankBalanceMatches
    ├─ BUG-049 ConfirmDialog loading prop; confirm-label → confirm-text
    └─ New from MT-3 / MT-4: BUG-050 (on-hold balance box), BUG-051 (bank statement 0 ฿), BUG-052 (MT approver name) — Low, open
+
+✅ Small UX + auth fixes (PR #172, merged Nov 21 — manual test passed Nov 21)
+   ├─ BUG-046 carry-over option names the source day (MT + BP); MT label "จากเมื่อวาน" → "ยกยอดมา"
+   ├─ BUG-047 date change updates ?date= in the URL (MT + BP)
+   ├─ BUG-050 MT status-change balance box: on hold shows the returned amount; cancel an on-hold record → "ไม่กระทบยอด"
+   ├─ BUG-051 Owner card "ไม่ได้กรอก" when the bank statement amount is missing (MT + BP; unit tests)
+   ├─ BUG-053 BP reloads the carry-over balance on date change
+   ├─ BUG-054 refresh / pasted link no longer lands on /login (middleware awaits authStateReady); /login?redirect= returns to the page
+   ├─ BUG-055 header logout signs out of Firebase (was clearing Pinia only — direct links still opened pages)
+   └─ New: BUG-056 (MT detail before → after is a stale snapshot — Owner chose live recompute), BUG-057 (hold/cancel can make transfer cash negative — Owner chose warn-only)
 ```
 
 ### Week 9 (Mar 23-25): Layout Consistency & Polish
@@ -355,7 +365,7 @@ Components (50 total):
 | Production build (`nuxt build`) | Success | ✅ |
 | Money Transfer workflow | 9/9 statuses (unified) | ✅ |
 | Bill Payment workflow | Phase 1-6 Complete (27 Tasks) | ✅ |
-| Service Harmonization Testing | 8/17 tasks done (MT-1~4, BP-1~4); open bugs BUG-037, BUG-046, 047, 050~052 | 🔄 |
+| Service Harmonization Testing | 8/17 tasks done (MT-1~4, BP-1~4); open bugs BUG-037, BUG-052, BUG-056, BUG-057 | 🔄 |
 | Design System components | 15 ui + 4 layout + 8 shared | ✅ |
 | Mobile responsive | Yes | ✅ |
 | CI (PR Check / Staging / Production) | PR Check + Staging passing (Nov 21, 2026, PR #169); Production last ran Oct 16, 2026 | ✅ |
