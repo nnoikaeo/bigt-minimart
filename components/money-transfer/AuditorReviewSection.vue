@@ -91,14 +91,16 @@ const expectedServiceFee = computed(() =>
 )
 
 const txnsWithIssues = computed(() => Object.keys(txnIssueStatus.value).length)
+const hasFindings = computed(() => issueDetails.value.trim() !== '')
+// Bank Statement + both cash counts are required for either confirm button (same as BP, BUG-026)
 const canSubmitAudit = computed(
-  () => auditorCashTransferWithdrawal.value !== null && auditorCashServiceFee.value !== null
-)
-const canSubmitAuditWithIssues = computed(
-  () => canSubmitAudit.value && issueDetails.value.trim() !== ''
+  () =>
+    bankStatementAmount.value !== '' &&
+    typeof auditorCashTransferWithdrawal.value === 'number' &&
+    typeof auditorCashServiceFee.value === 'number'
 )
 // Send-back needs a reason (same as BP)
-const canSendBack = computed(() => issueDetails.value.trim() !== '')
+const canSendBack = computed(() => hasFindings.value)
 // Audit form after Manager fixed a sent-back day (correctionNotes kept from the send-back)
 const canShowAuditForm = computed(() => store.isStep2Complete && !store.isAudited)
 const isReaudit = computed(() => canShowAuditForm.value && !!store.currentSummary?.correctionNotes)
@@ -130,6 +132,18 @@ const auditorDiffTotal = computed(() =>
 const bankBalanceDiff = computed(() =>
   bankStatementAmount.value === '' ? null : bankStatementAmount.value - closingBalance.value
 )
+const hasDiscrepancy = computed(
+  () =>
+    (bankBalanceDiff.value !== null && bankBalanceDiff.value !== 0) ||
+    txnsWithIssues.value > 0 ||
+    !!step2Data.value?.hasDiscrepancies ||
+    (auditorDiffTransferWithdrawal.value !== null && auditorDiffTransferWithdrawal.value !== 0) ||
+    (auditorDiffServiceFee.value !== null && auditorDiffServiceFee.value !== 0)
+)
+// "ยืนยันการตรวจสอบ" means nothing to report; anything found goes through "ยืนยันพร้อมหมายเหตุ" (same as BP)
+const needsNotedConfirm = computed(() => hasDiscrepancy.value || hasFindings.value)
+const canConfirmClean = computed(() => canSubmitAudit.value && !needsNotedConfirm.value)
+const canSubmitAuditWithIssues = computed(() => canSubmitAudit.value && hasFindings.value)
 
 const auditResultSummary = computed(() => {
   const audit = store.currentSummary?.auditorVerification
@@ -203,7 +217,7 @@ function openVerifyModal(txn: any) {
 }
 
 async function handleApproveAudit() {
-  if (!canSubmitAudit.value) return
+  if (!canConfirmClean.value) return
   isSubmittingAction.value = true
   try {
     const hasIssues = issueDetails.value.trim() !== '' || txnsWithIssues.value > 0
@@ -211,7 +225,8 @@ async function handleApproveAudit() {
       transactionsVerified: auditTransactionList.value.length,
       transactionsWithIssues: txnsWithIssues.value,
       bankStatementVerified: Number(bankStatementAmount.value) > 0,
-      bankStatementAmount: bankStatementAmount.value || undefined,
+      bankStatementAmount: bankStatementAmount.value === '' ? undefined : bankStatementAmount.value,
+      bankBalanceMatches: bankBalanceDiff.value === 0,
       auditorCash: (auditorCashTransferWithdrawal.value !== null && auditorCashServiceFee.value !== null)
         ? {
             transferWithdrawal: auditorCashTransferWithdrawal.value,
@@ -243,7 +258,8 @@ async function handleAuditWithIssues() {
       transactionsVerified: auditTransactionList.value.length,
       transactionsWithIssues: txnsWithIssues.value,
       bankStatementVerified: Number(bankStatementAmount.value) > 0,
-      bankStatementAmount: bankStatementAmount.value || undefined,
+      bankStatementAmount: bankStatementAmount.value === '' ? undefined : bankStatementAmount.value,
+      bankBalanceMatches: bankBalanceDiff.value === 0,
       auditorCash: (auditorCashTransferWithdrawal.value !== null && auditorCashServiceFee.value !== null)
         ? {
             transferWithdrawal: auditorCashTransferWithdrawal.value,
@@ -495,6 +511,10 @@ async function handleRejectAudit() {
         ⚠️ พบ {{ txnsWithIssues }} รายการมีปัญหาในรายการธุรกรรม
       </div>
 
+      <p v-if="canSubmitAudit && needsNotedConfirm" class="text-right text-sm text-amber-700">
+        พบผลต่างหรือมีรายละเอียดปัญหา — ใช้ปุ่ม "ยืนยันพร้อมหมายเหตุ"
+      </p>
+
       <!-- Action Buttons -->
       <div ref="auditorActionsRef" class="flex flex-col sm:flex-row items-center justify-between gap-4 py-4">
         <BaseButton variant="danger" :disabled="!canSendBack" :title="!canSendBack ? 'กรอกรายละเอียดปัญหาก่อน' : ''" @click="showAuditRejectConfirm = true">
@@ -506,13 +526,18 @@ async function handleRejectAudit() {
             variant="secondary"
             class="border border-amber-400 !bg-amber-50 !text-amber-800 hover:!bg-amber-100 disabled:opacity-50"
             :disabled="!canSubmitAuditWithIssues"
-            :title="!canSubmitAuditWithIssues ? 'กรอกรายละเอียดปัญหาก่อน' : ''"
+            :title="!canSubmitAudit ? 'กรอก Bank Statement และยอดนับให้ครบก่อน' : !hasFindings ? 'กรอกรายละเอียดปัญหาก่อน' : ''"
             @click="showAuditWithIssuesConfirm = true"
           >
             <ExclamationTriangleIcon class="w-4 h-4" />
             ยืนยันพร้อมหมายเหตุ
           </BaseButton>
-          <BaseButton variant="success" :disabled="!canSubmitAudit" @click="showAuditApproveConfirm = true">
+          <BaseButton
+            variant="success"
+            :disabled="!canConfirmClean"
+            :title="!canSubmitAudit ? 'กรอก Bank Statement และยอดนับให้ครบก่อน' : needsNotedConfirm ? 'พบผลต่างหรือมีรายละเอียดปัญหา — ใช้ ยืนยันพร้อมหมายเหตุ' : ''"
+            @click="showAuditApproveConfirm = true"
+          >
             <CheckCircleIcon class="w-4 h-4" />
             ยืนยันการตรวจสอบ
           </BaseButton>
@@ -638,7 +663,7 @@ async function handleRejectAudit() {
           <ExclamationTriangleIcon class="w-4 h-4" />
           ยืนยัน+หมายเหตุ
         </BaseButton>
-        <BaseButton variant="success" size="sm" :disabled="!canSubmitAudit" @click="showAuditApproveConfirm = true">
+        <BaseButton variant="success" size="sm" :disabled="!canConfirmClean" @click="showAuditApproveConfirm = true">
           <CheckCircleIcon class="w-4 h-4" />
           ยืนยัน
         </BaseButton>
@@ -740,7 +765,7 @@ async function handleRejectAudit() {
       :open="showAuditWithIssuesConfirm"
       title="ยืนยันพร้อมหมายเหตุ"
       message="ยืนยันผลการ Audit (มีปัญหา/หมายเหตุ) และส่งให้ Owner อนุมัติหรือไม่? Owner จะเห็นหมายเหตุที่ระบุไว้"
-      confirm-label="ยืนยัน"
+      confirm-text="ยืนยัน"
       variant="warning"
       :loading="isSubmittingAction"
       @confirm="handleAuditWithIssues"

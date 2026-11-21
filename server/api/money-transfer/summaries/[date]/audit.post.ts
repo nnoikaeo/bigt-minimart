@@ -30,6 +30,8 @@ const auditSchema = z.object({
   transactionsWithIssues: z.number().nonnegative('Issues count cannot be negative'),
   bankStatementVerified: z.boolean(),
   bankStatementAmount: z.number().nonnegative().optional(),
+  /** Bank Statement equals the expected closing balance (client compares, same as BP) */
+  bankBalanceMatches: z.boolean().optional(),
   auditorCash: z.object({
     transferWithdrawal: z.number().nonnegative(),
     serviceFee: z.number().nonnegative(),
@@ -137,7 +139,7 @@ export default defineEventHandler(async (event) => {
         transactionsWithIssues: validated.transactionsWithIssues,
         bankStatementVerified: validated.bankStatementVerified,
         bankStatementAmount: validated.bankStatementAmount,
-        bankBalanceMatches: true, // TODO: Verify against bank statement
+        bankBalanceMatches: validated.bankBalanceMatches ?? false,
         auditorCash: validated.auditorCash,
         auditNotes: validated.auditNotes,
         issuesFound: validated.issuesFound ? [validated.issuesFound] : undefined,

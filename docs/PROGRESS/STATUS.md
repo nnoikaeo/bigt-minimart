@@ -2,9 +2,9 @@
 
 **Last Updated**: Nov 14, 2026
 **Updated By**: Claude Code
-**Current Branch**: develop (latest merge: PR #166; main: docs synced via PR #150, code at release #148)
+**Current Branch**: develop (latest merge: PR #168; main: docs synced via PR #150, code at release #148)
 **Current Phase**: Testing — Service Harmonization (Manual Test → Bug Fix → E2E)
-**Next Up**: MT-3 + MT-4 with BUG-035 (MT send-back flow); BUG-037 (server role checks) before release; then history summary columns (MT + BP, see "Planned" below); small: BUG-046 (carry-over label) + BUG-047 (URL date) MT + BP; then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
+**Next Up**: MT-4 manual test (MT-3 passed Nov 14; BUG-035 PR #168, BUG-026 MT / 048 / 049 PR #169); BUG-037 (server role checks) before release; then history summary columns (MT + BP, see "Planned" below); small: BUG-046 (carry-over label) + BUG-047 (URL date) MT + BP; then PR 2 — borrow/repay sales cash (spec: `docs/REQUIREMENTS/DRAFT_QUEUE_AND_CASH_LOAN.md`)
 
 ---
 
@@ -23,7 +23,7 @@ PHASE 1: Core Features
 ├─ Week 9: Layout Consistency & Polish            ✅ COMPLETE (100%)
 ├─ Week 5-6 (original plan): Dashboard + Reports ❌ NOT STARTED (0%)
 ├─ Week 10+: Bill Payment Service Harmonization               ✅ COMPLETE (100%)
-├─ Testing: Service Harmonization Testing Plan                 🔄 IN PROGRESS (MT-1 ✅, MT-2 ✅, BP-2 ✅, BP-3 ✅, BP-4 ✅, BP-1 ✅; next MT-3)
+├─ Testing: Service Harmonization Testing Plan                 🔄 IN PROGRESS (MT-1 ✅, MT-2 ✅, BP-2 ✅, BP-3 ✅, BP-4 ✅, BP-1 ✅; MT-3 ✅, MT-4 next)
 └─ Overall: PHASE 1 CORE COMPLETE — Harmonization COMPLETE — Testing IN PROGRESS
 
 Timeline Status: Money Transfer feature fully shipped ✓
@@ -227,6 +227,13 @@ Timeline Status: Money Transfer feature fully shipped ✓
    ├─ BUG-044 needs_correction banner shows the send-back reason (MT side checked in MT-4)
    ├─ BUG-045 todayISO() — "today" in Thai time on client and server
    └─ New from the retest: BUG-046 (carry-over label says "yesterday"), BUG-047 (URL keeps the old date) — Low, open
+
+🔄 MT send-back flow like BP + Owner card parity (PR #168, merged Nov 14 — manual test MT-3 / MT-4 in progress)
+   ├─ BUG-035 Auditor/Owner send-back → Manager: requestCorrection keeps Step 1, clears Step 2 / audit / owner decision
+   ├─ Manager edits + re-confirms Step 1, recount box; Auditor waiting + re-audit boxes; send-back needs issue details
+   ├─ Removed unused completeAudit / approveByOwner (saved approve_with_notes as approved)
+   ├─ Owner card: transfer / withdrawal / deposit totals, cancelled count, "ไม่มีหมายเหตุ", time column + sort
+   └─ New: BUG-048 (MT bankBalanceMatches hard-coded true), BUG-049 (ConfirmDialog :loading warning)
 ```
 
 ### Week 9 (Mar 23-25): Layout Consistency & Polish
@@ -336,16 +343,16 @@ Components (50 total):
 | Pages | 26 (16 functional, 10 placeholders) | ✅ |
 | Components | 50 | ✅ |
 | API routes | 72 | ✅ |
-| PRs merged (latest) | #166 | ✅ |
+| PRs merged (latest) | #168 | ✅ |
 | TypeScript errors (`nuxt typecheck`) | 0 | ✅ |
-| Unit/Integration tests (`vitest run`) | 367/367 passed (26 files) | ✅ |
+| Unit/Integration tests (`vitest run`) | 376/376 passed (27 files) | ✅ |
 | Production build (`nuxt build`) | Success | ✅ |
 | Money Transfer workflow | 9/9 statuses (unified) | ✅ |
 | Bill Payment workflow | Phase 1-6 Complete (27 Tasks) | ✅ |
-| Service Harmonization Testing | 5/17 tasks done (MT-1, MT-2, BP-2, BP-3, BP-4); open bugs BUG-035, BUG-037 | 🔄 |
+| Service Harmonization Testing | 5/17 tasks done (MT-1, MT-2, BP-2, BP-3, BP-4); open bugs BUG-037, BUG-046~049 (BUG-035 fixed, in test) | 🔄 |
 | Design System components | 15 ui + 4 layout + 8 shared | ✅ |
 | Mobile responsive | Yes | ✅ |
-| CI (PR Check / Staging / Production) | PR Check + Staging passing (Nov 2, 2026); Production last ran Oct 16, 2026 | ✅ |
+| CI (PR Check / Staging / Production) | PR Check + Staging passing (Nov 14, 2026, PR #168); Production last ran Oct 16, 2026 | ✅ |
 
 ---
 
