@@ -167,9 +167,9 @@
         "serviceFeeCash": 90
       }
     },
-    "workflowStatus": "step2_completed_with_notes",
+    "workflowStatus": "approved_with_notes",
     "createdAt": "2026-03-08T09:00:00.000Z",
-    "updatedAt": "2026-10-17T05:22:46.961Z",
+    "updatedAt": "2026-11-21T07:38:55.884Z",
     "step2": {
       "status": "completed",
       "completedAt": "2026-10-17T05:22:46.961Z",
@@ -192,6 +192,37 @@
       },
       "verificationNotes": "เงินสดขาด 100 บาท ทอนลูกค้าเกิน",
       "hasDiscrepancies": true
+    },
+    "auditorVerification": {
+      "status": "completed",
+      "completedAt": "2026-11-14T07:11:59.569Z",
+      "completedBy": "dAuL8YQfWDcbiP4NL0z8z2J0wIy2",
+      "completedByName": "พรทิพย์ เรือนสุข",
+      "transactionsVerified": 5,
+      "transactionsWithIssues": 1,
+      "bankStatementVerified": false,
+      "bankBalanceMatches": false,
+      "auditorCash": {
+        "transferWithdrawal": 8500,
+        "serviceFee": 90,
+        "total": 8590
+      },
+      "auditNotes": "เงินสดขาด 100",
+      "issuesFound": [
+        "เงินสดขาด 100"
+      ],
+      "auditResult": "minor_issues",
+      "txnIssueStatus": {
+        "mts-1772992200000-txn01": true
+      }
+    },
+    "ownerApproval": {
+      "status": "approved_with_notes",
+      "completedAt": "2026-11-21T07:38:55.884Z",
+      "completedBy": "owner",
+      "completedByName": "Owner",
+      "decision": "approve_with_notes",
+      "ownerNotes": "รับทราบเงินขาด 100"
     }
   },
   {
@@ -214,9 +245,9 @@
         "serviceFeeCash": 50
       }
     },
-    "workflowStatus": "step2_completed",
+    "workflowStatus": "approved",
     "createdAt": "2026-03-09T19:43:22.466Z",
-    "updatedAt": "2026-03-25T15:18:28.363Z",
+    "updatedAt": "2026-11-14T08:17:25.829Z",
     "step2": {
       "status": "completed",
       "completedAt": "2026-03-25T15:18:28.363Z",
@@ -239,6 +270,30 @@
       },
       "verificationNotes": "",
       "hasDiscrepancies": false
+    },
+    "auditorVerification": {
+      "status": "completed",
+      "completedAt": "2026-11-14T06:13:41.688Z",
+      "completedBy": "dAuL8YQfWDcbiP4NL0z8z2J0wIy2",
+      "completedByName": "พรทิพย์ เรือนสุข",
+      "transactionsVerified": 5,
+      "transactionsWithIssues": 0,
+      "bankStatementVerified": false,
+      "bankBalanceMatches": false,
+      "auditorCash": {
+        "transferWithdrawal": 2900,
+        "serviceFee": 50,
+        "total": 2950
+      },
+      "auditNotes": "",
+      "auditResult": "no_issues"
+    },
+    "ownerApproval": {
+      "status": "approved",
+      "completedAt": "2026-11-14T08:17:25.829Z",
+      "completedBy": "owner",
+      "completedByName": "Owner",
+      "decision": "approve"
     }
   },
   {
@@ -246,7 +301,7 @@
     "date": "2026-03-10",
     "step1": {
       "status": "completed",
-      "completedAt": "2026-04-15T13:25:03.997Z",
+      "completedAt": "2026-11-21T07:50:35.651Z",
       "completedBy": "8zjwYo5T8sYeqThBX4MGYohjBOA3",
       "completedByName": "กัลญา ผิวขำทองดี",
       "totalTransactions": 10,
@@ -261,12 +316,16 @@
         "serviceFeeCash": 100
       }
     },
-    "workflowStatus": "step2_completed",
+    "workflowStatus": "approved",
     "createdAt": "2026-03-25T16:02:00.138Z",
-    "updatedAt": "2026-04-15T13:26:17.803Z",
+    "updatedAt": "2026-11-21T07:55:44.260Z",
+    "needsCorrectionFrom": "audited",
+    "correctionNotes": "ตรวจรายการฝากเงินใหม่",
+    "correctionRequestedAt": "2026-11-21T07:47:01.522Z",
+    "correctionRequestedBy": "owner",
     "step2": {
       "status": "completed",
-      "completedAt": "2026-04-15T13:26:17.803Z",
+      "completedAt": "2026-11-21T07:51:30.113Z",
       "completedBy": "manager",
       "completedByName": "Manager",
       "expectedCash": {
@@ -286,6 +345,31 @@
       },
       "verificationNotes": "",
       "hasDiscrepancies": false
+    },
+    "auditorVerification": {
+      "status": "completed",
+      "completedAt": "2026-11-21T07:54:20.075Z",
+      "completedBy": "dAuL8YQfWDcbiP4NL0z8z2J0wIy2",
+      "completedByName": "พรทิพย์ เรือนสุข",
+      "transactionsVerified": 10,
+      "transactionsWithIssues": 0,
+      "bankStatementVerified": true,
+      "bankStatementAmount": 7934,
+      "bankBalanceMatches": true,
+      "auditorCash": {
+        "transferWithdrawal": 5436,
+        "serviceFee": 100,
+        "total": 5536
+      },
+      "auditNotes": "",
+      "auditResult": "no_issues"
+    },
+    "ownerApproval": {
+      "status": "approved",
+      "completedAt": "2026-11-21T07:55:44.259Z",
+      "completedBy": "owner",
+      "completedByName": "Owner",
+      "decision": "approve"
     }
   },
   {
