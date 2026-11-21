@@ -425,14 +425,14 @@
     "step1": {
       "status": "in_progress",
       "totalTransactions": 3,
-      "completedTransactions": 3,
+      "completedTransactions": 2,
       "draftTransactions": 0,
-      "totalAmount": 2100,
-      "totalCommission": 20
+      "totalAmount": 1300,
+      "totalCommission": 10
     },
     "workflowStatus": "step1_in_progress",
     "createdAt": "2026-10-17T05:59:43.253Z",
-    "updatedAt": "2026-11-02T17:52:59.592Z"
+    "updatedAt": "2026-11-21T08:57:44.719Z"
   },
   {
     "id": "mtsum-2026-10-18",
